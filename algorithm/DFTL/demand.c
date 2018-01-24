@@ -12,9 +12,11 @@ struct algorithm __demand={
 	.remove = demand_remove
 };
 
+// Please split functions (create, get, set, remove) and (others)
+
 C_TABLE *CMT;
 D_TABLE *GTD;
-D_OOB *demand_OOB; // PLEASE USE OOB
+D_OOB *demand_OOB; 
 D_SRAM *d_sram;
 
 uint32_t DPA_status = 0;
@@ -28,24 +30,19 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * _NOB);
 	d_sram = (D_SRAM*)malloc(sizeof(D_SRAM) * _NOB);
 	algo->li = li;
-	printf("Table_alloc done\n");
 
 	// SRAM Init 
 	for(int i = 0; i < GTDENT; i++){
 		GTD[i].ppa = -1;
 	}
-	printf("GTD done\n");
 	for(int i = 0; i < CMTENT; i++){
 		CMT[i] = (C_TABLE){-1, -1, 0, NULL};
 	}
-	printf("CMT done\n");
 	for(int i = 0; i < _NOB; i++){
 		d_sram->lpa_RAM = -1;
 		d_sram->PTR_RAM = NULL;
 	}
-	printf("SRAM init done\n");
 	memset(demand_OOB, 0, sizeof(D_OOB) * _NOB);
-	printf("OOB init done\n");
 }
 
 void demand_destroy(lower_info *li, algorithm *algo){
@@ -208,60 +205,67 @@ char btype_check(uint32_t PBA_status){
 	return 'D';
 }
 
-void batch_update(){
-	//qsort(d_sram);
+int lpa_compare(const void *a, const void *b){
+	if(((D_SRAM*)a)->lpa_RAM < ((D_SRAM*)b)->lpa_RAM) return -1;
+	if(((D_SRAM*)a)->lpa_RAM == ((D_SRAM*)b)->lpa_RAM) return 0;
+	if(((D_SRAM*)a)->lpa_RAM > ((D_SRAM*)b)->lpa_RAM) return 1;
 }
 
-//please change all int of page address to uint32_t
-//please make NULL ptr to other ptr
-//
+void batch_update(){
+	qsort(d_sram, _PPB, sizeof(C_TABLE), lpa_compare);
+	// Check the case when PBA_status changes
+}
+
+// Please make NULL ptr to other ptr
 
 void SRAM_load(uint32_t ppa, int idx){
-	__demand.li->pull_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, NULL, 0);
-	d_sram[idx].lpa_RAM = demand_OOB[ppa].reverse_table;
-	demand_OOB[ppa] = (D_OOB){-1, 0};
+	__demand.li->pull_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, NULL, 0); // Page load
+	d_sram[idx].lpa_RAM = demand_OOB[ppa].reverse_table;	// Page load
+	demand_OOB[ppa] = (D_OOB){-1, 0};	// OOB init
 }
 
 void SRAM_unload(uint32_t ppa, int idx){
-	__demand.li->push_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, NULL, 0);
-	demand_OOB[ppa] = (D_OOB){d_sram[idx].lpa_RAM, 1};
-	d_sram[idx] = (D_SRAM){-1, NULL};
+	__demand.li->push_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, NULL, 0);	// Page unlaod
+	demand_OOB[ppa] = (D_OOB){d_sram[idx].lpa_RAM, 1};	// OOB unload
+	d_sram[idx] = (D_SRAM){-1, NULL};	// SRAM init
 }
 
-void demand_GC(uint32_t PBA_status){
+// Check the case when no page be GCed.
+void demand_GC(uint32_t victim_PBA){
 	/* SRAM load */
-	int temp_idx = 0;
-	for(int i = PBA_status * _PPB; i < (PBA_status + 1) * _PPB; i++){
+	int temp_idx = 0;	// Valid page num
+	uint32_t PBA2PPA = victim_PBA * _PPB;	// Save PBA to PPA
+	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){	// Load valid pages to SRAM
 		if(demand_OOB[i].valid_checker == 1){
 			SRAM_load(i, temp_idx);
 			temp_idx++;
 		}
 	}
-	__demand.li->trim_block(PBA_status * _PPB, false); //BLOCK erase
+	__demand.li->trim_block(PBA2PPA, false); // Block erase
 
 	/* SRAM unload */
-	if(btype_check(PBA_status) == 'T'){
+	if(btype_check(PBA_status) == 'T'){	// Block type check
 		for(int j = 0; j < temp_idx; j++){
-			GTD[(d_sram[j].lpa_RAM / _PPB)].ppa = PBA_status * _PPB + j;
-			SRAM_unload(PBA_status * _PPB + j, j);
+			GTD[(d_sram[j].lpa_RAM / _PPB)].ppa = PBA2PPA + j;	// GTD update
+			SRAM_unload(PBA2PPA + j, j);	// SRAM unload
 		}
-		TPA_status = PBA_status * _PPB + temp_idx;
+		TPA_status = PBA2PPA + temp_idx;	// TPA_status update
 	}
 	else{
 		for(int j = 0; j < temp_idx; j++){
-			// translation page management
-			batch_update();
-			SRAM_unload(PBA_status * _PPB + j, j);
+			batch_update();		// batch_update + t_page update
+			SRAM_unload(PBA2PPA + j, j);
 		}
-		DPA_status = PBA_status * _PPB + temp_idx;
+		DPA_status = PBA2PPA + temp_idx;	// DPA_status update
 	}
 }
 
+// Check the case when no page be GCed.
 void dp_alloc(uint32_t *ppa){
 	if(DPA_status % _PPB == 0){
 		if(PBA_status >= _NOB){
 			PBA_status = PBA_status % _NOB;
-			//demand_GC(PBA_status);
+			demand_GC(PBA_status);	// Please add how to find d_block
 			DPA_status = PBA_status * _PPB;
 			PBA_status = PBA_status + _NOB;
 		}
@@ -277,7 +281,7 @@ void tp_alloc(uint32_t *t_ppa){
 	if(TPA_status % _PPB == 0){
 		if(PBA_status >= _NOB){
 			PBA_status = PBA_status % _NOB;
-			//demand_GC(PBA_status);
+			demand_GC(PBA_status);	// Please add how to find t_block
 			TPA_status = PBA_status * _PPB;
 			PBA_status = PBA_status + _NOB;
 		}
