@@ -10,16 +10,17 @@ int main(){
 	/* 1D array for Random key */
 	//KEYT keyArray[300];
 	printf("Start!\n");
-	KEYT* keyArray = (KEYT*)malloc(sizeof(KEYT) * 300);
+	KEYT* keyArray = (KEYT*)malloc(sizeof(KEYT) * 20000);
 
-	for(int i=0; i<300; i++){
+	for(int i=0; i<20000; i++){
 #ifdef LEAKCHECK
 		printf("set: %d\n",i);
 #endif
 		//printf("1\n");
-		const KEYT new_key=rand();
+		const KEYT new_key=rand() % 100;
 		//printf("2\n");
 		keyArray[i] = new_key;
+		printf("Set_random: %d\n", keyArray[i]);
 		//printf("3\n");
 		char *temp = (char*)malloc(PAGESIZE);
 		memcpy(temp, &new_key, sizeof(i));
@@ -39,7 +40,7 @@ int main(){
 	}
 
 	int check;
-	for(int i=0; i<300; i++){
+	for(int i=0; i<20000; i++){
 		char *temp = (char*)malloc(PAGESIZE);
 		inf_make_req(FS_GET_T, i, temp);
 		memcpy(&check, temp, sizeof(i));
