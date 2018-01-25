@@ -13,23 +13,23 @@
 #define CMTENT (CMTSIZE/sizeof(C_TABLE))	// Num of CMT entries
 
 typedef struct cached_table{
-	int32_t lpa;
-	int32_t ppa;
+	uint32_t lpa;
+	uint32_t ppa;
 	unsigned char flag; // 0: unchanged, 1: changed
 	LINKED_LIST *queue_ptr;
 }C_TABLE;
 
 typedef struct demand_mapping_table{
-	int32_t ppa; //Index = lpa
+	uint32_t ppa; //Index = lpa
 }D_TABLE;
 
 typedef struct demand_OOB{
-	int32_t reverse_table;
+	uint32_t reverse_table;
 	unsigned char valid_checker; // 0: invalid, 1: valid
 }D_OOB;
 
 typedef struct demand_SRAM{
-	int32_t lpa_RAM;
+	uint32_t lpa_RAM;
 	PTR PTR_RAM;
 }D_SRAM;
 
@@ -47,7 +47,9 @@ void *demand_end_req(algo_req*);
 int CMT_check(uint32_t lpa, uint32_t *ppa);
 uint32_t demand_eviction(int *CMT_i);
 char btype_check(uint32_t PBA_status);
-void batch_update();
+void batch_update(int valid_page_num, uint32_t PBA2PPA);
+void SRAM_load(uint32_t ppa, int idx);
+void SRAM_unload(uint32_t ppa, int idx);
 int lpa_compare(const void *a, const void *b);
 bool demand_GC(uint32_t victim_PBA, char btype);
 void dp_alloc(uint32_t *ppa);

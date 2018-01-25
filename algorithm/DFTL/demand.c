@@ -1,6 +1,6 @@
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdio.h>
 #include "demand.h"
 
@@ -25,7 +25,6 @@ uint32_t PBA_status = 0;
 char needGC = 0;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
-	printf("NOB : %lu\n", _NOB); 
 	// Table Alloc 
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 	CMT = (C_TABLE*)malloc(CMTSIZE);
@@ -51,6 +50,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
 	free(CMT);
 	free(GTD);
 	free(demand_OOB);
+	free(d_sram);
 }
 
 uint32_t demand_get(const request *req){
@@ -100,14 +100,14 @@ uint32_t demand_set(const request *req){
 	if((CMT_i = CMT_check(lpa, &ppa)) != -1){ // check CACHE
 		// CACHE hit
 		demand_OOB[ppa].valid_checker = 0;
-		dp_alloc(&ppa);//please add data_page_allocation function
+		dp_alloc(&ppa);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0);
 		CMT[CMT_i] = (C_TABLE){.ppa = ppa, .flag = 1}; // Is it possible???
 		queue_update(CMT[CMT_i].queue_ptr);
 	}
 	else{
 		// CACHE miss
-		demand_eviction(&CMT_i); //Handling initial cycle in eviction
+		demand_eviction(&CMT_i);
 		dp_alloc(&ppa);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0);
 		CMT[CMT_i] = (C_TABLE){lpa, ppa, 1, queue_insert((void*)(CMT + CMT_i))};
@@ -165,7 +165,6 @@ int CMT_check(uint32_t lpa, uint32_t *ppa){
 	return -1; //No such lpa in CMT
 }
 
-//Handling when cache is empty or first t_page write
 uint32_t demand_eviction(int *CMT_i){
 	uint32_t lpa;
 	uint32_t ppa;
@@ -191,6 +190,7 @@ uint32_t demand_eviction(int *CMT_i){
 		}
 		tp_alloc(&t_ppa);
 		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, NULL, 0);
+		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1};
 		GTD[D_IDX].ppa = t_ppa;
 	}
 	queue_delete(tail);
@@ -213,10 +213,41 @@ int lpa_compare(const void *a, const void *b){
 	if(((D_SRAM*)a)->lpa_RAM > ((D_SRAM*)b)->lpa_RAM) return 1;
 }
 
-// Still making
-void batch_update(){
-	qsort(d_sram, _PPB, sizeof(C_TABLE), lpa_compare);
-	// Check the case when PBA_status changes
+// PLASE UPDATE (ONLY CMT GC)
+
+// PLEASE CONFIRM GTD MANAGEMENT AND OOB MANAGEMENT
+void batch_update(int valid_page_num, uint32_t PBA2PPA){
+	uint32_t vba;
+	uint32_t t_ppa;
+	D_TABLE* p_table;
+	uint32_t* temp_lpa_table = (uint32_t*)malloc(sizeof(uint32_t) * _PPB);
+	qsort(d_sram, _PPB, sizeof(D_TABLE), lpa_compare);	// Sort d_sram as lpa
+	for(int i = 0; i < valid_page_num; i++){	// Make lpa table and SRAM_unload
+		temp_lpa_table[i] = d_sram[i].lpa_RAM;
+		SRAM_unload(PBA2PPA + i, i);
+	}
+	
+	vba = UINT32_MAX;
+	for(int i = 0; i < valid_page_num; i++){
+		if(vba == temp_lpa_table[i] / _PPB){
+			p_table[temp_lpa_table[i] % _PPB].ppa = PBA2PPA + i;
+		}
+		else if(vba != UINT32_MAX){
+			tp_alloc(&t_ppa);
+			__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, NULL, 0);
+			demand_OOB[t_ppa] = (D_OOB){vba, 1};
+			demand_OOB[GTD[vba].ppa].valid_checker = 0;
+			GTD[vba].ppa = t_ppa;
+			free(p_table);
+			p_table = NULL;
+		}
+		if(p_table == NULL){
+			vba = temp_lpa_table[i] / _PPB;
+			__demand.li->pull_data(GTD[vba].ppa, PAGESIZE, (V_PTR)p_table, 0, NULL, 0);
+			p_table[temp_lpa_table[i] % _PPB].ppa = PBA2PPA + i;
+		}
+	}
+	free(temp_lpa_table);
 }
 
 // Please make NULL ptr to other ptr
@@ -235,11 +266,11 @@ void SRAM_unload(uint32_t ppa, int idx){
 
 // Check the case when no page be GCed.
 bool demand_GC(uint32_t victim_PBA, char btype){
-	int temp_idx = 0;	// Valid page num
+	int valid_page_num = 0;	// Valid page num
 	uint32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
 
 	/* block type, invalid page check */
-	if(btype_check(victim_PBA) != btype){
+	if(btype_check(PBA2PPA) != btype){
 		return false;
 	}
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
@@ -251,8 +282,8 @@ bool demand_GC(uint32_t victim_PBA, char btype){
 	/* SRAM load */
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){	// Load valid pages to SRAM
 		if(demand_OOB[i].valid_checker == 1){
-			SRAM_load(i, temp_idx);
-			temp_idx++;
+			SRAM_load(i, valid_page_num);
+			valid_page_num++;
 		}
 	}
 
@@ -261,23 +292,19 @@ bool demand_GC(uint32_t victim_PBA, char btype){
 
 	/* SRAM unlaod */
 	if(btype == 'T'){	// Block type check
-		for(int j = 0; j < temp_idx; j++){
+		for(int j = 0; j < valid_page_num; j++){
 			GTD[(d_sram[j].lpa_RAM / _PPB)].ppa = PBA2PPA + j;	// GTD update
 			SRAM_unload(PBA2PPA + j, j);	// SRAM unload
 		}
-		TPA_status = PBA2PPA + temp_idx;	// TPA_status update
+		TPA_status = PBA2PPA + valid_page_num;	// TPA_status update
 	}
 	else if(btype == 'D'){
-		for(int j = 0; j < temp_idx; j++){
-			batch_update();		// batch_update + t_page update
-			SRAM_unload(PBA2PPA + j, j);
-		}
-		DPA_status = PBA2PPA + temp_idx;	// DPA_status update
+		batch_update(valid_page_num, PBA2PPA);	// batch_update + t_page update
+		DPA_status = PBA2PPA + valid_page_num;	// DPA_status update
 	}
 	return true;
 }
 
-// Check the case when no page be GCed. Think about where to put btype_check()
 void dp_alloc(uint32_t *ppa){ // Data page allocation
 	if(DPA_status % _PPB == 0){
 		if(PBA_status == _NOB) 
@@ -299,7 +326,7 @@ void tp_alloc(uint32_t *t_ppa){ // Translation page allocation
 		if(PBA_status == _NOB) 
 			needGC = 1;
 		if(needGC == 1){
-			while(!demand_GC(PBA_status, 'T'))// Please add how to find t_block
+			while(!demand_GC(PBA_status, 'T'))	// Find GC-able t_block and GC
 				PBA_status++;
 		}
 		else
