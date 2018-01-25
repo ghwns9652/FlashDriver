@@ -49,6 +49,6 @@ uint32_t demand_eviction(int *CMT_i);
 char btype_check(uint32_t PBA_status);
 void batch_update();
 int lpa_compare(const void *a, const void *b);
-void demand_GC(uint32_t victim_PBA);
+bool demand_GC(uint32_t victim_PBA, char btype);
 void dp_alloc(uint32_t *ppa);
 void tp_alloc(uint32_t *t_ppa);

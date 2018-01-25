@@ -22,8 +22,10 @@ D_SRAM *d_sram;
 uint32_t DPA_status = 0;
 uint32_t TPA_status = 0;
 uint32_t PBA_status = 0;
+char needGC = 0;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
+	printf("NOB : %lu\n", _NOB); 
 	// Table Alloc 
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 	CMT = (C_TABLE*)malloc(CMTSIZE);
@@ -211,6 +213,7 @@ int lpa_compare(const void *a, const void *b){
 	if(((D_SRAM*)a)->lpa_RAM > ((D_SRAM*)b)->lpa_RAM) return 1;
 }
 
+// Still making
 void batch_update(){
 	qsort(d_sram, _PPB, sizeof(C_TABLE), lpa_compare);
 	// Check the case when PBA_status changes
@@ -231,43 +234,57 @@ void SRAM_unload(uint32_t ppa, int idx){
 }
 
 // Check the case when no page be GCed.
-void demand_GC(uint32_t victim_PBA){
-	/* SRAM load */
+bool demand_GC(uint32_t victim_PBA, char btype){
 	int temp_idx = 0;	// Valid page num
-	uint32_t PBA2PPA = victim_PBA * _PPB;	// Save PBA to PPA
+	uint32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
+
+	/* block type, invalid page check */
+	if(btype_check(victim_PBA) != btype){
+		return false;
+	}
+	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
+		if(demand_OOB[i].valid_checker != 1){
+			return false;
+		}
+	}
+
+	/* SRAM load */
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){	// Load valid pages to SRAM
 		if(demand_OOB[i].valid_checker == 1){
 			SRAM_load(i, temp_idx);
 			temp_idx++;
 		}
 	}
-	__demand.li->trim_block(PBA2PPA, false); // Block erase
 
-	/* SRAM unload */
-	if(btype_check(PBA_status) == 'T'){	// Block type check
+	/* Block erase */
+	__demand.li->trim_block(PBA2PPA, false);
+
+	/* SRAM unlaod */
+	if(btype == 'T'){	// Block type check
 		for(int j = 0; j < temp_idx; j++){
 			GTD[(d_sram[j].lpa_RAM / _PPB)].ppa = PBA2PPA + j;	// GTD update
 			SRAM_unload(PBA2PPA + j, j);	// SRAM unload
 		}
 		TPA_status = PBA2PPA + temp_idx;	// TPA_status update
 	}
-	else{
+	else if(btype == 'D'){
 		for(int j = 0; j < temp_idx; j++){
 			batch_update();		// batch_update + t_page update
 			SRAM_unload(PBA2PPA + j, j);
 		}
 		DPA_status = PBA2PPA + temp_idx;	// DPA_status update
 	}
+	return true;
 }
 
-// Check the case when no page be GCed.
-void dp_alloc(uint32_t *ppa){
+// Check the case when no page be GCed. Think about where to put btype_check()
+void dp_alloc(uint32_t *ppa){ // Data page allocation
 	if(DPA_status % _PPB == 0){
-		if(PBA_status >= _NOB){
-			PBA_status = PBA_status % _NOB;
-			demand_GC(PBA_status);	// Please add how to find d_block
-			DPA_status = PBA_status * _PPB;
-			PBA_status = PBA_status + _NOB;
+		if(PBA_status == _NOB) 
+			needGC = 1;
+		if(needGC == 1){
+			while(!demand_GC(PBA_status, 'D'))	// Find GC-able d_block and GC
+				PBA_status++;
 		}
 		else
 			DPA_status = PBA_status * _PPB;
@@ -277,13 +294,13 @@ void dp_alloc(uint32_t *ppa){
 	DPA_status++;
 }
 
-void tp_alloc(uint32_t *t_ppa){
+void tp_alloc(uint32_t *t_ppa){ // Translation page allocation
 	if(TPA_status % _PPB == 0){
-		if(PBA_status >= _NOB){
-			PBA_status = PBA_status % _NOB;
-			demand_GC(PBA_status);	// Please add how to find t_block
-			TPA_status = PBA_status * _PPB;
-			PBA_status = PBA_status + _NOB;
+		if(PBA_status == _NOB) 
+			needGC = 1;
+		if(needGC == 1){
+			while(!demand_GC(PBA_status, 'T'))// Please add how to find t_block
+				PBA_status++;
 		}
 		else
 			TPA_status = PBA_status * _PPB;
