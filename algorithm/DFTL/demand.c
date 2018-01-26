@@ -19,9 +19,9 @@ D_TABLE *GTD;
 D_OOB *demand_OOB; 
 D_SRAM *d_sram;
 
-uint32_t DPA_status = 0;
-uint32_t TPA_status = 0;
-uint32_t PBA_status = 0;
+int32_t DPA_status = 0;
+int32_t TPA_status = 0;
+int32_t PBA_status = 0;
 char needGC = 0;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
@@ -54,9 +54,9 @@ void demand_destroy(lower_info *li, algorithm *algo){
 }
 
 uint32_t demand_get(const request *req){
-	uint32_t lpa;
-	uint32_t ppa;
-	uint32_t t_ppa;
+	int32_t lpa;
+	int32_t ppa;
+	int32_t t_ppa;
 	int CMT_i;
 	D_TABLE* p_table;
 	demand_params *params = (demand_params*)malloc(sizeof(demand_params));
@@ -84,8 +84,8 @@ uint32_t demand_get(const request *req){
 }
 
 uint32_t demand_set(const request *req){
-	uint32_t lpa; //lpa of data page
-	uint32_t ppa; //ppa of data page
+	int32_t lpa; //lpa of data page
+	int32_t ppa; //ppa of data page
 	int CMT_i; //index of CMT
 	D_TABLE *p_table;
 	demand_params *params = (demand_params*)malloc(sizeof(demand_params));
@@ -102,7 +102,8 @@ uint32_t demand_set(const request *req){
 		demand_OOB[ppa].valid_checker = 0;
 		dp_alloc(&ppa);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0);
-		CMT[CMT_i] = (C_TABLE){.ppa = ppa, .flag = 1}; // Is it possible???
+		CMT[CMT_i].ppa = ppa;
+		CMT[CMT_i].flag = 1;
 		queue_update(CMT[CMT_i].queue_ptr);
 	}
 	else{
@@ -116,9 +117,9 @@ uint32_t demand_set(const request *req){
 }
 
 bool demand_remove(const request *req){
-	uint32_t lpa;
-	uint32_t ppa;
-	uint32_t t_ppa;
+	int32_t lpa;
+	int32_t ppa;
+	int32_t t_ppa;
 	int CMT_i;
 	D_TABLE *p_table;
 	
@@ -155,9 +156,9 @@ void *demand_end_req(algo_req* input){
 	free(input);
 }
 
-int CMT_check(uint32_t lpa, uint32_t *ppa){
+int CMT_check(int32_t lpa, int32_t *ppa){
 	for(int i = 0; i < CMTENT; i++){
-		if(CMT[i].lpa==lpa){
+		if(CMT[i].lpa == lpa){
 			*ppa = CMT[i].ppa;
 			return i; //CMT_i
 		}
@@ -166,9 +167,9 @@ int CMT_check(uint32_t lpa, uint32_t *ppa){
 }
 
 uint32_t demand_eviction(int *CMT_i){
-	uint32_t lpa;
-	uint32_t ppa;
-	uint32_t t_ppa;
+	int32_t lpa;
+	int32_t ppa;
+	int32_t t_ppa;
 	D_TABLE *p_table;
 
 	/* Check empty entry */
@@ -199,7 +200,7 @@ uint32_t demand_eviction(int *CMT_i){
 	free(p_table);
 }
 
-char btype_check(uint32_t PBA_status){
+char btype_check(int32_t PBA_status){
 	for(int i = 0; i < GTDENT; i++){
 		if((GTD[i].ppa / _PPB) == PBA_status)
 			return 'T';
@@ -216,11 +217,11 @@ int lpa_compare(const void *a, const void *b){
 // PLASE UPDATE (ONLY CMT GC)
 
 // PLEASE CONFIRM GTD MANAGEMENT AND OOB MANAGEMENT
-void batch_update(int valid_page_num, uint32_t PBA2PPA){
-	uint32_t vba;
-	uint32_t t_ppa;
+void batch_update(int valid_page_num, int32_t PBA2PPA){
+	int32_t vba;
+	int32_t t_ppa;
 	D_TABLE* p_table;
-	uint32_t* temp_lpa_table = (uint32_t*)malloc(sizeof(uint32_t) * _PPB);
+	int32_t* temp_lpa_table = (int32_t*)malloc(sizeof(int32_t) * _PPB);
 	qsort(d_sram, _PPB, sizeof(D_TABLE), lpa_compare);	// Sort d_sram as lpa
 	for(int i = 0; i < valid_page_num; i++){	// Make lpa table and SRAM_unload
 		temp_lpa_table[i] = d_sram[i].lpa_RAM;
@@ -252,22 +253,22 @@ void batch_update(int valid_page_num, uint32_t PBA2PPA){
 
 // Please make NULL ptr to other ptr
 
-void SRAM_load(uint32_t ppa, int idx){
+void SRAM_load(int32_t ppa, int idx){
 	__demand.li->pull_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, NULL, 0); // Page load
 	d_sram[idx].lpa_RAM = demand_OOB[ppa].reverse_table;	// Page load
 	demand_OOB[ppa] = (D_OOB){-1, 0};	// OOB init
 }
 
-void SRAM_unload(uint32_t ppa, int idx){
+void SRAM_unload(int32_t ppa, int idx){
 	__demand.li->push_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, NULL, 0);	// Page unlaod
 	demand_OOB[ppa] = (D_OOB){d_sram[idx].lpa_RAM, 1};	// OOB unload
 	d_sram[idx] = (D_SRAM){-1, NULL};	// SRAM init
 }
 
 // Check the case when no page be GCed.
-bool demand_GC(uint32_t victim_PBA, char btype){
+bool demand_GC(int32_t victim_PBA, char btype){
 	int valid_page_num = 0;	// Valid page num
-	uint32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
+	int32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
 
 	/* block type, invalid page check */
 	if(btype_check(PBA2PPA) != btype){
@@ -305,7 +306,7 @@ bool demand_GC(uint32_t victim_PBA, char btype){
 	return true;
 }
 
-void dp_alloc(uint32_t *ppa){ // Data page allocation
+void dp_alloc(int32_t *ppa){ // Data page allocation
 	if(DPA_status % _PPB == 0){
 		if(PBA_status == _NOB) 
 			needGC = 1;
@@ -321,7 +322,7 @@ void dp_alloc(uint32_t *ppa){ // Data page allocation
 	DPA_status++;
 }
 
-void tp_alloc(uint32_t *t_ppa){ // Translation page allocation
+void tp_alloc(int32_t *t_ppa){ // Translation page allocation
 	if(TPA_status % _PPB == 0){
 		if(PBA_status == _NOB) 
 			needGC = 1;
