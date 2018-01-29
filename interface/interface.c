@@ -35,7 +35,7 @@ static void assign_req(request* req){
 	}
 
 	if(!req->isAsync){
-		pthread_mutex_lock(&req->async_mutex);
+		pthread_mutex_lock(&req->async_mutex); //unlock 아닌가??
 		pthread_mutex_destroy(&req->async_mutex);
 	}
 }

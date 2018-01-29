@@ -44,6 +44,8 @@ uint32_t demand_get(const request*);
 uint32_t demand_set(const request*);
 uint32_t demand_remove(const request*);
 void *demand_end_req(algo_req*);
+void *pseudo_end_req(algo_req*);
+algo_req* assign_pseudo_req();
 int CMT_check(int32_t lpa, int32_t *ppa);
 uint32_t demand_eviction(int *CMT_i);
 char btype_check(int32_t PBA_status);
