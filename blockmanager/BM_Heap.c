@@ -2,12 +2,7 @@
 
 #include "BM_Heap.h"
 
-/*
- * Heap Functions for ptrBlock
- */
-
-
-
+#if 0
 void max_heapify_cnt_(Block* ptrBlock[], uint32_t size_, int32_t i)
 {
 	int32_t l = 2 * i + 1;
@@ -15,10 +10,10 @@ void max_heapify_cnt_(Block* ptrBlock[], uint32_t size_, int32_t i)
 	int32_t largest;
 	int32_t size = (int32_t)size_;
 
-	if (l <= size - 1 && ptrBlock[l]->cnt > ptrBlock[i]->cnt)	largest = l;
+	if (l <= size - 1 && ptrBlock[l]->numValid > ptrBlock[i]->numValid)	largest = l;
 	else largest = i;
 
-	if (r <= size - 1 && ptrBlock[r]->cnt > ptrBlock[largest]->cnt)	largest = r; // if, else, if의 과정을 통해 가장 큰 value를 가지는 index를 찾아낸 뒤,
+	if (r <= size - 1 && ptrBlock[r]->numValid > ptrBlock[largest]->numValid)	largest = r; // if, else, if의 과정을 통해 가장 큰 value를 가지는 index를 찾아낸 뒤,
 	if (largest != i) {                                          // 만약 부모 노드의 값인 i가 largest가 아니라면 largest과 i를 바꾼다.
 																 //SWAP(Block_list[i].cnt, Block_list[largest].cnt);
 		//SWAP(ptrBlock[i]->cnt, ptrBlock[largest]->cnt);
@@ -139,5 +134,95 @@ void heapSort(int* list, int count)
 	}
 }
 
+#endif
+
+/*----------------------------위에거는 필요없는 것들. 지워도 됨 */
+/*
+ * Functions for numValid_map with MAX-HEAP 
+ */
+
+ /* Make Max-Heap with the pointers of numValid_map by numValid in blockArray */
+int32_t BM_Maxheap_numValid(Block* blockArray, uint8_t* numValid_map[])
+{
+	uint8_t* temp_NV = (uint8_t*)malloc(sizeof(uint8_t) * NOB);
+
+	for (int i = 0; i < NOB; ++i) {
+		temp_NV[i] = blockArray[i].numValid;
+	}
+
+	BM__buildmaxheapNV(temp_NV, numValid_map); // 굳이 buildmaxheap으로 따로 만들 필요가 있을까? 의미상으로는 지금이 맞지만 약간 더 비효율적이지 않을까
+
+	free(temp_NV); // 이게 정말 temp일까? heap을 계속 유지하고 변경하려면 이 temp_NV도 계속 유지되고 지속적으로 사용해야 하는 것 아닐까?
+}
 
 
+/* Build max-heap by numValid */
+int32_t BM__buildmaxheapNV(uint8_t* temp_NV, uint8_t* numValid_map[])
+{
+	int32_t i;
+	for (i = NOB / 2; i >= 0; --i) {
+		BM__maxheapifyNV(temp_NV, i, numValid_map);
+	}
+}
+
+int32_t BM__maxheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[])
+{
+	int32_t l = 2 * i + 1;
+	int32_t r = 2 * i + 2;
+	int32_t largest;
+
+	if (l <= NOB - 1 && temp_NV[l] > temp_NV[i]) largest = l;
+	else largest = i;
+
+	if (r <= NOB - 1 && temp_NV[r] > temp_NV[largest])	largest = r;
+	if (largest != i) {                                          // 만약 부모 노드의 값인 i가 largest가 아니라면 largest과 i를 바꾼다.
+		
+		SWAP_NV(temp_NV[i], temp_NV[largest]);
+		SWAP_NV_PTR(numValid_map[i], numValid_map[largest]); 
+		
+		BM__maxheapifyNV(temp_NV, largest, numValid_map);
+	}
+}
+
+/*
+ * Functions for PE_map with SORT
+ */
+
+/* 지금은 완전히 sorting하는 것이지만, max와 min만 필요할 지도 모른다. */
+/* Sorting the pointers of PE_map by PE_cycle in blockArray */
+int32_t BM_SortPE(Block* blockArray, uint32_t* PE_map[])
+{
+	//uint32_t temp_PE[NOB];
+	uint32_t* temp_PE = (uint32_t*)malloc(sizeof(uint32_t) * NOB);
+
+	for (int i = 0; i < NOB; ++i) {
+		temp_PE[i] = blockArray[i].PE_cycle;
+	}
+
+	BM__quicksort(temp_PE, 0, NOB - 1, PE_map); // Need Verification of this function
+
+
+	free(temp_PE);
+	return(eNOERROR);
+}
+void BM__quicksort(uint32_t* temp_PE, int p, int r, uint32_t* PE_map[]) // If this function works, it would be maybe better to fix with 'quicksort_Optimized'
+{
+	int q;
+	int x;
+	int i;
+	int j;
+	if (p < r) { // partition하는 코드
+		x = temp_PE[r];
+		i = p - 1;
+		for (j = p; j < r; j++) {
+			if (temp_PE[j] <= x) {
+				i++; SWAP_PE(temp_PE[i], temp_PE[j]); //	PE_map의 element(pointer)를 SWAP하는 코드를 여기에 넣자. 
+				SWAP_PE_PTR(PE_map[i], PE_map[j]);
+			}
+		}
+		SWAP_PE(temp_PE[i + 1], temp_PE[r]);	SWAP_PE_PTR(PE_map[i + 1], PE_map[r]);
+		q = i + 1; // divide(여기까지가 partition)
+		quickSort(temp_PE, p, q - 1, PE_map); // 재귀 호출
+		quickSort(temp_PE, q + 1, r, PE_map);
+	}
+}

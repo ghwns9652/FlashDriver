@@ -8,6 +8,10 @@
 #define PPB 256		/* Actually NOT THIS. REAL PPB is in "container.h" */
 // container에 있는 PPB 찾아서 macro로 찾을 수 있게 바꿔놓자.
 // include/settings.h 에 _PPB(256) 으로 나와있는 것 같다
+#define NOP 2000000	/* Actually NOT THIS. */
+#define NOB 1000	/* Actually NOT THIS. */
+
+
 
 
 /* Size of ptrBlock */
@@ -27,9 +31,9 @@
 #define SWAP_BIT(a, b)		\
 	{ uint32_t tempbit; tempbit = a->bit; a->bit = b->bit; b->bit = tempbit; }
 #define SWAP_CNT(a, b)		\
-	{ uint32_t tempcnt; tempcnt = a->cnt; a->cnt = b->cnt; b->cnt = tempcnt; }
-#define SWAP_PE(a, b)		\
-	{ uint32_t tempPE; tempPE = a->PE; a->PE = b->PE; b->PE = tempPE; }
+	{ uint32_t tempcnt; tempcnt = a->numValid; a->numValid = b->numValid; b->numValid = tempcnt; }
+//#define SWAP_PE(a, b)		\
+//	{ uint32_t tempPE; tempPE = a->PE; a->PE = b->PE; b->PE = tempPE; }
 
 
 
@@ -69,6 +73,7 @@
 #define eHEAPUNDERFLOW_BM                        ERR_ENCODE_ERROR_CODE(OM_ERR_BASE,0)
 #define ePBASEARCH_BM							 ERR_ENCODE_ERROR_CODE(OM_ERR_BASE,1)
 #define eBADOFFSET_BM							 ERR_ENCODE_ERROR_CODE(OM_ERR_BASE,2)
+#define eBADVALIDPAGE_BM						 ERR_ENCODE_ERROR_CODE(OM_ERR_BASE,3)
 /*
 #define eBADOBJECTID_OM                          ERR_ENCODE_ERROR_CODE(OM_ERR_BASE,1)
 #define eBADCATALOGOBJECT_OM                     ERR_ENCODE_ERROR_CODE(OM_ERR_BASE,2)

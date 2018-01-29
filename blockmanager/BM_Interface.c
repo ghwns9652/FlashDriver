@@ -1,86 +1,96 @@
 /* Badblock Manager */
 #include "BM_Interface.h"
 
-
-#define numBlock 10		// '현재 멀쩡한 Block의 개수' 를 반환해야 한다. 어떻게 할 지 찾아보자.
+#define METHOD 1	// Which method has better performance?
 
 // 기본 4가지 인터페이스
 
-void		BM_invalidate_ppa(Block* ptrBlock[], uint32_t PPA)
+int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA)
 {
-	// array를 통해 invalid 여부를 표시
-	// parameter로 받은 PPA를 VALID에서 INVALID로 바꾸는 함수인듯]
-	
-	/*
-	 * 어.. 이거.... parameter를 뭐로 해야되지??? 기본적으로 ptrBlock이 어떤 순으로 정렬되어있지? 만약 PPA 순으로 정렬되어있다면 PPA로 바로
-	 * index 접근할 수 있는데.. ptrBlock[PPA] 이렇게.. 그런데 만약 그렇게 정렬되어있지 않다면
-	 * PPA를 통해 일단 그게 ptrBlock의 몇 번째 index에 있는지 검색하여 찾아야 한다.. 그런데 검색하면 성능이 좀... 
-	 */
+	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	uint8_t offset = PPA % PPB;
 
+#if (METHOD == 1)
+	blockArray[PBA].bit[offset] = BM_INVALIDPAGE;
+	return (eNOERROR);
+#endif
+
+#if (METHOD == 2)
+	if (blockArray[PBA].bit[offset] == BM_INVALIDPAGE) {
+		printf("Input PPA is already INVALID\n");
+		return (eNOERROR);
+	}
+	else {
+		blockArray[PBA].bit[offset] = BM_INVALIDPAGE;
+		return (eNOERROR);
+	}
+#endif
 }
-int32_t		BM_is_invalid_ppa(Block* ptrBlock[], uint32_t size, uint32_t PPA) // ptrBlock을 어느 영역에 두어야 하지? 일단 다 parameter로 넣자
+int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA) // ptrBlock을 어느 영역에 두어야 하지? 일단 다 parameter로 넣자
 {
 	// parameter로 받은 PPA가 VALID인지 INVALID인지 반환하는 함수인듯
 	// 1bit로 하게 해도 되겠지만 status가 VALID INVALID 외에 더 있을수도 있으므로 일단 char로 반환
 
-	int32_t Block_index = BM_Find_BlockPlace_by_PPA(ptrBlock, size, PPA);	/* Index of ptrBlock[] corresponded to input PPA */
-	uint8_t offset = PPA % PPB;						/* Page offset of input PPA(Range: 0~255) */
-	Block* targetBlock = ptrBlock[Block_index];		/* Pointer of Target Block */
-	uint8_t index;									/* bit index (0,1,2,3) */
-	uint64_t targetBit;								/* Validity of parameter PPA(1 means VALID, 0 means INVALID) */
+	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	uint8_t offset = PPA % PPB;
 
 
-	/* Find the offset(index) of target bit */
-	if (offset < 128) {		
-		if (offset > 64) { index = 1; }
-		else if (offset > 0) { index = 0; }
-		else { ERR(eBADOFFSET_BM); }
+	/* if - else if should be switched if invalid page is more than valid page */
+	if (blockArray[PBA].bit[offset] == BM_VALIDPAGE) {
+		printf("Input PPA is VALID\n");
+		return (0);
+	}
+	else if (blockArray[PBA].bit[offset] == BM_INVALIDPAGE) {
+		printf("Input PPA is UNVALID\n");
+		return (1);
 	}
 	else {
-		if (offset < 192) { index = 2; }
-		else if (offset < 256) { index = 3; }
-		else { ERR(eBADOFFSET_BM); }
+		printf("Error!\n");
+		ERR(eBADVALIDPAGE_BM);
 	}
-	offset = offset % 64;	/* Example: page offset 253 becomes 253-192 = 61 */
-
-
-	/* 
-	 * Now, Range of offset is 0~63 
-	 * targetBit indicates 'Validity of parameter PPA'. 1 means VALID, 0 means INVALID
-	 */
-	targetBit = targetBlock->bit[index] << 64 - (offset + 1); 
-	targetBit = targetBit >> 63;								// Didn't merge two lines for more readability
-	//이거는 그냥 validity 확인할 뿐인데.. 그 bit만 딱 바꾸려면 OR 연산 해야할듯?
-
-	if (!targetBit)
-		return 1; // INVALID
-	else
-		return 0; // VALID
 
 
 }
-uint32_t	BM_get_gc_victim(Block *ptrBlock[], uint32_t size)
+uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
 {
 	/* victim block의 PBA를 반환하는 함수 */
-	/* 
-	 * Parameter: Array(Heap) of Block structure
-	 * Parameter가 Heap으로 주어지므로, Heap 연산을 이용하여 cnt(P/E)가 max인 node를(max heap의 root) 찾아서 그 PPA(PBA?)를 반환한다.
-	 * 아니 PPA가 아니라 Block 자체를 반환하는 건가?
-	 */
+	/*
+	* Parameter: Array(Heap) of numValid pointer(numValid_map)
+	* Parameter가 Heap으로 주어지므로, Heap 연산을 이용하여 numValid가 max인 node를(max heap의 root) 찾아서 그 PBA를 반환한다.
+	*/
 
-	/* Make Max-heap by invalid count, cnt */
-	//build_max_heap_cnt(Block_list, numBlock); // numBlock 말고 진짜 size 넣어야..
-	build_max_heap_cnt_(ptrBlock, size);
 
-	// 음... cnt 기준으로 바꾼다 한들.. 단순히 SWAP하는 게 아니라 'cnt가 가장 높은 block에 해당하는 PBA'를 찾아야 한다. cnt array와 PBA array는 index가 다르다!!
-	// 지금은 안되어있는데 고쳐야 한다..
+	/* After this function, numValid_map will become Max-heap by numValid */
+	BM_Maxheap_numValid(blockArray, numValid_map);
 
-	/* 0th offset of cnt array is the block of maximum cnt.. but is it corresponding PBA? */
-	return ptrBlock[0]->PBA;
+	/* Make Block_pointer from numValid_pointer */
+	void* ptr_max_nV_block = numValid_map[0] - sizeof(bit_T)*NOP - sizeof(PBA_T);
+
+	return *((PBA_T*)ptr_max_nV_block); // This means value of PBA of maxnV block
 
 }
-uint32_t	BM_get_weared_block(Block *ptrBlock[], uint32_t size)
+uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
 {
-	// 이거 뭐지
+	/* PE_map을 PE_cycle 순서대로 Ascending order sorting하는 함수 */
+	/*@
+	 * Parameter: Array of PE_cycle pointer(PE_map)
+	 * PE_map을 정렬하면 
+	 * 실제 Flash 내의 data를 SWAP하는 과정도 들어가야 할 것
+	 */
+
+	/* 어떤 식으로 할까? 
+	1. PE_cycle 순서대로 sorting해서 그 순서대로 아예 PBA를 바꿔버리기 
+	2. 가쟝 PE_cycle이 높은 block과 가장 PE_cycle이 낮은 block의 데이터를 교환하기(Heap으로 하는 게 낫을려나)(물론 둘 다 Badblock이 아닌 걸로)
+	*/
+	
+
+	/* 교수님 생각 */
+	/*
+	 * wear-leveling은 가끔 일어나는 작업이고, 우리 연구주제는 wear-leveling 자체가 아니니까 간단하게 구현하도록 한다.
+	 * free block pool을 만들 때, 그 allocation 대상을 PE_cycle이 가장 낮은 block을 return해서 하는 방식으로
+	 * max와 min의 차이가 어느 정도 일어날 때 wear-leveling이 일어나거나 등..
+	 */
+	// 그런데 free block pool은 어디서 관리되지? 경택이인가?
+
 	return 0;
 }

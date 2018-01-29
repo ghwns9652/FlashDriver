@@ -55,7 +55,8 @@ int32_t setblock(Block targetBlock, uint8_t offset) 	// return type이 ERR type과
 #endif // DEBUG
 
 
-
+// #if 0 ~ #endif 는 주석처리하는 것
+#if 0 
 void print_binary(uint64_t num)
 {
 	int i;
@@ -69,6 +70,8 @@ void print_binary(uint64_t num)
 	}
 	printf("\n");
 }
+#endif
+
 int32_t main(void)
 {
 	// 배열이 여러 개 독립적으로 들어있는 포인터가 Block
@@ -82,7 +85,7 @@ int32_t main(void)
 		arr[i] = malloc(sizeof(Block));
 
 		arr[i]->PBA = i;
-		arr[i]->cnt = i;
+		arr[i]->numValid = i;
 		arr[i]->PE_cycle = rand() % 10;
 		for (int j=0; j<4; ++j)
 			arr[i]->bit[j] = i;
