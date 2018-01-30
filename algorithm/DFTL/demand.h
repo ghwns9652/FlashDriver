@@ -1,12 +1,12 @@
 #include "../../include/container.h"
 #include "demand_queue.h"
 
-#define CACHESIZE (4*M)
+#define CACHESIZE (4*K)
 #define EPP (PAGESIZE / sizeof(D_TABLE)) //Number of table entries per page
 #define NTP (_NOP / EPP) //Number of Translation Page
 #define	GTDSIZE (sizeof(D_TABLE) * NTP)
-#define CMTSIZE (CACHESIZE - GTDSIZE)
-//#define CMTSIZE (sizeof(C_TABLE) * ((CACHESIZE - GTDSIZE) / sizeof(C_TABLE)))
+//#define CMTSIZE (CACHESIZE - GTDSIZE)
+#define CMTSIZE (sizeof(C_TABLE) * ((CACHESIZE - GTDSIZE) / sizeof(C_TABLE)))
 #define D_IDX (lpa/EPP)	// Idx of directory table
 #define P_IDX (lpa%EPP)	// Idx of page table
 #define GTDENT (GTDSIZE/sizeof(D_TABLE))	// Num of GTD entries

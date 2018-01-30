@@ -5,7 +5,7 @@
 #include "../include/settings.h"
 #include "../include/types.h"
 #include "interface.h"
-#define INPUTSIZE 10000
+#define INPUTSIZE 1000000
 int main(){
 	inf_init();
 	srand(time(NULL));
@@ -14,7 +14,7 @@ int main(){
 #ifdef LEAKCHECK
 		printf("set: %d\n", i);
 #endif
-		int rand_key = rand()%100;
+		int rand_key = rand()%20000;
 		char *temp=(char*)malloc(PAGESIZE);
 		memcpy(temp,&rand_key,sizeof(rand_key));
 		key_save[i] = rand_key;
@@ -27,7 +27,7 @@ int main(){
 		char *temp=(char*)malloc(PAGESIZE);
 		inf_make_req(FS_GET_T,key_save[i],temp);
 		memcpy(&check,temp,sizeof(key_save[i]));
-		printf("get:%d\n", check);
+		//printf("get:%d\n", check);
 		free(temp);
 	}
 
