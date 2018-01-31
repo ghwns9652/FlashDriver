@@ -72,7 +72,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
 	free(d_sram);
 }
 
-uint32_t demand_get(const request *req){
+uint32_t demand_get(request *const req){
 	int32_t lpa;
 	int32_t ppa;
 	int32_t t_ppa;
@@ -103,7 +103,7 @@ uint32_t demand_get(const request *req){
 	}
 }
 
-uint32_t demand_set(const request *req){
+uint32_t demand_set(request *const req){
 	int32_t lpa; //lpa of data page
 	int32_t ppa; //ppa of data page
 	int CMT_i; //index of CMT
@@ -139,7 +139,7 @@ uint32_t demand_set(const request *req){
 	}
 }
 
-bool demand_remove(const request *req){
+uint32_t demand_remove(request *const req){
 	int32_t lpa;
 	int32_t ppa;
 	int32_t t_ppa;
@@ -306,7 +306,7 @@ void batch_update(int valid_page_num, int32_t PBA2PPA){
 // Please make NULL ptr to other ptr
 
 void SRAM_load(int32_t ppa, int idx){
-	d_sram[idx].PTR_RAM = (D_TABLE*)malloc(PAGESIZE);
+	d_sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
 	__demand.li->pull_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, assign_pseudo_req(), 0); // Page load
 	d_sram[idx].lpa_RAM = demand_OOB[ppa].reverse_table;	// Page load
 	demand_OOB[ppa] = (D_OOB){-1, 0};	// OOB init
@@ -320,6 +320,7 @@ void SRAM_unload(int32_t ppa, int idx){
 
 // Check the case when no page be GCed.
 bool demand_GC(int32_t victim_PBA, char btype){
+	printf("GC start\n");
 	int valid_page_num = 0;	// Valid page num
 	int32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
 

@@ -40,9 +40,9 @@ typedef struct demand_params{
 
 uint32_t demand_create(lower_info*, algorithm*);
 void demand_destroy(lower_info*, algorithm*);
-uint32_t demand_get(const request*);
-uint32_t demand_set(const request*);
-uint32_t demand_remove(const request*);
+uint32_t demand_get(request *const);
+uint32_t demand_set(request *const);
+uint32_t demand_remove(request *const);
 void *demand_end_req(algo_req*);
 void *pseudo_end_req(algo_req*);
 algo_req* assign_pseudo_req();
