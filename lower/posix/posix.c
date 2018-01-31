@@ -37,7 +37,7 @@ void *posix_destroy(lower_info *li){
 	close(_fd);
 }
 
-void *posix_push_data(KEYT PPA, uint32_t size, const V_PTR value, bool async,const algo_req *req, uint32_t dmatag){
+void *posix_push_data(KEYT PPA, uint32_t size, V_PTR value, bool async,algo_req *const req, uint32_t dmatag){
 	if(lseek64(_fd,((off64_t)__posix.SOP)*PPA,SEEK_SET)==-1){
 		printf("lseek error in read\n");
 	}
@@ -54,7 +54,7 @@ void *posix_push_data(KEYT PPA, uint32_t size, const V_PTR value, bool async,con
 	*/
 }
 
-void *posix_pull_data(KEYT PPA, uint32_t size, const V_PTR value, bool async,const algo_req *req, uint32_t dmatag){
+void *posix_pull_data(KEYT PPA, uint32_t size,  V_PTR value, bool async,algo_req *const req, uint32_t dmatag){
 	if(lseek64(_fd,((off64_t)__posix.SOP)*PPA,SEEK_SET)==-1){
 		printf("lseek error in read\n");
 	}
@@ -72,7 +72,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, const V_PTR value, bool async,con
 }
 
 void *posix_trim_block(KEYT PPA, bool async){
-	char temp[__posix.SOB];
+	char *temp=(char *)malloc(__posix.SOB);
 	memset(temp,0,__posix.SOB);
 	if(lseek64(_fd,((off64_t)__posix.SOP)*PPA,SEEK_SET)==-1){
 		printf("lseek error in trim\n");
@@ -80,6 +80,7 @@ void *posix_trim_block(KEYT PPA, bool async){
 	if(!write(_fd,temp,__posix.SOB)){
 		printf("write none\n");
 	}
+	free(temp);
 }
 
 void posix_stop(){}
