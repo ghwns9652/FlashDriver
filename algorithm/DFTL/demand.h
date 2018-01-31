@@ -1,7 +1,7 @@
 #include "../../include/container.h"
 #include "demand_queue.h"
 
-#define CACHESIZE (4*K)
+#define CACHESIZE (64)
 #define EPP (PAGESIZE / sizeof(D_TABLE)) //Number of table entries per page
 #define NTP (_NOP / EPP) //Number of Translation Page
 #define	GTDSIZE (sizeof(D_TABLE) * NTP)

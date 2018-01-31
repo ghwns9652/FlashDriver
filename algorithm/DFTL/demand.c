@@ -26,17 +26,21 @@ char needGC;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	
-	/*printf("BLOCKSIZE : %d\n", BLOCKSIZE);
-	printf("_NOB : %lu\n", _NOB);
-	printf("_NOP : %lu\n", _NOP);
+	printf("BLOCKSIZE : %d\n", BLOCKSIZE);
+	printf("_NOB : %d\n", _NOB);
+	printf("_NOP : %d\n", _NOP);
 	printf("EPP : %lu\n", EPP);
 	printf("NTP : %lu\n", NTP);
 	printf("CHACHESIZE : %d\n", CACHESIZE);
 	printf("GTDSIZE : %lu\n", GTDSIZE);
 	printf("GTDENT : %lu\n", GTDENT);
 	printf("CMTSIZE : %lu\n", CMTSIZE);
-	printf("CMTENT : %lu\n", CMTENT);*/
-
+	printf("CMTENT : %lu\n", CMTENT);
+	printf("sizeof(C_TABLE) : %lu\n", sizeof(C_TABLE));
+	printf("sizeof(int32_t) : %lu\n", sizeof(int32_t));
+	printf("sizeof(unsigned char) : %lu\n", sizeof(unsigned char));
+	printf("sizeof(LINKED_LIST*) : %lu\n", sizeof(LINKED_LIST*));
+	printf("INT32_MIN : %d\n", INT32_MIN);
 	// Table Alloc 
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 	CMT = (C_TABLE*)malloc(CMTSIZE);
@@ -116,6 +120,7 @@ uint32_t demand_set(request *const req){
 	my_req->params = (void*)params;
 
 	lpa = req->key;
+	printf("Request lpa : %d\n", lpa);
 	if((CMT_i = CMT_check(lpa, &ppa)) != -1){ // check CACHE
 		// CACHE hit
 		demand_OOB[ppa].valid_checker = 0;
@@ -124,8 +129,6 @@ uint32_t demand_set(request *const req){
 		CMT[CMT_i].ppa = ppa;
 		CMT[CMT_i].flag = 1;
 		queue_update(CMT[CMT_i].queue_ptr);
-		printf("lpa : %d\n", lpa);
-		printf("hit ppa : %d\n", ppa);
 	}
 	else{
 		// CACHE miss
@@ -134,9 +137,8 @@ uint32_t demand_set(request *const req){
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0);
 		CMT[CMT_i] = (C_TABLE){lpa, ppa, 1, queue_insert((void*)(CMT + CMT_i))};
 		demand_OOB[ppa] = (D_OOB){lpa, 1};
-		printf("lpa : %d\n", lpa);
-		printf("miss ppa : %d\n", ppa);
 	}
+	printf("Write on ppa : %d\n", ppa);
 }
 
 uint32_t demand_remove(request *const req){
@@ -226,13 +228,14 @@ uint32_t demand_eviction(int *CMT_i){
 			return 0;
 		}
 	}
+
+	printf("eviction!\n");
 	
 	/* Eviction */
 	*CMT_i = (int)((C_TABLE*)(tail->DATA) - CMT); //Use tail of queue
 	lpa = CMT[*CMT_i].lpa;
 	ppa = CMT[*CMT_i].ppa;
 	if(CMT[*CMT_i].flag != 0){
-		printf("CMT lpa : %d\n", lpa);
 		if((t_ppa = GTD[D_IDX].ppa) != -1){	// When it's not a first t_page
 			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
 			demand_OOB[t_ppa].valid_checker = 0;
@@ -251,7 +254,7 @@ uint32_t demand_eviction(int *CMT_i){
 
 char btype_check(int32_t PBA_status){
 	for(int i = 0; i < GTDENT; i++){
-		if((GTD[i].ppa / _PPB) == PBA_status)
+		if(GTD[i].ppa != -1 && (GTD[i].ppa / _PPB) == PBA_status)
 			return 'T';
 	}
 	return 'D';
@@ -320,23 +323,25 @@ void SRAM_unload(int32_t ppa, int idx){
 
 // Check the case when no page be GCed.
 bool demand_GC(int32_t victim_PBA, char btype){
-	printf("GC start\n");
 	int valid_page_num = 0;	// Valid page num
 	int32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
 
 	/* block type, invalid page check */
-	if(btype_check(PBA2PPA) != btype){
+	if(btype_check(victim_PBA % _NOB) != btype)
 		return false;
-	}
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
-		if(demand_OOB[i].valid_checker != 1){
+		if(!demand_OOB[i].valid_checker)
+			break;
+		else if(i == PBA2PPA + _PPB - 1)
 			return false;
-		}
 	}
+
+	printf("GC on pba : %d\n", (victim_PBA % _NOB));
+	printf("GC type : %c\n", btype);
 
 	/* SRAM load */
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){	// Load valid pages to SRAM
-		if(demand_OOB[i].valid_checker == 1){
+		if(demand_OOB[i].valid_checker){
 			SRAM_load(i, valid_page_num);
 			valid_page_num++;
 		}
