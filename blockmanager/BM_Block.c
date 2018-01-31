@@ -149,14 +149,14 @@ void print_arr_PBA(Block* arr[], uint32_t size)
 	}
 	printf("\n");
 }
-void print_arr_bit(Block* arr[], uint32_t size)
+void print_arr_ValidP(Block* arr[], uint32_t size)
 {
-	printf("[bit]\n");
+	printf("[ValidP]\n");
 	for (int i = 0; i < (int32_t)size; ++i) {
 		for (int j = 0; j < 4; ++j) {
-			printf("%d ", arr[i]->bit[j]);
+			printf("%d ", arr[i]->ValidP[j]);
 		}
-		//printf("%d ", arr[i]->bit);
+		//printf("%d ", arr[i]->ValidP);
 	}
 	printf("\n");
 }void print_arr_cnt(Block* arr[], uint32_t size)
@@ -174,13 +174,13 @@ void print_arr_bit(Block* arr[], uint32_t size)
 	}
 	printf("\n");
 }
-void print_arr_all(Block* arr[], uint32_t size) // PBA, bit, cnt, P/E cycle
+void print_arr_all(Block* arr[], uint32_t size) // PBA, ValidP, cnt, P/E cycle
 {
 	printf("------------------------------------\n");
 	printf("size: %d\n", size);
-	printf("Print PBA, bit, cnt, P/E cycle..\n");
+	printf("Print PBA, ValidP, cnt, P/E cycle..\n");
 	print_arr_PBA(arr, size);
-	print_arr_bit(arr, size);
+	print_arr_ValidP(arr, size);
 	print_arr_cnt(arr, size);
 	print_arr_PE(arr, size);
 	printf("------------------------------------\n");

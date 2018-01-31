@@ -28,8 +28,8 @@
 	{ Block* temp; temp=a; a=b; b=temp; }
 #define SWAP_PBA(a, b)		\
 	{ uint32_t tempPBA; tempPBA = a->PBA; a->PBA = b->PBA; b->PBA = tempPBA; } 
-#define SWAP_BIT(a, b)		\
-	{ uint32_t tempbit; tempbit = a->bit; a->bit = b->bit; b->bit = tempbit; }
+#define SWAP_ValidP(a, b)		\
+	{ uint32_t tempValidP; tempValidP = a->ValidP; a->ValidP = b->ValidP; b->ValidP = tempValidP; }
 #define SWAP_CNT(a, b)		\
 	{ uint32_t tempcnt; tempcnt = a->numValid; a->numValid = b->numValid; b->numValid = tempcnt; }
 //#define SWAP_PE(a, b)		\

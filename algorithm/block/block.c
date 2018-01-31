@@ -90,6 +90,7 @@ uint32_t block_set(const request *req){
 	}
 	if (block_maptable[LBA] == NIL)
 	{
+		printf("Case 1\n");
 		// Switch E to V of block_valid_array
 		block_valid_array[set_pointer] = VALID;
 
@@ -116,6 +117,7 @@ uint32_t block_set(const request *req){
 
 		if (exist_table[PPA] == NONEXIST && offset == 0)
 		{
+			printf("Case 2\n");
 			exist_table[PPA] = EXIST;
 			block_valid_array[PBA] = VALID;
 			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -125,6 +127,7 @@ uint32_t block_set(const request *req){
 		}
 		else if (exist_table[PPA] == NONEXIST)
 		{
+			printf("Case 3\n");
 			exist_table[PPA] = EXIST;
 			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			my_req->end_req = block_end_req;
@@ -133,6 +136,8 @@ uint32_t block_set(const request *req){
 		}
 		else if (exist_table[PPA] != NONEXIST)
 		{
+			printf("GC Start!\n");
+			while(1)	printf("AAA");
 			// Cleaning
 			// Maptable update for data moving
 			block_maptable[LBA] = set_pointer;

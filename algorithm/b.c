@@ -23,7 +23,8 @@ int main(void)
 	Block A[NOP];
 	printf("start\n");
 	A[3].PBA = 42;
-	memset(A[3].bit, 0, NOP);
+	memset(A[3].bit, 10, NOP);
+
 	A[3].numValid = 86;
 	A[3].PE_cycle = 14;
 
@@ -63,6 +64,12 @@ int main(void)
 	printf("size of PBA: %d\n", sizeof(A[3].PBA));
 	printf("size of bit: %d\n", sizeof(A[3].bit));
 	printf("size of numValid: %d\n", sizeof(A[3].numValid));
+
+	printf("Value of bit[]:\n\t");
+	for (int i=0; i<NOP; ++i){
+		printf("%d ", A[3].bit[i]);
+	}
+	printf("\n");
 
 
 }

@@ -4,20 +4,24 @@
 #include "../include/settings.h"
 #include "../include/types.h"
 #include "interface.h"
+
+
+#define	numKey	3000
+
 int main(){
 	inf_init();
 
 	/* 1D array for Random key */
 	//KEYT keyArray[300];
 	printf("Start!\n");
-	KEYT* keyArray = (KEYT*)malloc(sizeof(KEYT) * 20000);
+	KEYT* keyArray = (KEYT*)malloc(sizeof(KEYT) * numKey);
 
-	for(int i=0; i<20000; i++){
+	for(int i=0; i<numKey; i++){
 #ifdef LEAKCHECK
 		printf("set: %d\n",i);
 #endif
 		//printf("1\n");
-		const KEYT new_key=rand() % 100;
+		const KEYT new_key=rand() % 10;
 		//printf("2\n");
 		keyArray[i] = new_key;
 		printf("Set_random: %d\n", keyArray[i]);
@@ -40,11 +44,11 @@ int main(){
 	}
 
 	int check;
-	for(int i=0; i<20000; i++){
+	for(int i=0; i<numKey; i++){
 		char *temp = (char*)malloc(PAGESIZE);
 		inf_make_req(FS_GET_T, i, temp);
 		memcpy(&check, temp, sizeof(i));
-		printf("get:%d\n", check);
+		//printf("get:%d\n", check);
 		free(temp);
 
 		/* Follwoings are NORMAL INPUT(sequential) */
