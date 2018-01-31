@@ -10,3 +10,5 @@ uint32_t block_get(const request *);
 uint32_t block_set(const request *);
 uint32_t block_remove(const request*);
 void *block_end_req(algo_req*);
+
+void *block_algo_end_req(algo_req* input);

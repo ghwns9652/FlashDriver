@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "block.h"
 
+#include <stdio.h> // Temporary measure for printf
+
 int32_t *block_maptable; // pointer to LPA->PPA table 
 int8_t *exist_table; 
 int8_t *block_valid_array;
@@ -136,8 +138,7 @@ uint32_t block_set(const request *req){
 		}
 		else if (exist_table[PPA] != NONEXIST)
 		{
-			printf("GC Start!\n");
-			while(1)	printf("AAA");
+			printf("Case GC\n");
 			// Cleaning
 			// Maptable update for data moving
 			block_maptable[LBA] = set_pointer;
@@ -155,8 +156,9 @@ uint32_t block_set(const request *req){
 
 			for (i = 0; i < offset; ++i) {
 				algo_req *temp_req=(algo_req*)malloc(sizeof(algo_req));
-				temp_req->end_req=block_end_req;
-				temp_req->params=(void*)params;
+				//temp_req->end_req=block_end_req;
+				//temp_req->params=(void*)params;
+				temp_req->end_req = block_algo_end_req;
 				__block.li->pull_data(PBA* __block.li->PPB + i, PAGESIZE, temp_block+i, 0, temp_req, 0);
 
 				exist_table[PBA * __block.li->PPB + i] = NONEXIST;
@@ -176,8 +178,9 @@ uint32_t block_set(const request *req){
 			if (offset < __block.li->PPB) {
 				for (i = offset + 1; i < __block.li->PPB; ++i) {
 					algo_req *temp_req = (algo_req*)malloc(sizeof(algo_req));
-					temp_req->end_req = block_end_req;
-					temp_req->params = (void*)params;
+					//temp_req->end_req = block_end_req;
+					//temp_req->params = (void*)params;
+					temp_req->end_req = block_algo_end_req;
 					__block.li->pull_data(PBA* __block.li->PPB + i, PAGESIZE, temp_block+i, 0, temp_req, 0);
 
 					exist_table[PBA * __block.li->PPB + i] = NONEXIST;
@@ -238,5 +241,12 @@ void *block_end_req(algo_req* input){
 	res->end_req(res);
 
 	free(params);
+	free(input);
+}
+
+
+
+/* From gyeongtaek idea */
+void *block_algo_end_req(algo_req* input){
 	free(input);
 }
