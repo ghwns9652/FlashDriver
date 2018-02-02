@@ -26,6 +26,7 @@ char needGC;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	
+	/*
 	printf("BLOCKSIZE : %d\n", BLOCKSIZE);
 	printf("_NOB : %d\n", _NOB);
 	printf("_NOP : %d\n", _NOP);
@@ -35,12 +36,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	printf("GTDSIZE : %lu\n", GTDSIZE);
 	printf("GTDENT : %lu\n", GTDENT);
 	printf("CMTSIZE : %lu\n", CMTSIZE);
-	printf("CMTENT : %lu\n", CMTENT);
-	printf("sizeof(C_TABLE) : %lu\n", sizeof(C_TABLE));
-	printf("sizeof(int32_t) : %lu\n", sizeof(int32_t));
-	printf("sizeof(unsigned char) : %lu\n", sizeof(unsigned char));
-	printf("sizeof(LINKED_LIST*) : %lu\n", sizeof(LINKED_LIST*));
-	printf("INT32_MIN : %d\n", INT32_MIN);
+	printf("CMTENT : %lu\n", CMTENT);*/
+	
 	// Table Alloc 
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 	CMT = (C_TABLE*)malloc(CMTSIZE);
@@ -253,6 +250,15 @@ uint32_t demand_eviction(int *CMT_i){
 }
 
 char btype_check(int32_t PBA_status){
+	int32_t PBA2PPA = PBA_status * _PPB;
+	int invalid_page_num = 0;
+	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
+		if(!demand_OOB[i])
+			invalid_page_num++;
+	}
+	if(invalid_page_num == _PPB)
+		return 'N'
+
 	for(int i = 0; i < GTDENT; i++){
 		if(GTD[i].ppa != -1 && (GTD[i].ppa / _PPB) == PBA_status)
 			return 'T';
@@ -325,9 +331,9 @@ void SRAM_unload(int32_t ppa, int idx){
 bool demand_GC(int32_t victim_PBA, char btype){
 	int valid_page_num = 0;	// Valid page num
 	int32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
-
+	char victim_btype = btype_check(victim_PBA % _NOB);
 	/* block type, invalid page check */
-	if(btype_check(victim_PBA % _NOB) != btype)
+	if(victim_btype != 'N' && victim_btype != btype)
 		return false;
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
 		if(!demand_OOB[i].valid_checker)
@@ -353,7 +359,7 @@ bool demand_GC(int32_t victim_PBA, char btype){
 	/* SRAM unlaod */
 	if(btype == 'T'){	// Block type check
 		for(int j = 0; j < valid_page_num; j++){
-			GTD[(d_sram[j].lpa_RAM / EPP)].ppa = PBA2PPA + j;	// GTD update
+			GTD[(d_sram[j].lpa_RAM)].ppa = PBA2PPA + j;	// GTD update
 			SRAM_unload(PBA2PPA + j, j);	// SRAM unload
 		}
 		TPA_status = PBA2PPA + valid_page_num;	// TPA_status update
