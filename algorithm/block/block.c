@@ -53,15 +53,17 @@ uint32_t block_get(const request *req){
 	params->parents=req;
 	params->test=-1;
 
+	algo_req *my_req=(algo_req*)malloc(sizeof(algo_req));
+	my_req->end_req=block_end_req;
+	my_req->params=(void*)params;
+
 	uint32_t LBA = params->parents->key / __block.li->PPB;
 	uint32_t offset = params->parents->key % __block.li->PPB;
 
 	uint32_t PBA = block_maptable[LBA];
 	uint32_t PPA = PBA * __block.li->PPB + offset;
 
-	algo_req *my_req=(algo_req*)malloc(sizeof(algo_req));
-	my_req->end_req=block_end_req;
-	my_req->params=(void*)params;
+
 
 	//__block.li->pull_data(req->key,PAGESIZE,req->value,0,my_req,0);
 	__block.li->pull_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
@@ -70,6 +72,10 @@ uint32_t block_set(const request *req){
 	block_params* params=(block_params*)malloc(sizeof(block_params));
 	params->parents=req;
 	params->test=-1;
+
+	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+	my_req->end_req = block_end_req;
+	my_req->params = (void*)params;
 
 	uint32_t LBA = params->parents->key / __block.li->PPB;
 	uint32_t offset = params->parents->key % __block.li->PPB;
@@ -106,9 +112,9 @@ uint32_t block_set(const request *req){
 		exist_table[PPA] = EXIST;
 
 		// write
-		algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-		my_req->end_req = block_end_req;
-		my_req->params = (void*)params;
+		//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+		//my_req->end_req = block_end_req;
+		//my_req->params = (void*)params;
 		__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
 	}
 
@@ -122,18 +128,18 @@ uint32_t block_set(const request *req){
 			printf("Case 2\n");
 			exist_table[PPA] = EXIST;
 			block_valid_array[PBA] = VALID;
-			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-			my_req->end_req = block_end_req;
-			my_req->params = (void*)params;
+			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+			//my_req->end_req = block_end_req;
+			//my_req->params = (void*)params;
 			__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
 		}
 		else if (exist_table[PPA] == NONEXIST)
 		{
 			printf("Case 3\n");
 			exist_table[PPA] = EXIST;
-			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-			my_req->end_req = block_end_req;
-			my_req->params = (void*)params;
+			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+			//my_req->end_req = block_end_req;
+			//my_req->params = (void*)params;
 			__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
 		}
 		else if (exist_table[PPA] != NONEXIST)
@@ -164,15 +170,15 @@ uint32_t block_set(const request *req){
 				exist_table[PBA * __block.li->PPB + i] = NONEXIST;
 				exist_table[new_PBA * __block.li->PPB + i] = EXIST;
 
-				algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-				my_req->end_req = block_end_req;
-				my_req->params = (void*)params;
+				//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+				//my_req->end_req = block_end_req;
+				//my_req->params = (void*)params;
 				__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block+i, 0, my_req, 0);
 			}
 
-			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-			my_req->end_req = block_end_req;
-			my_req->params = (void*)params;
+			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+			//my_req->end_req = block_end_req;
+			//my_req->params = (void*)params;
 			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req, 0);
 			
 			if (offset < __block.li->PPB) {
@@ -186,9 +192,9 @@ uint32_t block_set(const request *req){
 					exist_table[PBA * __block.li->PPB + i] = NONEXIST;
 					exist_table[new_PBA * __block.li->PPB + i] = EXIST;
 
-					algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-					my_req->end_req = block_end_req;
-					my_req->params = (void*)params;
+					//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+					//my_req->end_req = block_end_req;
+					//my_req->params = (void*)params;
 					__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block+i, 0, my_req, 0);
 				}
 			}
