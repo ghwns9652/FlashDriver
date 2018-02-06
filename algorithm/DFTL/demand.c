@@ -60,6 +60,8 @@ void demand_destroy(lower_info *li, algorithm *algo){
 	free(GTD);
 	free(demand_OOB);
 	free(d_sram);
+	while(head)
+		queue_delete(head);
 }
 
 uint32_t demand_get(request *const req){
@@ -289,7 +291,56 @@ void batch_update(int valid_page_num, int32_t PBA2PPA){
 	free(temp_lpa_table);
 }
 
-// Please make NULL ptr to other ptr
+/* Please enhance the full merge algorithm */
+void tpage_full_merge(){
+	int32_t *pba_array = (int32_t*)malloc(GTDSIZE);
+	int block_num = 0;
+	int32_t pba;
+	int32_t t_ppa;
+	int sram_idx;
+	int write_block_idx;
+
+	/* Make PBA array */
+	for(int i = 0; i < GTDENT; i++)
+		pba_array[i] = -1;
+	for(int i = 0; i < GTDENT; i++){
+		pba = GTD[i].ppa % _PPB;
+		for(int j = 0; j < block_num; j++){
+			if(pba_array[j] == pba)
+				break;
+			if(j == block_num - 1){
+				pba_array[block_num] = pba;
+				block_num++;
+			}
+		}
+	}
+
+	/* Merge tpages */
+	write_block_idx = 0;
+	for(int i = 0; i < block_num; i++){
+		for(int j = 0; j < _PPB; j++){
+			t_ppa = pba_array[i] + j;
+			if(demand_OOB[t_ppa].valid_checker == 1){
+				SRAM_load(t_ppa, sram_idx);
+				if(sram_idx == _PPB || (i == block_num - 1 && j == _PPB - 1)){
+					write_tppa = pba_array[write_block_idx] * _PPB;
+					__demand.li->trim_data(write_tppa, false);
+					for(int k = 0; k < _PPB; k++){
+						SRAM_unload(write_tppa, k);
+						write_tppa++;
+					}
+					sram_idx = -1;
+					write_block_idx++;
+				}
+				sram_idx++;
+			}
+		}
+	}
+	for(int i = write_block_idx; i < block_num; i++){
+		write_tppa = pba_array[i] * _PPB;
+		__demand.li->trim_data(write_tppa, false);
+	}
+}
 
 void SRAM_load(int32_t ppa, int idx){
 	d_sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
@@ -309,30 +360,45 @@ void SRAM_unload(int32_t ppa, int idx){
 bool demand_GC(int32_t victim_PBA, char btype){
 	int valid_page_num = 0;	// Valid page num
 	int32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
-	char victim_btype = btype_check(victim_PBA % _NOB);
-	/* block type, invalid page check */
-	if(victim_btype != 'N' && victim_btype != btype)
-		return false;
-	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
-		if(!demand_OOB[i].valid_checker)
-			break;
-		else if(i == PBA2PPA + _PPB - 1)
+	char victim_btype;
+
+	if(btype == 'T')
+		tpage_full_merge();
+	else{
+		/* block type, invalid page check */
+		victim_btype = btype_check(victim_PBA % _NOB);
+		if(victim_btype != 'N' && victim_btype != btype)
 			return false;
-	}
-
-	/* SRAM load */
-	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){	// Load valid pages to SRAM
-		if(demand_OOB[i].valid_checker){
-			SRAM_load(i, valid_page_num);
-			valid_page_num++;
+		for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
+			if(!demand_OOB[i].valid_checker)
+				break;
+			else if(i == PBA2PPA + _PPB - 1)
+				return false;
 		}
+
+		if(btype == 'D'){
+		/* SRAM load */
+		for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){	// Load valid pages to SRAM
+			if(demand_OOB[i].valid_checker){
+				SRAM_load(i, valid_page_num);
+				valid_page_num++;
+			}
+		}
+		/* Block erase */
+		__demand.li->trim_block(PBA2PPA, false);
+
+		/* SRAM unload */
+		batch_update(valid_page_num, PBA2PPA);	// batch_update + t_page update
+		DPA_status = PBA2PPA + valid_page_num;	// DPA_status update
+		}
+		else if(btype == 'N')
+			__demand.li->trim_block(PBA2PPA, false);
 	}
 
-	/* Block erase */
-	__demand.li->trim_block(PBA2PPA, false);
+	return true;
 
 	/* SRAM unlaod */
-	if(btype == 'T'){	// Block type check
+	/*if(btype == 'T'){	// Block type check
 		for(int j = 0; j < valid_page_num; j++){
 			GTD[(d_sram[j].lpa_RAM)].ppa = PBA2PPA + j;	// GTD update
 			SRAM_unload(PBA2PPA + j, j);	// SRAM unload
@@ -342,8 +408,7 @@ bool demand_GC(int32_t victim_PBA, char btype){
 	else if(btype == 'D'){
 		batch_update(valid_page_num, PBA2PPA);	// batch_update + t_page update
 		DPA_status = PBA2PPA + valid_page_num;	// DPA_status update
-	}
-	return true;
+	}*/
 }
 
 void dp_alloc(int32_t *ppa){ // Data page allocation
