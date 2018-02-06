@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <time.h>
 #include <unistd.h>
 #include "../include/settings.h"
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
-//#define INPUTSIZE (TOTALSIZE * 1000)
+
 int main(){
 	bench_init(2);
 	bench_add(SEQSET,0,1024*30,1024*30);

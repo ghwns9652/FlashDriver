@@ -79,13 +79,10 @@ void inf_init(){
 
 #ifdef normal
 	mp.algo=&__normal;
-<<<<<<< HEAD
 #elif defined(DFTL)
 	mp.algo=&__demand;
-=======
 #elif defined(lsmtree)
 	mp.algo=&algo_lsm;
->>>>>>> origin
 #endif
 	mp.li->create(mp.li);
 	mp.algo->create(mp.li,mp.algo);

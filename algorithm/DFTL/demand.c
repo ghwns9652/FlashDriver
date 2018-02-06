@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "demand.h"
+#include "../../bench/bench.h"
 
 struct algorithm __demand={
 	.create = demand_create,
@@ -14,38 +15,28 @@ struct algorithm __demand={
 
 // Please split functions (create, get, set, remove) and (others)
 
-C_TABLE *CMT;
-D_TABLE *GTD;
-D_OOB *demand_OOB; 
-D_SRAM *d_sram;
+extern LINKED_LIST* head; // Head of queue
+extern LINKED_LIST* tail; // Tail of queue
 
-int32_t DPA_status;
-int32_t TPA_status;
-int32_t PBA_status;
-char needGC;
+C_TABLE *CMT; // Cached Mapping Table
+D_TABLE *GTD; // Global Translation Directory
+D_OOB *demand_OOB; // Page level OOB
+D_SRAM *d_sram; // SRAM for contain block data temporarily
+
+int32_t DPA_status; // Data page allocation
+int32_t TPA_status; // Translation page allocation
+int32_t PBA_status; // Block allocation
+int8_t needGC; // Indicates need of GC
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
-	
-	/*
-	printf("BLOCKSIZE : %d\n", BLOCKSIZE);
-	printf("_NOB : %d\n", _NOB);
-	printf("_NOP : %d\n", _NOP);
-	printf("EPP : %lu\n", EPP);
-	printf("NTP : %lu\n", NTP);
-	printf("CHACHESIZE : %d\n", CACHESIZE);
-	printf("GTDSIZE : %lu\n", GTDSIZE);
-	printf("GTDENT : %lu\n", GTDENT);
-	printf("CMTSIZE : %lu\n", CMTSIZE);
-	printf("CMTENT : %lu\n", CMTENT);*/
-	
-	// Table Alloc 
+	// Table Allocation
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 	CMT = (C_TABLE*)malloc(CMTSIZE);
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * _NOP);
 	d_sram = (D_SRAM*)malloc(sizeof(D_SRAM) * _PPB);
 	algo->li = li;
 
-	// SRAM, OOB init 
+	// SRAM, OOB initialization
 	for(int i = 0; i < GTDENT; i++){
 		GTD[i].ppa = -1;
 	}
@@ -53,13 +44,11 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 		CMT[i] = (C_TABLE){-1, -1, 0, NULL};
 	}
 	for(int i = 0; i < _PPB; i++){
-		d_sram->lpa_RAM = -1;
-		d_sram->PTR_RAM = NULL;
+		d_sram = (D_SRAM){-1, NULL};
 	}
 	for(int i = 0; i < _NOP; i++){
 		demand_OOB[i] = (D_OOB){-1, 0};
 	}
-
 	DPA_status = 0;
 	TPA_status = 0;
 	PBA_status = 0;
@@ -74,190 +63,181 @@ void demand_destroy(lower_info *li, algorithm *algo){
 }
 
 uint32_t demand_get(request *const req){
-	int32_t lpa;
-	int32_t ppa;
-	int32_t t_ppa;
-	int CMT_i;
-	D_TABLE* p_table = (D_TABLE*)malloc(PAGESIZE);
-	algo_req* pseudo_my_req;
-	demand_params *params = (demand_params*)malloc(sizeof(demand_params));
-	params->parents = req;
-	params->test = -1;
+	bench_algo_start(req); // Algorithm level benchmarking start
+	int32_t lpa; // Logical data page address
+	int32_t ppa; // Physical data page address
+	int32_t t_ppa; // Translation page address
+	int CMT_i; // Cache mapping table index
+	D_TABLE* p_table; // Contains page table
 	
+	/* algo_req allocation, initialization */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+	my_req->parents = req;
 	my_req->end_req = demand_end_req;
-	my_req->params = (void*)params;
 
 	lpa = req->key;
+	/* Cache hit */
 	if((CMT_i = CMT_check(lpa, &ppa)) != -1){
-		queue_update(CMT[CMT_i].queue_ptr);
-		__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0);
+		queue_update(CMT[CMT_i].queue_ptr);	// Update queue
+		bench_algo_end(req); // Algorithm level benchmarking end
+		__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
 	}
+	/* Cache miss */
 	else{
-		demand_eviction(&CMT_i);
-		t_ppa = GTD[D_IDX].ppa;
-		__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); 
-		ppa = p_table[P_IDX].ppa;
-		CMT[CMT_i] = (C_TABLE){lpa, ppa, 0, queue_insert((void*)(CMT + CMT_i))};
-		__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0);
+		demand_eviction(&CMT_i); // Evict one entry in CMT
+		t_ppa = GTD[D_IDX].ppa; // Get t_ppa
+		p_table = (D_TABLE*)malloc(PAGESIZE); // p_table allocaiton
+		__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Get page table
+		ppa = p_table[P_IDX].ppa; // Find ppa
+		CMT[CMT_i] = (C_TABLE){lpa, ppa, 0, queue_insert((void*)(CMT + CMT_i))}; // CMT update
 		free(p_table);
+		bench_algo_end(req); // Algorithm level benchmarking end
+		__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
 	}
 }
 
 uint32_t demand_set(request *const req){
-	int32_t lpa; //lpa of data page
-	int32_t ppa; //ppa of data page
-	int CMT_i; //index of CMT
-	demand_params *params = (demand_params*)malloc(sizeof(demand_params));
-	params->parents = req;
-	params->test = -1;
+	bench_algo_start(req);
+	int32_t lpa;
+	int32_t ppa;
+	int CMT_i;
 
+	/* algo_req allocation, initialization */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+	my_req->parents = req;
 	my_req->end_req = demand_end_req;
-	my_req->params = (void*)params;
 
+	/* Cache hit */
 	lpa = req->key;
-	printf("Request lpa : %d\n", lpa);
-	if((CMT_i = CMT_check(lpa, &ppa)) != -1){ // check CACHE
-		// CACHE hit
-		demand_OOB[ppa].valid_checker = 0;
-		dp_alloc(&ppa);
-		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0);
-		CMT[CMT_i].ppa = ppa;
-		CMT[CMT_i].flag = 1;
-		queue_update(CMT[CMT_i].queue_ptr);
+	if((CMT_i = CMT_check(lpa, &ppa)) != -1){
+		demand_OOB[ppa].valid_checker = 0; // Invalidate previous page
+		dp_alloc(&ppa); // Allocate data page
+		CMT[CMT_i].ppa = ppa; // Update ppa
+		CMT[CMT_i].flag = 1; // Mapping table changed
+		queue_update(CMT[CMT_i].queue_ptr); // Update queue
+		demand_OOB[ppa] = (D_OOB){lpa, 1}; // Update OOB
+		bench_algo_end(req);
+		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
 	}
+	/* Cache miss */
 	else{
-		// CACHE miss
-		demand_eviction(&CMT_i);
+		demand_eviction(&CMT_i); // Evict one entry in CMT
 		dp_alloc(&ppa);
-		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0);
-		CMT[CMT_i] = (C_TABLE){lpa, ppa, 1, queue_insert((void*)(CMT + CMT_i))};
+		CMT[CMT_i] = (C_TABLE){lpa, ppa, 1, queue_insert((void*)(CMT + CMT_i))}; // CMT update
 		demand_OOB[ppa] = (D_OOB){lpa, 1};
+		bench_algo_end(req);
+		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
 	}
-	printf("Write on ppa : %d\n", ppa);
 }
 
 uint32_t demand_remove(request *const req){
+	bench_algo_start(req);
 	int32_t lpa;
 	int32_t ppa;
 	int32_t t_ppa;
 	int CMT_i;
-	D_TABLE *p_table = (D_TABLE*)malloc(PAGESIZE);
-	algo_req *pseudo_my_req;
+	D_TABLE *p_table;
 	
-	demand_params *params = (demand_params*)malloc(sizeof(demand_params));
-	params->parents = req;
-	params->test = -1;
-
+	/* algo_req allocation, initialization */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+	my_req->parents = req;
 	my_req->end_req = demand_end_req;
-	my_req->params = (void*)params;
 
+	/* Cache hit */
 	lpa = req->key;
 	if((CMT_i = CMT_check(lpa, &ppa)) != -1){
-		queue_delete(CMT[CMT_i].queue_ptr);
-		CMT[CMT_i] = (C_TABLE){-1, -1, 0, NULL};
+		queue_delete(CMT[CMT_i].queue_ptr); // Delete queue
+		CMT[CMT_i] = (C_TABLE){-1, -1, 0, NULL}; // Initailize CMT
 	}
-	t_ppa = GTD[D_IDX].ppa;
-	__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
-	ppa = p_table[P_IDX].ppa;
-	demand_OOB[ppa].valid_checker = 0;
-	p_table[P_IDX].ppa = -1;
-	tp_alloc(&t_ppa);
-	GTD[D_IDX].ppa = t_ppa;
-	__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, my_req, 0);
+
+	/* Both cache hit or miss */
+	t_ppa = GTD[D_IDX].ppa; // Find t_ppa
+	p_table = (D_TABLE*)malloc(PAGESIZE);
+	__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Get page table
+	ppa = p_table[P_IDX].ppa; // Get ppa
+	demand_OOB[ppa].valid_checker = 0; // Invalidate ppa
+	p_table[P_IDX].ppa = -1; // Invalidte mapping data
+	tp_alloc(&t_ppa); // Translation page allocation
+	GTD[D_IDX].ppa = t_ppa; // GTD update
+	bench_algo_end(req);
+	__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, my_req, 0); // Update page table
+	free(p_table);
 }
 
 void *demand_end_req(algo_req* input){
-	demand_params* params = (demand_params*)input->params;
-
-	request *res = params->parents;
+	request *res = input->parents;
 	res->end_req(res);
 
-	free(params);
 	free(input);
 }
 
 void *pseudo_end_req(algo_req* input){
-	demand_params* params = (demand_params*)input->params;
-
-	request *res = params->parents;
-//	res->end_req(res);
-
-	free(params);
 	free(input);
 }
 
 algo_req* assign_pseudo_req(){
-	demand_params *params = (demand_params*)malloc(sizeof(demand_params));
-	//params->parents = req;
-	params->test = -1;
-
 	algo_req *pseudo_my_req = (algo_req*)malloc(sizeof(algo_req));
+	pseudo_my_req->parents = NULL;
 	pseudo_my_req->end_req = pseudo_end_req;
-	pseudo_my_req->params = (void*)params;
 
 	return pseudo_my_req;
 }
 
 int CMT_check(int32_t lpa, int32_t *ppa){
 	for(int i = 0; i < CMTENT; i++){
-		if(CMT[i].lpa == lpa){
-			*ppa = CMT[i].ppa;
+		if(CMT[i].lpa == lpa){ // Find lpa in CMT
+			*ppa = CMT[i].ppa; // Return ppa in CMT
 			return i; //CMT_i
 		}
 	}
-	return -1; //No such lpa in CMT
+	return -1; //No lpa in CMT
 }
 
 uint32_t demand_eviction(int *CMT_i){
 	int32_t lpa;
 	int32_t ppa;
 	int32_t t_ppa;
-	D_TABLE *p_table = (D_TABLE*)malloc(PAGESIZE);
-	algo_req* pseudo_my_req;
+	D_TABLE *p_table;
 
 	/* Check empty entry */
 	for(int i = 0; i < CMTENT; i++){
 		if(CMT[i].lpa == -1){
-			*CMT_i = i;
-			return 0;
+			*CMT_i = i; // Empty entry
+			return 0; 
 		}
 	}
 
-	printf("eviction!\n");
-	
 	/* Eviction */
-	*CMT_i = (int)((C_TABLE*)(tail->DATA) - CMT); //Use tail of queue
-	lpa = CMT[*CMT_i].lpa;
-	ppa = CMT[*CMT_i].ppa;
-	if(CMT[*CMT_i].flag != 0){
+	*CMT_i = (int)((C_TABLE*)(tail->DATA) - CMT); // Save CMT_i of tail
+	lpa = CMT[*CMT_i].lpa; // Get lpa of CMT_i
+	ppa = CMT[*CMT_i].ppa; // Get ppa of CMT_i
+	if(CMT[*CMT_i].flag != 0){ // When CMT_i has changed
+		p_table = (D_TABLE*)malloc(PAGESIZE);
 		if((t_ppa = GTD[D_IDX].ppa) != -1){	// When it's not a first t_page
-			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
-			demand_OOB[t_ppa].valid_checker = 0;
+			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Get page table
+			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
 		}
-		p_table[P_IDX].ppa = ppa;
-		tp_alloc(&t_ppa);
-		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
-		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1};
-		GTD[D_IDX].ppa = t_ppa;
+		p_table[P_IDX].ppa = ppa; // Update page table
+		tp_alloc(&t_ppa); // Translation page allocation
+		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Set translation page
+		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1}; // Update OOB
+		GTD[D_IDX].ppa = t_ppa; // Update GTD
 		free(p_table);
 	}
-	queue_delete(tail);
-	CMT[*CMT_i] = (C_TABLE){-1, -1, 0, NULL};
-	demand_OOB[ppa].valid_checker = 0;
+	queue_delete(tail); // Delete queue
+	CMT[*CMT_i] = (C_TABLE){-1, -1, 0, NULL}; // Initializae CMT
+	//demand_OOB[ppa].valid_checker = 0;
 }
 
 char btype_check(int32_t PBA_status){
 	int32_t PBA2PPA = PBA_status * _PPB;
 	int invalid_page_num = 0;
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
-		if(!demand_OOB[i])
+		if(!demand_OOB[i].valid_checker)
 			invalid_page_num++;
 	}
 	if(invalid_page_num == _PPB)
-		return 'N'
+		return 'N';
 
 	for(int i = 0; i < GTDENT; i++){
 		if(GTD[i].ppa != -1 && (GTD[i].ppa / _PPB) == PBA_status)
@@ -279,7 +259,6 @@ void batch_update(int valid_page_num, int32_t PBA2PPA){
 	int32_t vba;
 	int32_t t_ppa;
 	D_TABLE* p_table = (D_TABLE*)malloc(PAGESIZE);
-	algo_req* pseudo_my_req;
 	int32_t* temp_lpa_table = (int32_t*)malloc(sizeof(int32_t) * _PPB);
 	qsort(d_sram, _PPB, sizeof(D_TABLE), lpa_compare);	// Sort d_sram as lpa
 	for(int i = 0; i < valid_page_num; i++){	// Make lpa table and SRAM_unload
@@ -294,7 +273,6 @@ void batch_update(int valid_page_num, int32_t PBA2PPA){
 		}
 		else if(vba != INT32_MAX){
 			tp_alloc(&t_ppa);
-			assign_pseudo_req(pseudo_my_req);
 			__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
 			demand_OOB[t_ppa] = (D_OOB){vba, 1};
 			demand_OOB[GTD[vba].ppa].valid_checker = 0;
@@ -304,7 +282,6 @@ void batch_update(int valid_page_num, int32_t PBA2PPA){
 		}
 		if(p_table == NULL){
 			vba = temp_lpa_table[i] / EPP;
-			assign_pseudo_req(pseudo_my_req);
 			__demand.li->pull_data(GTD[vba].ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
 			p_table[temp_lpa_table[i] % EPP].ppa = PBA2PPA + i;
 		}
@@ -323,6 +300,7 @@ void SRAM_load(int32_t ppa, int idx){
 
 void SRAM_unload(int32_t ppa, int idx){
 	__demand.li->push_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, assign_pseudo_req(), 0);	// Page unlaod
+	free(d_sram[idx].PTR_RAM);
 	demand_OOB[ppa] = (D_OOB){d_sram[idx].lpa_RAM, 1};	// OOB unload
 	d_sram[idx] = (D_SRAM){-1, NULL};	// SRAM init
 }
@@ -341,9 +319,6 @@ bool demand_GC(int32_t victim_PBA, char btype){
 		else if(i == PBA2PPA + _PPB - 1)
 			return false;
 	}
-
-	printf("GC on pba : %d\n", (victim_PBA % _NOB));
-	printf("GC type : %c\n", btype);
 
 	/* SRAM load */
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){	// Load valid pages to SRAM

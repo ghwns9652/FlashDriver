@@ -202,7 +202,7 @@ void __bench_time_maker(MeasureTime mt, bench_data *datas,bool isalgo){
 		target[10]++;
 		return;
 	}
-	idx=mt.adding.tv_usec/100;
+	idx=mt.adding.tv_usec/1000;
 	if(target){
 		target[idx]++;
 	}
