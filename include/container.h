@@ -3,6 +3,7 @@
  
 #include "settings.h"
 #include "types.h"
+#include "utils.h"
 #include <stdarg.h>
 #include <pthread.h>
 
@@ -28,9 +29,14 @@ struct request {
 	bool isAsync;
 	void *params;
 	pthread_mutex_t async_mutex;
+
+	MeasureTime algo;
+	MeasureTime lower;
+	int mark;
 };
 
 struct algo_req{
+	request * parents;
 	void *(*end_req)(struct algo_req *const);
 	void *params;
 };
@@ -41,12 +47,20 @@ struct lower_info {
 	void* (*push_data)(KEYT ppa, uint32_t size, V_PTR value,bool async,algo_req * const req,uint32_t dmatag);
 	void* (*pull_data)(KEYT ppa, uint32_t size, V_PTR value,bool async,algo_req * const req,uint32_t dmatag);
 	void* (*trim_block)(KEYT ppa,bool async);
+	void* (*refresh)(struct lower_info*);
 	void (*stop)();
 	/*
 	void*(*push_data)(int num, ...);
 	void*(*pull_data)(int num, ...);
 	*/
 	lower_status (*statusOfblock)(BLOCKT);
+	
+	uint64_t write_op;
+	uint64_t read_op;
+	uint64_t trim_op;
+	
+	MeasureTime writeTime;
+	MeasureTime readTime;
 
 	uint32_t NOB;
 	uint32_t NOP;

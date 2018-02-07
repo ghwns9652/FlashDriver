@@ -7,7 +7,7 @@ CFLAGS +=\
 
 
 SRCS +=\
-	   normal.c\
+	   page_revised.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -15,7 +15,7 @@ OBJS :=\
 TARGETOBJ:=\
 	$(addprefix ../../object/,$(OBJS))\
 
-LEAK: all
+
 all: $(TARGETOBJ) 
 
 libnom.a : $(TARGETOBJ)
