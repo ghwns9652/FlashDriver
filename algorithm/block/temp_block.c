@@ -59,8 +59,8 @@ uint32_t block_get(const request *req){
 	my_req->end_req=block_end_req;
 	//my_req->params=(void*)params;
 
-	uint32_t LBA = my_req->parents->key / __block.li->PPB;
-	uint32_t offset = my_req->parents->key % __block.li->PPB;
+	uint32_t LBA = params->parents->key / __block.li->PPB;
+	uint32_t offset = params->parents->key % __block.li->PPB;
 
 	uint32_t PBA = block_maptable[LBA];
 	uint32_t PPA = PBA * __block.li->PPB + offset;
@@ -82,8 +82,8 @@ uint32_t block_set(const request *req){
 	my_req->end_req = block_end_req;
 	//my_req->params = (void*)params;
 
-	uint32_t LBA = my_req->parents->key / __block.li->PPB;
-	uint32_t offset = my_req->parents->key % __block.li->PPB;
+	uint32_t LBA = params->parents->key / __block.li->PPB;
+	uint32_t offset = params->parents->key % __block.li->PPB;
 	uint32_t PBA;
 	uint32_t PPA;
 	//uint32_t PPB = __block.li->PPB;
@@ -103,7 +103,7 @@ uint32_t block_set(const request *req){
 	}
 	if (block_maptable[LBA] == NIL)
 	{
-		//printf("Case 1\n");
+		printf("Case 1\n");
 		// Switch E to V of block_valid_array
 		block_valid_array[set_pointer] = VALID;
 
@@ -130,7 +130,7 @@ uint32_t block_set(const request *req){
 
 		if (exist_table[PPA] == NONEXIST && offset == 0)
 		{
-			//printf("Case 2\n");
+			printf("Case 2\n");
 			exist_table[PPA] = EXIST;
 			block_valid_array[PBA] = VALID;
 			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -140,16 +140,16 @@ uint32_t block_set(const request *req){
 		}
 		else if (exist_table[PPA] == NONEXIST)
 		{
-			//printf("Case 3\n");
+			printf("Case 3\n");
 			exist_table[PPA] = EXIST;
 			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			//my_req->end_req = block_end_req;
 			//my_req->params = (void*)params;
 			__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
 		}
-		else if (exist_table[PPA] == EXIST) //!= NONEXIST)
+		else if (exist_table[PPA] != NONEXIST)
 		{
-			//printf("Case GC\n");
+			printf("Case GC\n");
 			// Cleaning
 			// Maptable update for data moving
 			block_maptable[LBA] = set_pointer;
@@ -160,38 +160,25 @@ uint32_t block_set(const request *req){
 			uint32_t new_PPA = new_PBA * __block.li->PPB + offset;
 
 			// Data move to new block
-			//int8_t* temp_block = (int8_t*)malloc(sizeof(int8_t)*__block.li->PPB); // 이거 vale를 제대로 담을 수 있는 걸로 만들어야..
-			//int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
+			uint8_t* temp_block = (uint8_t*)malloc(sizeof(uint8_t)*__block.li->PPB); // 이거 vale를 제대로 담을 수 있는 걸로 만들어야..
 			int i;
 
 			/* Followings: ASC consideartion */
 
-			//printf("Start move\n");
-			int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
 			for (i = 0; i < offset; ++i) {
 				algo_req *temp_req=(algo_req*)malloc(sizeof(algo_req));
-				//int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
 				//temp_req->end_req=block_end_req;
 				//temp_req->params=(void*)params;
-				temp_req->parents = NULL;
 				temp_req->end_req = block_algo_end_req;
-				//printf("Before %d-th pull_data\n", i);
-				__block.li->pull_data(PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req, 0);
-				//printf("After pull_data\n");
+				__block.li->pull_data(PBA* __block.li->PPB + i, PAGESIZE, temp_block+i, 0, temp_req, 0);
 
 				exist_table[PBA * __block.li->PPB + i] = NONEXIST;
 				exist_table[new_PBA * __block.li->PPB + i] = EXIST;
 
-				algo_req *temp_req2=(algo_req*)malloc(sizeof(algo_req));
-				temp_req2->parents = NULL;
-				temp_req2->end_req = block_algo_end_req;
 				//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 				//my_req->end_req = block_end_req;
 				//my_req->params = (void*)params;
-				//printf("Before %d-th push_data\n", i);
-				__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req2, 0);
-				//printf("After push_data\n");
-				//free(temp_block);
+				__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block+i, 0, my_req, 0);
 			}
 
 			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -199,27 +186,21 @@ uint32_t block_set(const request *req){
 			//my_req->params = (void*)params;
 			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req, 0);
 			
-			if (offset < __block.li->PPB - 1) {
+			if (offset < __block.li->PPB) {
 				for (i = offset + 1; i < __block.li->PPB; ++i) {
 					algo_req *temp_req = (algo_req*)malloc(sizeof(algo_req));
-					//int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
 					//temp_req->end_req = block_end_req;
 					//temp_req->params = (void*)params;
-					temp_req->parents = NULL;
 					temp_req->end_req = block_algo_end_req;
-					__block.li->pull_data(PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req, 0);
+					__block.li->pull_data(PBA* __block.li->PPB + i, PAGESIZE, temp_block+i, 0, temp_req, 0);
 
 					exist_table[PBA * __block.li->PPB + i] = NONEXIST;
 					exist_table[new_PBA * __block.li->PPB + i] = EXIST;
 
-					algo_req *temp_req2=(algo_req*)malloc(sizeof(algo_req));
-					temp_req2->parents = NULL;
-					temp_req2->end_req = block_algo_end_req;
 					//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 					//my_req->end_req = block_end_req;
 					//my_req->params = (void*)params;
-					__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req2, 0);
-					//free(temp_block);
+					__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block+i, 0, my_req, 0);
 				}
 			}
 
@@ -255,10 +236,8 @@ uint32_t block_set(const request *req){
 			}
 			*/
 			//trim(PBA);
-			//printf("Before trim\n");
 			__block.li->trim_block(PBA * __block.li->PPB + offset, false); // Is that right?
-			//printf("After trim\n");
-			//free(temp_block);
+			free(temp_block);
 		}
 	}
 	bench_algo_end(req);
@@ -269,13 +248,12 @@ bool block_remove(const request *req){
 }
 
 void *block_end_req(algo_req* input){
-	//block_params* params=(block_params*)input->params;
+	block_params* params=(block_params*)input->params;
 
-	//request *res=params->parents;
-	request* res = input->parents;
+	request *res=params->parents;
 	res->end_req(res);
 
-	//free(params);
+	free(params);
 	free(input);
 }
 
