@@ -104,6 +104,7 @@ uint32_t demand_set(request *const req){
 	int32_t ppa;
 	int CMT_i;
 
+
 	/* algo_req allocation, initialization */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
@@ -218,7 +219,14 @@ uint32_t demand_eviction(int *CMT_i){
 		if((t_ppa = GTD[D_IDX].ppa) != -1){	// When it's not a first t_page
 			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Get page table
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
+
 		}
+		else{ // p_table initialization
+			for(int i = 0; i < EPP; i++)
+				p_table[i].ppa = -1;
+		}
+		if(p_table[P_IDX].ppa != -1)
+			demand_OOB[p_table[P_IDX].ppa].valid_checker = 0;
 		p_table[P_IDX].ppa = ppa; // Update page table
 		tp_alloc(&t_ppa); // Translation page allocation
 		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Set translation page
@@ -367,7 +375,7 @@ void SRAM_unload(int32_t ppa, int idx){
 // Check the case when no page be GCed.
 bool demand_GC(int32_t victim_PBA, char btype){
 	int valid_page_num = 0;	// Valid page num
-	int32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Save PBA to PPA
+	int32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Change PBA to PPA
 	char victim_btype;
 	victim_btype = btype_check(victim_PBA % _NOB);
 	/* Case 0 : victim block type 'N' */
@@ -381,7 +389,7 @@ bool demand_GC(int32_t victim_PBA, char btype){
 	}
 	else{
 		/* Case 1 : victim block type 'T' */
-		if (btype == 'T'){
+		if(btype == 'T'){
 			tpage_full_merge();
 			return true;
 		}
@@ -410,7 +418,7 @@ bool demand_GC(int32_t victim_PBA, char btype){
 		}
 	}
 	return false;
-}		
+}
 
 void dp_alloc(int32_t *ppa){ // Data page allocation
 	if(DPA_status % _PPB == 0){
