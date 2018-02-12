@@ -10,7 +10,6 @@ extern struct lower_info __posix;
 extern struct algorithm __normal;
 extern struct algorithm __block;
 extern struct algorithm algo_pbase;
->>>>>>> a16a50cf577bbe4a0c5971701ee14fa2c81351e4
 extern struct algorithm algo_lsm;
 
 master_processor mp;
@@ -75,7 +74,6 @@ void inf_init(){
 	mp.li=&__posix;
 #endif
 
-<<<<<<< HEAD
 #ifdef block
 	mp.algo=&__block;
 #endif
@@ -83,6 +81,8 @@ void inf_init(){
 	mp.algo=&__normal;
 #elif defined(lsmtree)
 	mp.algo=&algo_lsm;
+#endif
+
 #ifdef page
 	mp.algo=&algo_pbase;
 #endif

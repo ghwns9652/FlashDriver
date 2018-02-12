@@ -98,9 +98,17 @@ uint32_t block_set(const request *req){
 	}
 	if (checker == 0) {
 		for (set_pointer =0; set_pointer < __block.li->NOB; ++set_pointer)
-			if (block_valid_array[set_pointer] == ERASE)
+			if (block_valid_array[set_pointer] == ERASE){
+				checker = 1;
 				break;
+			}
 	}
+	//if (checker == 0) {
+		/* There is NO free space in flash block */
+		/* We need OverProvisioning area, maybe. */
+
+
+
 	if (block_maptable[LBA] == NIL)
 	{
 		//printf("Case 1\n");
@@ -142,6 +150,11 @@ uint32_t block_set(const request *req){
 		{
 			//printf("Case 3\n");
 			exist_table[PPA] = EXIST;
+			if (block_valid_array[PBA] == ERASE){
+				while (1)
+					printf("AAA");
+			}
+			block_valid_array[PBA] = VALID;
 			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			//my_req->end_req = block_end_req;
 			//my_req->params = (void*)params;
@@ -167,10 +180,10 @@ uint32_t block_set(const request *req){
 			/* Followings: ASC consideartion */
 
 			//printf("Start move\n");
-			int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
+			//int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
 			for (i = 0; i < offset; ++i) {
 				algo_req *temp_req=(algo_req*)malloc(sizeof(algo_req));
-				//int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
+				int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
 				//temp_req->end_req=block_end_req;
 				//temp_req->params=(void*)params;
 				temp_req->parents = NULL;
@@ -191,18 +204,20 @@ uint32_t block_set(const request *req){
 				//printf("Before %d-th push_data\n", i);
 				__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req2, 0);
 				//printf("After push_data\n");
-				//free(temp_block);
+				free(temp_block);
 			}
 
 			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			//my_req->end_req = block_end_req;
 			//my_req->params = (void*)params;
 			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req, 0);
+			exist_table[PBA * __block.li->PPB + offset] = NONEXIST;
+			exist_table[new_PPA] = EXIST;
 			
 			if (offset < __block.li->PPB - 1) {
 				for (i = offset + 1; i < __block.li->PPB; ++i) {
 					algo_req *temp_req = (algo_req*)malloc(sizeof(algo_req));
-					//int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
+					int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
 					//temp_req->end_req = block_end_req;
 					//temp_req->params = (void*)params;
 					temp_req->parents = NULL;
@@ -219,7 +234,7 @@ uint32_t block_set(const request *req){
 					//my_req->end_req = block_end_req;
 					//my_req->params = (void*)params;
 					__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req2, 0);
-					//free(temp_block);
+					free(temp_block);
 				}
 			}
 
@@ -256,7 +271,7 @@ uint32_t block_set(const request *req){
 			*/
 			//trim(PBA);
 			//printf("Before trim\n");
-			__block.li->trim_block(PBA * __block.li->PPB + offset, false); // Is that right?
+			__block.li->trim_block(PBA * __block.li->PPB, false); // Is that right?
 			//printf("After trim\n");
 			//free(temp_block);
 		}
