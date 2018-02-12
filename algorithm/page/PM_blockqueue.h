@@ -4,7 +4,6 @@
 #include <string.h>
 #include "../../include/settings.h"
 
-#define OP_area 1
 
 //this would be the queue structure for Page_selector
 //use linked list to build queue.

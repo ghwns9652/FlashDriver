@@ -5,6 +5,11 @@
 #include "../../bench/bench.h"
 #include "PM_operation.h"
 
+extern int64_t local_page_position;
+extern int64_t block_position;
+extern int64_t reserved_local;
+extern int64_t reserved_block;
+
 struct algorithm algo_pbase=
 {
 	.create = pbase_create,
@@ -21,13 +26,12 @@ TABLE *page_TABLE;
 OOB *page_OOB;
 SRAM *page_SRAM;
 uint16_t *invalid_per_block;
-
-
+BINFO* binfo[_NOB];
 uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize mapping table.
 {
-	 algo->li = li; 	//allocate li parameter to algorithm's li.
-	 page_TABLE = (TABLE*)malloc(sizeof(TABLE)*_NOP);
-	 for(int i = 0; i < _NOP; i++)
+	algo->li = li; 	//allocate li parameter to algorithm's li.
+	page_TABLE = (TABLE*)malloc(sizeof(TABLE)*_NOP);
+	for(int i = 0; i < _NOP; i++)
 	{
      	page_TABLE[i].lpa_to_ppa = -1;
 		page_TABLE[i].valid_checker = 0;
@@ -50,8 +54,16 @@ uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize map
 	{
 		invalid_per_block[i] = 0;
 	}
+	
+	for (int i = 0; i < _NOB; i++)
+	{
+		binfo[i] = (BINFO*)malloc(sizeof(BINFO));
+		binfo[i]->head_ppa = i * _PPB;
+		binfo[i]->BAD = 0;
+	}
 
-	fake_bp_maker(fake_bp);
+	BINFO** bp = binfo;
+	Selector_Init(bp);//init selector with fake bp.
 	//init mapping table.
 }	//now we can use page table after pbase_create operation.
 
@@ -63,7 +75,11 @@ void pbase_destroy(lower_info* li, algorithm *algo)
         free(invalid_per_block);
 		  free(page_SRAM);
 		  free(page_TABLE);
-		  free(fake_bp);
+		  Selector_Destroy();
+		  for (int i = 0; i < _NOB; i++)
+		  {
+			  free(binfo[i]);
+		  }
 }
 
 void *pbase_end_req(algo_req* input)
@@ -103,16 +119,11 @@ uint32_t pbase_set(request* const req)
 	my_req->end_req = pbase_end_req;
 
 	//garbage_collection necessity detection.
-	if (PPA_status == _NOP)
+	if ((IsEmpty(&empty_queue))&&(local_page_position == _PPB))
 	{
 		pbase_garbage_collection();
-		init_done = 1;
 	}
 
-	else if ((init_done == 1) && (PPA_status % _PPB == 0))
-	{
-		pbase_garbage_collection();
-	}
 	//!garbage_collection.
 	
 	if (page_TABLE[req->key].lpa_to_ppa != -1)
@@ -121,12 +132,11 @@ uint32_t pbase_set(request* const req)
 		page_TABLE[temp].valid_checker = 0; //set that ppa validity to 0.
 		invalid_per_block[temp/_PPB] += 1;
 	}
-	
+	PPA_status = Giveme_Page(0);
 	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
 	page_TABLE[PPA_status].valid_checker = 1; 
 	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
 	KEYT set_target = PPA_status;
-	PPA_status++;
 	bench_algo_end(req);
 	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req,0);
 }

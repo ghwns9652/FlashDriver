@@ -1,10 +1,11 @@
-#include "select_operation.h"
+#include "PM_operation.h"
 
-int64_t local_page_position = 0;
-int64_t block_position = -1;
-int64_t reserved_local = 0;
-int64_t reserved_block = -1;
 //use this global parameters to count 
+int64_t block_position;
+int64_t local_page_position;
+int64_t reserved_local;
+int64_t reserved_block;
+
 
 void Selector_Init(BINFO** bp)//initializes selector.
 {
@@ -12,9 +13,10 @@ void Selector_Init(BINFO** bp)//initializes selector.
 	// 1.get Block_information
 	// 2.attach on empty_queue.
 	int OP_builder = 0;
+	int OP_area = 1;
 	Init_Bqueue(&reserved_queue);
 	Init_Bqueue(&empty_queue);
-	for (int i=0; i < NOB; i++)
+	for (int i=0; i <_NOB; i++)
 	{
 		if ((OP_builder < OP_area) && (bp[i]->BAD == 0))
 		{
@@ -44,31 +46,31 @@ uint64_t Giveme_Page(int reserved)
 	if (reserved == 0)
 	{
 		
-		if ((block_position == -1) || (local_page_position == PPB))
+		if ((block_position == -1) || (local_page_position == _PPB))
 		{
 			BINFO* newbie = Dequeue(&empty_queue);
-			block_position = newbie->head_ppa / PPB;
+			block_position = newbie->head_ppa /_PPB;
 			local_page_position = 1;
 			return newbie->head_ppa;
 		}//if it is first write or block is full, get another block.
 		else
 		{
-			uint64_t re = block_position * PPB + local_page_position;
+			uint64_t re = block_position *_PPB + local_page_position;
 			local_page_position++;
 			return re;
 		}//if not, increase local_position && give page num.
 	}
 	else if (reserved == 1)
 	{
-		if (reserved_block = -1 || reserved_local == PPB)
+		if (reserved_block = -1 || reserved_local == _PPB)
 		{
 			BINFO* newbie = Dequeue(&reserved_queue);
-			reserved_block= newbie->head_ppa / PPB;
+			reserved_block= newbie->head_ppa /_PPB;
 			return newbie->head_ppa;
 		}//if it is first time using reserved, get block.
 		else
 		{
-			uint64_t re = reserved_block * PPB + reserved_local;
+			uint64_t re = reserved_block *_PPB + reserved_local;
 			reserved_local++;
 			return re;
 		}//if not, increase local_position && give page num.

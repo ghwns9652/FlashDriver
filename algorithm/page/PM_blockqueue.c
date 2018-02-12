@@ -1,4 +1,4 @@
-#include "PM_BlockQueue.h"
+#include "PM_blockqueue.h"
 
 void Init_Bqueue(B_queue *queue)//initialize queue for binfo.
 {

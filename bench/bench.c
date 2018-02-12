@@ -102,10 +102,10 @@ bench_value* get_bench(){
 		bench_make_data();
 		_m=&_master->m[_master->n_num];
 	}
-	if(_m->n_num%(PRINTPER*(_m->m_num/100))==0){
-		printf("\r testing...... [%ld%%]",(_m->n_num)/(_m->m_num/100));
-		fflush(stdout);
-	}
+	//if(_m->n_num%(PRINTPER*(_m->m_num/100))==0){
+	//	printf("\r testing...... [%ld%%]",(_m->n_num)/(_m->m_num/100));
+	//	fflush(stdout);
+	//}
 	return &_m->body[_m->n_num++];
 }
 
