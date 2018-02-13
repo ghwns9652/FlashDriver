@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include<stdint.h>
+#include <stdint.h>
 #include <stdio.h>
 #include "demand.h"
 #include "../../bench/bench.h"
@@ -44,10 +44,11 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 		CMT[i] = (C_TABLE){-1, -1, 0, NULL};
 	}
 	for(int i = 0; i < _PPB; i++){
-		d_sram[i] = (D_SRAM){-1, NULL};
+		d_sram[i].PTR_RAM = NULL;
+		d_sram[i].OOB_RAM = (D_OOB){-1, 0, 0};
 	}
 	for(int i = 0; i < _NOP; i++){
-		demand_OOB[i] = (D_OOB){-1, 0};
+		demand_OOB[i] = (D_OOB){-1, 0, 0};
 	}
 	DPA_status = 0;
 	TPA_status = 0;
@@ -93,6 +94,7 @@ uint32_t demand_get(request *const req){
 		ppa = p_table[P_IDX].ppa; // Find ppa
 		CMT[CMT_i] = (C_TABLE){lpa, ppa, 0, queue_insert((void*)(CMT + CMT_i))}; // CMT update
 		free(p_table);
+		demand_OOB[ppa].cache_bit = 1;
 		bench_algo_end(req); // Algorithm level benchmarking end
 		__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
 	}
@@ -103,7 +105,6 @@ uint32_t demand_set(request *const req){
 	int32_t lpa;
 	int32_t ppa;
 	int CMT_i;
-
 
 	/* algo_req allocation, initialization */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -118,16 +119,17 @@ uint32_t demand_set(request *const req){
 		CMT[CMT_i].ppa = ppa; // Update ppa
 		CMT[CMT_i].flag = 1; // Mapping table changed
 		queue_update(CMT[CMT_i].queue_ptr); // Update queue
-		demand_OOB[ppa] = (D_OOB){lpa, 1}; // Update OOB
+		demand_OOB[ppa] = (D_OOB){lpa, 1, 1}; // Update OOB
 		bench_algo_end(req);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
 	}
+
 	/* Cache miss */
 	else{
 		demand_eviction(&CMT_i); // Evict one entry in CMT
 		dp_alloc(&ppa);
 		CMT[CMT_i] = (C_TABLE){lpa, ppa, 1, queue_insert((void*)(CMT + CMT_i))}; // CMT update
-		demand_OOB[ppa] = (D_OOB){lpa, 1};
+		demand_OOB[ppa] = (D_OOB){lpa, 1, 1};
 		bench_algo_end(req);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
 	}
@@ -230,13 +232,13 @@ uint32_t demand_eviction(int *CMT_i){
 		p_table[P_IDX].ppa = ppa; // Update page table
 		tp_alloc(&t_ppa); // Translation page allocation
 		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Set translation page
-		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1}; // Update OOB
+		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1, 0}; // Update OOB
 		GTD[D_IDX].ppa = t_ppa; // Update GTD
 		free(p_table);
 	}
+	demand_OOB[ppa].cache_bit = 0; // Mark data page as t_page mapping
 	queue_delete(tail); // Delete queue
 	CMT[*CMT_i] = (C_TABLE){-1, -1, 0, NULL}; // Initializae CMT
-	//demand_OOB[ppa].valid_checker = 0;
 }
 
 char btype_check(int32_t PBA_status){
@@ -257,46 +259,72 @@ char btype_check(int32_t PBA_status){
 }
 
 int lpa_compare(const void *a, const void *b){
-	if(((D_SRAM*)a)->lpa_RAM < ((D_SRAM*)b)->lpa_RAM) return -1;
-	if(((D_SRAM*)a)->lpa_RAM == ((D_SRAM*)b)->lpa_RAM) return 0;
-	if(((D_SRAM*)a)->lpa_RAM > ((D_SRAM*)b)->lpa_RAM) return 1;
+	if((uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table) < (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table)) return -1;
+	if((uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table) == (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table)) return 0;
+	if((uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table) > (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table)) return 1;
 }
 
 // PLASE UPDATE (ONLY CMT GC)
 
 // PLEASE CONFIRM GTD MANAGEMENT AND OOB MANAGEMENT
-void batch_update(int valid_page_num, int32_t PBA2PPA){
+void dpage_GC(){
 	int32_t vba;
 	int32_t t_ppa;
-	D_TABLE* p_table = (D_TABLE*)malloc(PAGESIZE);
-	int32_t* temp_lpa_table = (int32_t*)malloc(sizeof(int32_t) * _PPB);
+	int32_t pseudo_ppa;
+	int32_t PBA2PPA;
+	int valid_page_num;
+	int CMT_i;
+	D_TABLE* p_table;
+
+	/* Load valid pages to SRAM */
+	PBA2PPA = (PBA_status % _NOB) * _PPB;
+	valid_page_num = 0;
+	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
+		if(demand_OOB[i].valid_checker){
+			SRAM_load(i, valid_page_num);
+			valid_page_num++;
+		}
+	}
+	/* Trim data block */
+	__demand.li->trim_block(PBA2PPA, false);
+
+	/* Sort pages in SRAM */
 	qsort(d_sram, _PPB, sizeof(D_SRAM), lpa_compare);	// Sort d_sram as lpa
+
+	/* Mapping data manage */
+	for(int i = 0; i < valid_page_num; i++){
+		/* Cache update */
+		if(d_sram[i].OOB_RAM.cache_bit == 1){
+			CMT_i = CMT_check(d_sram[i].OOB_RAM.reverse_table, &pseudo_ppa);
+			CMT[CMT_i].ppa = PBA2PPA + i;
+		}
+		/* Batch update */
+		else{
+			vba = INT32_MAX;
+			p_table = NULL;
+			if(vba == d_sram[i].OOB_RAM.reverse_table / EPP)
+				p_table[d_sram[i].OOB_RAM.reverse_table % EPP].ppa = PBA2PPA + i;
+			else if(vba != INT32_MAX){
+				tp_alloc(&t_ppa);
+				__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
+				demand_OOB[t_ppa] = (D_OOB){vba, 1};
+				demand_OOB[GTD[vba].ppa].valid_checker = 0;
+				GTD[vba].ppa = t_ppa;
+				free(p_table);
+				p_table = NULL;
+			}
+			if(p_table == NULL){
+				vba = d_sram[i].OOB_RAM.reverse_table / EPP;
+				p_table = (D_TABLE*)malloc(PAGESIZE);
+				__demand.li->pull_data(GTD[vba].ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
+				p_table[d_sram[i].OOB_RAM.reverse_table % EPP].ppa = PBA2PPA + i;
+			}
+		}
+	}
 	for(int i = 0; i < valid_page_num; i++){	// Make lpa table and SRAM_unload
-		temp_lpa_table[i] = d_sram[i].lpa_RAM;
 		SRAM_unload(PBA2PPA + i, i);
 	}
-	
-	vba = INT32_MAX;
-	for(int i = 0; i < valid_page_num; i++){
-		if(vba == temp_lpa_table[i] / EPP){
-			p_table[temp_lpa_table[i] % EPP].ppa = PBA2PPA + i;
-		}
-		else if(vba != INT32_MAX){
-			tp_alloc(&t_ppa);
-			__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
-			demand_OOB[t_ppa] = (D_OOB){vba, 1};
-			demand_OOB[GTD[vba].ppa].valid_checker = 0;
-			GTD[vba].ppa = t_ppa;
-			free(p_table);
-			p_table = NULL;
-		}
-		if(p_table == NULL){
-			vba = temp_lpa_table[i] / EPP;
-			__demand.li->pull_data(GTD[vba].ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
-			p_table[temp_lpa_table[i] % EPP].ppa = PBA2PPA + i;
-		}
-	}
-	free(temp_lpa_table);
+	DPA_status = PBA2PPA + valid_page_num;	// DPA_status update
 }
 
 int ppa_compare(const void *a, const void *b){
@@ -306,7 +334,7 @@ int ppa_compare(const void *a, const void *b){
 }
 
 /* Please enhance the full merge algorithm !!! */
-void tpage_full_merge(){
+void tpage_GC(){
 	int n = 0;
 	int32_t head_ppa;
 	int32_t temp_ppa;
@@ -321,12 +349,12 @@ void tpage_full_merge(){
 		else{ //
 			SRAM_load(GTDcpy[i].ppa, n);
 			if(n == _PPB){
-				head_ppa = GTD[d_sram[0].lpa_RAM].ppa;
+				head_ppa = GTD[d_sram[0].OOB_RAM.reverse_table].ppa;
 				head_ppa = head_ppa - head_ppa % _PPB;
 				last_block_idx = i;
 				__demand.li->trim_block(head_ppa, false);
 				for(int j = 0; j < _PPB; j++){
-					GTD[d_sram[j].lpa_RAM].ppa = head_ppa + j;
+					GTD[d_sram[j].OOB_RAM.reverse_table].ppa = head_ppa + j;
 					SRAM_unload(head_ppa + j, j);
 				}
 				n = -1;
@@ -335,11 +363,11 @@ void tpage_full_merge(){
 		}
 	}
 	if(n > 0){
-		head_ppa = GTD[d_sram[0].lpa_RAM].ppa;
+		head_ppa = GTD[d_sram[0].OOB_RAM.reverse_table].ppa;
 		head_ppa = head_ppa - head_ppa % _PPB;
 		__demand.li->trim_block(head_ppa, false);
 		for(int j = 0; j < n; j++){
-			GTD[d_sram[j].lpa_RAM].ppa = head_ppa + j;
+			GTD[d_sram[j].OOB_RAM.reverse_table].ppa = head_ppa + j;
 			SRAM_unload(head_ppa + j, j);
 		}
 		TPA_status = head_ppa + n;
@@ -361,23 +389,23 @@ void tpage_full_merge(){
 void SRAM_load(int32_t ppa, int idx){
 	d_sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
 	__demand.li->pull_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, assign_pseudo_req(), 0); // Page load
-	d_sram[idx].lpa_RAM = demand_OOB[ppa].reverse_table;	// Page load
-	demand_OOB[ppa] = (D_OOB){-1, 0};	// OOB init
+	d_sram[idx].OOB_RAM = demand_OOB[ppa];	// Page load
+	demand_OOB[ppa] = (D_OOB){-1, 0, 0};	// OOB init
 }
 
 void SRAM_unload(int32_t ppa, int idx){
 	__demand.li->push_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, assign_pseudo_req(), 0);	// Page unlaod
 	free(d_sram[idx].PTR_RAM);
-	demand_OOB[ppa] = (D_OOB){d_sram[idx].lpa_RAM, 1};	// OOB unload
-	d_sram[idx] = (D_SRAM){-1, NULL};	// SRAM init
+	demand_OOB[ppa] = d_sram[idx].OOB_RAM;	// OOB unload
+	d_sram[idx].PTR_RAM = NULL;	// SRAM init
+	d_sram[idx].OOB_RAM = (D_OOB){-1, 0, 0};
 }
 
 // Check the case when no page be GCed.
-bool demand_GC(int32_t victim_PBA, char btype){
-	int valid_page_num = 0;	// Valid page num
-	int32_t PBA2PPA = (victim_PBA % _NOB) * _PPB;	// Change PBA to PPA
+bool demand_GC(char btype){
+	int32_t PBA2PPA = (PBA_status % _NOB) * _PPB;	// Change PBA to PPA
 	char victim_btype;
-	victim_btype = btype_check(victim_PBA % _NOB);
+	victim_btype = btype_check(PBA_status % _NOB);
 	/* Case 0 : victim block type 'N' */
 	if(victim_btype == 'N'){
 		__demand.li->trim_block(PBA2PPA, false);
@@ -390,7 +418,7 @@ bool demand_GC(int32_t victim_PBA, char btype){
 	else{
 		/* Case 1 : victim block type 'T' */
 		if(btype == 'T'){
-			tpage_full_merge();
+			tpage_GC();
 			return true;
 		}
 		/* Case 2 : victim block type 'D' */
@@ -405,15 +433,7 @@ bool demand_GC(int32_t victim_PBA, char btype){
 					return false;
 			}
 			/* Data block GC */
-			for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){	// Load valid pages to SRAM
-				if(demand_OOB[i].valid_checker){
-					SRAM_load(i, valid_page_num);
-					valid_page_num++;
-				}
-			}
-			__demand.li->trim_block(PBA2PPA, false);
-			batch_update(valid_page_num, PBA2PPA);	// batch_update + t_page update
-			DPA_status = PBA2PPA + valid_page_num;	// DPA_status update
+			dpage_GC();	// batch_update + t_page update
 			return true;
 		}
 	}
@@ -425,7 +445,7 @@ void dp_alloc(int32_t *ppa){ // Data page allocation
 		if(PBA_status == _NOB) 
 			needGC = 1;
 		if(needGC == 1){
-			while(!demand_GC(PBA_status, 'D'))	// Find GC-able d_block and GC
+			while(!demand_GC('D'))	// Find GC-able d_block and GC
 				PBA_status++;
 		}
 		else
@@ -441,7 +461,7 @@ void tp_alloc(int32_t *t_ppa){ // Translation page allocation
 		if(PBA_status == _NOB) 
 			needGC = 1;
 		if(needGC == 1){
-			while(!demand_GC(PBA_status, 'T'))	// Find GC-able t_block and GC
+			while(!demand_GC('T'))	// Find GC-able t_block and GC
 				PBA_status++;
 		}
 		else

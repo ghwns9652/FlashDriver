@@ -26,10 +26,11 @@ typedef struct demand_mapping_table{
 typedef struct demand_OOB{
 	int32_t reverse_table;
 	unsigned char valid_checker; // 0: invalid, 1: valid
+	unsigned char cache_bit; // 0: mapping in t_page, 1: mapping in cache
 }D_OOB;
 
 typedef struct demand_SRAM{
-	int32_t lpa_RAM;
+	D_OOB OOB_RAM;
 	PTR PTR_RAM;
 }D_SRAM;
 
@@ -48,12 +49,12 @@ algo_req* assign_pseudo_req();
 int CMT_check(int32_t lpa, int32_t *ppa);
 uint32_t demand_eviction(int *CMT_i);
 char btype_check(int32_t PBA_status);
-void tpage_full_merge();
-void batch_update(int valid_page_num, int32_t PBA2PPA);
+void tpage_GC();
+void dpage_GC();
 void SRAM_load(int32_t ppa, int idx);
 void SRAM_unload(int32_t ppa, int idx);
 int lpa_compare(const void *a, const void *b);
 int ppa_compare(const void *a, const void *b);
-bool demand_GC(int32_t victim_PBA, char btype);
+bool demand_GC(char btype);
 void dp_alloc(int32_t *ppa);
 void tp_alloc(int32_t *t_ppa);
