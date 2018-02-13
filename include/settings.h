@@ -13,7 +13,7 @@
 #define _PPB (256)
 #define BLOCKSIZE (PAGESIZE*_PPB)
 #define _NOB (TOTALSIZE/BLOCKSIZE)
-#define _NOP (TOTALSIZE/BLOCKSIZE)
+#define _NOP (TOTALSIZE/PAGESIZE)
 
 //#define PAGESIZE (8*K)
 //#define _PPB (4)
