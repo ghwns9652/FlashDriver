@@ -40,9 +40,7 @@ BINFO* Dequeue(B_queue *queue)
 	queue->front = now->next;
 	free(now);
 	queue->count--;
-	printf("re? %d, %d\n", re->BAD, re->head_ppa);
 	return re;
-	
 }
 
 

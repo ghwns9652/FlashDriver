@@ -45,7 +45,6 @@ uint64_t Giveme_Page(int reserved)
 {
 	if (reserved == 0)
 	{
-		
 		if ((block_position == -1) || (local_page_position == _PPB))
 		{
 			BINFO* newbie = Dequeue(&empty_queue);
@@ -53,6 +52,12 @@ uint64_t Giveme_Page(int reserved)
 			local_page_position = 1;
 			return newbie->head_ppa;
 		}//if it is first write or block is full, get another block.
+		else if ((GC_phase == 1)&&(!IsEmpty(&empty_queue)))
+		{
+			BINFO* newbie = Dequeue(&empty_queue);
+			block_position = newbie->head_ppa / _PPB;
+			return newbie->head_ppa + local_page_position;
+		}//if GC is done, and need to select new block for set. 
 		else
 		{
 			uint64_t re = block_position *_PPB + local_page_position;

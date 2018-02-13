@@ -19,14 +19,17 @@ struct algorithm algo_pbase=
 	.remove = pbase_remove
 };
 
-uint32_t PPA_status = 0;
+uint32_t PPA_status = 0;//GC target PPA.
 int init_done = 0;//check if initial write is done.
-
+int rsv_ppa = 0;//first ppa of reserved area.
+int GC_phase = 0;
 TABLE *page_TABLE;
 OOB *page_OOB;
 SRAM *page_SRAM;
 uint16_t *invalid_per_block;
+
 BINFO* binfo[_NOB];
+
 uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize mapping table.
 {
 	algo->li = li; 	//allocate li parameter to algorithm's li.
@@ -105,7 +108,11 @@ uint32_t pbase_get(request* const req)
 	my_req->end_req=pbase_end_req;//allocate end_req for request.
 	KEYT target = page_TABLE[req->key].lpa_to_ppa;
 	bench_algo_end(req);
-
+	if (page_TABLE[req->key].lpa_to_ppa == -1)
+	{
+		printf("read an empty page!");
+		return;
+	}
 	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req,0);
 	//key-value operation.
 	//Question: why value type is char*?
@@ -113,6 +120,11 @@ uint32_t pbase_get(request* const req)
 
 uint32_t pbase_set(request* const req)
 {
+	if ((PPA_status/_PPB) < 10) 
+	{
+		printf("local page in block :%d\n",local_page_position);
+		printf("block number : %d\n",PPA_status/_PPB);
+	}
 	bench_algo_start(req);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
@@ -152,7 +164,7 @@ uint32_t SRAM_load(int ppa, int a)
 	PTR value_PTR;
 	value_PTR =(PTR)malloc(PAGESIZE);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
- my_req->parents = NULL;
+	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
 	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req,0);
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
@@ -178,6 +190,7 @@ uint32_t SRAM_unload(int ppa, int a)
 
 uint32_t pbase_garbage_collection()//do pbase_read and pbase_set 
 {
+	GC_phase = 1;
 	printf("enterged GC..!");
 	int target_block = 0;
 	int invalid_num = 0;
@@ -189,7 +202,7 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 			invalid_num = invalid_per_block[i];
 		}
 	}//found block with the most invalid block.
-	PPA_status = target_block* _PPB;
+	PPA_status = target_block* _PPB; //GC target
 	int valid_component = _PPB - invalid_num;
 	int a = 0;
 	for (int i = 0; i < _PPB; i++)
@@ -201,13 +214,22 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 			page_TABLE[PPA_status + i].valid_checker = 0;
 		}
 	}
-	algo_pbase.li->trim_block(PPA_status, false);
+	algo_pbase.li->trim_block(PPA_status, false);//trim target block
 
 	for (int i = 0; i<valid_component; i++)
 	{
-		SRAM_unload(PPA_status,i);
-		PPA_status++;
+		SRAM_unload(rsv_ppa,i);
+		rsv_ppa++;
 	}
 
 	invalid_per_block[target_block] = 0;
+
+	BINFO* rsv_trans;//rsv is transformed to empty_queue
+	rsv_trans = (BINFO*)malloc(sizeof(BINFO));
+	rsv_trans->head_ppa = rsv_ppa - valid_component;
+	rsv_trans->BAD = 0;
+	Enqueue(&empty_queue, rsv_trans);
+	local_page_position = valid_component;
+
+	rsv_ppa = PPA_status;//GC target became new reserved.
 }
