@@ -8,18 +8,8 @@
 #include "interface.h"
 
 
-int main(){
-#if 0
-<<<<<<< HEAD
-	bench_init(4);
-	//bench_add(SEQSET,0,1024*30,1024*30);
-	//bench_add(SEQGET,0,1024*30,1024*30);
-	for (int i=0; i<2; ++i){
-		bench_add(RANDSET,0,1024*5,1024*5);
-		bench_add(RANDGET,0,1024*5,1024*5);
-	}
-=======
-#endif
+int main(){/*
+>>>>>>> 5c776eb8c03af5769e5d04f2343aebeb491e8220
 	int Input_cycle;
 	int Input_type;
 	int start;
@@ -66,9 +56,16 @@ int main(){
 	}
 
 	printf("benchmark setting done. starts now.\n");
+*/
 
 
 //>>>>>>> a16a50cf577bbe4a0c5971701ee14fa2c81351e4
+	bench_init(1);
+	bench_add(SEQGET,0,10*1024,10*1024);
+	//bench_add(RANDGET,0,100*1024,100*1024);
+	
+//	bench_add(RANDSET,0,15*1024,15*1024);
+//	bench_add(RANDGET,0,15*1024,15*1024);
 	inf_init();
 	bench_value *value;
 	while((value=get_bench())){

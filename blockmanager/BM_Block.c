@@ -8,20 +8,109 @@ Block* blockArray;
 uint8_t* numValid_map[NOB];
 uint32_t* PE_map[NOB];
 
+#if 0
+uint32_t BM_get(const request *req){
+	block_params* params=(block_params*)malloc(sizeof(block_params));
+	params->parents=req;
+	params->test=-1;
+
+	uint32_t PPA;
+
+	algo_req *my_req=(algo_req*)malloc(sizeof(algo_req));
+	my_req->end_req=block_end_req;
+	my_req->params=(void*)params;
+
+	//__block.li->pull_data(req->key,PAGESIZE,req->value,0,my_req,0);
+	__block.li->pull_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
+}
+#endif
+
+struct algorithm __BM={
+	.create=BM_create,
+	.destroy=BM_destroy,
+	.get=BM_get,
+	.set=BM_set,
+	.remove=BM_remove
+};
+
 /* Initiation of Bad-Block Manager */
 int32_t BM_Init()
 {
-	printf("Start Bad-Block Manager..\n");
-	printf("BM_InitBlock..\n");		BM_InitBlock();
-	printf("BM_LoadBlock..\n");		BM_LoadBlock(0);
-	printf("BM_FillMap..\n");		BM_FillMap(blockArray, numValid_map, PE_map);
+	int32_t bA_Exist;
 
+	printf("BM_Init() Start..\n");
+	printf("Start Bad-Block Manager..\n\n");
+	
+	printf("Read Flash..\n");
+	
+	/* Here.. READ FUNCTION.. */
+
+	/* Read bA_Exist in Flash, and check whether blockArray exists or not */
+
+	/* bA_Exist is a data of first page in the block for BM. If blockArray exists, then bA_Exist == _BA_EXIST. If not, blockArray doesn't exist */
+
+
+
+	printf("Allocate blockArray..");	BM_InitBlock();	printf("..End\n");
+
+	if (bA_Exist == _BA_GOODSTATE){
+		/* SSD was turned off normally, so just load blockArray in Blockmanager block */ // Blockmanager block: Flash blocks for BM
+		printf("In the past, SSD was normally turned off. Load blockArray..");
+		BM_LoadBlock(0);	printf("..End\n");
+	}
+	/* If the body of 'else if' and 'else' is same, we can merge two condition to 'else' */
+	else if (bA_Exist == _BA_BADSTATE){
+		/* SSD was turned off abnormally, so scan all flash blocks and make blockArray */
+		printf("SSD was abnormally turned off, so there is a consistancy problem.. Scan & Restore blockArray using OOB\n");
+		
+		
+		//printf("Load blockArray..");	BM_LoadBlock(0);	printf("..End\n");
+	}
+	else{
+		/* Turn on this SSD for the first time, so initialize blockArray */
+		printf("Initialize blockArray..");
+		BM_InitBlockArray();
+		printf("..End\n");
+	}
+
+	printf("Bad Block Check..");	BM_BadBlockCheck();	printf("..End\n");
+	printf("Fill pointer maps..");	BM_FillMap();		printf("..End\n");
+	
+	printf("BM_Init() End!\n");
 }
+
+
+#if 0
+	if (bA_Exist != _BA_EXIST) {
+		printf("There is no saved blockArray..\n");
+		printf("Make new blockArray..\n");
+
+		printf("\tAllocate blockArray....");	BM_InitBlock();	printf("End\n");
+
+		printf("\tCheck whether blockArray data exists..");	BM_
+		 
+
+		printf("\tRead Data in Flash blocks....");	READ();	printf("End\n");
+		printf("Finish to make blockArray!\n");
+	}
+	else if (bA_Exist )
+	else {
+		printf("There is saved blockArray..\n");
+		printf("Load existing blockArray....");		BM_LoadBlock(0);	printf("End\n");
+	}
+
+	printf("Bad Block Check....");	BM_BadBlockCheck(blockArray);	printf("End\n");
+	printf("Fill pointer maps....");	BM_FillMap(blockArray, numValid_map, PE_map);	printf("End\n");
+	
+	printf("BM_Init() End!\n");
+}
+#endif
+
 
 /* Initialization of Block structures */
 int32_t BM_InitBlock()
 {
-	blockArray= (Block*)malloc(sizeof(Block) * NOB);
+	blockArray= (Block*)malloc(sizeof(Block) * _NOB);
 
 	
 	//numValid_map = (uint8_t**)malloc(sizeof(uint8_t*) * NOB);
@@ -35,23 +124,88 @@ int32_t BM_InitBlock()
  * Write each PBA, numValid, etc... to blockArray. 
  * 어디에서 불러와야 하지? ptr 2개는 나중에 만드는 거라고 쳐도 block 데이터를 읽어와서 PBA, PE_cycle 등을 알아야 하는데..
  */
-int32_t BM_LoadBlock(int32_t somewhere)
+int32_t BM_LoadBlock(uint32_t PBA_BM) /* Flash block 하나에 blockArray가 모두 들어갈 수 있나? */
 {
 	printf("Loading Block Data..\n");
 	// 일단 이 함수가 완성되어있다고 가정하고 다른 함수를 먼저 만들자...
 
+
+
 }
 
 
+/* Initalize blockArray */
+int32_t BM_InitBlockArray()
+{
+	for (int i=0; i<NOB; ++i){
+		blockArray[i].PBA = PBA;
+		memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(int8_t));
+		blockArray[i].numValid = _PPB;
+		blockArray[i].PE_cycle = 0;
+	}
+}
+
+
+
+#if 1
+/* Scan data to make blockArray */
+/*
+ * Scan all flash blocks to fill the data of blockArray
+ */
+int32_t BM_ScanFlash()
+{
+	/* Access and Read data in all flash blocks */
+	for (int i=0; i<NOB; ++i){
+		BM_ReadBlock(i);
+
+	}
+}
+
+int32_t BM_ReadBlock(int32_t PBA){
+	/* (Later)Read OOB of PBA block and Fill blockArray */
+
+	#if 0
+	int8_t* temp_block = (int8_t*)malloc(_PPB * PAGESIZE);
+
+	for (uint8_t offset = 0; offset < _PPB; ++offset){ // int offset..?
+		algo_req* my_req = (algo_req*)malloc(sizeof(algo_req));
+		my_req->parents = NULL;
+		my_req->end_req = BM_end_req;
+
+		//uint32_t PPA = PBA * _PPB + offset;
+		__block.li->pull_data(PBA * _PPB + offset, PAGESIZE, temp_block + (offset*PAGESIZE), 0, my_req, 0); // Question: Format of pull_data to 'Block' is right?
+	}
+	blockArray[PBA].PBA = PBA;
+	#endif
+}
+
+#endif
+
+/* Check which blocks are bad */
+int32_t BM_BadBlockCheck(Block* blockArray)
+{
+	/* This functions should be made with HARDWARE Function */
+
+	for (int i = 0; i < NOB; ++i) {
+		/* HARDWARE Functions to check bad state */
+
+
+		blockArray[i].BAD = _BADSTATE;
+	}
+}
+
 /* Fill numValid_map, PE_map from blockArray */
-int32_t BM_FillMap(Block* blockArray, uint8_t** numValid_map, uint32_t** PE_map)
+//int32_t BM_FillMap(Block* blockArray, uint8_t** numValid_map, uint32_t** PE_map)
+int32_t BM_FillMap()
 {
 	for (int i = 0; i < NOB; ++i) {
-		numValid_map[i] = &(blockArray[i].numValid);
-		PE_map[i] = &(blockArray[i].PE_cycle);
+		if (blockArray[i].BAD != _BADSTATE) { /* Does this condition need? Anyway we know the state of BAD.. Don't need to prevent filling maps */
+			numValid_map[i] = &(blockArray[i].numValid);
+			PE_map[i] = &(blockArray[i].PE_cycle);
 
-		blockArray[i].ptrNV_data = &(numValid_map[i]);
-		blockArray[i].ptrPE_data = &(PE_map[i]);
+			blockArray[i].ptrNV_data = &(numValid_map[i]);
+			blockArray[i].ptrPE_data = &(PE_map[i]);
+		}
 	}
 
 	return(eNOERROR);
@@ -59,19 +213,18 @@ int32_t BM_FillMap(Block* blockArray, uint8_t** numValid_map, uint32_t** PE_map)
 
 }
 
-/* Check which blocks are bad */
-int32_t BM_BadBlockCheck(Block* blockArray)
-{
-	/* This functions should be made with HARDWARE Function */
-
-}
 
 
 /* Shutdown of Block structures */
-int32_t BM_Shutdown(Block* blockArray, uint8_t** numValid_map, uint32_t** PE_map)
+//int32_t BM_Shutdown(Block* blockArray, uint8_t** numValid_map, uint32_t** PE_map)
+int32_t BM_Shutdown();
 {
 	// 아 어딘가에 저장해야 하는데..... Flash 내의 특정 block들을 dedicated block으로 두어서 거기에 하는 방식으로 하게 될 것 같다.
 	// 다만.. 기존의 FTL이나 wear-leveling 과정과 꼬이지 않도록 해야 할 것. 나중에 논의될 것
+
+
+	/* PUSH blockArray, numValid_map, PE_map to Flash */ 
+	/* Come Here! */
 
 	free(blockArray);
 	//free(numValid_map);

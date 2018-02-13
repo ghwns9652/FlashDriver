@@ -1,4 +1,5 @@
 
+#if 0
 #include "BM_Interface.h"
 
 
@@ -139,3 +140,5 @@ int32_t main(void)
 	print_arr(numarray, 9);
 	*/
 }
+
+#endif

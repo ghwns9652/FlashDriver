@@ -4,10 +4,10 @@
 #include "BM_common.h"
 
 
-typedef struct {
+typedef struct { // 16 bytes
 	uint32_t	PBA;			/* PBA of this block */
-	int8_t		ValidP[NOP];	/* index means ValidPity of offset pages */
-	uint8_t		numValid;		/* Number of inValidPate pages in this block*/
+	int8_t		ValidP[NOP];	/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
+	uint8_t		numValid;		/* Number of Valid pages in this block*/
 	uint32_t	PE_cycle;		/* P/E cycles of this block */
 	uint8_t		*ptrNV_data;	/* Pointer of numValid map */	//Heap이나 Quicksort에서 SWAP할 때 이것도 새로 맞춰야 할 것 같은데.. 애초에 이걸 어디 쓸지 잘 모르겠다
 	uint32_t	*ptrPE_data;	/* Pointer of PE map */
@@ -27,9 +27,18 @@ typedef uint8_t		nV_T;
 typedef uint32_t	PE_T;
 typedef int8_t		Bad_T;
 
+
+/* BAD Status of blocks */
+#define _BADSTATE	1
+
+/* Whether blockArray exists or not */
+#define _BA_EXIST	32
+#define _BA_GOODSTATE	10
+#define _BA_BADSTATE	20
+
 /* 이름들 좀 일관적으로 바꾸자...  nV_map, PE_map 혹은 numValid_map, PE_map 이렇게 */
-uint8_t* numValid_map[NOB];	/* Array of pointers to numValid */
-uint32_t* PE_map[NOB];		/* Array of pointers to PE */
+//uint8_t* numValid_map[NOB];	/* Array of pointers to numValid */
+//uint32_t* PE_map[NOB];		/* Array of pointers to PE */
 
 //Block blockArray[NOB];	/* Array of Blocks */
 
@@ -40,6 +49,9 @@ uint32_t* PE_map[NOB];		/* Array of pointers to PE */
 #define BM_VALIDPAGE	1
 #define BM_INVALIDPAGE	0
 #define BM_WRITTEN		1	/* Not Determined yet */
+
+
+
 
 int32_t BM_Find_BlockPlace_by_PPA(Block* ptrBlock[], uint32_t size, uint32_t PPA);
 int32_t BM_search_PBA(Block* ptrBlock[], uint32_t size, uint32_t PBA);

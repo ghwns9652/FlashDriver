@@ -3,7 +3,7 @@
 
 #define METHOD 1	// Which method has better performance?
 
-// 기본 4가지 인터페이스
+// Four basic interfaces
 
 int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA)
 {
@@ -26,10 +26,12 @@ int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA)
 	}
 #endif
 }
-int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA) // ptrBlock을 어느 영역에 두어야 하지? 일단 다 parameter로 넣자
+int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA) 
 {
-	// parameter로 받은 PPA가 VALID인지 INVALID인지 반환하는 함수인듯
-	// 1bit로 하게 해도 되겠지만 status가 VALID INVALID 외에 더 있을수도 있으므로 일단 char로 반환
+	/*
+	 * Return whether parameter PPA is VALID or INVALID
+	 * Current Implementation: using char array to express state
+	 */
 
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 	uint8_t offset = PPA % PPB;
@@ -51,11 +53,11 @@ int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA) // ptrBlock을 어느 �
 }
 uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
 {
-	/* victim block의 PBA를 반환하는 함수 */
+	/* Return PBA of victim block */
 	/*
-	* Parameter: Array(Heap) of numValid pointer(numValid_map)
-	* Parameter가 Heap으로 주어지므로, Heap 연산을 이용하여 numValid가 max인 node를(max heap의 root) 찾아서 그 PBA를 반환한다.
-	*/
+	 * Parameter: Array(Heap) of numValid pointer(numValid_map)
+	 * numValid_map is a heap array, so find the root of the max-heap in numValid using Heap opeartion
+	 */
 
 
 	/* After this function, numValid_map will become Max-heap by numValid */
@@ -69,11 +71,10 @@ uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
 }
 uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
 {
-	/* PE_map을 PE_cycle 순서대로 Ascending order sorting하는 함수 */
+	/* Function which sorts PE_map by PE_cycle with ascending order
 	/*@
 	 * Parameter: Array of PE_cycle pointer(PE_map)
-	 * PE_map을 정렬하면 
-	 * 실제 Flash 내의 data를 SWAP하는 과정도 들어가야 할 것
+	 * (Warning) We need 'SWAP REAL DATA IN FLASH'. Current codes have no this step.
 	 */
 
 	/* 어떤 식으로 할까? 
@@ -90,13 +91,17 @@ uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
 	 */
 	// 그런데 free block pool은 어디서 관리되지? 경택이인가?
 	
+	/* Sort PE_map by PE_cycle */
 	BM_SortPE(blockArray, PE_map);
-	return 0;
+	
+
+
+	return (eNOERROR);
 }
 
 int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
 {
-	/* GC할 때마다 불러야 하는 함수 */
+	/* This function should be called when GC
 	/*
 	 * Parameter: PPA(or PBA?)
 	 * Update status of corresponding block
@@ -111,27 +116,27 @@ int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
 	return (eNOERROR);
 }
 
-inline void BM_update_block_with_push(Block* blockArray, uint32_t PPA)
+inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
 {
-	/* Push할 때마다 불러야 하는 함수 */
+	/* This function should be called when Push */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 	uint8_t offset = PPA % PPB;
 
-	blockArray[PBA].ValidP[offset] = BM_WRITTEN; /* Not Determined yet */
+	blockArray[PBA].ValidP[offset] = BM_WRITTEN; /* Not Determined yet */ /* What is BM_WRITTEN? */
 
 	blockArray[PBA].PE_cycle++;
 }
-inline void BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
+inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
 {
-	/* Trim할 때마다 불러야 하는 함수 */
+	/* This function should be called when Trim */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 
-
 	blockArray[PBA].PE_cycle++;
 
 
 }
 
+/*
 추가할 것
 GC할 때마다 부르는 함수
 GC하면.. numValid==0이고 모든 ValidP[]도 VALID 상태가 되겠지(ERASE를 따로 만들어야 하나?)
@@ -140,3 +145,4 @@ free block pool 쪽에서도 뭔가 해야할 것 같은데.. 해당 block을 free block pool에 
 
 
 PE cycle 늘리는 거, numValid 늘리는 거, ValidP[]를 바꾸는 것 등... 인터페이스 함수 필요할까? 한줄이면 되겠지만 inline으로다가 주면 좋을듯?
+*/

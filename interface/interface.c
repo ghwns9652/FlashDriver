@@ -73,16 +73,15 @@ void inf_init(){
 #ifdef posix
 	mp.li=&__posix;
 #endif
-
 #ifdef block
 	mp.algo=&__block;
 #endif
-#ifdef normal
-	mp.algo=&__normal;
-#elif defined(lsmtree)
+#ifdef lsmtree
 	mp.algo=&algo_lsm;
 #endif
-
+#ifdef normal
+	mp.algo=&__normal;
+#endif
 #ifdef page
 	mp.algo=&algo_pbase;
 #endif
@@ -146,7 +145,7 @@ bool inf_end_req( request * const req){
 #ifdef DEBUG
 	printf("inf_end_req!\n");
 #endif
-	if(req->type==FS_GET_T){
+	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
 		int check;
 		memcpy(&check,req->value,sizeof(check));
 		/*

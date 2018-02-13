@@ -23,6 +23,24 @@ struct algorithm __block={
 	.remove=block_remove
 };
 
+//Set set_pointer to first-meet ERASE index from current set_pointer
+int32_t block_findsp(int32_t checker){
+	for (; set_pointer < __block.li->NOB; ++set_pointer) {
+		if (block_valid_array[set_pointer] == ERASE) {
+			checker = 1;
+			break;
+		}
+	}
+	if (checker == 0) {
+		for (set_pointer =0; set_pointer < __block.li->NOB; ++set_pointer)
+			if (block_valid_array[set_pointer] == ERASE){
+				checker = 1;
+				break;
+			}
+	}
+	return checker;
+}
+
 uint32_t block_create (lower_info* li,algorithm *algo){
 	algo->li=li;
 
@@ -89,20 +107,7 @@ uint32_t block_set(const request *req){
 	//uint32_t PPB = __block.li->PPB;
 	int8_t checker = 0;
 
-	//Set set_pointer to first-meet ERASE index from current set_pointer
-	for (; set_pointer < __block.li->NOB; ++set_pointer) {
-		if (block_valid_array[set_pointer] == ERASE) {
-			checker = 1;
-			break;
-		}
-	}
-	if (checker == 0) {
-		for (set_pointer =0; set_pointer < __block.li->NOB; ++set_pointer)
-			if (block_valid_array[set_pointer] == ERASE){
-				checker = 1;
-				break;
-			}
-	}
+
 	//if (checker == 0) {
 		/* There is NO free space in flash block */
 		/* We need OverProvisioning area, maybe. */
@@ -111,6 +116,7 @@ uint32_t block_set(const request *req){
 
 	if (block_maptable[LBA] == NIL)
 	{
+		checker = block_findsp(checker);
 		//printf("Case 1\n");
 		// Switch E to V of block_valid_array
 		block_valid_array[set_pointer] = VALID;
@@ -135,7 +141,7 @@ uint32_t block_set(const request *req){
 	{
 		PBA = block_maptable[LBA];
 		PPA = PBA  * __block.li->PPB + offset;
-
+#if 0
 		if (exist_table[PPA] == NONEXIST && offset == 0)
 		{
 			//printf("Case 2\n");
@@ -146,7 +152,8 @@ uint32_t block_set(const request *req){
 			//my_req->params = (void*)params;
 			__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
 		}
-		else if (exist_table[PPA] == NONEXIST)
+#endif
+		if (exist_table[PPA] == NONEXIST)
 		{
 			//printf("Case 3\n");
 			exist_table[PPA] = EXIST;
@@ -165,11 +172,14 @@ uint32_t block_set(const request *req){
 			//printf("Case GC\n");
 			// Cleaning
 			// Maptable update for data moving
+			checker = block_findsp(checker);
 			block_maptable[LBA] = set_pointer;
 			block_valid_array[set_pointer] = VALID;
 			block_valid_array[PBA] = ERASE; // PBA means old_PBA
 
+			uint32_t old_PPA_zero = PBA * __block.li->PPB;
 			uint32_t new_PBA = block_maptable[LBA];
+			uint32_t new_PPA_zero = new_PBA * __block.li->PPB;
 			uint32_t new_PPA = new_PBA * __block.li->PPB + offset;
 
 			// Data move to new block
@@ -189,11 +199,11 @@ uint32_t block_set(const request *req){
 				temp_req->parents = NULL;
 				temp_req->end_req = block_algo_end_req;
 				//printf("Before %d-th pull_data\n", i);
-				__block.li->pull_data(PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req, 0);
+				__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_block, 0, temp_req, 0);
 				//printf("After pull_data\n");
 
-				exist_table[PBA * __block.li->PPB + i] = NONEXIST;
-				exist_table[new_PBA * __block.li->PPB + i] = EXIST;
+				exist_table[old_PPA_zero + i] = NONEXIST;
+				exist_table[new_PPA_zero + i] = EXIST;
 
 				algo_req *temp_req2=(algo_req*)malloc(sizeof(algo_req));
 				temp_req2->parents = NULL;
@@ -202,7 +212,7 @@ uint32_t block_set(const request *req){
 				//my_req->end_req = block_end_req;
 				//my_req->params = (void*)params;
 				//printf("Before %d-th push_data\n", i);
-				__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req2, 0);
+				__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_block, 0, temp_req2, 0);
 				//printf("After push_data\n");
 				free(temp_block);
 			}
@@ -211,8 +221,8 @@ uint32_t block_set(const request *req){
 			//my_req->end_req = block_end_req;
 			//my_req->params = (void*)params;
 			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req, 0);
-			exist_table[PBA * __block.li->PPB + offset] = NONEXIST;
-			exist_table[new_PPA] = EXIST;
+			exist_table[old_PPA_zero + offset] = NONEXIST;
+			exist_table[new_PPA_zero + offset] = EXIST;
 			
 			if (offset < __block.li->PPB - 1) {
 				for (i = offset + 1; i < __block.li->PPB; ++i) {
@@ -222,10 +232,10 @@ uint32_t block_set(const request *req){
 					//temp_req->params = (void*)params;
 					temp_req->parents = NULL;
 					temp_req->end_req = block_algo_end_req;
-					__block.li->pull_data(PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req, 0);
+					__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_block, 0, temp_req, 0);
 
-					exist_table[PBA * __block.li->PPB + i] = NONEXIST;
-					exist_table[new_PBA * __block.li->PPB + i] = EXIST;
+					exist_table[old_PPA_zero + i] = NONEXIST;
+					exist_table[new_PPA_zero + i] = EXIST;
 
 					algo_req *temp_req2=(algo_req*)malloc(sizeof(algo_req));
 					temp_req2->parents = NULL;
@@ -233,7 +243,7 @@ uint32_t block_set(const request *req){
 					//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 					//my_req->end_req = block_end_req;
 					//my_req->params = (void*)params;
-					__block.li->push_data(new_PBA * __block.li->PPB + i, PAGESIZE, temp_block, 0, temp_req2, 0);
+					__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_block, 0, temp_req2, 0);
 					free(temp_block);
 				}
 			}
@@ -271,7 +281,7 @@ uint32_t block_set(const request *req){
 			*/
 			//trim(PBA);
 			//printf("Before trim\n");
-			__block.li->trim_block(PBA * __block.li->PPB, false); // Is that right?
+			__block.li->trim_block(old_PPA_zero, false); // Is that right?
 			//printf("After trim\n");
 			//free(temp_block);
 		}

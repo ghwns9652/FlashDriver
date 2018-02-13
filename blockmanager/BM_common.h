@@ -1,18 +1,20 @@
 #ifndef _BM_COMMON_H_
 #define _BM_COMMON_H_
 
+#include "../../include/container.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #define PPB 256		/* Actually NOT THIS. REAL PPB is in "container.h" */
 // container에 있는 PPB 찾아서 macro로 찾을 수 있게 바꿔놓자.
 // include/settings.h 에 _PPB(256) 으로 나와있는 것 같다
-#define NOP 2000000	/* Actually NOT THIS. */
-#define NOB 1000	/* Actually NOT THIS. */
+#define NOP 33554432	/* Actually NOT THIS. */
+#define NOB 131072	/* Actually NOT THIS. */
 
 
-
+#define NIL	-1
 
 /* Size of ptrBlock */
 /* Should be used in declaration file, and it is equal to Declaration block size */

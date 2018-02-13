@@ -26,12 +26,15 @@ uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[]);
 /* 아직 구체적으로 설계하지 못하여 구현되지 않은 상태
     PE_cycle이 가장 낮은 block을 return하여 free block pool에 할당하거나 PE_cycle 순으로 정렬해놓는 등의 방식이 될 것 같음
     경택이와 상의할 필요가 있을 듯함
-	*/
+*/
 uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[]);
 
 
 
 /* GC할 때마다 불러야 하는 함수*/
+int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
+inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA);
+inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA);
 
 
 #endif // !_BM_INTERFACE_H_
