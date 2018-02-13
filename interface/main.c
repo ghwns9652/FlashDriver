@@ -6,14 +6,13 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
+<<<<<<< HEAD
 
 int main(){
 	bench_init(2);
 	bench_add(RANDSET,0,1024*30,1024*30);
 	bench_add(RANDGET,0,1024*30,1024*30);
 	inf_init();
-
-	
 	bench_value *value;
 	while((value=get_bench())){
 		char *data=(char*)malloc(PAGESIZE);
@@ -21,11 +20,7 @@ int main(){
 		if(value->type==FS_SET_T){
 			memcpy(data,&value->key,sizeof(value->key));
 		}
-#ifdef BENCH
 		inf_make_req(value->type,value->key,data,value->mark);
-#else
-		inf_make_req(value->type,value->key,data);
-#endif
 	}
 	
 	while(!bench_is_finish()){
@@ -33,6 +28,7 @@ int main(){
 		sleep(1);
 #endif
 	}
+	inf_free();
 	bench_print();
 	bench_free();
 	inf_free();

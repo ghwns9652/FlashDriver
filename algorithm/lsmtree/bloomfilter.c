@@ -7,7 +7,16 @@
 #else
 #define FORCE_INLINE inline
 #endif
-
+void BITSET(char *input, char offset){
+	char test=1;
+	test<<=offset;
+	(*input)|=test;
+}
+bool BITGET(char input, char offset){
+	char test=1;
+	test<<=offset;
+	return input&test;
+}
 static FORCE_INLINE uint32_t rotl32 ( uint32_t x, int8_t r )
 {
 	return (x << r) | (x >> (32 - r));
@@ -113,6 +122,15 @@ BF* bf_init(int entry, float fpr){
 	memset(res->body,0,targetsize);
 	res->p=fpr;
 	res->targetsize=targetsize;
+	return res;
+}
+
+BF* bf_cpy(BF *src){
+	BF* res=(BF*)malloc(sizeof(BF));
+	memcpy(res,src,sizeof(BF));
+
+	res->body=(char *)malloc(res->targetsize);
+	memcpy(res->body,src->body,res->targetsize);
 	return res;
 }
 

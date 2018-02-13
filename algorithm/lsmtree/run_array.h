@@ -3,7 +3,9 @@
 #include "../../include/container.h"
 #include "../../include/settings.h"
 #include "../../include/lsm_settings.h"
+#include "cache.h"
 #include "lsmtree.h"
+#include "bloomfilter.h"
 
 struct htable;
 struct skiplis;
@@ -14,9 +16,14 @@ typedef struct Entry{
 	uint8_t bitset[KEYNUM/8];
 	uint64_t version;
 #ifdef BLOOM
-	BF *filter
+	BF *filter;
+#endif
+
+#ifdef CACHE
+	cache_entry *c_entry;
 #endif
 	struct htable *t_table;
+	bool iscompactioning;
 }Entry;
 
 typedef struct Node{
@@ -40,6 +47,7 @@ typedef struct level{
 	KEYT start;
 	KEYT end;
 	pthread_mutex_t level_lock;
+	bool iscompactioning;
 	char *body;
 }level;
 
@@ -63,6 +71,7 @@ int level_range_find(level *,KEYT start, KEYT end, Entry ***);//
 bool level_check_overlap(level*,KEYT start, KEYT end);//a
 bool level_full_check(level *);//
 Node *level_insert(level *,Entry*);//
+Node *level_insert_seq(level *, Entry *);
 Entry *level_get_next(Iter *);//
 Iter *level_get_Iter(level *);//
 void level_print(level *);//

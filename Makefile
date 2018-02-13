@@ -13,7 +13,7 @@ CFLAGS +=\
 		 -Wall\
 		 -Wno-discarded-qualifiers\
 		 -D_BSD_SOURCE\
-		 -DBENCH\
+-DBENCH\
 
 SRCS +=\
 	./interface/queue.c\
@@ -38,15 +38,21 @@ all: simulator
 DEBUG: debug_simulator
 
 memory_leak: simulator_memory_check
+
+duma_sim: duma_simulator
 	
 simulator_memory_check: ./interface/main.c mem_libsimulator.a $(LOWER_LIB) $(ALGO_LIB)
-	$(CC) $(CFLAGS) -DLEAKCHECK -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -DLEAKCHECK -o $@ $^ $(LIBS) -lm
 
 debug_simulator: ./interface/main.c libsimulator_d.a
 	$(CC) $(CFLAGS) -DDEBUG -o $@ $^ -lpthread
 
 simulator: ./interface/main.c libsimulator.a
-	$(CC) $(CFLAGS) -o $@ $^ -lpthread
+	$(CC) $(CFLAGS) -o $@ $^ -lpthread -lm
+
+duma_simulator: ./interface/main.c libsimulator.a
+	$(CC) $(CFLAGS) -o $@ $^ -lpthread -lduma -lm
+	
 
 libsimulator.a: $(TARGETOBJ)
 	mkdir -p object && mkdir -p data
@@ -64,7 +70,7 @@ libsimulator_d.a:$(MEMORYOBJ)
 
 mem_libsimulator.a:$(MEMORYOBJ)
 	mkdir -p object && mkdir -p data
-	cd ./algorithm/$(TARGET_ALGO) && make && cd ../../
+	cd ./algorithm/$(TARGET_ALGO) && make LEAK && cd ../../
 	cd ./lower/$(TARGET_LOWER) && make && cd ../../ 
 	mv ./interface/*.o ./object/ & mv ./bench/*.o ./object/
 	$(AR) r $(@) ./object/*.o
@@ -88,3 +94,4 @@ clean :
 	@$(RM) simulator
 	@$(RM) simulator_memory_check
 	@$(RM) debug_simulator
+	@$(RM) duma_simulator
