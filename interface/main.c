@@ -6,7 +6,6 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
-<<<<<<< HEAD
 
 int main(){
 	bench_init(2);

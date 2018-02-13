@@ -57,12 +57,18 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 }
 
 void demand_destroy(lower_info *li, algorithm *algo){
+	printf("CMT\n");
 	free(CMT);
+	printf("GTD\n");
 	free(GTD);
+	printf("demand_OOB\n");
 	free(demand_OOB);
+	printf("d_sram\n");
 	free(d_sram);
+	printf("queue\n");
 	while(head)
 		queue_delete(head);
+	printf("what?\n");
 }
 
 uint32_t demand_get(request *const req){
@@ -221,7 +227,6 @@ uint32_t demand_eviction(int *CMT_i){
 		if((t_ppa = GTD[D_IDX].ppa) != -1){	// When it's not a first t_page
 			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Get page table
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
-
 		}
 		else{ // p_table initialization
 			for(int i = 0; i < EPP; i++)
@@ -259,15 +264,15 @@ char btype_check(int32_t PBA_status){
 }
 
 int lpa_compare(const void *a, const void *b){
-	if((uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table) < (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table)) return -1;
-	if((uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table) == (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table)) return 0;
-	if((uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table) > (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table)) return 1;
+	uint32_t num1 = (uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table);
+	uint32_t num2 = (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table);
+	if(num1 < num2) return -1;
+	if(num1 == num2) return 0;
+	if(num1 > num2) return 1;
 }
 
-// PLASE UPDATE (ONLY CMT GC)
-
-// PLEASE CONFIRM GTD MANAGEMENT AND OOB MANAGEMENT
 void dpage_GC(){
+	int32_t lpa;
 	int32_t vba;
 	int32_t t_ppa;
 	int32_t pseudo_ppa;
@@ -277,10 +282,10 @@ void dpage_GC(){
 	D_TABLE* p_table;
 
 	/* Load valid pages to SRAM */
-	PBA2PPA = (PBA_status % _NOB) * _PPB;
+	PBA2PPA = (PBA_status % _NOB) * _PPB; // PPA calculatioin
 	valid_page_num = 0;
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
-		if(demand_OOB[i].valid_checker){
+		if(demand_OOB[i].valid_checker){ // Load valid pages
 			SRAM_load(i, valid_page_num);
 			valid_page_num++;
 		}
@@ -290,39 +295,41 @@ void dpage_GC(){
 
 	/* Sort pages in SRAM */
 	qsort(d_sram, _PPB, sizeof(D_SRAM), lpa_compare);	// Sort d_sram as lpa
-
+	
 	/* Mapping data manage */
-	for(int i = 0; i < valid_page_num; i++){
+	for(int i = 0; i <= valid_page_num; i++){
+		lpa = d_sram[i].OOB_RAM.reverse_table;
 		/* Cache update */
-		if(d_sram[i].OOB_RAM.cache_bit == 1){
-			CMT_i = CMT_check(d_sram[i].OOB_RAM.reverse_table, &pseudo_ppa);
-			CMT[CMT_i].ppa = PBA2PPA + i;
+		if(d_sram[i].OOB_RAM.cache_bit == 1){ // Check cache bit
+			CMT_i = CMT_check(lpa, &pseudo_ppa); // Search cache
+			CMT[CMT_i].ppa = PBA2PPA + i; // Cache ppa, flag update
+			CMT[CMT_i].flag = 1;
 		}
 		/* Batch update */
 		else{
-			vba = INT32_MAX;
+			vba = INT32_MAX; // Initial state
 			p_table = NULL;
-			if(vba == d_sram[i].OOB_RAM.reverse_table / EPP)
-				p_table[d_sram[i].OOB_RAM.reverse_table % EPP].ppa = PBA2PPA + i;
-			else if(vba != INT32_MAX){
+			if(vba == D_IDX) // Share same vba with previous lpa
+				p_table[P_IDX].ppa = PBA2PPA + i;
+			else if(vba != INT32_MAX){ // Push t_ppa
 				tp_alloc(&t_ppa);
 				__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
-				demand_OOB[t_ppa] = (D_OOB){vba, 1};
-				demand_OOB[GTD[vba].ppa].valid_checker = 0;
-				GTD[vba].ppa = t_ppa;
+				demand_OOB[t_ppa] = (D_OOB){vba, 1}; // OOB management
+				demand_OOB[GTD[vba].ppa].valid_checker = 0; // Invalidate previous tpage
+				GTD[vba].ppa = t_ppa; // GTD update
 				free(p_table);
 				p_table = NULL;
 			}
-			if(p_table == NULL){
-				vba = d_sram[i].OOB_RAM.reverse_table / EPP;
+			if(p_table == NULL && i != valid_page_num){ // Start to make new tpage
+				vba = D_IDX; // vba calculation
 				p_table = (D_TABLE*)malloc(PAGESIZE);
-				__demand.li->pull_data(GTD[vba].ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
-				p_table[d_sram[i].OOB_RAM.reverse_table % EPP].ppa = PBA2PPA + i;
+				__demand.li->pull_data(GTD[vba].ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Load tpage
+				p_table[P_IDX].ppa = PBA2PPA + i; // Update tpage
 			}
 		}
 	}
-	for(int i = 0; i < valid_page_num; i++){	// Make lpa table and SRAM_unload
-		SRAM_unload(PBA2PPA + i, i);
+	for(int i = 0; i < valid_page_num; i++){
+		SRAM_unload(PBA2PPA + i, i); // Unload dpages
 	}
 	DPA_status = PBA2PPA + valid_page_num;	// DPA_status update
 }

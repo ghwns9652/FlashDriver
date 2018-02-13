@@ -8,7 +8,6 @@
 #include <string.h>
 extern struct lower_info __posix;
 extern struct algorithm __normal;
-<<<<<<< HEAD
 extern struct algorithm __demand;
 extern struct algorithm algo_pbase;
 extern struct algorithm algo_lsm;
