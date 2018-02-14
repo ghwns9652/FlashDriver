@@ -37,19 +37,16 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	algo->li = li;
 
 	// SRAM, OOB initialization
-	for(int i = 0; i < GTDENT; i++){
+	for(int i = 0; i < GTDENT; i++)
 		GTD[i].ppa = -1;
-	}
-	for(int i = 0; i < CMTENT; i++){
+	for(int i = 0; i < CMTENT; i++)
 		CMT[i] = (C_TABLE){-1, -1, 0, NULL};
-	}
 	for(int i = 0; i < _PPB; i++){
 		d_sram[i].PTR_RAM = NULL;
 		d_sram[i].OOB_RAM = (D_OOB){-1, 0, 0};
 	}
-	for(int i = 0; i < _NOP; i++){
+	for(int i = 0; i < _NOP; i++)
 		demand_OOB[i] = (D_OOB){-1, 0, 0};
-	}
 	DPA_status = 0;
 	TPA_status = 0;
 	PBA_status = 0;
@@ -57,18 +54,12 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 }
 
 void demand_destroy(lower_info *li, algorithm *algo){
-	printf("CMT\n");
 	free(CMT);
-	printf("GTD\n");
 	free(GTD);
-	printf("demand_OOB\n");
 	free(demand_OOB);
-	printf("d_sram\n");
 	free(d_sram);
-	printf("queue\n");
 	while(head)
 		queue_delete(head);
-	printf("what?\n");
 }
 
 uint32_t demand_get(request *const req){
@@ -95,14 +86,29 @@ uint32_t demand_get(request *const req){
 	else{
 		demand_eviction(&CMT_i); // Evict one entry in CMT
 		t_ppa = GTD[D_IDX].ppa; // Get t_ppa
-		p_table = (D_TABLE*)malloc(PAGESIZE); // p_table allocaiton
-		__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Get page table
+		if(t_ppa != -1){
+			p_table = (D_TABLE*)malloc(PAGESIZE); // p_table allocaiton
+			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Get page table
+		}
+		else{ // lseek error avoid
+			printf("Invalid ppa read\n");
+			bench_algo_end(req);
+			my_req->end_req(my_req);
+		}
 		ppa = p_table[P_IDX].ppa; // Find ppa
-		CMT[CMT_i] = (C_TABLE){lpa, ppa, 0, queue_insert((void*)(CMT + CMT_i))}; // CMT update
-		free(p_table);
-		demand_OOB[ppa].cache_bit = 1;
-		bench_algo_end(req); // Algorithm level benchmarking end
-		__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
+		if(ppa != -1){
+			CMT[CMT_i] = (C_TABLE){lpa, ppa, 0, queue_insert((void*)(CMT + CMT_i))}; // CMT update
+			free(p_table);
+			demand_OOB[ppa].cache_bit = 1;
+			bench_algo_end(req); // Algorithm level benchmarking end
+			__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
+		}
+		else{ // lseek error avoid
+			printf("invalid ppa read\n");
+			free(p_table);
+			bench_algo_end(req);
+			my_req->end_req(my_req);
+		}
 	}
 }
 
@@ -217,7 +223,6 @@ uint32_t demand_eviction(int *CMT_i){
 			return 0; 
 		}
 	}
-
 	/* Eviction */
 	*CMT_i = (int)((C_TABLE*)(tail->DATA) - CMT); // Save CMT_i of tail
 	lpa = CMT[*CMT_i].lpa; // Get lpa of CMT_i
@@ -243,7 +248,7 @@ uint32_t demand_eviction(int *CMT_i){
 	}
 	demand_OOB[ppa].cache_bit = 0; // Mark data page as t_page mapping
 	queue_delete(tail); // Delete queue
-	CMT[*CMT_i] = (C_TABLE){-1, -1, 0, NULL}; // Initializae CMT
+	CMT[*CMT_i] = (C_TABLE){-1, -1, 0, NULL}; // Initialize CMT
 }
 
 char btype_check(int32_t PBA_status){

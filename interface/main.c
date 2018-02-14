@@ -30,23 +30,5 @@ int main(){
 	inf_free();
 	bench_print();
 	bench_free();
-	inf_free();
-/*
-	for(int i=0; i<1024*2; i++){
-#ifdef LEAKCHECK
-		printf("set: %d\n", i);
-#endif
-		int rand_key = rand()%(_NOP);
-		char *temp=(char*)malloc(PAGESIZE);
-		memcpy(temp,&rand_key,sizeof(rand_key));
-		key_save[i] = rand_key;
-		inf_make_req(FS_SET_T,rand_key,temp);
-	}
-
-	for(int i=0; i<1024*2; i++){
-		char *temp=(char*)malloc(PAGESIZE);
-		inf_make_req(FS_GET_T,key_save[i],temp);
-	}
- */
 	return 0;
 }
