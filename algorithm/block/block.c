@@ -80,10 +80,14 @@ uint32_t block_get(const request *req){
 	uint32_t LBA = my_req->parents->key / __block.li->PPB;
 	uint32_t offset = my_req->parents->key % __block.li->PPB;
 
+	if (block_maptable[LBA] == NIL){
+		printf("\nRead Empty Page..\n");
+		bench_algo_end(req);
+		return;
+	}
+
 	uint32_t PBA = block_maptable[LBA];
 	uint32_t PPA = PBA * __block.li->PPB + offset;
-
-
 
 	//__block.li->pull_data(req->key,PAGESIZE,req->value,0,my_req,0);
 	__block.li->pull_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
