@@ -301,7 +301,7 @@ void randget(KEYT start, KEYT end,monitor *m){
 	printf("making rand Get bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
 		m->body[i].key=start+rand()%(start+end)+1;
-		m->body[i].type=FS_SET_T;
+		m->body[i].type=FS_GET_T;
 		m->body[i].mark=m->mark;
 	}
 }

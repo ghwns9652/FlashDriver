@@ -1,7 +1,7 @@
 CC=gcc
 
 TARGET_LOWER=posix
-TARGET_ALGO=page
+TARGET_ALGO=Hybrid
 PWD=$(pwd)
 
 CFLAGS +=\

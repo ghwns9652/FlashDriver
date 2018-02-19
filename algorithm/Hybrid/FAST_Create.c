@@ -1,5 +1,5 @@
 #include "FAST.h"
-
+#include <limits.h>
 /**
  * Function : uint32_t FAST_Create(lower_info* li, algorithm* algo)
  * 
@@ -32,7 +32,8 @@ struct algorithm FAST_Algorithm = {
 
 TableInfo* tableInfo;
 
-char* STATE;
+char* BLOCK_STATE;
+char* PAGE_STATE;
 
 /* Definition of constant value */
 uint32_t NUMBER_OF_BLOCK;
@@ -57,6 +58,13 @@ const char NUMBER_OF_RW_LOG_BLOCK = 15;
 
 const char NIL = -1;
 
+// const char ERASED = 0;
+const char DATA_BLOCK = 1;
+const char SW_LOG_BLOCK = 2;
+const char RW_LOG_BLOCK = 3;
+
+uint32_t NUMBER_OF_DATA_BLOCK;
+
 uint32_t FAST_Create(lower_info* li, algorithm* algo)
 {
     NUMBER_OF_BLOCK = li->NOB;
@@ -65,6 +73,8 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     SIZE_OF_BLOCK = li->SOB;
     PAGE_PER_BLOCK = li->PPB;
     TOTAL_SIZE = li->TS;
+
+    NUMBER_OF_DATA_BLOCK = UINT_MAX/PAGE_PER_BLOCK + 1;
 
     algo->li = li;      /* li means Lower Info */
 
@@ -86,23 +96,27 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     tableInfo->block_MappingTable = (Block_MappingTable*)malloc(sizeof(Block_MappingTable));
 
     tableInfo->sw_MappingTable->data = 
-            (SW_MappingInfo*)malloc(sizeof(SW_MappingInfo) * PAGE_PER_BLOCK);
+        (SW_MappingInfo*)malloc(sizeof(SW_MappingInfo) * PAGE_PER_BLOCK);
     memset(tableInfo->sw_MappingTable->data, 0, sizeof(SW_MappingInfo) * PAGE_PER_BLOCK);
     tableInfo->rw_MappingTable->data = 
-            (RW_MappingInfo*)malloc(sizeof(RW_MappingInfo) * PAGE_PER_BLOCK);
+        (RW_MappingInfo*)malloc(sizeof(RW_MappingInfo) * PAGE_PER_BLOCK);
     memset(tableInfo->rw_MappingTable->data, 0, sizeof(RW_MappingInfo) * PAGE_PER_BLOCK);
     tableInfo->block_MappingTable->data = 
-            (Block_MappingInfo*)malloc(sizeof(Block_MappingInfo) * NUMBER_OF_BLOCK);
+        (Block_MappingInfo*)malloc(sizeof(Block_MappingInfo) * NUMBER_OF_DATA_BLOCK);
     memset(tableInfo->block_MappingTable->data, 0, sizeof(Block_MappingInfo) * PAGE_PER_BLOCK);
 
-	for(int i = 0; i < NUMBER_OF_BLOCK; i++){
-		tableInfo->block_MappingTable->data[i].physical_block = i;
-	}
+    for(int i = 0; i < NUMBER_OF_DATA_BLOCK; i++){
+        tableInfo->block_MappingTable->data[i].physical_block = i;
+    }
 
-	tableInfo->sw_MappingTable->data->physical_block = 1000; // @TODO : should change dependent on log block size
+    tableInfo->sw_MappingTable->data->physical_block = 1000; // @TODO : should change dependent on log block size
+    
+    BLOCK_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_BLOCK);
+    PAGE_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_PAGE);
 
-    STATE = (char*)malloc(sizeof(char)*NUMBER_OF_BLOCK);
-    memset(STATE, ERASED, NUMBER_OF_BLOCK);
+    memset(BLOCK_STATE, ERASED, NUMBER_OF_BLOCK);
+    memset(PAGE_STATE, ERASED, NUMBER_OF_BLOCK);
+    
     printf("FAST FTL Creation Finished!\n");
 	printf("Page Per Block : %d\n", PAGE_PER_BLOCK);
 	printf("Total_Size : %d\n", TOTAL_SIZE);

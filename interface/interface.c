@@ -9,6 +9,7 @@
 extern struct lower_info __posix;
 extern struct algorithm algo_pbase;
 extern struct algorithm algo_lsm;
+extern struct algorithm FAST_Algorithm;
 
 master_processor mp;
 void *p_main(void*);
@@ -75,6 +76,8 @@ void inf_init(){
 #ifdef page
 	mp.algo=&algo_pbase;
 #endif
+	mp.algo = & FAST_Algorithm;
+
 	mp.li->create(mp.li);
 	mp.algo->create(mp.li,mp.algo);
 }

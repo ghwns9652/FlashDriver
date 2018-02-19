@@ -14,7 +14,12 @@ inline int SW_LOG_BLOCK(uint32_t logical_block)
 inline int RW_LOG_BLOCK(uint32_t logical_block)
         { return ()}
 */
-char GET_STATE(uint32_t physical_address)
-        { return *(STATE + physical_address); }
-void SET_STATE(uint32_t physical_address, char state)
-        { *(STATE + physical_address) = state; }
+char GET_PAGE_STATE(uint32_t physical_address)
+        { return *(PAGE_STATE + physical_address); }
+void SET_PAGE_STATE(uint32_t physical_address, char state)
+        { *(PAGE_STATE + physical_address) = state; }
+
+char GET_BLOCK_STATE(uint32_t physical_address)
+        { return *(BLOCK_STATE + physical_address); }
+void SET_BLOCK_STATE(uint32_t physical_address, char state)
+        { *(BLOCK_STATE + physical_address) = state; }

@@ -1,6 +1,6 @@
 #include "FAST.h"
 
-bool FAST_Remove(const request* req)
+uint32_t FAST_Remove(request* const req)
 {
     return true;
 }

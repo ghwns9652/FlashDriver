@@ -8,7 +8,7 @@
  *  No returns
  */
 
-char fast_SwitchSWLogBlock(uint32_t log_block)
+char fast_SwitchSWLogBlock(uint32_t log_block_number)
 {
     SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
     uint32_t data_block = BLOCK_TABLE(sw_MappingTable->data->logical_block);

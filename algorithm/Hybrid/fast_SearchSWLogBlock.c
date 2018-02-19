@@ -23,7 +23,7 @@ char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address)
 
     if(logical_block == sw_log_block && offset < number_of_stored_sector){
         *physical_address = ADDRESS(physical_block, offset);
-        printf("Log Block Found!\n");
+        printf("SW Log Block Found!");
         return (eNOERROR);
     }
     

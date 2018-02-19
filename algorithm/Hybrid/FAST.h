@@ -22,7 +22,8 @@ extern const char UNEXPECTED;
 
 extern const char NIL;
 
-extern char* STATE;
+extern char* BLOCK_STATE;
+extern char* PAGE_STATE;
 /*@
  * Inline function Definition
  */
@@ -129,9 +130,9 @@ extern TableInfo* tableInfo;
 /* API Function */
 uint32_t FAST_Create(lower_info* li, algorithm* algo);
 void FAST_Destroy(lower_info* li, algorithm* algo);
-bool FAST_Get(const request* req);
-bool FAST_Set(const request* req);
-bool FAST_Remove(const request* req);
+uint32_t FAST_Get(request* const req);
+uint32_t FAST_Set(request* const req);
+uint32_t FAST_Remove(request* const req);
 void* FAST_EndRequest(algo_req* input);
 
 /* Internal Function */
@@ -152,7 +153,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address);
 char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address);
 
 /* FAST_Remove */
-char fast_SwitchSWLogBLock(uint32_t log_block_number);
+char fast_SwitchSWLogBlock(uint32_t log_block_number);
 char fast_MergeSWLogBlock(uint32_t log_block_number);
 char fast_MergeRWLogBLock(uint32_t log_block_number);
 
@@ -179,9 +180,10 @@ uint32_t OFFSET(uint32_t logical_address);
 uint32_t ADDRESS(uint32_t block, uint32_t offset);
 uint32_t BLOCK_TABLE(uint32_t logical_block);
 
-char GET_STATE(uint32_t physical_address);
-void SET_STATE(uint32_t physical_address, char state);
-
+char GET_PAGE_STATE(uint32_t physical_address);
+void SET_PAGE_STATE(uint32_t physical_address, char state);
+char GET_BLOCK_STATE(uint32_t physical_address);
+void SET_BLOCK_STATE(uint32_t physical_address, char state);
 
 // @TODO
 /*

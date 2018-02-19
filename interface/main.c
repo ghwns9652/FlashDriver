@@ -6,6 +6,7 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
+
 int main(){
 	int Input_cycle;
 	int Input_type;
@@ -21,7 +22,7 @@ int main(){
 	printf("SEQSET = 1, \nSEQGET = 2, \nRANDGET = 3, \nRANDRW = 4, \n");
 	printf("SEQRW = 5, \nRANDSET = 6, \nMIXED = 7\n");
 	printf("====bench type list end ====\n");
-   printf("ex. 1 0 100 100 means seqset 0 to 100 with input size 100\n");
+   	printf("ex. 1 0 100 100 means seqset 0 to 100 with input size 100\n");
 	for (int i = 0; i < Input_cycle; i++)
 	{
 		scanf("%d %d %d %d",&Input_type, &start, &end, &Input_size);

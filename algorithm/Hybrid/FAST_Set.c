@@ -9,7 +9,7 @@
  *  No returns
  */
 
-bool FAST_Set(const request* req)
+uint32_t FAST_Set(request* const req)
 {
     FAST_Parameters*    params;
     algo_req*           my_req;
@@ -26,11 +26,13 @@ bool FAST_Set(const request* req)
 		//printf("physical_address: %d\n", physical_address);
         if(fast_AllocSWLogBlockEntry(key, &physical_address) != eNOERROR){
     		//printf("physical_address: %d\n", physical_address);
-            printf("Why so slow?\n");
+            //printf("Why so slow?\n");
         	fast_AllocRWLogBlockEntry(key, &physical_address);
         }
     }
 	//printf("Translated_address: %d\n", physical_address);
+    printf("Set : %d to %d\n", key, physical_address);
+    //printf("Set : %d to %d", key, physical_address);
 
     // Push data using translated address
     params = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));

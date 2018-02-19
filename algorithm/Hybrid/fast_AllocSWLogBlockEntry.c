@@ -36,7 +36,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address)
    	
 	
 	if(sw_MappingInfo->number_of_stored_sector == PAGE_PER_BLOCK){
-		fast_SwitchSWLogBlock();
+		fast_SwitchSWLogBlock(*physical_address);
 		sw_MappingInfo->number_of_stored_sector = 0;
 	}
 	
@@ -45,23 +45,28 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address)
 			fast_MergeSWLogBlock(logical_block);
 		}
 		sw_MappingInfo->logical_block = logical_block;
+		sw_MappingInfo->number_of_stored_sector = 0;
 	}
 	else if(logical_block == sw_logical_block){
 		fast_SwitchSWLogBlock(logical_block);
 
 		if(offset != sw_MappingInfo->number_of_stored_sector){
+			//printf("Offset Different");
+			//printf("%d %d", sw_MappingInfo->number_of_stored_sector, offset);
 			return (eNOTSEQUENTIAL);
 		}
 	}
 	else{
+		//printf("Block Difference");
 		return (eNOTSEQUENTIAL);
 	}
 
 	*physical_address = ADDRESS(sw_MappingInfo->physical_block, offset);
 	sw_MappingInfo->number_of_stored_sector++;
-	printf("%d %d %d\t", sw_MappingInfo->physical_block, offset, *physical_address);
-	printf("Why So Slow?\n");
+	//printf("%d %d %d\t", sw_MappingInfo->physical_block, offset, *physical_address);
+	//printf("Why So Slow?\n");
 
+	//printf("    SW Log Block! ");
 	return (eNOERROR);
 	/*
 	if(BLOCK(key) != sw_MappingTable->data->logical_block){

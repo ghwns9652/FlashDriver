@@ -29,7 +29,7 @@ char fast_SearchDataBlock(uint32_t logical_address, uint32_t* physical_address)
     
     *physical_address = ADDRESS(physical_block, offset);
 
-    char state = GET_STATE(*physical_address);
+    char state = GET_PAGE_STATE(*physical_address);
     if(state == VALID){
         return (eNOERROR);
     }

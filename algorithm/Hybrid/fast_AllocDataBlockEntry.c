@@ -13,24 +13,25 @@
 
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
 {
-    // RW_MappingTable* rw_MappingTable = tableInfo->rw_MappingTable;
+    // 
+    int logical_block = BLOCK(key);
+    int physical_block = BLOCK_TABLE(logical_block);
+    int offset = OFFSET(key);
 
-    int logical_block;
-    int physical_block;
-    int offset;
-    char check;
+    *physical_address = ADDRESS(physical_block, offset);
+    char check = GET_PAGE_STATE(*physical_address);
 
     /* Should Use Block Mapping Table */
     logical_block = BLOCK(key);
     offset = OFFSET(key);
 	physical_block = BLOCK_TABLE(logical_block);
 	*physical_address = ADDRESS(physical_block, offset);
-    check = GET_STATE(*physical_address);
+    check = GET_PAGE_STATE(*physical_address);
 	if(check == VALID){
-		SET_STATE(*physical_address, INVALID);
+		SET_PAGE_STATE(*physical_address, INVALID);
 	}
 	else if(check == ERASED){
-		SET_STATE(*physical_address, VALID);
+		SET_PAGE_STATE(*physical_address, VALID);
 	}
     return check;
     /*

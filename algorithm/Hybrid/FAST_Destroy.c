@@ -11,7 +11,8 @@
 
 void FAST_Destroy(lower_info* li, algorithm* algo)
 {
-    free(STATE);
+    free(PAGE_STATE);
+    free(BLOCK_STATE);
 
     free(tableInfo->block_MappingTable->data);
     free(tableInfo->rw_MappingTable->data);
