@@ -3,79 +3,12 @@
 #include <string.h>
 #include "../../include/container.h"
 
-
-
-extern const char NUMBER_OF_RW_LOG_BLOCK;
-
-extern const char ERASED;
-extern const char VALID;
-extern const char INVALID;
-
-extern const char eNOERROR;
-extern const char eNOTWRITTEN;
-extern const char eOVERWRITTED;
-extern const char eUNEXPECTED;
-extern const char eNOTSEQUENTIAL;
-
-extern const char eNOTFOUND;
-extern const char UNEXPECTED;
-
-extern const char NIL;
-
-extern char* BLOCK_STATE;
-extern char* PAGE_STATE;
-/*@
- * Inline function Definition
- */
-
-extern uint32_t NUMBER_OF_BLOCK;
-extern uint32_t NUMBER_OF_PAGE;
-extern uint32_t SIZE_OF_KEY_TYPE;
-extern uint32_t SIZE_OF_BLOCK;
-extern uint32_t PAGE_PER_BLOCK;
-extern uint32_t TOTAL_SIZE;
-
-/*
-inline uint32_t NUMBER_OF_BLOCK(lower_info* li)     { return li -> NOB; }
-inline uint32_t NUMBER_OF_PAGE(lower_info* li)      { return li -> NOP; }
-inline uint32_t SIZE_OF_KEY_TYPE(lower_info* li)    { return li -> SOK; }
-inline uint32_t SIZE_OF_BLOCK(lower_info* li)       { return li -> SOB; }
-inline uint32_t PAGE_PER_BLOCK(lower_info* li)      { return li -> PPB; }
-inline uint32_t TOTAL_SIZE(lower_info* li)          { return li -> TS; }
-*/
-
-
-
-
-// MappingTable() () #TODO
-
-/* Allocation of multidimensional array requires memory a lot */
-
-//const int NUMBER_OF_RW_LOG_BLOCK = 15;
-
-//const int ERASED = 0;
-//const int VALID = 1;
-//const int INVALID = 2;
-
-/* TODO: change name more carefully */
-//const int eNOERROR = 0;
-//const int NOTFOUNT = 1;
-//const int UNEXPECTED = 10;
-
 /*@
  * Structure Definition
  */
 typedef struct {
     request* parents;
 } FAST_Parameters;
-
-/*
-typedef struct {
-
-} SlottedPage;
-*/
-
-
 
 typedef struct {
     uint32_t logical_block;
@@ -84,8 +17,6 @@ typedef struct {
 } SW_MappingInfo;
 
 typedef struct {
-    //int data_block_number;
-    //int num_sector_in_block;
     SW_MappingInfo* data;       /* Should allocate with value of lower_info */
 } SW_MappingTable;
 
@@ -104,9 +35,7 @@ typedef struct {
 } RW_MappingTable;
 
 typedef struct {
-    //int logical_block;
     uint32_t physical_block;
-    //int offset;
 } Block_MappingInfo;
 
 typedef struct {
@@ -118,10 +47,6 @@ typedef struct {
     RW_MappingTable* rw_MappingTable;
     Block_MappingTable* block_MappingTable;
 } TableInfo;
-
-extern struct algorithm FAST_Algorithm;
-extern TableInfo* tableInfo;
-
 
 /*@
  * Function Prototypes
@@ -161,20 +86,7 @@ char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address)
 char fast_SearchRWLogBlock(uint32_t logical_address, uint32_t* physical_address);
 char fast_SearchDataBlock(uint32_t logical_address, uint32_t* physical_address);
 
-
-/*
-extern struct algorithm FAST_Algorithm = {
-    .create = FAST_Create,
-    .destroy = FAST_Destroy,
-    .get = FAST_Get,
-    .set = FAST_Set,
-    .remove = FAST_Remove
-};
-*/
-/*@
- * Global Variables
- */
-
+/* Commonly Used Function */
 uint32_t BLOCK(uint32_t logical_address);
 uint32_t OFFSET(uint32_t logical_address);
 uint32_t ADDRESS(uint32_t block, uint32_t offset);
@@ -185,20 +97,35 @@ void SET_PAGE_STATE(uint32_t physical_address, char state);
 char GET_BLOCK_STATE(uint32_t physical_address);
 void SET_BLOCK_STATE(uint32_t physical_address, char state);
 
-// @TODO
-/*
-inline uint32_t TABLE(uint32_t physical_block, Block_MappingTable* mappingTable)
-        { return mappingTable->data[physical_block].physical_block; }
-        */
+/*@
+ * Global Variables
+ */
 
-/*
-struct algorithm FAST_Algorithm = {
-    .create = FAST_Create,
-    .destroy = FAST_Destroy,
-    .get = FAST_Get,
-    .set = FAST_Set,
-    .remove = FAST_Remove
-};
-*/
+extern const char NUMBER_OF_RW_LOG_BLOCK;
 
+extern const char ERASED;
+extern const char VALID;
+extern const char INVALID;
 
+extern const char eNOERROR;
+extern const char eNOTWRITTEN;
+extern const char eOVERWRITTED;
+extern const char eUNEXPECTED;
+extern const char eNOTSEQUENTIAL;
+
+extern const char eNOTFOUND;
+extern const char UNEXPECTED;
+
+extern const char NIL;
+
+extern struct algorithm FAST_Algorithm;
+extern TableInfo* tableInfo;
+extern char* BLOCK_STATE;
+extern char* PAGE_STATE;
+
+extern uint32_t NUMBER_OF_BLOCK;
+extern uint32_t NUMBER_OF_PAGE;
+extern uint32_t SIZE_OF_KEY_TYPE;
+extern uint32_t SIZE_OF_BLOCK;
+extern uint32_t PAGE_PER_BLOCK;
+extern uint32_t TOTAL_SIZE;
