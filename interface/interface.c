@@ -11,6 +11,7 @@ extern struct algorithm __normal;
 extern struct algorithm algo_pbase;
 #ifdef lsmtree
 extern struct algorithm algo_lsm;
+#endif
 extern struct algorithm FAST_Algorithm;
 
 master_processor mp;
