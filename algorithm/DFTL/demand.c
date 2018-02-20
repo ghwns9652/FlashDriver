@@ -340,9 +340,11 @@ void dpage_GC(){
 }
 
 int ppa_compare(const void *a, const void *b){
-	if(((D_TABLE*)a)->ppa < ((D_TABLE*)b)->ppa) return -1;
-	if(((D_TABLE*)a)->ppa == ((D_TABLE*)b)->ppa) return 0;
-	if(((D_TABLE*)a)->ppa > ((D_TABLE*)b)->ppa) return 1;
+	uint32_t num1 = (uint32_t)(((D_TABLE*)a)->ppa);
+	uint32_t num2 = (uint32_t)(((D_TABLE*)a)->ppa);
+	if(num1 < num2) return -1;
+	if(num1 == num2) return 0;
+	if(num1 > num2) return 1;
 }
 
 /* Please enhance the full merge algorithm !!! */
@@ -357,13 +359,14 @@ void tpage_GC(){
 
 	for(int i = 0; i < GTDENT; i++){
 		if(GTDcpy[i].ppa == -1)
-			continue;
+			break;
 		else{ //
 			SRAM_load(GTDcpy[i].ppa, n);
-			if(n == _PPB){
-				head_ppa = GTD[d_sram[0].OOB_RAM.reverse_table].ppa;
-				head_ppa = head_ppa - head_ppa % _PPB;
+			if(n == 0){
+				head_ppa = GTDcpy[i].ppa - GTDcpy[i].ppa % _PPB;
 				last_block_idx = i;
+			}
+			if(n == _PPB){
 				__demand.li->trim_block(head_ppa, false);
 				for(int j = 0; j < _PPB; j++){
 					GTD[d_sram[j].OOB_RAM.reverse_table].ppa = head_ppa + j;
@@ -375,8 +378,6 @@ void tpage_GC(){
 		}
 	}
 	if(n > 0){
-		head_ppa = GTD[d_sram[0].OOB_RAM.reverse_table].ppa;
-		head_ppa = head_ppa - head_ppa % _PPB;
 		__demand.li->trim_block(head_ppa, false);
 		for(int j = 0; j < n; j++){
 			GTD[d_sram[j].OOB_RAM.reverse_table].ppa = head_ppa + j;
@@ -387,6 +388,10 @@ void tpage_GC(){
 	}
 	else{
 		for(int i = last_block_idx + 1; i < GTDENT; i++){
+			if(GTDcpy[i].ppa == -1){
+				printf("Invalid tpage GC\n");
+				break;
+			}
 			temp_ppa = GTDcpy[i].ppa - (GTDcpy[i].ppa % _PPB);
 			if(head_ppa != temp_ppa){
 				__demand.li->trim_block(temp_ppa, false);
