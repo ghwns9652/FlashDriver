@@ -7,7 +7,9 @@
 #include <unistd.h>
 #include <string.h>
 extern struct lower_info __posix;
+extern struct algorithm __normal;
 extern struct algorithm algo_pbase;
+#ifdef lsmtree
 extern struct algorithm algo_lsm;
 extern struct algorithm FAST_Algorithm;
 
@@ -73,6 +75,12 @@ void inf_init(){
 	mp.li=&__posix;
 #endif
 
+#ifdef lsmtree
+	mp.algo=&algo_lsm;
+#endif
+#ifdef normal
+	mp.algo=&__normal;
+#endif
 #ifdef page
 	mp.algo=&algo_pbase;
 #endif
@@ -138,7 +146,7 @@ bool inf_end_req( request * const req){
 #ifdef DEBUG
 	printf("inf_end_req!\n");
 #endif
-	if(req->type==FS_GET_T){
+	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
 		int check;
 		memcpy(&check,req->value,sizeof(check));
 		/*
