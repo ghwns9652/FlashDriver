@@ -4,7 +4,12 @@
  * Function : fast_AllocDataBlockEntry(int key, int* physical_address)
  * 
  * Description : 
- *  Find a physical page.
+ *  Find a physical page in Data Block.
+ *   First, seperate key into block and offset.
+ *   Second, translate logical block to physical block using block table.
+ *   Return state of translated address.
+ *    If state is ERASED or VALID, update state.
+ *    ERASED -> VALID, VALID -> INVALID
  * 
  * Returns :
  *  physical_address
@@ -13,40 +18,23 @@
 
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
 {
-    // 
+    // Seperate key into block and offset
     int logical_block = BLOCK(key);
-    int physical_block = BLOCK_TABLE(logical_block);
     int offset = OFFSET(key);
 
+    // Translate logical block to physical block
+    int physical_block = BLOCK_TABLE(logical_block);
+
+    // Check state of ssd using tasnlated address
     *physical_address = ADDRESS(physical_block, offset);
-    char check = GET_PAGE_STATE(*physical_address);
+    char state = GET_PAGE_STATE(*physical_address);
 
     /* Should Use Block Mapping Table */
-    logical_block = BLOCK(key);
-    offset = OFFSET(key);
-	physical_block = BLOCK_TABLE(logical_block);
-	*physical_address = ADDRESS(physical_block, offset);
-    check = GET_PAGE_STATE(*physical_address);
-	if(check == VALID){
+	if(state == VALID){
 		SET_PAGE_STATE(*physical_address, INVALID);
 	}
-	else if(check == ERASED){
+	else if(state == ERASED){
 		SET_PAGE_STATE(*physical_address, VALID);
 	}
-    return check;
-    /*
-    if(check == ERASED){
-        return (eNOERROR);
-    }
-    else if(check == VALID){
-        // We should write to log block 
-        SET_STATE(physical_address, INVALID);
-        return (VALID);
-    }
-    else if(check == INVALID){
-        return (INVALID);
-    }
-
-    return (UNEXPECTED);
-    */
+    return state;
 }

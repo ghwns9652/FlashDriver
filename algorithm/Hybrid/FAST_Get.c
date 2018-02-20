@@ -16,8 +16,6 @@
 
 uint32_t FAST_Get(request* const req)
 {
-    //algo_req            temp;
-    //char                type;
     uint32_t            key;
     char*               value;
     uint32_t            physical_address;
@@ -27,24 +25,15 @@ uint32_t FAST_Get(request* const req)
     key = req->key;
     value = req->value;
 
-	//printf("Physical_Address: %d\n", physical_address);
     if(fast_SearchSWLogBlock(key, &physical_address) == eNOTFOUND){
-        //printf("Physical_Address: %d\n", physical_address);
 		if(fast_SearchRWLogBlock(key, &physical_address) == eNOTFOUND){
-			printf("Data Block : Physical_Address: %d\n", physical_address);
             fast_SearchDataBlock(key, &physical_address);
         }
     }
-	//printf("Test\n");
-	//printf("Key: %d Translated Address: %d\n", key, physical_address);
-    //printf("Get : %d to %d", key, physical_address);
+
     printf("Get : %d to %d\n", key, physical_address);
-/*    
-    if(!FAST_SearchLogBlockTable(req, &physical_address)){
-        FAST_SearchDataBlockTable(req, &physical_address);
-    }
-*/
-    
+    //printf("Get : %d to %d", key, physical_address);
+
     // Pull data using translated address
     params = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
     params->parents = req;

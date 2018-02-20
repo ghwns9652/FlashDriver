@@ -21,20 +21,16 @@ uint32_t FAST_Set(request* const req)
     value = req->value;    
 
     // Find page to write
-	//printf("physical_address: %d\n", physical_address);
     if(fast_AllocDataBlockEntry(key, &physical_address) != eNOERROR){
-		//printf("physical_address: %d\n", physical_address);
         if(fast_AllocSWLogBlockEntry(key, &physical_address) != eNOERROR){
-    		//printf("physical_address: %d\n", physical_address);
-            //printf("Why so slow?\n");
         	fast_AllocRWLogBlockEntry(key, &physical_address);
         }
     }
-	//printf("Translated_address: %d\n", physical_address);
+
     printf("Set : %d to %d\n", key, physical_address);
     //printf("Set : %d to %d", key, physical_address);
 
-    // Push data using translated address
+    //Push data using translated address
     params = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
     params->parents = req;
     

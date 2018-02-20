@@ -67,6 +67,7 @@ uint32_t NUMBER_OF_DATA_BLOCK;
 
 uint32_t FAST_Create(lower_info* li, algorithm* algo)
 {
+    // Definition of Global Varables
     NUMBER_OF_BLOCK = li->NOB;
     NUMBER_OF_PAGE = li->NOP;
     SIZE_OF_KEY_TYPE = li->SOK;
@@ -74,21 +75,10 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     PAGE_PER_BLOCK = li->PPB;
     TOTAL_SIZE = li->TS;
 
-    NUMBER_OF_DATA_BLOCK = UINT_MAX/PAGE_PER_BLOCK + 1;
-
+    NUMBER_OF_DATA_BLOCK = NUMBER_OF_BLOCK/2 + 1;
     algo->li = li;      /* li means Lower Info */
 
-
-
-    /* Definition of Global Variables */
-    /*
-    NUMBER_OF_BLOCK = li->NOB;
-    NUMBER_OF_PAGE = li->NOP;
-    SIZE_OF_KEY_TYPE = li->SOK;
-    SIZE_OF_BLOCK = li->SOB;
-    PAGE_PER_BLOCK = li->PPB;
-    TOTAL_SIZEZ = li->TS;
-    */
+    // Memory Allocation for Global Variables (Pointer)
     tableInfo = (TableInfo*)malloc(sizeof(TableInfo));
 
     tableInfo->sw_MappingTable = (SW_MappingTable*)malloc(sizeof(SW_MappingTable));
@@ -105,20 +95,33 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
         (Block_MappingInfo*)malloc(sizeof(Block_MappingInfo) * NUMBER_OF_DATA_BLOCK);
     memset(tableInfo->block_MappingTable->data, 0, sizeof(Block_MappingInfo) * PAGE_PER_BLOCK);
 
-    for(int i = 0; i < NUMBER_OF_DATA_BLOCK; i++){
-        tableInfo->block_MappingTable->data[i].physical_block = i;
-    }
-
-    tableInfo->sw_MappingTable->data->physical_block = 1000; // @TODO : should change dependent on log block size
-    
+    // Setting block mapping information
     BLOCK_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_BLOCK);
     PAGE_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_PAGE);
+    tableInfo->rw_MappingTable->rw_log_block = (uint32_t*)malloc(sizeof(uint32_t)*NUMBER_OF_RW_LOG_BLOCK);
+    tableInfo->rw_MappingTable->current_position = 0;
+    tableInfo->rw_MappingTable->number_of_full_log_block = 0;
+    tableInfo->rw_MappingTable->offset = 0;
 
     memset(BLOCK_STATE, ERASED, NUMBER_OF_BLOCK);
-    memset(PAGE_STATE, ERASED, NUMBER_OF_BLOCK);
-    
+    memset(PAGE_STATE, ERASED, NUMBER_OF_PAGE);
+
+    for(int i = 0; i < NUMBER_OF_DATA_BLOCK; i++){
+        tableInfo->block_MappingTable->data[i].physical_block = i;
+        SET_BLOCK_STATE(i, DATA_BLOCK);
+    }
+    tableInfo->sw_MappingTable->data->physical_block = NUMBER_OF_DATA_BLOCK;
+    SET_BLOCK_STATE(NUMBER_OF_DATA_BLOCK, SW_LOG_BLOCK);
+
+    for(int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
+        SET_BLOCK_STATE(NUMBER_OF_DATA_BLOCK+1 + i, RW_LOG_BLOCK);
+        tableInfo->rw_MappingTable->rw_log_block[i] = NUMBER_OF_DATA_BLOCK+1 + i;
+    }
+
     printf("FAST FTL Creation Finished!\n");
 	printf("Page Per Block : %d\n", PAGE_PER_BLOCK);
 	printf("Total_Size : %d\n", TOTAL_SIZE);
 	printf("NUMBER_OF_PAGE : %d\n", NUMBER_OF_PAGE);
+    printf("NUMBER_OF_BLOCK : %d\n", NUMBER_OF_BLOCK);
+    printf("NUMBER_OF_DATA_BLOCK : %d\n", NUMBER_OF_DATA_BLOCK);
 }

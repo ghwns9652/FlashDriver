@@ -41,6 +41,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address)
 	}
 	
 	if(offset == 0){
+        //FAST_Algorithm.li->trim_block(BLOCK(sw_MappingInfo->physical_block), true);
 		if(fast_SwitchSWLogBlock(logical_block) != eNOERROR){
 			fast_MergeSWLogBlock(logical_block);
 		}
@@ -63,7 +64,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address)
 
 	*physical_address = ADDRESS(sw_MappingInfo->physical_block, offset);
 	sw_MappingInfo->number_of_stored_sector++;
-	//printf("%d %d %d\t", sw_MappingInfo->physical_block, offset, *physical_address);
+	printf("%d %d %d\t", sw_MappingInfo->physical_block, offset, *physical_address);
 	//printf("Why So Slow?\n");
 
 	//printf("    SW Log Block! ");

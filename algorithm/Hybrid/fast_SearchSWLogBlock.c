@@ -5,7 +5,12 @@
  * 
  * 
  * Description : 
- * 
+ *  Search SW log block and translate logical_address to physical_address
+ *      if SW log block have corresponding entry.
+ *  First, logical_address is diveded into logical_block and offset.
+ *  Then, get information about SW log block which logical block corresponding to.
+ *  If logical block correspond to SW log block, check offset.
+ *  If offset is
  * 
  * Returns :
  *  No returns
@@ -23,7 +28,6 @@ char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address)
 
     if(logical_block == sw_log_block && offset < number_of_stored_sector){
         *physical_address = ADDRESS(physical_block, offset);
-        printf("SW Log Block Found!");
         return (eNOERROR);
     }
     
