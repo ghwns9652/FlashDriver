@@ -2,7 +2,7 @@
 
 /**
  * Function :
- * 
+ *  fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address)
  * 
  * Description : 
  *  Search SW log block and translate logical_address to physical_address
@@ -10,10 +10,14 @@
  *  First, logical_address is diveded into logical_block and offset.
  *  Then, get information about SW log block which logical block corresponding to.
  *  If logical block correspond to SW log block, check offset.
- *  If offset is
+ *  If offset is less than number of stored sector in SW log block,
+ *      set physical_address using physical_block stored in SW log block information
+ *      and return eNOERROR.
+ *  If given logical_address didn't satisfy condition above, return eNOTFOUND.
  * 
  * Returns :
- *  No returns
+ *  eNOERROR - success to find elements in SW log block
+ *  eNOTFOUND - fail to find elements in SW log block
  */
 
 char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address)
@@ -33,6 +37,3 @@ char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address)
     
     return (eNOTFOUND);
 }
-
-// 뒤에서부터 읽어옴
-// 같은 값들을 가지고 있으면 그 값의 물리적 주소를 반환함.
