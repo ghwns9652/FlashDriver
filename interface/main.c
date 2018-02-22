@@ -61,7 +61,7 @@ int main(){/*
 
 //>>>>>>> a16a50cf577bbe4a0c5971701ee14fa2c81351e4
 	bench_init(1);
-	bench_add(MIXED,0,10*1024,10*1024);
+	bench_add(RANDRW,0,50*1024,50*1024);
 	//bench_add(RANDGET,0,100*1024,100*1024);
 	
 //	bench_add(RANDSET,0,15*1024,15*1024);
