@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "demand.h"
+#include "demand_v2.h"
 #include "../../bench/bench.h"
 
 struct algorithm __demand={
@@ -43,10 +43,11 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 		CMT[i] = (C_TABLE){-1, -1, 0, NULL};
 	for(int i = 0; i < _PPB; i++){
 		d_sram[i].PTR_RAM = NULL;
-		d_sram[i].OOB_RAM = (D_OOB){-1, 0, 0};
+		d_sram[i].OOB_RAM = (D_OOB){-1, 0};
 	}
 	for(int i = 0; i < _NOP; i++)
-		demand_OOB[i] = (D_OOB){-1, 0, 0};
+		demand_OOB[i] = (D_OOB){-1, 0};
+
 	DPA_status = 0;
 	TPA_status = 0;
 	PBA_status = 0;
@@ -93,7 +94,6 @@ uint32_t demand_get(request *const req){
 			if(ppa != -1){
 				CMT[CMT_i] = (C_TABLE){lpa, ppa, 0, queue_insert((void*)(CMT + CMT_i))}; // CMT update
 				free(p_table);
-				demand_OOB[ppa].cache_bit = 1;
 				bench_algo_end(req); // Algorithm level benchmarking end
 				__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
 			}
@@ -131,7 +131,7 @@ uint32_t demand_set(request *const req){
 		CMT[CMT_i].ppa = ppa; // Update ppa
 		CMT[CMT_i].flag = 1; // Mapping table changed
 		queue_update(CMT[CMT_i].queue_ptr); // Update queue
-		demand_OOB[ppa] = (D_OOB){lpa, 1, 1}; // Update OOB
+		demand_OOB[ppa] = (D_OOB){lpa, 1}; // Update OOB
 		bench_algo_end(req);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
 	}
@@ -141,7 +141,7 @@ uint32_t demand_set(request *const req){
 		demand_eviction(&CMT_i); // Evict one entry in CMT
 		dp_alloc(&ppa);
 		CMT[CMT_i] = (C_TABLE){lpa, ppa, 1, queue_insert((void*)(CMT + CMT_i))}; // CMT update
-		demand_OOB[ppa] = (D_OOB){lpa, 1, 1};
+		demand_OOB[ppa] = (D_OOB){lpa, 1};
 		bench_algo_end(req);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
 	}
@@ -242,11 +242,10 @@ uint32_t demand_eviction(int *CMT_i){
 		p_table[P_IDX].ppa = ppa; // Update page table
 		tp_alloc(&t_ppa); // Translation page allocation
 		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Set translation page
-		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1, 0}; // Update OOB
+		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1}; // Update OOB
 		GTD[D_IDX].ppa = t_ppa; // Update GTD
 		free(p_table);
 	}
-	demand_OOB[ppa].cache_bit = 0; // Mark data page as t_page mapping
 	queue_delete(tail); // Delete queue
 	CMT[*CMT_i] = (C_TABLE){-1, -1, 0, NULL}; // Initialize CMT
 }
@@ -280,8 +279,9 @@ void dpage_GC(){
 	int32_t lpa;
 	int32_t vba;
 	int32_t t_ppa;
-	int32_t pseudo_ppa;
+	int32_t ppa;
 	int32_t PBA2PPA;
+	int32_t origin_ppa[_PPB];
 	int valid_page_num;
 	int CMT_i;
 	D_TABLE* p_table;
@@ -292,6 +292,7 @@ void dpage_GC(){
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
 		if(demand_OOB[i].valid_checker){ // Load valid pages
 			SRAM_load(i, valid_page_num);
+			origin_ppa[valid_page_num] = i;
 			valid_page_num++;
 		}
 	}
@@ -304,9 +305,9 @@ void dpage_GC(){
 	/* Mapping data manage */
 	for(int i = 0; i <= valid_page_num; i++){
 		lpa = d_sram[i].OOB_RAM.reverse_table;
+		CMT_i = CMT_check(lpa, &ppa);
 		/* Cache update */
-		if(d_sram[i].OOB_RAM.cache_bit == 1){ // Check cache bit
-			CMT_i = CMT_check(lpa, &pseudo_ppa); // Search cache
+		if(CMT_i != -1 && ppa == origin_ppa[i]){ // Check cache bit
 			CMT[CMT_i].ppa = PBA2PPA + i; // Cache ppa, flag update
 			CMT[CMT_i].flag = 1;
 		}
@@ -407,7 +408,7 @@ void SRAM_load(int32_t ppa, int idx){
 	d_sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
 	__demand.li->pull_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, assign_pseudo_req(), 0); // Page load
 	d_sram[idx].OOB_RAM = demand_OOB[ppa];	// Page load
-	demand_OOB[ppa] = (D_OOB){-1, 0, 0};	// OOB init
+	demand_OOB[ppa] = (D_OOB){-1, 0};	// OOB init
 }
 
 void SRAM_unload(int32_t ppa, int idx){
@@ -415,7 +416,7 @@ void SRAM_unload(int32_t ppa, int idx){
 	free(d_sram[idx].PTR_RAM);
 	demand_OOB[ppa] = d_sram[idx].OOB_RAM;	// OOB unload
 	d_sram[idx].PTR_RAM = NULL;	// SRAM init
-	d_sram[idx].OOB_RAM = (D_OOB){-1, 0, 0};
+	d_sram[idx].OOB_RAM = (D_OOB){-1, 0};
 }
 
 // Check the case when no page be GCed.

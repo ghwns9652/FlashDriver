@@ -26,7 +26,6 @@ typedef struct demand_mapping_table{
 typedef struct demand_OOB{
 	int32_t reverse_table;
 	unsigned char valid_checker; // 0: invalid, 1: valid
-	unsigned char cache_bit; // 0: mapping on t_page, 1: mapping on cache
 }D_OOB;
 
 typedef struct demand_SRAM{
