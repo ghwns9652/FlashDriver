@@ -165,7 +165,7 @@ uint32_t block_set(const request *req){
 				while (1)
 					printf("AAA");
 			}
-			block_valid_array[PBA] = VALID;
+			//block_valid_array[PBA] = VALID;
 			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			//my_req->end_req = block_end_req;
 			//my_req->params = (void*)params;
