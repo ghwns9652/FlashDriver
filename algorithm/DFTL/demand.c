@@ -352,7 +352,6 @@ void tpage_GC(){
 	int n = 0;
 	int32_t head_ppa;
 	int32_t temp_ppa;
-	int32_t last_block_idx;
 	D_TABLE* GTDcpy = (D_TABLE*)malloc(GTDSIZE);
 	memcpy(GTDcpy, GTD, GTDSIZE);
 	qsort(GTDcpy, GTDENT, sizeof(D_TABLE), ppa_compare);
@@ -362,10 +361,8 @@ void tpage_GC(){
 			break;
 		else{ //
 			SRAM_load(GTDcpy[i].ppa, n);
-			if(n == 0){
+			if(n == 0)
 				head_ppa = GTDcpy[i].ppa - GTDcpy[i].ppa % _PPB;
-				last_block_idx = i;
-			}
 			if(n == _PPB){
 				__demand.li->trim_block(head_ppa, false);
 				for(int j = 0; j < _PPB; j++){
@@ -385,20 +382,6 @@ void tpage_GC(){
 		}
 		TPA_status = head_ppa + n;
 		n = 0;
-	}
-	else{
-		for(int i = last_block_idx + 1; i < GTDENT; i++){
-			if(GTDcpy[i].ppa == -1){
-				printf("Invalid tpage GC\n");
-				break;
-			}
-			temp_ppa = GTDcpy[i].ppa - (GTDcpy[i].ppa % _PPB);
-			if(head_ppa != temp_ppa){
-				__demand.li->trim_block(temp_ppa, false);
-				TPA_status = temp_ppa;
-				break;
-			}
-		}
 	}
 	free(GTDcpy);
 }
