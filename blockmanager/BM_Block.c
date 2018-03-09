@@ -142,6 +142,7 @@ int32_t BM_InitBlockArray()
 		memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(int8_t));
 		blockArray[i].numValid = _PPB;
 		blockArray[i].PE_cycle = 0;
+		blockArray[i].BAD = _NOTBADSTATE;
 	}
 }
 

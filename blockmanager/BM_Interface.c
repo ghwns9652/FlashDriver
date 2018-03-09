@@ -69,6 +69,27 @@ uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
 	return *((PBA_T*)ptr_max_nV_block); // This means value of PBA of maxnV block
 
 }
+
+uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[])
+{
+	/* Return PBA of minPE block whose PE_cycle is minimum */
+	/*
+	 * Parameter: Array(Heap) of PE_map pointer(PE_map)
+	 * PE_map is a Min-heap array, so find the root of the min-heap in PE_cycle using Heap opeartion
+	 */
+
+
+	/* After this function, PE_map Min-heap by PE_cycle */
+	BM_Minheap_PEcycle(blockArray, PE_map);
+
+	/* Make Block_pointer from PE_cycle pointer */
+	void* ptr_min_PE_block = PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*NOP - sizeof(PBA_T);
+
+	return *((PBA_T*)ptr_min_PE_block); // This means value of PBA of minPE block
+
+}
+
+
 uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
 {
 	/* Function which sorts PE_map by PE_cycle with ascending order

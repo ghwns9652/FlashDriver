@@ -184,6 +184,60 @@ int32_t BM__maxheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[])
 	}
 }
 
+
+
+
+/*
+ * Functions for PE_cycle with MIN-HEAP 
+ * !!! FOLLOWINGS ARE NOT VERIFIED !!!
+ */
+
+ /* Make Min-Heap with the pointers of PE_map by PE_cycle in blockArray */
+int32_t BM_Minheap_PEcycle(Block* blockArray, uint8_t* PE_map[])
+{
+	PE_T* temp_PE = (PE_T*)malloc(sizeof(PE_T) * NOB);
+
+	for (int i = 0; i < NOB; ++i) {
+		temp_PE[i] = blockArray[i].PE_cycle;
+	}
+
+	BM__buildminheapPE(temp_PE, PE_map); // 굳이 buildmaxheap으로 따로 만들 필요가 있을까? 의미상으로는 지금이 맞지만 약간 더 비효율적이지 않을까
+
+	free(temp_PE); // 이게 정말 temp일까? heap을 계속 유지하고 변경하려면 이 temp_NV도 계속 유지되고 지속적으로 사용해야 하는 것 아닐까?
+}
+
+
+/* Build min-heap by PE_cycle */
+int32_t BM__buildminheapPE(uint8_t* temp_PE, uint8_t* PE_map[])
+{
+	int32_t i;
+	for (i = NOB / 2; i >= 0; --i) {
+		BM__minheapifyPE(temp_PE, i, PE_map); // Is that OKAY?? I don't know about 'MINheapify'
+	}
+}
+
+int32_t BM__minheapifyPE(uint8_t* temp_PE, int32_t i, uint8_t* PE_map[])
+{
+	int32_t l = 2 * i + 1;
+	int32_t r = 2 * i + 2;
+	int32_t smallest;
+
+	if (l <= NOB - 1 && temp_PE[l] < temp_PE[i]) smallest = l;
+	else smallest = i;
+
+	if (r <= NOB - 1 && temp_PE[r] < temp_PE[smallest])	smallest = r;
+	if (smallest != i) {                                          // 만약 부모 노드의 값인 i가 largest가 아니라면 largest과 i를 바꾼다.
+		
+		SWAP_PE(temp_PE[i], temp_PE[smallest]);
+		SWAP_PE_PTR(PE_map[i], PE_map[smallest]); 
+		
+		BM__minheapifyPE(temp_PE, smallest, PE_map);
+	}
+}
+
+
+
+
 /*
  * Functions for PE_map with SORT
  */

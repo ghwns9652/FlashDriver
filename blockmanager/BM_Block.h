@@ -30,6 +30,7 @@ typedef int8_t		Bad_T;
 
 /* BAD Status of blocks */
 #define _BADSTATE	1
+#define _NOTBADSTATE	0
 
 /* Whether blockArray exists or not */
 #define _BA_EXIST	32

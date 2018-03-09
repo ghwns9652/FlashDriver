@@ -39,12 +39,12 @@ void heapSort(int* list, int count);
 //void max_heapify_cnt(Block* Block_list, uint32_t size_, int32_t i);
 
 #define SWAP_PE(a, b)	\
-	{ uint32_t temp; temp=a; a=b; b=temp; }
+	{ PE_T temp; temp=a; a=b; b=temp; }
 #define SWAP_PE_PTR(a, b)	\
-	{ uint32_t* temp; temp=a; a=b; b=temp; }
+	{ PE_T* temp; temp=a; a=b; b=temp; }
 #define SWAP_NV(a, b)	\
-	{ uint8_t temp; temp=a; a=b; b=temp; }
+	{ nV_T temp; temp=a; a=b; b=temp; }
 #define SWAP_NV_PTR(a, b)	\
-	{ uint8_t* temp; temp=a; a=b; b=temp; }
+	{ nV_T* temp; temp=a; a=b; b=temp; }
 
 #endif // !_BM_HEAP_H_
