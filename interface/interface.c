@@ -1,5 +1,6 @@
 #include "interface.h"
 #include "../include/container.h"
+#include "../include/FS.h"
 #include "../bench/bench.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,8 +8,11 @@
 #include <unistd.h>
 #include <string.h>
 extern struct lower_info __posix;
+extern struct algorithm __normal;
 extern struct algorithm algo_pbase;
+#ifdef lsmtree
 extern struct algorithm algo_lsm;
+#endif
 
 master_processor mp;
 void *p_main(void*);
@@ -72,6 +76,12 @@ void inf_init(){
 	mp.li=&__posix;
 #endif
 
+#ifdef lsmtree
+	mp.algo=&algo_lsm;
+#endif
+#ifdef normal
+	mp.algo=&__normal;
+#endif
 #ifdef page
 	mp.algo=&algo_pbase;
 #endif
@@ -79,15 +89,17 @@ void inf_init(){
 	mp.algo->create(mp.li,mp.algo);
 }
 #ifndef USINGAPP
-bool inf_make_req(const FSTYPE type, const KEYT key, V_PTR value,int mark){
+bool inf_make_req(const FSTYPE type, const KEYT key, value_set *value,int mark){
 #else
-bool inf_make_req(const FSTYPE type, const KEYT key,V_PTR value){
+bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 #endif
 	request *req=(request*)malloc(sizeof(request));
 	req->upper_req=NULL;
 	req->type=type;
 	req->key=key;
-	req->value=value;
+
+	req->value=inf_get_valueset(value->value,req->type);
+	
 	req->end_req=inf_end_req;
 	req->isAsync=false;
 	req->params=NULL;
@@ -115,7 +127,7 @@ bool inf_make_req_Async(void *ureq, void *(*end_req)(void*)){
 	upper_request *u_req=(upper_request*)ureq;
 	req->type=u_req->type;
 	req->key=u_req->key;
-	req->value=u_req->value;
+	req->value=inf_get_valueset(u_req->value,req->type);
 	req->isAsync=true;
 	switch(req->type){
 		case FS_GET_T:
@@ -131,11 +143,14 @@ bool inf_make_req_Async(void *ureq, void *(*end_req)(void*)){
 
 //static int end_req_num=0;
 bool inf_end_req( request * const req){
+#ifdef SNU_TEST
+#else
 	bench_reap_data(req,mp.li);
+#endif
 #ifdef DEBUG
 	printf("inf_end_req!\n");
 #endif
-	if(req->type==FS_GET_T){
+	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
 		int check;
 		memcpy(&check,req->value,sizeof(check));
 		/*
@@ -143,13 +158,14 @@ bool inf_end_req( request * const req){
 			printf("get:%d, number: %d\n",check,end_req_num);*/
 	}
 	if(req->value){
-		free(req->value);
+		inf_free_valueset(req->value, req->type);
 	}
 	if(!req->isAsync){
 		pthread_mutex_unlock(&req->async_mutex);
 	}
-	else
+	else{
 		free(req);
+	}
 	return true;
 }
 void inf_free(){
@@ -176,10 +192,10 @@ void inf_print_debug(){
 void *p_main(void *__input){
 	void *_inf_req;
 	request *inf_req;
-	processor *this=NULL;
+	processor *_this=NULL;
 	for(int i=0; i<THREADSIZE; i++){
 		if(pthread_self()==mp.processors[i].t_id){
-			this=&mp.processors[i];
+			_this=&mp.processors[i];
 		}
 	}
 	while(1){
@@ -188,7 +204,7 @@ void *p_main(void *__input){
 #endif
 		if(mp.stopflag)
 			break;
-		if(!(_inf_req=q_dequeue(this->req_q))){
+		if(!(_inf_req=q_dequeue(_this->req_q))){
 			//sleep or nothing
 			continue;
 		}
@@ -208,4 +224,19 @@ void *p_main(void *__input){
 	}
 	printf("bye bye!\n");
 	return NULL;
+}
+value_set *inf_get_valueset(PTR in_v, int type){
+	value_set *res=(value_set*)malloc(sizeof(value_set));
+	//check dma alloc type
+	res->dmatag=F_malloc((void**)&res->value,PAGESIZE,type);
+	if(in_v){
+		memcpy(res->value,in_v,PAGESIZE);
+	}
+	return res;
+}
+
+void inf_free_valueset(value_set *in, int type){
+	F_free((void*)in->value,in->dmatag,type);
+	free(in);
+
 }

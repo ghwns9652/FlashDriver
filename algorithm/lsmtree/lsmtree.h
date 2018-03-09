@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include "run_array.h"
 #include "skiplist.h"
+#include "bloomfilter.h"
+#include "cache.h"
 #include "../../interface/queue.h"
 #include "../../include/container.h"
 #include "../../include/settings.h"
@@ -13,7 +15,8 @@
 #define HEADERW 3
 #define DATAR 4
 #define DATAW 5
-
+#define GCR 6
+#define GCW 7
 
 typedef struct keyset{
 	KEYT lpa;
@@ -37,6 +40,7 @@ typedef struct lsm_params{
 
 typedef struct lsmtree{
 	struct level *disk[LEVELN];
+	struct level *c_level;
 	PTR level_addr[LEVELN];
 	pthread_mutex_t memlock;
 	pthread_mutex_t templock;
@@ -46,6 +50,9 @@ typedef struct lsmtree{
 	struct skiplist *temptable;
 	struct queue *re_q;
 	struct Entry *tempent;
+#ifdef CACHE
+	struct cache* lsm_cache;
+#endif
 	lower_info* li;
 }lsmtree;
 

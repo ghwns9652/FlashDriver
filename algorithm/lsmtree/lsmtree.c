@@ -8,6 +8,7 @@
 #include "compaction.h"
 #include "run_array.h"
 #include "lsmtree.h"
+#include "page.h"
 #include<stdio.h>
 #ifdef DEBUG
 #endif
@@ -20,6 +21,7 @@ struct algorithm algo_lsm={
 	.remove=lsm_remove
 };
 lsmtree LSM;
+
 uint32_t __lsm_get(request *const);
 uint32_t lsm_create(lower_info *li, algorithm *lsm){
 	LSM.memtable=skiplist_init();
@@ -41,7 +43,7 @@ uint32_t lsm_create(lower_info *li, algorithm *lsm){
 #else
 		target_fpr=(float)RAF/LEVELN;
 #endif
-		LSM.disk[i].fpr=target_fpr;
+		LSM.disk[i]->fpr=target_fpr;
 #endif
 		LSM.level_addr[i]=(PTR)LSM.disk[i];
 	}
@@ -51,7 +53,13 @@ uint32_t lsm_create(lower_info *li, algorithm *lsm){
 	//compactor start
 	compaction_init();
 	q_init(&LSM.re_q,CQSIZE);
+#ifdef CACHE
+	LSM.lsm_cache=cache_init();
+#endif
 	LSM.li=li;
+	algo_lsm.li=li;
+	pm_init();
+	return 0;
 }
 
 void lsm_destroy(lower_info *li, algorithm *lsm){
@@ -59,25 +67,30 @@ void lsm_destroy(lower_info *li, algorithm *lsm){
 	for(int i=0; i<LEVELN; i++){
 		level_free(LSM.disk[i]);
 	}
+#ifdef CACHE
+	cache_free(LSM.lsm_cache);
+#endif
 	skiplist_free(LSM.memtable);
 	if(LSM.temptable)
 		skiplist_free(LSM.temptable);
 }
 
-extern pthread_mutex_t compaction_wait;
-extern int epc_check;
-int comp_target_get_cnt=0;
+extern pthread_mutex_t compaction_wait,gc_wait;
+extern int epc_check,gc_read_wait;
+extern KEYT memcpy_cnt;
+int comp_target_get_cnt=0,gc_target_get_cnt;
 void* lsm_end_req(algo_req* const req){
 	lsm_params *params=(lsm_params*)req->params;
 	request* parents=req->parents;
-	FSTYPE *temp_type;
 	bool havetofree=true;
+	void *req_temp_params=NULL;
 	switch(params->lsm_type){
 		case OLDDATA:
 			//do nothing
 			break;
 		case HEADERR:
 			if(!parents){
+
 				comp_target_get_cnt++;
 				if(epc_check==comp_target_get_cnt){
 #ifdef MUTEXLOCK
@@ -97,7 +110,7 @@ void* lsm_end_req(algo_req* const req){
 						if(inf_assign_try(parents)){
 							break;
 						}else{
-							if(q_enqueue(LSM.re_q,(void*)parents))
+							if(q_enqueue((void*)parents,LSM.re_q))
 								break;
 						}
 					}
@@ -107,10 +120,28 @@ void* lsm_end_req(algo_req* const req){
 			}
 			break;
 		case HEADERW:
+#ifdef CACHE
+
+#else	
+			free(params->value);
+#endif
+			break;
+		case GCR:
+			gc_target_get_cnt++;
+			if(gc_read_wait==gc_target_get_cnt){
+#ifdef MUTEXLOCK
+				pthread_mutex_unlock(&gc_wait);
+#elif defined(SPINLOCK)
+
+#endif
+			}
+			break;
+		case GCW:
+			free(params->value);
 			break;
 		case DATAR:
 			pthread_mutex_destroy(&params->lock);
-			int *req_temp_params=parents->params;
+			req_temp_params=parents->params;
 			free(req_temp_params);
 			break;
 		case DATAW:
@@ -142,7 +173,7 @@ uint32_t lsm_set(request * const req){
 	params->lsm_type=DATAW;
 	params->value=req->value;
 	lsm_req->params=(void*)params;
-	
+
 	lsm_req->end_req=lsm_end_req;
 
 	if(req->type==FS_DELETE_T)
@@ -155,22 +186,38 @@ uint32_t lsm_set(request * const req){
 	req->end_req(req); //end write
 	return 1;
 }
-
+extern bool compaction_idle;
+int nor;
 uint32_t lsm_get(request *const req){
 	void *re_q;
+	static bool temp=false;
+	static bool level_show=false;
+	if(!level_show){
+		level_show=true;
+		level_all_print();
+	}
+	//printf("seq: %d, key:%u\n",nor++,req->key);
 	if((re_q=q_dequeue(LSM.re_q))){
 		request *tmp_req=(request*)re_q;
 
 		bench_algo_start(tmp_req);
 		if(__lsm_get(tmp_req)==3){
-	//		printf("not found_tmp! key:%d \n",tmp_req->key);
+			tmp_req->type=FS_NOTFOUND_T;
 			tmp_req->end_req(tmp_req);
 		}
+	}
+	if(!temp){
+		for(int i=0; i<LEVELN; i++){
+			//printf("level : %d\n",i);
+			//level_print(LSM.disk[i]);
+		}
+		temp=true;
 	}
 	bench_algo_start(req);
 	int res=__lsm_get(req);
 	if(res==3){
-	//	printf("not found! key:%d \n",req->key);
+		printf("seq: %d, key:%u\n",nor++,req->key);
+		req->type=FS_NOTFOUND_T;
 		req->end_req(req);
 	}
 	return res;
@@ -190,7 +237,7 @@ uint32_t __lsm_get(request *const req){
 		req->end_req(req);
 		return 2;
 	}
-	
+
 
 	int level;
 	int run;
@@ -229,7 +276,6 @@ uint32_t __lsm_get(request *const req){
 	pthread_mutex_lock(&LSM.entrylock);
 	if(LSM.tempent){
 		keyset *target=htable_find(LSM.tempent->t_table,req->key);
-		//delete check
 		if(target){
 			params->lsm_type=DATAR;
 			bench_algo_end(req);
@@ -249,36 +295,56 @@ uint32_t __lsm_get(request *const req){
 	}
 	else{
 		//check_sktable
+		int *temp_req=(int*)req->params;
+		level=temp_req[0];
+		run=temp_req[1]+1;
 		mapinfo=(htable*)req->value;
 		keyset *target=htable_find(mapinfo,req->key);
 		if(target){
+#ifdef CACHE
+			Node *t_node=ns_run(LSM.disk[level],run);
+			Entry *_entry=level_find_fromR(t_node,mapinfo->sets[0].lpa);
+			if(_entry){
+				cache_entry *c_entry=cache_insert(LSM.lsm_cache,_entry,0);
+				_entry->c_entry=c_entry;
+			}
+#endif
 			//read target data;
 			params->lsm_type=DATAR;
-
 			bench_algo_end(req);
 			LSM.li->pull_data(target->ppa,PAGESIZE,req->value,0,lsm_req,0);
 			return 1;
 		}
-		int *temp_req=(int*)req->params;
-		level=temp_req[0];
-		run=temp_req[1]+1;
 	}
 
 	for(int i=level; i<LEVELN; i++){
 		pthread_mutex_lock(&LSM.disk[i]->level_lock);
-		entries=level_find(LSM.disk[i],req->key);
+		entries=level_find(LSM.disk[i],req->key);//checking bloomfilter inside this function
 		pthread_mutex_unlock(&LSM.disk[i]->level_lock);
 		if(!entries)continue;
 		for(int j=run; entries[j]!=NULL; j++){
 			Entry *entry=entries[j];
-			//(!)check bloomfilter && check cache
 			params->lsm_type=HEADERR;
 
 			//read mapinfo
 			int *temp_data=(int*)req->params;
 			temp_data[0]=i;
 			temp_data[1]=j;
-
+#ifdef CACHE
+			if(entry->c_entry){
+				keyset *target=htable_find(entry->t_table,req->key);
+				if(target){
+					params->lsm_type=DATAR;
+					cache_update(LSM.lsm_cache,entry);
+					bench_algo_end(req);
+					LSM.li->pull_data(target->ppa,PAGESIZE,req->value,0,lsm_req,0);
+					free(entries);
+					return 1;
+				}
+				continue;
+			}
+#endif
+			//printf("header read!\n");
 			LSM.li->pull_data(entry->pbn,PAGESIZE,req->value,0,lsm_req,0);
 			if(!req->isAsync){
 				pthread_mutex_lock(&params->lock); // wait until read table data;
@@ -289,6 +355,12 @@ uint32_t __lsm_get(request *const req){
 				}
 				else{
 					//read target data;
+#ifdef CACHE	
+					entry->t_table=(htable*)malloc(sizeof(htable));
+					memcpy(entry->t_table,mapinfo,PAGESIZE);
+					cache_entry *c_entry=cache_insert(LSM.lsm_cache,entry,0);
+					entry->c_entry=c_entry;
+#endif
 					params->lsm_type=DATAR;
 					bench_algo_end(req);
 					LSM.li->pull_data(target->ppa,PAGESIZE,req->value,0,lsm_req,0);
@@ -309,7 +381,7 @@ uint32_t __lsm_get(request *const req){
 }
 
 uint32_t lsm_remove(request *const req){
-	lsm_set(req);
+	return lsm_set(req);
 }
 
 keyset *htable_find(htable *table, KEYT target){

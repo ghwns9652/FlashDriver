@@ -2,11 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
+#include "../include/lsm_settings.h"
+#include "../include/FS.h"
 #include "../include/settings.h"
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
-int main(){
+int main(){/*
 	int Input_cycle;
 	int Input_type;
 	int start;
@@ -53,26 +56,38 @@ int main(){
 	}
 
 	printf("benchmark setting done. starts now.\n");
-
+*/
 
 	inf_init();
+	bench_init(1);
+	char t_value[PAGESIZE];
+	memset(t_value,'x',PAGESIZE);
+	bench_add(RANDRW,0,128*1024,1024*64);
+//	bench_add(RANDSET,0,15*1024,15*1024);
+//	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
-	while((value=get_bench())){
+#ifdef SNU_TEST
+	while(1){
 		char *data=(char*)malloc(PAGESIZE);
 		memset(data,0,PAGESIZE);
-		if(value->type==FS_SET_T){
-			memcpy(data,&value->key,sizeof(value->key));
-		}
-		inf_make_req(value->type,value->key,data,value->mark);
+		inf_make_req(FS_SET_T,rand()%UINT_MAX,data,0);
 	}
+#else
+	value_set temp;
+	temp.value=t_value;
+	temp.dmatag=0;
+	while((value=get_bench())){
+		inf_make_req(value->type,value->key,&temp,value->mark);
+	}
+#endif
 	
 	while(!bench_is_finish()){
 #ifdef LEAKCHECK
 		sleep(1);
 #endif
 	}
-	inf_free();
 	bench_print();
 	bench_free();
+	inf_free();
 	return 0;
 }

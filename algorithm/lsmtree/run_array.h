@@ -3,7 +3,9 @@
 #include "../../include/container.h"
 #include "../../include/settings.h"
 #include "../../include/lsm_settings.h"
+#include "cache.h"
 #include "lsmtree.h"
+#include "bloomfilter.h"
 
 struct htable;
 struct skiplis;
@@ -14,18 +16,26 @@ typedef struct Entry{
 	uint8_t bitset[KEYNUM/8];
 	uint64_t version;
 #ifdef BLOOM
-	BF *filter
+	BF *filter;
+#endif
+
+#ifdef SNU_TEST
+	KEYT id;
+#endif
+
+#ifdef CACHE
+	cache_entry *c_entry;
 #endif
 	struct htable *t_table;
-	bool iscompactioning;
+	bool iscompactioning; //0->nocomfaction, 1->iscompactioning, 2->already read
 }Entry;
 
 typedef struct Node{
 	int n_num;
 	int m_num;
 	int e_size;
-	int start;
-	int end;
+	KEYT start;
+	KEYT end;
 	char **body_addr;
 }Node;
 
@@ -61,13 +71,15 @@ level *level_clear(level *);//
 level *level_copy(level *);//
 Entry **level_find(level *,KEYT key);//
 Entry *level_find_fromR(Node *, KEYT key);//
-int level_range_find(level *,KEYT start, KEYT end, Entry ***);//
+int level_range_find(level *,KEYT start, KEYT end, Entry ***,bool compaction);//
 bool level_check_overlap(level*,KEYT start, KEYT end);//a
 bool level_full_check(level *);//
 Node *level_insert(level *,Entry*);//
+Node *level_insert_seq(level *, Entry *);
 Entry *level_get_next(Iter *);//
 Iter *level_get_Iter(level *);//
 void level_print(level *);//
+void level_all_print();//
 void level_free(level *);//
 void level_free_entry(Entry *);//
 
