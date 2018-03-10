@@ -201,11 +201,15 @@ algo_req* assign_pseudo_req(){
 }
 
 int CMT_check(int32_t lpa, int32_t *ppa){
+	int CMT_idx = lpa % CMTENT;
 	for(int i = 0; i < CMTENT; i++){
-		if(CMT[i].lpa == lpa){ // Find lpa in CMT
-			*ppa = CMT[i].ppa; // Return ppa in CMT
-			return i; //CMT_i
+		if(CMT_idx == CMTENT)
+			CMT_idx = 0;
+		if(CMT[CMT_idx].lpa == lpa){ // Find lpa in CMT
+			*ppa = CMT[CMT_idx].ppa; // Return ppa in CMT
+			return CMT_idx; //CMT_i
 		}
+		CMT_idx++;
 	}
 	return -1; //No lpa in CMT
 }
