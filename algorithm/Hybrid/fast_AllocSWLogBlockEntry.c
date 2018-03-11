@@ -42,9 +42,11 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address)
 	
 	if(offset == 0){
         //FAST_Algorithm.li->trim_block(BLOCK(sw_MappingInfo->physical_block), true);
-		if(fast_SwitchSWLogBlock(logical_block) != eNOERROR){
+		/*
+		if(fast_SwitchSWLogBlock(logical_block, req) != eNOERROR){
 			fast_MergeSWLogBlock(logical_block);
 		}
+		*/
 		sw_MappingInfo->logical_block = logical_block;
 		sw_MappingInfo->number_of_stored_sector = 0;
 	}

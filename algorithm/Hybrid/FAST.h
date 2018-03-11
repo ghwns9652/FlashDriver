@@ -80,7 +80,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address);
 char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address);
 
 /* FAST_Remove */
-char fast_SwitchSWLogBlock(uint32_t log_block_number);
+char fast_SwitchSWLogBlock(uint32_t log_block_number, request* const req);
 char fast_MergeSWLogBlock(uint32_t log_block_number);
 char fast_MergeRWLogBLock(uint32_t log_block_number);
 
@@ -133,5 +133,9 @@ extern uint32_t PAGE_PER_BLOCK;
 extern uint32_t TOTAL_SIZE;
 
 extern uint32_t NUMBER_OF_DATA_BLOCK;
+
+extern const char DATA_BLOCK;
+extern const char SW_LOG_BLOCK;
+extern const char RW_LOG_BLOCK;
 
 extern algorithm FAST_Algorithm;
