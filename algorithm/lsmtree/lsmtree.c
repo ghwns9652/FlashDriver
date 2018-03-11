@@ -8,6 +8,7 @@
 #include "compaction.h"
 #include "run_array.h"
 #include "lsmtree.h"
+#include "page.h"
 #include<stdio.h>
 #ifdef DEBUG
 #endif
@@ -52,34 +53,37 @@ uint32_t lsm_create(lower_info *li, algorithm *lsm){
 	//compactor start
 	compaction_init();
 	q_init(&LSM.re_q,CQSIZE);
-
 #ifdef CACHE
 	LSM.lsm_cache=cache_init();
 #endif
 	LSM.li=li;
+	algo_lsm.li=li;
+	pm_init();
+	return 0;
 }
 
 void lsm_destroy(lower_info *li, algorithm *lsm){
-#ifdef CACHE
-	cache_free(LSM.lsm_cache);
-#endif
 	compaction_free();
 	for(int i=0; i<LEVELN; i++){
 		level_free(LSM.disk[i]);
 	}
+#ifdef CACHE
+	cache_free(LSM.lsm_cache);
+#endif
 	skiplist_free(LSM.memtable);
 	if(LSM.temptable)
 		skiplist_free(LSM.temptable);
 }
 
-extern pthread_mutex_t compaction_wait;
-extern int epc_check;KEYT memcpy_cnt;
-int comp_target_get_cnt=0;
+extern pthread_mutex_t compaction_wait,gc_wait;
+extern int epc_check,gc_read_wait;
+extern KEYT memcpy_cnt;
+int comp_target_get_cnt=0,gc_target_get_cnt;
 void* lsm_end_req(algo_req* const req){
 	lsm_params *params=(lsm_params*)req->params;
 	request* parents=req->parents;
-	FSTYPE *temp_type;
 	bool havetofree=true;
+	void *req_temp_params=NULL;
 	switch(params->lsm_type){
 		case OLDDATA:
 			//do nothing
@@ -88,9 +92,6 @@ void* lsm_end_req(algo_req* const req){
 			if(!parents){
 
 				comp_target_get_cnt++;
-#ifdef CACHE
-				comp_target_get_cnt+=memcpy_cnt;
-#endif
 				if(epc_check==comp_target_get_cnt){
 #ifdef MUTEXLOCK
 					pthread_mutex_unlock(&compaction_wait);
@@ -109,7 +110,7 @@ void* lsm_end_req(algo_req* const req){
 						if(inf_assign_try(parents)){
 							break;
 						}else{
-							if(q_enqueue(LSM.re_q,(void*)parents))
+							if(q_enqueue((void*)parents,LSM.re_q))
 								break;
 						}
 					}
@@ -125,9 +126,22 @@ void* lsm_end_req(algo_req* const req){
 			free(params->value);
 #endif
 			break;
+		case GCR:
+			gc_target_get_cnt++;
+			if(gc_read_wait==gc_target_get_cnt){
+#ifdef MUTEXLOCK
+				pthread_mutex_unlock(&gc_wait);
+#elif defined(SPINLOCK)
+
+#endif
+			}
+			break;
+		case GCW:
+			free(params->value);
+			break;
 		case DATAR:
 			pthread_mutex_destroy(&params->lock);
-			int *req_temp_params=parents->params;
+			req_temp_params=parents->params;
 			free(req_temp_params);
 			break;
 		case DATAW:
@@ -173,9 +187,16 @@ uint32_t lsm_set(request * const req){
 	return 1;
 }
 extern bool compaction_idle;
+int nor;
 uint32_t lsm_get(request *const req){
 	void *re_q;
 	static bool temp=false;
+	static bool level_show=false;
+	if(!level_show){
+		level_show=true;
+		level_all_print();
+	}
+	//printf("seq: %d, key:%u\n",nor++,req->key);
 	if((re_q=q_dequeue(LSM.re_q))){
 		request *tmp_req=(request*)re_q;
 
@@ -195,6 +216,7 @@ uint32_t lsm_get(request *const req){
 	bench_algo_start(req);
 	int res=__lsm_get(req);
 	if(res==3){
+		printf("seq: %d, key:%u\n",nor++,req->key);
 		req->type=FS_NOTFOUND_T;
 		req->end_req(req);
 	}
@@ -322,7 +344,7 @@ uint32_t __lsm_get(request *const req){
 				continue;
 			}
 #endif
-			printf("header read!\n");
+			//printf("header read!\n");
 			LSM.li->pull_data(entry->pbn,PAGESIZE,req->value,0,lsm_req,0);
 			if(!req->isAsync){
 				pthread_mutex_lock(&params->lock); // wait until read table data;
@@ -359,7 +381,7 @@ uint32_t __lsm_get(request *const req){
 }
 
 uint32_t lsm_remove(request *const req){
-	lsm_set(req);
+	return lsm_set(req);
 }
 
 keyset *htable_find(htable *table, KEYT target){
