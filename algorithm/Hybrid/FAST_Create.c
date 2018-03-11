@@ -75,7 +75,7 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     PAGE_PER_BLOCK = li->PPB;
     TOTAL_SIZE = li->TS;
 
-    NUMBER_OF_DATA_BLOCK = NUMBER_OF_BLOCK/2 + 1;
+    NUMBER_OF_DATA_BLOCK = NUMBER_OF_BLOCK;
     algo->li = li;      /* li means Lower Info */
 
     // Memory Allocation for Global Variables (Pointer)
@@ -88,22 +88,24 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     tableInfo->sw_MappingTable->data = 
         (SW_MappingInfo*)malloc(sizeof(SW_MappingInfo) * PAGE_PER_BLOCK);
     memset(tableInfo->sw_MappingTable->data, 0, sizeof(SW_MappingInfo) * PAGE_PER_BLOCK);
+
     tableInfo->rw_MappingTable->data = 
         (RW_MappingInfo*)malloc(sizeof(RW_MappingInfo) * PAGE_PER_BLOCK);
     memset(tableInfo->rw_MappingTable->data, 0, sizeof(RW_MappingInfo) * PAGE_PER_BLOCK);
+
     tableInfo->block_MappingTable->data = 
         (Block_MappingInfo*)malloc(sizeof(Block_MappingInfo) * NUMBER_OF_DATA_BLOCK);
-    memset(tableInfo->block_MappingTable->data, 0, sizeof(Block_MappingInfo) * PAGE_PER_BLOCK);
+    memset(tableInfo->block_MappingTable->data, 0, sizeof(Block_MappingInfo) * NUMBER_OF_DATA_BLOCK);
 
     // Setting block mapping information
-    BLOCK_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_BLOCK);
+    BLOCK_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_BLOCK+1+NUMBER_OF_RW_LOG_BLOCK);
     PAGE_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_PAGE);
     tableInfo->rw_MappingTable->rw_log_block = (uint32_t*)malloc(sizeof(uint32_t)*NUMBER_OF_RW_LOG_BLOCK);
     tableInfo->rw_MappingTable->current_position = 0;
     tableInfo->rw_MappingTable->number_of_full_log_block = 0;
     tableInfo->rw_MappingTable->offset = 0;
 
-    memset(BLOCK_STATE, ERASED, NUMBER_OF_BLOCK);
+    memset(BLOCK_STATE, ERASED, NUMBER_OF_BLOCK+1+NUMBER_OF_RW_LOG_BLOCK);
     memset(PAGE_STATE, ERASED, NUMBER_OF_PAGE);
 
     for(int i = 0; i < NUMBER_OF_DATA_BLOCK; i++){

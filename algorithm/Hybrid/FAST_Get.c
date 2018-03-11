@@ -17,7 +17,7 @@
 uint32_t FAST_Get(request* const req)
 {
     uint32_t            key;
-    char*               value;
+    value_set*          value;
     uint32_t            physical_address;
     FAST_Parameters*    params;
     algo_req*           my_req;

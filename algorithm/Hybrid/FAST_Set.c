@@ -14,7 +14,7 @@ uint32_t FAST_Set(request* const req)
     FAST_Parameters*    params;
     algo_req*           my_req;
     KEYT                key;
-    char*               value;
+    value_set*          value;
     uint32_t            physical_address;
 
     key = req->key;

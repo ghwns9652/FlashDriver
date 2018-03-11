@@ -132,4 +132,6 @@ extern uint32_t SIZE_OF_BLOCK;
 extern uint32_t PAGE_PER_BLOCK;
 extern uint32_t TOTAL_SIZE;
 
+extern uint32_t NUMBER_OF_DATA_BLOCK;
+
 extern algorithm FAST_Algorithm;
