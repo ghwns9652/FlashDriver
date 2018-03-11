@@ -80,7 +80,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address);
 char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address);
 
 /* FAST_Remove */
-char fast_SwitchSWLogBlock(uint32_t log_block_number, request* const req);
+char fast_SwitchSWLogBlock(uint32_t log_block_number);
 char fast_MergeSWLogBlock(uint32_t log_block_number);
 char fast_MergeRWLogBLock(uint32_t log_block_number);
 
