@@ -11,7 +11,7 @@
 
 char fast_MergeSWLogBlock(uint32_t logical_block)
 {
-    int     e;      /* error number */
+    int e;      /* error number */
     SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
     uint32_t data_block = BLOCK_TABLE(sw_MappingTable->data->logical_block);
 	int log_block = 0;

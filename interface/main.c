@@ -12,7 +12,6 @@ int main(){/*
 	int start;
 	int end;
 	int Input_size;
-
 	printf("How many times would you run a benchmark?");
 	scanf("%d", &Input_cycle);
 	bench_init(Input_cycle);
@@ -49,9 +48,7 @@ int main(){/*
 			printf("initilization done.\n");
 		else
 			printf("please type in next benchmark settings.\n");
-
 	}
-
 	printf("benchmark setting done. starts now.\n");
 */
 

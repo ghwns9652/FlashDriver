@@ -3,15 +3,14 @@
 /**
  * Function : fast_AllocDataBlockEntry(int key, int* physical_address)
  * 
- * Description : 
- *  Find a physical page in Data Block.
- *   First, seperate key into block and offset.
- *   Second, translate logical block to physical block using block table.
- *   Return state of translated address.
- *    If state is ERASED or VALID, update state.
- *    ERASED -> VALID, VALID -> INVALID
+ * @deatils     Find a physical page in Data Block.
+ *              First, seperate key into block and offset.
+ *              Second, translate logical block to physical block using block table.
+ *              Return state of translated address.
+ *              If state is ERASED or VALID, update state.
+ *              ERASED -> VALID, VALID -> INVALID
  * 
- * Returns :
+ * Returns : 
  *  physical_address
  * 
  */
@@ -29,7 +28,7 @@ char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
     *physical_address = ADDRESS(physical_block, offset);
     char state = GET_PAGE_STATE(*physical_address);
 
-    /* Should Use Block Mapping Table */
+    // Should Use Block Mapping Table
 	if(state == VALID){
 		SET_PAGE_STATE(*physical_address, INVALID);
 	}
