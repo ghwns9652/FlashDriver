@@ -1,11 +1,11 @@
 #include "PM_operation.h"
 
 //use this global parameters to count 
-int64_t block_position;
-int64_t local_page_position;
-int64_t reserved_local;
-int64_t reserved_block;
-
+int64_t block_position = -1;
+int64_t local_page_position = 0;
+int64_t reserved_local = 0;
+int64_t reserved_block = -1;
+int8_t GC_phase = 0;
 
 void Selector_Init(BINFO** bp)//initializes selector.
 {

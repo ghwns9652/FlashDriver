@@ -9,6 +9,7 @@ extern int64_t local_page_position;
 extern int64_t block_position;
 extern int64_t reserved_local;
 extern int64_t reserved_block;
+extern int8_t GC_phase;
 
 struct algorithm algo_pbase=
 {
@@ -22,7 +23,6 @@ struct algorithm algo_pbase=
 uint32_t PPA_status = 0;//GC target PPA.
 int init_done = 0;//check if initial write is done.
 int rsv_ppa = 0;//first ppa of reserved area.
-int GC_phase = 0;
 TABLE *page_TABLE;
 OOB *page_OOB;
 SRAM *page_SRAM;
@@ -161,8 +161,8 @@ uint32_t pbase_remove(request* const req)
 
 uint32_t SRAM_load(int ppa, int a)
 {
-	PTR value_PTR;
-	value_PTR =(PTR)malloc(PAGESIZE);
+	value_set* value_PTR;
+	value_PTR =(value_set*)malloc(sizeof(value_PTR));
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.

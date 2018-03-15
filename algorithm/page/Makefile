@@ -1,11 +1,3 @@
-CC=gcc
-
-CFLAGS +=\
-		 -g\
-		 -std=c99\
-		 -Wno-discarded-qualifiers\
-
-
 SRCS +=\
 		PM_blockqueue.c\
 		PM_operation.c\
