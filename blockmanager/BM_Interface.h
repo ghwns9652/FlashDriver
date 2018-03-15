@@ -21,6 +21,11 @@ int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA);
 uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[]);
 
 
+/*
+ * Function returning PBA of minPE block
+ */
+uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[]);
+
 
 /* 
  * Function to wear-leveling 
