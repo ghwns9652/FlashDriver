@@ -6,35 +6,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+#define PPB 256		/* Actually NOT THIS. REAL PPB is in "container.h" */
+// container에 있는 PPB 찾아서 macro로 찾을 수 있게 바꿔놓자.
+// include/settings.h 에 _PPB(256) 으로 나와있는 것 같다
+#define NOP 33554432	/* Actually NOT THIS. */
+#define NOB 131072	/* Actually NOT THIS. */
+
+
 #define NIL	-1
+
+/* Size of ptrBlock */
+/* Should be used in declaration file, and it is equal to Declaration block size */
+#define BSIZE(arr)	sizeof(arr)/sizeof(Block*)
 
 
 /*
  * SWAP Macros
  */
 
-#define SWAP(a, b) {int32_t temp; temp=a; a=b; b=temp;} 
+#define SWAP(a, b) {int32_t temp; temp=a; a=b; b=temp;} // 다형성을 위해 void*로 할 필요는 없을까?
+#define SWAP_BLOCK(a, b)	\
+	{ Block* temp; temp=a; a=b; b=temp; }
+#define SWAP_PBA(a, b)		\
+	{ uint32_t tempPBA; tempPBA = a->PBA; a->PBA = b->PBA; b->PBA = tempPBA; } 
+#define SWAP_ValidP(a, b)		\
+	{ uint32_t tempValidP; tempValidP = a->ValidP; a->ValidP = b->ValidP; b->ValidP = tempValidP; }
+#define SWAP_CNT(a, b)		\
+	{ uint32_t tempcnt; tempcnt = a->numValid; a->numValid = b->numValid; b->numValid = tempcnt; }
+//#define SWAP_PE(a, b)		\
+//	{ uint32_t tempPE; tempPE = a->PE; a->PE = b->PE; b->PE = tempPE; }
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* ----------------------------------------------------------------------------- */
-/* (IGNORE!) Ignore following codes. Error handling functions are not completed. */
 
 
  /*
@@ -43,8 +48,15 @@
  /* Error Number Indicating NO ERROR */
 #define eNOERROR 0
 
+
 /* error macro */
 #define ERR(e)	{ printf("Error: %d\n", (int32_t)e); return e; }
+
+
+
+
+
+
 
 
 /*

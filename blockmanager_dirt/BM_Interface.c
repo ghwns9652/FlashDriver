@@ -12,7 +12,6 @@ int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA)
 
 #if (METHOD == 1)
 	blockArray[PBA].ValidP[offset] = BM_INVALIDPAGE;
-	blockArray[PBA].numValid--;
 	return (eNOERROR);
 #endif
 
@@ -23,7 +22,6 @@ int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA)
 	}
 	else {
 		blockArray[PBA].ValidP[offset] = BM_INVALIDPAGE;
-		blockArray[PBA].numValid--;
 		return (eNOERROR);
 	}
 #endif
@@ -100,9 +98,25 @@ uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
 	 * (Warning) We need 'SWAP REAL DATA IN FLASH'. Current codes have no this step.
 	 */
 
+	/* 어떤 식으로 할까? 
+	1. PE_cycle 순서대로 sorting해서 그 순서대로 아예 PBA를 바꿔버리기 
+	2. 가쟝 PE_cycle이 높은 block과 가장 PE_cycle이 낮은 block의 데이터를 교환하기(Heap으로 하는 게 낫을려나)(물론 둘 다 Badblock이 아닌 걸로)
+	*/
+	
+	
+	/* 교수님 생각 */
+	/*
+	 * wear-leveling은 가끔 일어나는 작업이고, 우리 연구주제는 wear-leveling 자체가 아니니까 간단하게 구현하도록 한다.
+	 * free block pool을 만들 때, 그 allocation 대상을 PE_cycle이 가장 낮은 block을 return해서 하는 방식으로
+	 * max와 min의 차이가 어느 정도 일어날 때 wear-leveling이 일어나거나 등..
+	 */
+	// 그런데 free block pool은 어디서 관리되지? 경택이인가?
+	
 	/* Sort PE_map by PE_cycle */
 	BM_SortPE(blockArray, PE_map);
 	
+
+
 	return (eNOERROR);
 }
 
@@ -142,3 +156,14 @@ inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
 
 
 }
+
+/*
+추가할 것
+GC할 때마다 부르는 함수
+GC하면.. numValid==0이고 모든 ValidP[]도 VALID 상태가 되겠지(ERASE를 따로 만들어야 하나?)
+
+free block pool 쪽에서도 뭔가 해야할 것 같은데.. 해당 block을 free block pool에 넣어야 하나?
+
+
+PE cycle 늘리는 거, numValid 늘리는 거, ValidP[]를 바꾸는 것 등... 인터페이스 함수 필요할까? 한줄이면 되겠지만 inline으로다가 주면 좋을듯?
+*/
