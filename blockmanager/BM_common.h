@@ -1,10 +1,11 @@
 #ifndef _BM_COMMON_H_
 #define _BM_COMMON_H_
 
-#include "../../include/container.h"
+#include "../include/container.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define NIL	-1
 

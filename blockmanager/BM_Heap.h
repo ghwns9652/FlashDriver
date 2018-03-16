@@ -11,27 +11,22 @@ int32_t BM_Maxheap_numValid(Block* blockArray, uint8_t* numValid_map[]);
 int32_t BM__buildmaxheapNV(uint8_t* temp_NV, uint8_t* numValid_map[]);
 int32_t BM__maxheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[]);
 
+int32_t BM_Minheap_PEcycle(Block* blockArray, uint8_t* PE_map[]);
+int32_t BM__buildminheapPE(PE_T* temp_PE, uint8_t* PE_map[]);
+int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, uint8_t* PE_map[]);
+
+
+
+/* Sorting algorithms foor blockArray and PE_map */
 int32_t BM_SortPE(Block* blockArray, uint32_t* PE_map[]);
 void BM__quicksort(uint32_t* temp_PE, int p, int r, uint32_t* PE_map[]); // If this function works, it would be maybe better to fix with 'quicksort_Optimized'
 
-/*
-* Heap Functions for ptrBlock
-*/
 
-
-
-void max_heapify_cnt_(Block* ptrBlock[], uint32_t size_, int32_t i);
-void build_max_heap_cnt_(Block* ptrBlock[], uint32_t size);
 
 /* --------------------------------- */
-
-
-
-uint32_t heap_maximum_extract(int* list, int size);
-uint32_t heap_maximum(int* list);
-void build_max_heap(int* list, int size);
-void max_heapify(int* list, int count, int i);
-void heapSort(int* list, int count);
+/*
+ * SWAP Macros
+ */
 
 #define SWAP_PE(a, b)	\
 	{ PE_T temp; temp=a; a=b; b=temp; }

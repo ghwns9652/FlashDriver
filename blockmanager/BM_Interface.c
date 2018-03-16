@@ -8,7 +8,7 @@
 int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA)
 {
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-	uint8_t offset = PPA % PPB;
+	uint8_t offset = PPA % _PPB;
 
 #if (METHOD == 1)
 	blockArray[PBA].ValidP[offset] = BM_INVALIDPAGE;
@@ -36,7 +36,7 @@ int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA)
 	 */
 
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-	uint8_t offset = PPA % PPB;
+	uint8_t offset = PPA % _PPB;
 
 
 	/* if - else if should be switched if invalid page is more than valid page */
@@ -66,7 +66,7 @@ uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
 	BM_Maxheap_numValid(blockArray, numValid_map);
 
 	/* Make Block_pointer from numValid_pointer */
-	void* ptr_max_nV_block = numValid_map[0] - sizeof(ValidP_T)*NOP - sizeof(PBA_T);
+	void* ptr_max_nV_block = numValid_map[0] - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
 
 	return *((PBA_T*)ptr_max_nV_block); // This means value of PBA of maxnV block
 
@@ -85,7 +85,7 @@ uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[])
 	BM_Minheap_PEcycle(blockArray, PE_map);
 
 	/* Make Block_pointer from PE_cycle pointer */
-	void* ptr_min_PE_block = PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*NOP - sizeof(PBA_T);
+	void* ptr_min_PE_block = PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
 
 	return *((PBA_T*)ptr_min_PE_block); // This means value of PBA of minPE block
 
@@ -94,7 +94,7 @@ uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[])
 
 uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
 {
-	/* Function which sorts PE_map by PE_cycle with ascending order
+	/* Function which sorts PE_map by PE_cycle with ascending order */
 	/*@
 	 * Parameter: Array of PE_cycle pointer(PE_map)
 	 * (Warning) We need 'SWAP REAL DATA IN FLASH'. Current codes have no this step.
@@ -108,7 +108,7 @@ uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
 
 int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
 {
-	/* This function should be called when GC
+	/* This function should be called when GC */
 	/*
 	 * Parameter: PPA(or PBA?)
 	 * Update status of corresponding block
@@ -118,7 +118,7 @@ int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 
 	blockArray[PBA].numValid = 0;
-	memset(blockArray[PBA].ValidP, BM_VALIDPAGE, NOP);
+	memset(blockArray[PBA].ValidP, BM_VALIDPAGE, _NOP);
 
 	return (eNOERROR);
 }
@@ -127,7 +127,7 @@ inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
 {
 	/* This function should be called when Push */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-	uint8_t offset = PPA % PPB;
+	uint8_t offset = PPA % _PPB;
 
 	blockArray[PBA].ValidP[offset] = BM_WRITTEN; /* Not Determined yet */ /* What is BM_WRITTEN? */
 

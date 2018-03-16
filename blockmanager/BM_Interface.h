@@ -34,7 +34,7 @@ uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[]);
 
 
 /* Function with primitive */
-int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
+int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA);
 inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA);
 inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA);
 
