@@ -1,23 +1,16 @@
 #include "../../include/container.h"
 #include "demand_queue.h"
 
-#define CACHESIZE (8*K)
+#define CACHESIZE (40*K)
 #define EPP (PAGESIZE / sizeof(D_TABLE)) //Number of table entries per page
 #define NTP (_NOP / EPP) //Number of Translation Page
 #define	GTDSIZE (sizeof(D_TABLE) * NTP)
 //#define CMTSIZE (CACHESIZE - GTDSIZE)
 #define CMTSIZE (sizeof(C_TABLE) * ((CACHESIZE - GTDSIZE) / sizeof(C_TABLE)))
-#define D_IDX (lpa/EPP)	// Idx of directory table
+#define D_IDX (lpa/EPP)	// Idx of global transaction directory table
 #define P_IDX (lpa%EPP)	// Idx of page table
 #define GTDENT (GTDSIZE/sizeof(D_TABLE))	// Num of GTD entries
-#define CMTENT (CMTSIZE/sizeof(C_TABLE))	// Num of CMT entries
-
-typedef struct cached_table{
-	int32_t lpa;
-	int32_t ppa;
-	unsigned char flag; // 0: unchanged, 1: changed
-	LINKED_LIST *queue_ptr;
-}C_TABLE;
+#define CMTENT (CMTSIZE/EPP)	// Num of CMT entries
 
 typedef struct demand_mapping_table{
 	int32_t ppa; //Index = lpa
@@ -32,6 +25,13 @@ typedef struct demand_SRAM{
 	D_OOB OOB_RAM;
 	PTR PTR_RAM;
 }D_SRAM;
+
+typedef struct cached_table{
+	int32_t GTD_idx;
+	D_TABLE p_table[EPP];	
+	unsigned char flag; // 0: unchanged, 1: changed
+	LINKED_LIST *queue_ptr;
+}C_TABLE;
 
 typedef struct demand_params{
 	int test;

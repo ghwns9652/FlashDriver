@@ -7,7 +7,7 @@ CFLAGS +=\
 
 
 SRCS +=\
-	   demand.c\
+	   demand_v2.c\
 	   demand_queue.c\
 
 OBJS :=\

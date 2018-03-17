@@ -9,8 +9,8 @@
 
 int main(){
 	bench_init(2);
-	bench_add(RANDSET,0,1024*30,1024*30);
-	bench_add(RANDGET,0,1024*30,1024*30);
+	bench_add(SEQSET,0,1024*30,1024*30);
+	bench_add(SEQGET,0,1024*30,1024*30);
 	inf_init();
 	bench_value *value;
 	while((value=get_bench())){
