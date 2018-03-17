@@ -29,7 +29,6 @@ int32_t PBA_status; // Block allocation
 int8_t needGC; // Indicates need of GC
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
-	printf("CMTENT : %ld\n", CMTENT);
 	// Table Allocation
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 	CMT = (C_TABLE*)malloc(CMTSIZE);
@@ -85,8 +84,15 @@ uint32_t demand_get(request *const req){
 	/* Cache hit */
 	if((CMT_i = CMT_check(lpa, &ppa)) != -1){
 		queue_update(CMT[CMT_i].queue_ptr);	// Update queue
-		bench_algo_end(req); // Algorithm level benchmarking end
-		__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
+		if(ppa != -1){
+			bench_algo_end(req); // Algorithm level benchmarking end
+			__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
+		}
+		else{
+			printf("invalid ppa read\n");
+			bench_algo_end(req);
+			my_req->end_req(my_req);
+		}
 	}
 	/* Cache miss */
 	else{
@@ -140,7 +146,6 @@ uint32_t demand_set(request *const req){
 			CMT[CMT_i].flag = 1;
 			demand_OOB[GTD[D_IDX].ppa].valid_checker = 0;
 		}
-		CMT[CMT_i].flag = 1; // Mapping table changed
 		queue_update(CMT[CMT_i].queue_ptr); // Update queue
 		demand_OOB[ppa] = (D_OOB){lpa, 1}; // Update OOB
 		bench_algo_end(req);
@@ -155,11 +160,11 @@ uint32_t demand_set(request *const req){
 		t_ppa = GTD[D_IDX].ppa;
 		p_table = CMT[CMT_i].p_table;
 		// Load t_page or make new t_page
-		if(t_ppa != -1){
+		if(t_ppa != -1){ // Load t_page to cache
 			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
 			demand_OOB[t_ppa].valid_checker = 0;
 		}
-		else{
+		else{ // Make new t_page
 			for(int i = 0; i < EPP; i++)
 				p_table[i].ppa = -1;
 		}
@@ -212,7 +217,7 @@ uint32_t demand_remove(request *const req){
 				CMT[CMT_i].flag = 1;
 			}
 			else
-				printf("Error ; No such data");
+				printf("Error : No such data");
 		}
 		else
 			printf("Error : No such data");
@@ -256,7 +261,7 @@ int CMT_check(int32_t lpa, int32_t *ppa){
 
 // Make empty cache entry queue function
 uint32_t demand_eviction(int *CMT_i){
-	int32_t lpa;
+	int32_t victim_idx;
 	int32_t ppa;
 	int32_t t_ppa;
 	D_TABLE *p_table;
@@ -270,14 +275,16 @@ uint32_t demand_eviction(int *CMT_i){
 	}
 	/* Eviction */
 	*CMT_i = (int)((C_TABLE*)(tail->DATA) - CMT); // Save CMT_i of tail
-	lpa = CMT[*CMT_i].GTD_idx; // Get lpa of CMT_i
+	victim_idx = CMT[*CMT_i].GTD_idx; // Get lpa of CMT_i
 	if(CMT[*CMT_i].flag != 0){ // When CMT_i has changed
-		if((t_ppa = GTD[D_IDX].ppa) != -1)	// When it's not a first t_page
+		if((t_ppa = GTD[victim_idx].ppa) != -1)	// When it's not a first t_page
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
 		tp_alloc(&t_ppa);
+		printf("t_ppa : %d\n", t_ppa);
 		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)CMT[*CMT_i].p_table, 0, assign_pseudo_req(), 0); // Get page table
-		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1}; // Update OOB
-		GTD[D_IDX].ppa = t_ppa; // Update GTD
+		printf("CHECK\n");
+		demand_OOB[t_ppa] = (D_OOB){victim_idx, 1}; // Update OOB
+		GTD[victim_idx].ppa = t_ppa; // Update GTD
 	}
 	queue_delete(tail); // Delete queue
 	CMT[*CMT_i].GTD_idx = -1;

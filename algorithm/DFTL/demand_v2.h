@@ -10,7 +10,7 @@
 #define D_IDX (lpa/EPP)	// Idx of global transaction directory table
 #define P_IDX (lpa%EPP)	// Idx of page table
 #define GTDENT (GTDSIZE/sizeof(D_TABLE))	// Num of GTD entries
-#define CMTENT (CMTSIZE/EPP)	// Num of CMT entries
+#define CMTENT (CMTSIZE/sizeof(C_TABLE))	// Num of CMT entries
 
 typedef struct demand_mapping_table{
 	int32_t ppa; //Index = lpa
