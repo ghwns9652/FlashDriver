@@ -41,17 +41,12 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address)
 	}
 	
 	if(offset == 0){
-        //FAST_Algorithm.li->trim_block(BLOCK(sw_MappingInfo->physical_block), true);
-		/*
-		if(fast_SwitchSWLogBlock(logical_block, req) != eNOERROR){
-			fast_MergeSWLogBlock(logical_block);
-		}
-		*/
+		// fast_MergeSWLogBlock(logical_block);
 		sw_MappingInfo->logical_block = logical_block;
 		sw_MappingInfo->number_of_stored_sector = 0;
 	}
 	else if(logical_block == sw_logical_block){
-		fast_SwitchSWLogBlock(logical_block);
+		// fast_MergeSWLogBlock(logical_block);
 
 		if(offset != sw_MappingInfo->number_of_stored_sector){
 			//printf("Offset Different");

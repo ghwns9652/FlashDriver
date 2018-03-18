@@ -2,7 +2,7 @@
 /**
  * Function: SW_Merge()
  * 
- * @brief       Merge Operation for Sequential Write (SW) Log Block
+ * @brief       Merge Operation for Sequential Write (SW) Log Block (Partial Merge)
  * @details     First, copy valid pages in data block into SW log block.\n
  *              Then, change statement of data block into erased block \n
  *              and statement of SW log block into data block.

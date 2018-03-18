@@ -29,9 +29,9 @@ typedef struct {
 } RW_MappingInfo;
 
 typedef struct {
-    uint32_t* rw_log_block;
+    int* rw_log_block;
     char current_position;
-    uint32_t number_of_full_log_block;
+    int number_of_full_log_block;
     uint32_t offset;
     RW_MappingInfo* data;       /* Should allocate with value of lower_info */
 } RW_MappingTable;

@@ -105,6 +105,13 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     tableInfo->rw_MappingTable->number_of_full_log_block = 0;
     tableInfo->rw_MappingTable->offset = 0;
 
+    memset(tableInfo->rw_MappingTable->rw_log_block, -1, sizeof(int)*NUMBER_OF_RW_LOG_BLOCK);
+    // Test
+    for(int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
+        printf("%d ", tableInfo->rw_MappingTable->rw_log_block[i]);
+    }
+    printf("\n");
+
     memset(BLOCK_STATE, ERASED, NUMBER_OF_BLOCK+1+NUMBER_OF_RW_LOG_BLOCK);
     memset(PAGE_STATE, ERASED, NUMBER_OF_PAGE);
 
