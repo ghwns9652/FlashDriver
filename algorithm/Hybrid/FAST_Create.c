@@ -64,6 +64,7 @@ const char SW_LOG_BLOCK = 2;
 const char RW_LOG_BLOCK = 3;
 
 uint32_t NUMBER_OF_DATA_BLOCK;
+uint32_t BLOCK_LAST_USED;
 
 uint32_t FAST_Create(lower_info* li, algorithm* algo)
 {
@@ -126,6 +127,8 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
         SET_BLOCK_STATE(NUMBER_OF_DATA_BLOCK+1 + i, RW_LOG_BLOCK);
         tableInfo->rw_MappingTable->rw_log_block[i] = NUMBER_OF_DATA_BLOCK+1 + i;
     }
+    
+    BLOCK_LAST_USED = NUMBER_OF_DATA_BLOCK + NUMBER_OF_RW_LOG_BLOCK;
 
     printf("FAST FTL Creation Finished!\n");
 	printf("Page Per Block : %d\n", PAGE_PER_BLOCK);

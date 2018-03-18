@@ -45,6 +45,9 @@ char fast_MergeSWLogBlock(uint32_t logical_block)
 
 		FAST_Algorithm.li->pull_data(src_address, PAGESIZE, value, 0, my_req, 0);
 		FAST_Algorithm.li->push_data(dst_address, PAGESIZE, value, 0, my_req, 0);
+
+        free(params);
+        free(my_req);
 	}
 
 	FAST_Algorithm.li->trim_block(ADDRESS(sw_MappingTable->data->physical_block, 0), false);
