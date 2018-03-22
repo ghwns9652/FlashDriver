@@ -105,7 +105,8 @@ int32_t BM_InitBlockArray()
 {
 	for (int i=0; i<_NOB; ++i){
 		blockArray[i].PBA = i;
-		memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(int8_t));
+		for (int j=0; j<_NOB; ++i)
+			blockArray[i].ValidP = BM_INVALIDPAGE;
 		blockArray[i].numValid = _PPB;
 		blockArray[i].PE_cycle = 0;
 		blockArray[i].BAD = _NOTBADSTATE;

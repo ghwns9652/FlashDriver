@@ -7,6 +7,11 @@
 /*
  * Heap Functions for blockArray, numValid_map, PE_map
  */
+
+int32_t BM_Minheap_numValid(Block* blockArray, uint8_t* numValid_map[]);
+int32_t BM__buildminheapNV(uint8_t* temp_NV, uint8_t* numValid_map[]);
+int32_t BM__minheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[]);
+
 int32_t BM_Maxheap_numValid(Block* blockArray, uint8_t* numValid_map[]);
 int32_t BM__buildmaxheapNV(uint8_t* temp_NV, uint8_t* numValid_map[]);
 int32_t BM__maxheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[]);

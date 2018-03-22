@@ -3,6 +3,54 @@
 #include "BM_Heap.h"
 
 /*
+ * Functions for numValid_map with Min-HEAP 
+ */
+
+ /* Make Min-Heap with the pointers of numValid_map by numValid in blockArray */
+int32_t BM_Minheap_numValid(Block* blockArray, uint8_t* numValid_map[])
+{
+	nV_T* temp_NV = (uint8_t*)malloc(sizeof(uint8_t) * _NOB);
+
+	for (int i = 0; i < _NOB; ++i) {
+		temp_NV[i] = blockArray[i].numValid;
+	}
+
+	BM__buildminheapNV(temp_NV, numValid_map); 
+
+	free(temp_NV); 
+}
+
+
+/* Build min-heap by numValid */
+int32_t BM__buildminheapNV(uint8_t* temp_NV, uint8_t* numValid_map[])
+{
+	int32_t i;
+	for (i = _NOB / 2; i >= 0; --i) {
+		BM__minheapifyNV(temp_NV, i, numValid_map);
+	}
+}
+
+int32_t BM__minheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[])
+{
+	int32_t l = 2 * i + 1;
+	int32_t r = 2 * i + 2;
+	int32_t smallest;
+
+	if (l <= _NOB - 1 && temp_NV[l] < temp_NV[i]) smallest = l;
+	else smallest = i;
+
+	if (r <= _NOB - 1 && temp_NV[r] < temp_NV[largest])	smallest = r;
+	if (smallest != i) {                      
+		
+		SWAP_NV(temp_NV[i], temp_NV[largest]);
+		SWAP_NV_PTR(numValid_map[i], numValid_map[largest]); 
+		
+		BM__minheapifyNV(temp_NV, smallest, numValid_map);
+	}
+}
+
+
+/*
  * Functions for numValid_map with MAX-HEAP 
  */
 
