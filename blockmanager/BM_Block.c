@@ -80,7 +80,7 @@ int32_t BM_InitBlock()
 {
 	blockArray= (Block*)malloc(sizeof(Block) * _NOB);
 	
-	numValid_map = (nV_T**)malloc(sizeof(nv_T*) * _NOB);
+	numValid_map = (nV_T**)malloc(sizeof(nV_T*) * _NOB);
 	PE_map = (PE_T**)malloc(sizeof(PE_T*) * _NOB);
 	//numValid_map = (uint8_t**)malloc(sizeof(uint8_t*) * _NOB);
 	//PE_map = (uint32_t**)malloc(sizeof(uint32_t*) * _NOB);
@@ -109,8 +109,8 @@ int32_t BM_InitBlockArray()
 {
 	for (int i=0; i<_NOB; ++i){
 		blockArray[i].PBA = i;
-		for (int j=0; j<_NOB; ++i)
-			blockArray[i].ValidP = BM_INVALIDPAGE;
+		for (int j=0; j<_PPB; ++j)
+			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
 		blockArray[i].numValid = _PPB;
 		blockArray[i].PE_cycle = 0;
 		blockArray[i].BAD = _NOTBADSTATE;

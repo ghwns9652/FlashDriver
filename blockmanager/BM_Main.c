@@ -1,6 +1,6 @@
 /* BM_Main */
 
-#include "BM_Block.h"
+#include "BM_Interface.h"
 
 int main(void)
 {

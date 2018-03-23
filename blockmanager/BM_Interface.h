@@ -18,19 +18,19 @@ int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA);
  * Function returning PBA of GC victim block
  * Select GC vimtim block which has maximum numValid
  */
-uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[]);
+uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t** numValid_map);
 
 
 /*
  * Function returning PBA of minPE block
  */
-uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[]);
+uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t** PE_map);
 
 
 /* 
  * Function to wear-leveling 
  */
-uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[]);
+uint32_t	BM_get_worn_block(Block *blockArray, uint32_t** PE_map);
 
 
 /* Function with primitive */

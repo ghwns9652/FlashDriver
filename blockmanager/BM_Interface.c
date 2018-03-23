@@ -53,7 +53,7 @@ int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA)
 		ERR(eBADVALIDPAGE_BM);
 	}
 }
-uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
+uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t** numValid_map)
 {
 	/* Return PBA of victim block */
 	/*
@@ -72,7 +72,7 @@ uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
 
 }
 
-uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[])
+uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t** PE_map)
 {
 	/* Return PBA of minPE block whose PE_cycle is minimum */
 	/*
@@ -92,7 +92,7 @@ uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[])
 }
 
 
-uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
+uint32_t	BM_get_worn_block(Block *blockArray, uint32_t** PE_map)
 {
 	/* Function which sorts PE_map by PE_cycle with ascending order */
 	/*@
