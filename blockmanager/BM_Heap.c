@@ -7,9 +7,9 @@
  */
 
  /* Make Min-Heap with the pointers of numValid_map by numValid in blockArray */
-int32_t BM_Minheap_numValid(Block* blockArray, uint8_t* numValid_map[])
+int32_t BM_Minheap_numValid(Block* blockArray, nV_T* numValid_map[])
 {
-	nV_T* temp_NV = (uint8_t*)malloc(sizeof(uint8_t) * _NOB);
+	nV_T* temp_NV = (nV_T*)malloc(sizeof(nV_T) * _NOB);
 
 	for (int i = 0; i < _NOB; ++i) {
 		temp_NV[i] = blockArray[i].numValid;
@@ -22,7 +22,7 @@ int32_t BM_Minheap_numValid(Block* blockArray, uint8_t* numValid_map[])
 
 
 /* Build min-heap by numValid */
-int32_t BM__buildminheapNV(uint8_t* temp_NV, uint8_t* numValid_map[])
+int32_t BM__buildminheapNV(nV_T* temp_NV, nV_T* numValid_map[])
 {
 	int32_t i;
 	for (i = _NOB / 2; i >= 0; --i) {
@@ -30,7 +30,7 @@ int32_t BM__buildminheapNV(uint8_t* temp_NV, uint8_t* numValid_map[])
 	}
 }
 
-int32_t BM__minheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[])
+int32_t BM__minheapifyNV(nV_T* temp_NV, int32_t i, nV_T* numValid_map[])
 {
 	int32_t l = 2 * i + 1;
 	int32_t r = 2 * i + 2;
@@ -55,9 +55,9 @@ int32_t BM__minheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[])
  */
 
  /* Make Max-Heap with the pointers of numValid_map by numValid in blockArray */
-int32_t BM_Maxheap_numValid(Block* blockArray, uint8_t* numValid_map[])
+int32_t BM_Maxheap_numValid(Block* blockArray, nV_T* numValid_map[])
 {
-	nV_T* temp_NV = (uint8_t*)malloc(sizeof(uint8_t) * _NOB);
+	nV_T* temp_NV = (nV_T*)malloc(sizeof(nV_T) * _NOB);
 
 	for (int i = 0; i < _NOB; ++i) {
 		temp_NV[i] = blockArray[i].numValid;
@@ -70,7 +70,7 @@ int32_t BM_Maxheap_numValid(Block* blockArray, uint8_t* numValid_map[])
 
 
 /* Build max-heap by numValid */
-int32_t BM__buildmaxheapNV(uint8_t* temp_NV, uint8_t* numValid_map[])
+int32_t BM__buildmaxheapNV(nV_T* temp_NV, nV_T* numValid_map[])
 {
 	int32_t i;
 	for (i = _NOB / 2; i >= 0; --i) {
@@ -78,7 +78,7 @@ int32_t BM__buildmaxheapNV(uint8_t* temp_NV, uint8_t* numValid_map[])
 	}
 }
 
-int32_t BM__maxheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[])
+int32_t BM__maxheapifyNV(nV_T* temp_NV, int32_t i, nV_T* numValid_map[])
 {
 	int32_t l = 2 * i + 1;
 	int32_t r = 2 * i + 2;
@@ -103,7 +103,7 @@ int32_t BM__maxheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[])
  */
 
  /* Make Min-Heap with the pointers of PE_map by PE_cycle in blockArray */
-int32_t BM_Minheap_PEcycle(Block* blockArray, uint8_t* PE_map[])
+int32_t BM_Minheap_PEcycle(Block* blockArray, PE_T* PE_map[])
 {
 	PE_T* temp_PE = (PE_T*)malloc(sizeof(PE_T) * _NOB);
 
@@ -118,7 +118,7 @@ int32_t BM_Minheap_PEcycle(Block* blockArray, uint8_t* PE_map[])
 
 
 /* Build min-heap by PE_cycle */
-int32_t BM__buildminheapPE(PE_T* temp_PE, uint8_t* PE_map[])
+int32_t BM__buildminheapPE(PE_T* temp_PE, PE_T* PE_map[])
 {
 	int32_t i;
 	for (i = _NOB / 2; i >= 0; --i) {
@@ -126,7 +126,7 @@ int32_t BM__buildminheapPE(PE_T* temp_PE, uint8_t* PE_map[])
 	}
 }
 
-int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, uint8_t* PE_map[])
+int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, PE_T* PE_map[])
 {
 	int32_t l = 2 * i + 1;
 	int32_t r = 2 * i + 2;
@@ -153,9 +153,9 @@ int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, uint8_t* PE_map[])
  */
 
 /* Sorting the pointers of PE_map by PE_cycle in blockArray */
-int32_t BM_SortPE(Block* blockArray, uint32_t* PE_map[])
+int32_t BM_SortPE(Block* blockArray, PE_T* PE_map[])
 {
-	uint32_t* temp_PE = (uint32_t*)malloc(sizeof(uint32_t) * _NOB);
+	PE_T* temp_PE = (PE_T*)malloc(sizeof(PE_T) * _NOB);
 
 	for (int i = 0; i < _NOB; ++i) {
 		temp_PE[i] = blockArray[i].PE_cycle;
@@ -168,7 +168,7 @@ int32_t BM_SortPE(Block* blockArray, uint32_t* PE_map[])
 	return(eNOERROR);
 }
 
-void BM__quicksort(uint32_t* temp_PE, int p, int r, uint32_t* PE_map[]) 
+void BM__quicksort(PE_T* temp_PE, int p, int r, PE_T* PE_map[]) 
 {
 	int q;
 	int x;

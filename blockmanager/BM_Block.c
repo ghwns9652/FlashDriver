@@ -15,8 +15,10 @@
 
 /* Declaration of Data Structures */
 Block* blockArray;
-nV_T* numValid_map[_NOB];
-PE_T* PE_map[_NOB];
+nV_T** numValid_map;
+PE_T** PE_map;
+//nV_T* numValid_map[_NOB];
+//PE_T* PE_map[_NOB];
 
 /* (IGNORE!) Incomplete */
 #if 0
@@ -78,6 +80,8 @@ int32_t BM_InitBlock()
 {
 	blockArray= (Block*)malloc(sizeof(Block) * _NOB);
 	
+	numValid_map = (nV_T**)malloc(sizeof(nv_T*) * _NOB);
+	PE_map = (PE_T**)malloc(sizeof(PE_T*) * _NOB);
 	//numValid_map = (uint8_t**)malloc(sizeof(uint8_t*) * _NOB);
 	//PE_map = (uint32_t**)malloc(sizeof(uint32_t*) * _NOB);
 	/*	
@@ -194,6 +198,8 @@ int32_t BM_Shutdown()
 	/* Come Here! */
 
 	free(blockArray);
+	free(numValid_map);
+	free(PE_map);
 	/*
 	for (int i=0; i<_NOB; ++i){
 		free(numValid_map[i]);
