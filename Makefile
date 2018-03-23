@@ -1,7 +1,7 @@
 CC=gcc
 
 TARGET_LOWER=posix
-TARGET_ALGO=DFTL
+TARGET_ALGO=dftl
 PWD=$(pwd)
 
 CFLAGS +=\

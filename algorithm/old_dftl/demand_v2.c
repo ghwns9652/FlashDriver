@@ -280,9 +280,7 @@ uint32_t demand_eviction(int *CMT_i){
 		if((t_ppa = GTD[victim_idx].ppa) != -1)	// When it's not a first t_page
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
 		tp_alloc(&t_ppa);
-		printf("t_ppa : %d\n", t_ppa);
 		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)CMT[*CMT_i].p_table, 0, assign_pseudo_req(), 0); // Get page table
-		printf("CHECK\n");
 		demand_OOB[t_ppa] = (D_OOB){victim_idx, 1}; // Update OOB
 		GTD[victim_idx].ppa = t_ppa; // Update GTD
 	}

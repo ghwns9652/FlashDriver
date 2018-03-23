@@ -1,0 +1,206 @@
+#ifdef UNIT_T
+#include "dftl.h"
+
+extern algorithm __demand;
+
+extern C_TABLE *CMT; // Cached Mapping Table
+extern D_TABLE *GTD; // Global Translation Directory
+extern D_OOB *demand_OOB; // Page level OOB
+extern D_SRAM *d_sram; // SRAM for contain block data temporarily
+
+extern int32_t DPA_status; // Data page allocation
+extern int32_t TPA_status; // Translation page allocation
+extern int32_t PBA_status; // Block allocation
+extern int8_t needGC; // Indicates need of GC
+
+char btype_check(int32_t PBA_status){
+	int32_t PBA2PPA = PBA_status * _PPB;
+	int invalid_page_num = 0;
+	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
+		if(!demand_OOB[i].valid_checker)
+			invalid_page_num++;
+	}
+	if(invalid_page_num == _PPB)
+		return 'N';
+
+	for(int i = 0; i < GTDENT; i++){
+		if(GTD[i].ppa != -1 && (GTD[i].ppa / _PPB) == PBA_status)
+			return 'T';
+	}
+	return 'D';
+}
+
+int lpa_compare(const void *a, const void *b){
+	uint32_t num1 = (uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table);
+	uint32_t num2 = (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table);
+	if(num1 < num2) return -1;
+	if(num1 == num2) return 0;
+	if(num1 > num2) return 1;
+}
+
+void dpage_GC(){
+	int32_t lpa;
+	int32_t vba;
+	int32_t t_ppa;
+	int32_t ppa;
+	int32_t PBA2PPA;
+	int32_t origin_ppa[_PPB];
+	int valid_page_num;
+	int CMT_i;
+	D_TABLE* p_table;
+
+	/* Load valid pages to SRAM */
+	PBA2PPA = (PBA_status % _NOB) * _PPB; // PPA calculatioin
+	valid_page_num = 0;
+	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
+		if(demand_OOB[i].valid_checker){ // Load valid pages
+			SRAM_load(i, valid_page_num);
+			origin_ppa[valid_page_num] = i;
+			valid_page_num++;
+		}
+	}
+	/* Trim data block */
+	__demand.li->trim_block(PBA2PPA, false);
+
+	/* Sort pages in SRAM */
+	qsort(d_sram, _PPB, sizeof(D_SRAM), lpa_compare);	// Sort d_sram as lpa
+	
+	/* Mapping data manage */
+	for(int i = 0; i <= valid_page_num; i++){
+		lpa = d_sram[i].OOB_RAM.reverse_table;
+		CMT_i = CMT_check(lpa, &ppa);
+		/* Cache update */
+		if(CMT_i != -1 && ppa == origin_ppa[i]){ // Check cache bit
+			CMT[CMT_i].p_table[P_IDX].ppa = PBA2PPA + i; // Cache ppa, flag update
+			CMT[CMT_i].flag = 1;
+		}
+		/* Batch update */
+		else{
+			vba = INT32_MAX; // Initial state
+			p_table = NULL;
+			if(vba == D_IDX) // Share same vba with previous lpa
+				p_table[P_IDX].ppa = PBA2PPA + i;
+			else if(vba != INT32_MAX){ // Push t_ppa
+				tp_alloc(&t_ppa);
+				__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
+				demand_OOB[t_ppa] = (D_OOB){vba, 1}; // OOB management
+				demand_OOB[GTD[vba].ppa].valid_checker = 0; // Invalidate previous tpage
+				GTD[vba].ppa = t_ppa; // GTD update
+				free(p_table);
+				p_table = NULL;
+			}
+			if(p_table == NULL && i != valid_page_num){ // Start to make new tpage
+				vba = D_IDX; // vba calculation
+				p_table = (D_TABLE*)malloc(PAGESIZE);
+				__demand.li->pull_data(GTD[vba].ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Load tpage
+				p_table[P_IDX].ppa = PBA2PPA + i; // Update tpage
+			}
+		}
+	}
+	for(int i = 0; i < valid_page_num; i++){
+		SRAM_unload(PBA2PPA + i, i); // Unload dpages
+	}
+	DPA_status = PBA2PPA + valid_page_num;	// DPA_status update
+}
+
+int ppa_compare(const void *a, const void *b){
+	uint32_t num1 = (uint32_t)(((D_TABLE*)a)->ppa);
+	uint32_t num2 = (uint32_t)(((D_TABLE*)a)->ppa);
+	if(num1 < num2) return -1;
+	if(num1 == num2) return 0;
+	if(num1 > num2) return 1;
+}
+
+/* Please enhance the full merge algorithm !!! */
+void tpage_GC(){
+	int n = 0;
+	int32_t head_ppa;
+	int32_t temp_ppa;
+	D_TABLE* GTDcpy = (D_TABLE*)malloc(GTDSIZE);
+	memcpy(GTDcpy, GTD, GTDSIZE);
+	qsort(GTDcpy, GTDENT, sizeof(D_TABLE), ppa_compare);
+
+	for(int i = 0; i < GTDENT; i++){
+		if(GTDcpy[i].ppa == -1)
+			break;
+		else{ //
+			SRAM_load(GTDcpy[i].ppa, n);
+			if(n == 0)
+				head_ppa = GTDcpy[i].ppa - GTDcpy[i].ppa % _PPB;
+			if(n == _PPB){
+				__demand.li->trim_block(head_ppa, false);
+				for(int j = 0; j < _PPB; j++){
+					GTD[d_sram[j].OOB_RAM.reverse_table].ppa = head_ppa + j;
+					SRAM_unload(head_ppa + j, j);
+				}
+				n = -1;
+			}
+			n++;
+		}
+	}
+	if(n > 0){
+		__demand.li->trim_block(head_ppa, false);
+		for(int j = 0; j < n; j++){
+			GTD[d_sram[j].OOB_RAM.reverse_table].ppa = head_ppa + j;
+			SRAM_unload(head_ppa + j, j);
+		}
+		TPA_status = head_ppa + n;
+		n = 0;
+	}
+	free(GTDcpy);
+}
+
+void SRAM_load(int32_t ppa, int idx){
+	d_sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
+	__demand.li->pull_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, assign_pseudo_req(), 0); // Page load
+	d_sram[idx].OOB_RAM = demand_OOB[ppa];	// Page load
+	demand_OOB[ppa] = (D_OOB){-1, 0};	// OOB init
+}
+
+void SRAM_unload(int32_t ppa, int idx){
+	__demand.li->push_data(ppa, PAGESIZE, d_sram[idx].PTR_RAM, 0, assign_pseudo_req(), 0);	// Page unlaod
+	free(d_sram[idx].PTR_RAM);
+	demand_OOB[ppa] = d_sram[idx].OOB_RAM;	// OOB unload
+	d_sram[idx].PTR_RAM = NULL;	// SRAM init
+	d_sram[idx].OOB_RAM = (D_OOB){-1, 0};
+}
+
+// Check the case when no page be GCed.
+bool demand_GC(char btype){
+	int32_t PBA2PPA = (PBA_status % _NOB) * _PPB;	// Change PBA to PPA
+	char victim_btype;
+	victim_btype = btype_check(PBA_status % _NOB);
+	/* Case 0 : victim block type 'N' */
+	if(victim_btype == 'N'){
+		__demand.li->trim_block(PBA2PPA, false);
+		if(btype == 'T')
+			TPA_status = PBA2PPA;
+		else
+			DPA_status = PBA2PPA;
+		return true;
+	}
+	else{
+		/* Case 1 : victim block type 'T' */
+		if(btype == 'T'){
+			tpage_GC();
+			return true;
+		}
+		/* Case 2 : victim block type 'D' */
+		else{
+			/* Check GCability */
+			if(victim_btype != 'D')
+				return false;
+			for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){
+				if(!demand_OOB[i].valid_checker)
+					break;
+				else if(i == PBA2PPA + _PPB - 1)
+					return false;
+			}
+			/* Data block GC */
+			dpage_GC();	// batch_update + t_page update
+			return true;
+		}
+	}
+	return false;
+}
+#endif

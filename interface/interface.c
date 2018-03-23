@@ -81,7 +81,7 @@ void inf_init(){
 #endif
 #ifdef normal
 	mp.algo=&__normal;
-#elif defined(DFTL)
+#elif defined(dftl)
 	mp.algo=&__demand;
 #elif defined(lsmtree)
 	mp.algo=&algo_lsm;
