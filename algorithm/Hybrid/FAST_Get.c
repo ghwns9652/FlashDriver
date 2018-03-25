@@ -43,4 +43,6 @@ uint32_t FAST_Get(request* const req)
     my_req->params = (void*)params;
     
     FAST_Algorithm.li->pull_data(physical_address, PAGESIZE, value, 0, my_req, 0);
+
+    return 1;
 }

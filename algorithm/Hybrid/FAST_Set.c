@@ -24,8 +24,8 @@ uint32_t FAST_Set(request* const req)
 
     // Find page to write
     if(fast_AllocDataBlockEntry(key, &physical_address) != eNOERROR){
-        if(fast_AllocSWLogBlockEntry(key, &physical_address) != eNOERROR){
-        	fast_AllocRWLogBlockEntry(key, &physical_address);
+        if(fast_AllocSWLogBlockEntry(key, &physical_address, req) != eNOERROR){
+        	fast_AllocRWLogBlockEntry(key, &physical_address, req);
         }
     }
 
@@ -41,4 +41,6 @@ uint32_t FAST_Set(request* const req)
     my_req->params = (void*)params;
 
     FAST_Algorithm.li->push_data(physical_address, PAGESIZE, value, 0, my_req, 0);
+
+    return 1;
 }

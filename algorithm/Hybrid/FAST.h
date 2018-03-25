@@ -76,11 +76,11 @@ int fast_ReadFromRWLogBlock(uint32_t physical_address);
 char fast_Write();
 char fast_WriteToLogBlock();
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address);
-char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address);
-char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address);
+char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* const req);
+char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request* const req);
 
 /* FAST_Remove */
-char fast_SwitchSWLogBlock(uint32_t log_block_number);
+char fast_SwitchSWLogBlock(uint32_t log_block_number, request* const req);
 char fast_MergeSWLogBlock(uint32_t log_block_number);
 char fast_MergeRWLogBLock(uint32_t log_block_number);
 
@@ -103,7 +103,7 @@ void SET_BLOCK_STATE(uint32_t physical_address, char state);
  * Global Variables
  */
 
-extern const char NUMBER_OF_RW_LOG_BLOCK;
+extern const uint32_t NUMBER_OF_RW_LOG_BLOCK;
 
 extern const char ERASED;
 extern const char VALID;

@@ -1,5 +1,8 @@
 #include "FAST.h"
 
+static int fast_RenewRWLogBlockState(uint32_t logical_address, uint32_t order);
+static char fast_FullMerge(int block_number);
+
 /**
  * Function :
  * 
@@ -14,28 +17,36 @@
  * 
  * @return      Error code for function call
  */
-char fast_MergeRWLogBlock(uint32_t log_block)
+char fast_MergeRWLogBlock(uint32_t log_block, request* const req)
 { //TODO : Key, Value 다 가지고 와서 그것도 input할 필요가 있음.
     RW_MappingTable* rw_MappingTable = tableInfo->rw_MappingTable;
-    RW_MappingInfo* data = tableInfo->data;
+    unsigned int victim_block = rw_MappingTable->rw_log_block[0];
+
+    RW_MappingInfo* data = rw_MappingTable->data;
 
     // TODO : Check Original Paper
-    for(int i = 0; i < PAGE_PER_BLOCK; i++){
-        if(GET_PAGE_STATE() == VALID){
-            fast_FullMerge();
+    for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
+        if(GET_PAGE_STATE(ADDRESS(victim_block, i)) == VALID){
+            fast_RenewRWLogBlockState(victim_block, i);
+        }
+    }
+    for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
+        if(GET_PAGE_STATE(ADDRESS(victim_block, i)) == VALID){
+            fast_FullMerge(data[i].logical_block);
         } 
     }
+    
 
-    Fast_Algorithm.li->trim_block(ADDRESS(rw_log_block, 0), false);
+    FAST_Algorithm.li->trim_block(ADDRESS(victim_block, 0), false);
 
-    for(int i = 0; i < PAGE_PER_BLOCK; i++){
-        SET_PAGE_STATE(ADDRESS(rw_log_block, i), ERASED);
+    for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
+        SET_PAGE_STATE(ADDRESS(victim_block, i), ERASED);
     }
-    SET_BLOCK_STATE(rw_log_block, ERASED);
+    SET_BLOCK_STATE(victim_block, ERASED);
     // Push RW log block table one elements
     // 2 -> 1, 3 -> 2, ...
-    uint32_t* rw_log_block = rw_MappingTable->rw_log_block;
-    for(int i = 0; i < NUMBER_OF_RW_LOG_BLOCK - 1; i++){
+    int* rw_log_block = rw_MappingTable->rw_log_block;
+    for(unsigned int i = 0; i < NUMBER_OF_RW_LOG_BLOCK - 1; i++){
         rw_log_block[i] = rw_log_block[i+1];
     }
     rw_log_block[NUMBER_OF_RW_LOG_BLOCK - 1] = 0;
@@ -56,11 +67,11 @@ char fast_MergeRWLogBlock(uint32_t log_block)
  */
 static int fast_RenewRWLogBlockState(uint32_t logical_address, uint32_t order)
 {
-    RW_MappingInfo data = tableInfo->rw_MappingTable->data;
+    RW_MappingInfo* data = tableInfo->rw_MappingTable->data;
     uint32_t victim_position = order;
     uint32_t victim_address = ADDRESS(data[victim_position].logical_block, data[victim_position].physical_block);
     if(GET_PAGE_STATE(victim_address) == INVALID){
-        return eALREADYINVALID;
+        // return eALREADYINVALID;
     }
     
     uint32_t current_position = order + 1;
@@ -78,26 +89,36 @@ static int fast_RenewRWLogBlockState(uint32_t logical_address, uint32_t order)
 /**
  * 
  */
-static char fast_FullMerge(int block_number)
+static char fast_FullMerge(int block_number, request* const req)
 {
     RW_MappingInfo* data = tableInfo->rw_MappingTable->data;
     uint32_t* candidates = (uint32_t*)malloc(sizeof(uint32_t*)*PAGE_PER_BLOCK);
 
+    unsigned int src_address;
+    unsigned int dst_address;
+
+    //unsigned int block_number;
+    unsigned int new_data_block;
+
+	FAST_Parameters* params;
+	value_set* value = req->value;
+	algo_req* my_req;
+
     int offset;
-    for(int i = 0; i < PAGE_PER_BLOCK; i++){
+    for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
         if(data[i].logical_block == block_number){
-            offset = fast_RenewRWLogBlockState();
+            //offset = fast_RenewRWLogBlockState();
             candidates[data[offset].logical_offset] = ADDRESS(data[offset].physical_block, data[offset].physical_offset);
         }
     }
 
-    for(int i = 0; i < PAGE_PER_NUMBER; i++){
+    for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
         if(GET_PAGE_STATE(ADDRESS(block_number, i) == VALID)){
             candidates[i] = ADDRESS(block_number, i);
         }
     }
 
-    for(int i = 0; i < PAGE_PER_NUMBER; i++){
+    for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
         src_address = candidates[i];
         dst_address = NULL; //TODO
 
@@ -124,4 +145,6 @@ static char fast_FullMerge(int block_number)
 
     SET_BLOCK_STATE(block_number, ERASED);
     SET_BLOCK_STATE(new_data_block, DATA_BLOCK);
+
+    return eNOERROR;
 }

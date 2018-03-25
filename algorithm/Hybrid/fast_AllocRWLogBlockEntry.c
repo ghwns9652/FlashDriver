@@ -16,10 +16,10 @@
  */
 
 // @TODO : Please use Circular Queue
-char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address)
+char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request* const req)
 {
-    uint32_t physical_block;
-    uint32_t offset;
+    //uint32_t physical_block;
+    //uint32_t offset;
     uint32_t number_of_written_page;
     RW_MappingTable* rw_MappingTable = tableInfo->rw_MappingTable;
 
@@ -35,7 +35,7 @@ char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address)
     rw_MappingTable->data[number_of_written_page].logical_offset = OFFSET(key);
     rw_MappingTable->data[number_of_written_page].state =  VALID;
     rw_MappingTable->offset++;
-    if(offset == PAGE_PER_BLOCK){
+    if(rw_MappingTable->offset == PAGE_PER_BLOCK){
         rw_MappingTable->offset = 0;
         rw_MappingTable->number_of_full_log_block++;
     }
@@ -49,4 +49,6 @@ char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address)
     }
 
     // printf("Check\n");
+
+    return eNOERROR;
 }

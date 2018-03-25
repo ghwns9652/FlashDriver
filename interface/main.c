@@ -9,7 +9,7 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
-int main(){/*
+int main(){
 	int Input_cycle;
 	int Input_type;
 	int start;
@@ -53,13 +53,13 @@ int main(){/*
 			printf("please type in next benchmark settings.\n");
 	}
 	printf("benchmark setting done. starts now.\n");
-*/
+
 
 	inf_init();
 	bench_init(1);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	bench_add(RANDRW,0,128*1024,1024*64);
+//	bench_add(RANDRW,0,128*1024,1024*64);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;

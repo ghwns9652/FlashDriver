@@ -22,4 +22,6 @@ void* FAST_EndRequest(algo_req *input)
 
     free(params);
     free(input);
+
+    return NULL;
 }

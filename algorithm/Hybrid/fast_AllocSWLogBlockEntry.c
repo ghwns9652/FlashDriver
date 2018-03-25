@@ -21,11 +21,11 @@
  *  No returns
  */
 
-char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address)
+char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* const req)
 {
-    int physical_block;
+    //int physical_block;
     int logical_block;
-	int offset;
+	uint32_t offset;
    	int sw_logical_block;
 
    	//SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
@@ -36,7 +36,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address)
    	
 	
 	if(sw_MappingInfo->number_of_stored_sector == PAGE_PER_BLOCK){
-		fast_SwitchSWLogBlock(*physical_address);
+		fast_SwitchSWLogBlock(*physical_address, req);
 		sw_MappingInfo->number_of_stored_sector = 0;
 	}
 	

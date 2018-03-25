@@ -43,6 +43,8 @@ uint32_t SIZE_OF_BLOCK;
 uint32_t PAGE_PER_BLOCK;
 uint32_t TOTAL_SIZE;
 
+const uint32_t NUMBER_OF_RW_LOG_BLOCK = 15;
+
 const char ERASED = 0;
 const char VALID = 1;
 const char INVALID = 2;
@@ -54,7 +56,6 @@ const char eNOTWRITTEN = -3;
 const char eOVERWRITTED = -4;
 const char eUNEXPECTED = -5;
 const char eNOTSEQUENTIAL = -6;
-const char NUMBER_OF_RW_LOG_BLOCK = 15;
 
 const char NIL = -1;
 
@@ -101,14 +102,14 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     // Setting block mapping information
     BLOCK_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_BLOCK+1+NUMBER_OF_RW_LOG_BLOCK);
     PAGE_STATE = (char*)malloc(sizeof(char)*NUMBER_OF_PAGE);
-    tableInfo->rw_MappingTable->rw_log_block = (uint32_t*)malloc(sizeof(uint32_t)*NUMBER_OF_RW_LOG_BLOCK);
+    tableInfo->rw_MappingTable->rw_log_block = (int*)malloc(sizeof(int)*NUMBER_OF_RW_LOG_BLOCK);
     tableInfo->rw_MappingTable->current_position = 0;
     tableInfo->rw_MappingTable->number_of_full_log_block = 0;
     tableInfo->rw_MappingTable->offset = 0;
 
     memset(tableInfo->rw_MappingTable->rw_log_block, -1, sizeof(int)*NUMBER_OF_RW_LOG_BLOCK);
     // Test
-    for(int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
+    for(unsigned int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
         printf("%d ", tableInfo->rw_MappingTable->rw_log_block[i]);
     }
     printf("\n");
@@ -116,14 +117,14 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     memset(BLOCK_STATE, ERASED, NUMBER_OF_BLOCK+1+NUMBER_OF_RW_LOG_BLOCK);
     memset(PAGE_STATE, ERASED, NUMBER_OF_PAGE);
 
-    for(int i = 0; i < NUMBER_OF_DATA_BLOCK; i++){
+    for(unsigned int i = 0; i < NUMBER_OF_DATA_BLOCK; i++){
         tableInfo->block_MappingTable->data[i].physical_block = i;
         SET_BLOCK_STATE(i, DATA_BLOCK);
     }
     tableInfo->sw_MappingTable->data->physical_block = NUMBER_OF_DATA_BLOCK;
     SET_BLOCK_STATE(NUMBER_OF_DATA_BLOCK, SW_LOG_BLOCK);
 
-    for(int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
+    for(unsigned int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
         SET_BLOCK_STATE(NUMBER_OF_DATA_BLOCK+1 + i, RW_LOG_BLOCK);
         tableInfo->rw_MappingTable->rw_log_block[i] = NUMBER_OF_DATA_BLOCK+1 + i;
     }
@@ -136,4 +137,6 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
 	printf("NUMBER_OF_PAGE : %d\n", NUMBER_OF_PAGE);
     printf("NUMBER_OF_BLOCK : %d\n", NUMBER_OF_BLOCK);
     printf("NUMBER_OF_DATA_BLOCK : %d\n", NUMBER_OF_DATA_BLOCK);
+
+    return 1;
 }

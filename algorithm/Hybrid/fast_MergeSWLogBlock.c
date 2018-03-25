@@ -9,12 +9,12 @@
  * @return      Error code for function call
  */
 
-char fast_MergeSWLogBlock(uint32_t logical_block)
+char fast_MergeSWLogBlock(uint32_t logical_block, request* const req)
 {
     SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
     uint32_t data_block = BLOCK_TABLE(sw_MappingTable->data->logical_block);
     uint32_t new_block = data_block + 1;
-	char state;
+	//char state;
 	
 	uint32_t src_address;
 	uint32_t dst_address;
@@ -33,7 +33,7 @@ char fast_MergeSWLogBlock(uint32_t logical_block)
 		new_block = (new_block + 1) / NUMBER_OF_BLOCK;
 	}
 
-	for(int i = sw_MappingTable->data->number_of_stored_sector; i < PAGE_PER_BLOCK; i++){
+	for(unsigned int i = sw_MappingTable->data->number_of_stored_sector; i < PAGE_PER_BLOCK; i++){
         src_address = ADDRESS(BLOCK_TABLE(sw_MappingTable->data->logical_block), i);
 		dst_address = ADDRESS(new_block, i);
 		params = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
@@ -54,7 +54,7 @@ char fast_MergeSWLogBlock(uint32_t logical_block)
 	FAST_Algorithm.li->trim_block(ADDRESS(BLOCK_TABLE(sw_MappingTable->data->logical_block), 0), false);
 
 	uint32_t dst_block = BLOCK_TABLE(sw_MappingTable->data->logical_block);
-	for(int i = 0; i < PAGE_PER_BLOCK; i++){
+	for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
 		SET_PAGE_STATE(ADDRESS(dst_block, i), ERASED);
 	}
 
