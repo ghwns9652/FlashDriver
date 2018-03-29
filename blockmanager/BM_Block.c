@@ -136,7 +136,7 @@ int32_t BM_ScanFlash()
 	}
 }
 
-int32_t BM_ReadBlock(){//(int32_t PBA){
+int32_t BM_ReadBlock(int i){//(int32_t PBA){
 	/* (Later)Read OOB of PBA block and Fill blockArray */
 	/* (IGNORE!) It is incomplete */
 

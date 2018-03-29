@@ -9,7 +9,7 @@ typedef struct { // 40 bytes
 	int8_t		ValidP[_NOP];	/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
 	int16_t		numValid;		/* Number of Valid pages in this block*/
 	uint32_t	PE_cycle;		/* P/E cycles of this block */
-	uint16_t**	ptrNV_data;		/* Pointer of numValid map */
+	int16_t**	ptrNV_data;		/* Pointer of numValid map */
 	uint32_t**	ptrPE_data;		/* Pointer of PE map */
 	int8_t		BAD;			/* Whether this block is bad or not */
 	uint32_t	v_PBA;			/* virtual PBA of this block. It is virtual block after Bad-Block check and wear-leveling by PE_cycle */
@@ -83,7 +83,7 @@ int32_t BM_InitBlockArray();
 
 int32_t BM_ScanFlash();
 
-int32_t BM_ReadBlock();
+int32_t BM_ReadBlock(int i);
 
 int32_t BM_BadBlockCheck();
 
