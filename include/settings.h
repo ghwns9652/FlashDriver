@@ -8,7 +8,7 @@
 #define T (1024L*G)
 #define P (1024L*T)
 
-#define TOTALSIZE (256L*M)
+#define TOTALSIZE (G/2)
 #define PAGESIZE (8*K)
 #define _PPB (256)
 //#define _PPB (4)
@@ -22,6 +22,7 @@
 #define FSTYPE uint8_t
 #define KEYT uint32_t
 #define BLOCKT uint32_t
+#define OOBT uint64_t
 #define V_PTR char * const
 #define PTR char*
 
@@ -29,8 +30,9 @@
 #define QSIZE (1024)
 #define THREADSIZE (1)
 
-#define CHACHESIZE 101010
+#ifndef __GNUG__
 typedef enum{false,true} bool;
+#endif
 
 typedef enum{
 	SEQGET,SEQSET,

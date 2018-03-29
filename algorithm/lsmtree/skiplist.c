@@ -5,6 +5,8 @@
 #include<unistd.h>
 #include<sys/types.h>
 #include"skiplist.h"
+#include"page.h"
+#include"../../interface/interface.h"
 
 skiplist *skiplist_init(){
 	skiplist *point=(skiplist*)malloc(sizeof(skiplist));
@@ -58,7 +60,7 @@ snode *skiplist_insert_wP(skiplist *list, KEYT key, KEYT ppa,bool deletef){
 
 	if(key==x->key){
 		x->key=key;
-		//delete exists x->ppa;
+		invalidate_PPA(x->ppa);
 		x->ppa=ppa;
 		x->isvalid=deletef;
 		return x;
@@ -99,12 +101,12 @@ snode *skiplist_insert_existIgnore(skiplist *list,KEYT key,KEYT ppa,bool deletef
 		update[i]=x;
 	}
 	x=x->list[1];
-
 	if(key<list->start) list->start=key;
 	if(key>list->end) list->end=key;
 
 	if(key==x->key){
 		//delete exists ppa; input ppa
+		invalidate_PPA(ppa);
 		return x;
 	}
 	else{
@@ -134,7 +136,7 @@ snode *skiplist_insert_existIgnore(skiplist *list,KEYT key,KEYT ppa,bool deletef
 	return x;
 }
 
-snode *skiplist_insert(skiplist *list,KEYT key,V_PTR value, algo_req *req,bool deletef){
+snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, algo_req *req,bool deletef){
 	snode *update[MAX_L+1];
 	snode *x=list->header;
 	for(int i=list->level; i>=1; i--){
@@ -177,6 +179,7 @@ snode *skiplist_insert(skiplist *list,KEYT key,V_PTR value, algo_req *req,bool d
 		x->key=key;
 		x->req=req;
 		x->isvalid=deletef;
+		x->ppa=UINT_MAX;
 		if(value !=NULL){
 			//x->value=(char *)malloc(VALUESIZE);
 			//memcpy(x->value,value,VALUESIZE);
@@ -261,7 +264,8 @@ void skiplist_clear(skiplist *list){
 	snode *now=list->header->list[1];
 	snode *next=now->list[1];
 	while(now!=list->header){
-		free(now->value);
+		if(now->value)
+			inf_free_valueset(now->value,FS_MALLOC_W);
 		free(now->list);
 		if(now->req){
 			free(now->req->params);
@@ -310,17 +314,17 @@ snode *skiplist_pop(skiplist *list){
 	return NULL;	
 }
 
-skiplist *skiplist_cut(skiplist *list, int num,KEYT limit){
+skiplist *skiplist_cut(skiplist *list, KEYT num,KEYT limit){
 	if(num==0) return NULL;
 	if(list->size<num) return NULL;
-	skiplist* res=skiplist_init(res);
+	skiplist* res=NULL;
+	res=skiplist_init();
 	snode *h=res->header;
 	snode *temp;
 	for(KEYT i=0; i<num; i++){
 		temp=skiplist_pop(list);
 		temp->value=NULL;
 		if(temp==NULL) return NULL;
-
 		if(temp->key>=limit){
 			snode *temp_header=res->header->list[1];
 			snode *temp_s;
@@ -346,6 +350,15 @@ skiplist *skiplist_cut(skiplist *list, int num,KEYT limit){
 		h=temp;
 	}
 	res->size=num;
+	//error check
+	/*
+	sk_iter* iter=skiplist_get_iterator(res);
+	snode *node;
+	while((node=skiplist_get_next(iter))){
+		if(node->ppa<512){
+			printf("here!\n");
+		}
+	}*/
 	return res;
 }
 /*

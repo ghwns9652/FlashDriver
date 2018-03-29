@@ -1,18 +1,28 @@
-CC=gcc
-
-CFLAGS +=\
+ifeq ($(CC),cc)
+ CC=gcc
+ CFLAGS_ALGO=\
 		 -g\
-		 -std=c99\
-		 -Wno-discarded-qualifiers\
-		 -lpthread\
+		 -Wall\
 
+ ifeq ($(CC),gcc)
+  CFLAGS_ALGO+=\
+			   -Wno-discarded-qualifiers\
+			   -std=c99\
 
+ else
+  CFLAGS_ALGO+=\
+			   -std=c++11\
+
+ endif
+endif
 SRCS +=\
 	   run_array.c\
 	   skiplist.c\
 	   bloomfilter.c\
 	   lsmtree.c\
 	   compaction.c\
+	   page.c\
+	   pageQ.c\
 cache.c\
 
 OBJS :=\
@@ -49,25 +59,25 @@ set_check:../../include/lsm_settings.h
 	make test_clean
 
 .c.o :
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 ../../object/%_d.o: %.c
-	$(CC) $(CFLAGS) -DDEBUG -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -DDEBUG -c $< -o $@
 
 ../../object/%_m.o: %.c
-	$(CC) $(CFLAGS) -DLEAKCHECK -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -DLEAKCHECK -c $< -o $@
 
 ../../object/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 run_test:run_array.c
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS_ALGO) -o $@ $^
 
 test_clean :
 	@$(RM) ../../object/*
 
 test : liblsm.a
-	$(CC) $(CFLAGS) -o ttt liblsm.a test.c -lpthread
+	$(CC) $(CFLAGS_ALGO) -o ttt liblsm.a test.c -lpthread
 
 clean : 
 	@$(RM) liblsm*
