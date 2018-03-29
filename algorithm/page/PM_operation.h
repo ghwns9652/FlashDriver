@@ -1,4 +1,5 @@
 #include "PM_blockqueue.h"
+#include "BM_Interface.h"
 
 void Selector_Init(BINFO** bp); //initialize selector. uses Block_Manager function.
 void Selector_Destroy(); // 

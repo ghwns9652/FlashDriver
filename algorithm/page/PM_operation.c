@@ -7,41 +7,23 @@ int64_t reserved_local = 0;
 int64_t reserved_block = -1;
 int8_t GC_phase = 0;
 
-void Selector_Init(BINFO** bp)//initializes selector.
+extern Block* blockArray;
+extern nV_T* numValid_map[_NOB];
+extern PE_T* PE_map[_NOB];
+
+void Selector_Init()//initializes selector.
 {
-	// 0.set block #0 as overprovision area.
-	// 1.get Block_information
-	// 2.attach on empty_queue.
-	int OP_builder = 0;
-	int OP_area = 1;
-	Init_Bqueue(&reserved_queue);
-	Init_Bqueue(&empty_queue);
-	for (int i=0; i <_NOB; i++)
-	{
-		if ((OP_builder < OP_area) && (bp[i]->BAD == 0))
-		{
-			Enqueue(&reserved_queue, bp[i]);
-			OP_builder++;
-		}//build overprovision area.
-		else if ((OP_builder >= OP_area) && (bp[i]->BAD == 0))
-		{
-			Enqueue(&empty_queue, bp[i]);
-		}//make empty_queue.
-	}
+	// Initializing Block manager is enough for now.
+	BM_Init();
 }
 
 void Selector_Destroy()
 {
-	int current_empty = empty_queue.count;
-	int current_reserved = reserved_queue.count;//get count of current queue.
-	for (int i = 0; i < current_empty; i++)
-		Dequeue(&empty_queue);
-	for (int i = 0; i < current_reserved; i++)
-		Dequeue(&reserved_queue);
-//dequeue until all components die.
+	BM_Shutdown();
+//destroy Block manager's structure array.
 }
 
-uint64_t Giveme_Page(int reserved)
+uint64_t Giveme_Page();
 {
 	if (reserved == 0)
 	{
@@ -78,7 +60,7 @@ uint64_t Giveme_Page(int reserved)
 			uint64_t re = reserved_block *_PPB + reserved_local;
 			reserved_local++;
 			return re;
-		}//if not, increase local_position && give page num.
+		}//if not, increase local_position && give page num
 	}
 }
 
