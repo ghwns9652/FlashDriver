@@ -20,6 +20,7 @@ uint32_t demand_get(request *const req){
 	int32_t t_ppa; // Translation page address
 	int CMT_i; // Cache mapping table index
 	D_TABLE* p_table; // Contains page table
+	value_set *temp_value_set;
 	
 	/* algo_req allocation, initialization */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -49,7 +50,10 @@ uint32_t demand_get(request *const req){
 			CMT[CMT_i].flag = 0;
 			CMT[CMT_i].queue_ptr = queue_insert((void*)(CMT + CMT_i));
 			p_table = CMT[CMT_i].p_table;
-			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0); // Get page table
+			temp_value_set = inf_get_valueset(NULL, DMAREAD);
+			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Get page table
+			memcpy(p_table, temp_value_set->value, PAGESIZE);
+			inf_free_valueset(temp_value_set, DMAREAD);
 			ppa = p_table[P_IDX].ppa; // Find ppa
 			if(ppa != -1){
 				bench_algo_end(req); // Algorithm level benchmarking end
@@ -76,6 +80,7 @@ uint32_t demand_set(request *const req){
 	int32_t t_ppa;
 	int CMT_i;
 	D_TABLE *p_table;
+	value_set *temp_value_set;
 
 	/* algo_req allocation, initialization */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -107,7 +112,10 @@ uint32_t demand_set(request *const req){
 		p_table = CMT[CMT_i].p_table;
 		// Load t_page or make new t_page
 		if(t_ppa != -1){ // Load t_page to cache
-			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
+			temp_value_set = inf_get_valueset(NULL, DMAREAD);
+			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0);
+			memcpy(p_table, temp_value_set->value, PAGESIZE);
+			inf_free_valueset(temp_value_set, DMAREAD);
 			demand_OOB[t_ppa].valid_checker = 0;
 		}
 		else{ // Make new t_page
@@ -133,6 +141,7 @@ uint32_t demand_remove(request *const req){
 	int32_t t_ppa;
 	int CMT_i;
 	D_TABLE *p_table;
+	value_set *temp_value_set;
 	
 	/* algo_req allocation, initialization */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -152,7 +161,10 @@ uint32_t demand_remove(request *const req){
 			demand_eviction(&CMT_i);
 			p_table = CMT[CMT_i].p_table;
 			CMT[CMT_i].GTD_idx = D_IDX;
-			__demand.li->pull_data(t_ppa, PAGESIZE, (V_PTR)p_table, 0, assign_pseudo_req(), 0);
+			temp_value_set = inf_get_valueset(NULL, DMAREAD);
+			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0);
+			memcpy(p_table, temp_value_set->value, PAGESIZE);
+			inf_free_valueset(temp_value_set, DMAREAD);
 			CMT[CMT_i].flag = 0;
 			CMT[CMT_i].queue_ptr = queue_insert((void*)(CMT + CMT_i));
 			ppa = p_table[P_IDX].ppa;
@@ -192,6 +204,7 @@ uint32_t demand_eviction(int *CMT_i){
 	int32_t ppa;
 	int32_t t_ppa;
 	D_TABLE *p_table;
+	value_set *temp_value_set;
 
 	/* Check empty entry */ // HOW TO ENHENCE EMPTY ENTRY CHECK CODE??
 	for(int i = 0; i < CMTENT; i++){
@@ -206,8 +219,10 @@ uint32_t demand_eviction(int *CMT_i){
 	if(CMT[*CMT_i].flag != 0){ // When CMT_i has changed
 		if((t_ppa = GTD[victim_idx].ppa) != -1)	// When it's not a first t_page
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
+		temp_value_set = inf_get_valueset((PTR)CMT[*CMT_i].p_table, DMAWRITE);
 		tp_alloc(&t_ppa);
-		__demand.li->push_data(t_ppa, PAGESIZE, (V_PTR)CMT[*CMT_i].p_table, 0, assign_pseudo_req(), 0); // Get page table
+		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Get page table
+		inf_free_valueset(temp_value_set, DMAWRITE);
 		demand_OOB[t_ppa] = (D_OOB){victim_idx, 1}; // Update OOB
 		GTD[victim_idx].ppa = t_ppa; // Update GTD
 	}

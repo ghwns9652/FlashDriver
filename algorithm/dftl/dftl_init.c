@@ -23,6 +23,10 @@ int8_t needGC; // Indicates need of GC
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// Table Allocation
+	printf("GTDSIZE : %ld\n", GTDSIZE);
+	printf("CMTSIZE : %ld\n", CMTSIZE);
+	printf("GTDENT : %ld\n", GTDENT);
+	printf("CMTENT : %ld\n", CMTENT);
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 	CMT = (C_TABLE*)malloc(CMTSIZE);
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * _NOP);
@@ -36,7 +40,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	for(int i = 0; i < CMTENT; i++)
 		CMT[i] = (C_TABLE){-1, -1, 0, NULL};
 	for(int i = 0; i < _PPB; i++){
-		d_sram[i].PTR_RAM = NULL;
+		d_sram[i].valueset_RAM = NULL;
 		d_sram[i].OOB_RAM = (D_OOB){-1, 0, 0};
 	}
 	for(int i = 0; i < _NOP; i++)
@@ -53,7 +57,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 		CMT[i].queue_ptr = NULL;
 	}
 	for(int i = 0; i < _PPB; i++){
-	    d_sram[i].PTR_RAM = NULL;
+	    d_sram[i].valueset_RAM = NULL;
 		d_sram[i].OOB_RAM = (D_OOB){-1, 0};
 	}
 	for(int i = 0; i < _NOP; i++)

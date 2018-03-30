@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../../include/container.h"
+#include "../../interface/interface.h"
 #include "dftl_queue.h"
 
 #define CACHESIZE (32*K)
@@ -15,6 +16,8 @@
 #define P_IDX (lpa%EPP)	// Idx of page table
 #define GTDENT (GTDSIZE/sizeof(D_TABLE))	// Num of GTD entries
 #define CMTENT (CMTSIZE/sizeof(C_TABLE))	// Num of CMT entries
+#define DMAWRITE 1
+#define DMAREAD 2
 
 typedef struct demand_mapping_table{
 	int32_t ppa; //Index = lpa
@@ -51,7 +54,7 @@ typedef struct demand_OOB{
 
 typedef struct demand_SRAM{
 	D_OOB OOB_RAM;
-	PTR PTR_RAM;
+	value_set *valueset_RAM;
 }D_SRAM;
 
 typedef struct demand_params{
