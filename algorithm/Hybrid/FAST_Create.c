@@ -77,7 +77,7 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     PAGE_PER_BLOCK = li->PPB;
     TOTAL_SIZE = li->TS;
 
-    NUMBER_OF_DATA_BLOCK = NUMBER_OF_BLOCK;
+    NUMBER_OF_DATA_BLOCK = NUMBER_OF_BLOCK / 2;
     algo->li = li;      /* li means Lower Info */
 
     // Memory Allocation for Global Variables (Pointer)
@@ -137,6 +137,7 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
 	printf("NUMBER_OF_PAGE : %d\n", NUMBER_OF_PAGE);
     printf("NUMBER_OF_BLOCK : %d\n", NUMBER_OF_BLOCK);
     printf("NUMBER_OF_DATA_BLOCK : %d\n", NUMBER_OF_DATA_BLOCK);
+    printf("BLOCK_LAST_USED : %d\n", BLOCK_LAST_USED);
 
     return 1;
 }

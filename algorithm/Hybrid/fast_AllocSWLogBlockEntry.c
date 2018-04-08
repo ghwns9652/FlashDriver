@@ -27,10 +27,12 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* co
     int logical_block;
 	uint32_t offset;
    	int sw_logical_block;
+    int physical_block;
 
    	//SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
     SW_MappingInfo* sw_MappingInfo = tableInfo->sw_MappingTable->data; 
 	logical_block = BLOCK(key);
+    physical_block = sw_MappingInfo->physical_block;
     sw_logical_block = sw_MappingInfo->logical_block;
 	offset = OFFSET(key);
    	
@@ -41,7 +43,9 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* co
 	}
 	
 	if(offset == 0){
-		// fast_MergeSWLogBlock(logical_block);
+        if(GET_BLOCK_STATE(physical_block) == SW_LOG_BLOCK){
+            fast_MergeSWLogBlock(logical_block, req);
+        }
 		sw_MappingInfo->logical_block = logical_block;
 		sw_MappingInfo->number_of_stored_sector = 0;
 	}
@@ -51,7 +55,9 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* co
 		if(offset != sw_MappingInfo->number_of_stored_sector){
 			//printf("Offset Different");
 			//printf("%d %d", sw_MappingInfo->number_of_stored_sector, offset);
+		    fast_MergeSWLogBlock(logical_block, req);
 			return (eNOTSEQUENTIAL);
+            // TODO : Add condition (if eNOTSEQUENTIAL -> just skip set operation because it is written already)
 		}
 	}
 	else{

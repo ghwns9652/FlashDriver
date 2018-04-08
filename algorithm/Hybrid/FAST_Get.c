@@ -37,6 +37,7 @@ uint32_t FAST_Get(request* const req)
     // Pull data using translated address
     params = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
     params->parents = req;
+    params->test = -1;
 
     my_req = (algo_req*)malloc(sizeof(algo_req));
     my_req->end_req = FAST_EndRequest;

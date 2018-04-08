@@ -1,0 +1,589 @@
+How many times would you run a benchmark?please type the bench_type, start, end and input size
+====bench type list====
+SEQSET = 1, 
+SEQGET = 2, 
+RANDGET = 3, 
+RANDRW = 4, 
+SEQRW = 5, 
+RANDSET = 6, 
+MIXED = 7
+====bench type list end ====
+ex. 1 0 100 100 means seqset 0 to 100 with input size 100
+benchmark # 1 is initiailized.
+please type in next benchmark settings.
+benchmark # 2 is initiailized.
+initilization done.
+benchmark setting done. starts now.
+mutex_t : 0x54237a8
+-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 
+FAST FTL Creation Finished!
+Page Per Block : 256
+Total_Size : 0
+NUMBER_OF_PAGE : 33554432
+NUMBER_OF_BLOCK : 131072
+NUMBER_OF_DATA_BLOCK : 131072
+making seq Set bench!
+ testing...... [0%]Set : 0 to 0
+ testing...... [1%]Set : 1 to 1
+ testing...... [2%]Set : 2 to 2
+ testing...... [3%]Set : 3 to 3
+ testing...... [4%]Set : 4 to 4
+ testing...... [5%]Set : 5 to 5
+ testing...... [6%]Set : 6 to 6
+ testing...... [7%]Set : 7 to 7
+ testing...... [8%]Set : 8 to 8
+ testing...... [9%]Set : 9 to 9
+ testing...... [10%] testing...... [11%]0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+0:read none!
+Partial Merge 131072 0 33554432	Set : 0 to 33554432
+Set : 1 to 1
+ testing...... [12%]Set : 2 to 2
+ testing...... [13%]Set : 3 to 3
+ testing...... [14%]Set : 4 to 4
+ testing...... [15%]Set : 5 to 5
+ testing...... [16%]Set : 6 to 6
+ testing...... [17%]Set : 7 to 7
+ testing...... [18%]Set : 8 to 8
+ testing...... [19%]Set : 9 to 9
+ testing...... [20%]Set : 0 to 0
+ testing...... [21%]131072 1 33554433	Set : 1 to 33554433
+ testing...... [22%]131072 2 33554434	Set : 2 to 33554434
+ testing...... [23%]131072 3 33554435	Set : 3 to 33554435
+ testing...... [24%]131072 4 33554436	Set : 4 to 33554436
+ testing...... [25%]131072 5 33554437	Set : 5 to 33554437
+ testing...... [26%]131072 6 33554438	Set : 6 to 33554438
+ testing...... [27%]131072 7 33554439	Set : 7 to 33554439
+ testing...... [28%]131072 8 33554440	Set : 8 to 33554440
+ testing...... [29%]131072 9 33554441	Set : 9 to 33554441
+ testing...... [30%] testing...... [31%]Partial Merge 131072 0 33554432	Set : 0 to 33554432
+Set : 1 to 1
+ testing...... [32%]Set : 2 to 2
+ testing...... [33%]Set : 3 to 3
+ testing...... [34%]Set : 4 to 4
+ testing...... [35%]Set : 5 to 5
+ testing...... [36%]Set : 6 to 6
+ testing...... [37%]Set : 7 to 7
+ testing...... [38%]Set : 8 to 8
+ testing...... [39%]Set : 9 to 9
+ testing...... [40%]Set : 0 to 0
+ testing...... [41%]131072 1 33554433	Set : 1 to 33554433
+ testing...... [42%]131072 2 33554434	Set : 2 to 33554434
+ testing...... [43%]131072 3 33554435	Set : 3 to 33554435
+ testing...... [44%]131072 4 33554436	Set : 4 to 33554436
+ testing...... [45%]131072 5 33554437	Set : 5 to 33554437
+ testing...... [46%]131072 6 33554438	Set : 6 to 33554438
+ testing...... [47%]131072 7 33554439	Set : 7 to 33554439
+ testing...... [48%]131072 8 33554440	Set : 8 to 33554440
+ testing...... [49%]131072 9 33554441	Set : 9 to 33554441
+ testing...... [50%] testing...... [51%]Partial Merge 131072 0 33554432	Set : 0 to 33554432
+Set : 1 to 1
+ testing...... [52%]Set : 2 to 2
+ testing...... [53%]Set : 3 to 3
+ testing...... [54%]Set : 4 to 4
+ testing...... [55%]Set : 5 to 5
+ testing...... [56%]Set : 6 to 6
+ testing...... [57%]Set : 7 to 7
+ testing...... [58%]Set : 8 to 8
+ testing...... [59%]Set : 9 to 9
+ testing...... [60%]Set : 0 to 0
+ testing...... [61%]131072 1 33554433	Set : 1 to 33554433
+ testing...... [62%]131072 2 33554434	Set : 2 to 33554434
+ testing...... [63%]131072 3 33554435	Set : 3 to 33554435
+ testing...... [64%]131072 4 33554436	Set : 4 to 33554436
+ testing...... [65%]131072 5 33554437	Set : 5 to 33554437
+ testing...... [66%]131072 6 33554438	Set : 6 to 33554438
+ testing...... [67%]131072 7 33554439	Set : 7 to 33554439
+ testing...... [68%]131072 8 33554440	Set : 8 to 33554440
+ testing...... [69%]131072 9 33554441	Set : 9 to 33554441
+ testing...... [70%] testing...... [71%]Partial Merge 131072 0 33554432	Set : 0 to 33554432
+Set : 1 to 1
+ testing...... [72%]Set : 2 to 2
+ testing...... [73%]Set : 3 to 3
+ testing...... [74%]Set : 4 to 4
+ testing...... [75%]Set : 5 to 5
+ testing...... [76%]Set : 6 to 6
+ testing...... [77%]Set : 7 to 7
+ testing...... [78%]Set : 8 to 8
+ testing...... [79%]Set : 9 to 9
+ testing...... [80%]Set : 0 to 0
+ testing...... [81%]131072 1 33554433	Set : 1 to 33554433
+ testing...... [82%]131072 2 33554434	Set : 2 to 33554434
+ testing...... [83%]131072 3 33554435	Set : 3 to 33554435
+ testing...... [84%]131072 4 33554436	Set : 4 to 33554436
+ testing...... [85%]131072 5 33554437	Set : 5 to 33554437
+ testing...... [86%]131072 6 33554438	Set : 6 to 33554438
+ testing...... [87%]131072 7 33554439	Set : 7 to 33554439
+ testing...... [88%]131072 8 33554440	Set : 8 to 33554440
+ testing...... [89%]131072 9 33554441	Set : 9 to 33554441
+ testing...... [90%] testing...... [91%]Partial Merge 131072 0 33554432	Set : 0 to 33554432
+Set : 1 to 1
+ testing...... [92%]Set : 2 to 2
+ testing...... [93%]Set : 3 to 3
+ testing...... [94%]Set : 4 to 4
+ testing...... [95%]Set : 5 to 5
+ testing...... [96%]Set : 6 to 6
+ testing...... [97%]Set : 7 to 7
+ testing...... [98%]Set : 8 to 8
+ testing...... [99%]Set : 9 to 9
+testing...... [100%] done!
+
+making seq Get bench!
+ testing...... [0%]Get : 0 to 33554432
+0:read none!
+ testing...... [1%]Get : 1 to 1
+ testing...... [2%]Get : 2 to 2
+ testing...... [3%]Get : 3 to 3
+ testing...... [4%]Get : 4 to 4
+ testing...... [5%]Get : 5 to 5
+ testing...... [6%]Get : 6 to 6
+ testing...... [7%]Get : 7 to 7
+ testing...... [8%]Get : 8 to 8
+ testing...... [9%]Get : 9 to 9
+ testing...... [10%]Get : 0 to 33554432
+0:read none!
+ testing...... [11%]Get : 1 to 1
+ testing...... [12%]Get : 2 to 2
+ testing...... [13%]Get : 3 to 3
+ testing...... [14%]Get : 4 to 4
+ testing...... [15%]Get : 5 to 5
+ testing...... [16%]Get : 6 to 6
+ testing...... [17%]Get : 7 to 7
+ testing...... [18%]Get : 8 to 8
+ testing...... [19%]Get : 9 to 9
+ testing...... [20%]Get : 0 to 33554432
+0:read none!
+ testing...... [21%]Get : 1 to 1
+ testing...... [22%]Get : 2 to 2
+ testing...... [23%]Get : 3 to 3
+ testing...... [24%]Get : 4 to 4
+ testing...... [25%]Get : 5 to 5
+ testing...... [26%]Get : 6 to 6
+ testing...... [27%]Get : 7 to 7
+ testing...... [28%]Get : 8 to 8
+ testing...... [29%]Get : 9 to 9
+ testing...... [30%]Get : 0 to 33554432
+0:read none!
+ testing...... [31%]Get : 1 to 1
+ testing...... [32%]Get : 2 to 2
+ testing...... [33%]Get : 3 to 3
+ testing...... [34%]Get : 4 to 4
+ testing...... [35%]Get : 5 to 5
+ testing...... [36%]Get : 6 to 6
+ testing...... [37%]Get : 7 to 7
+ testing...... [38%]Get : 8 to 8
+ testing...... [39%]Get : 9 to 9
+ testing...... [40%]Get : 0 to 33554432
+0:read none!
+ testing...... [41%]Get : 1 to 1
+ testing...... [42%]Get : 2 to 2
+ testing...... [43%]Get : 3 to 3
+ testing...... [44%]Get : 4 to 4
+ testing...... [45%]Get : 5 to 5
+ testing...... [46%]Get : 6 to 6
+ testing...... [47%]Get : 7 to 7
+ testing...... [48%]Get : 8 to 8
+ testing...... [49%]Get : 9 to 9
+ testing...... [50%]Get : 0 to 33554432
+0:read none!
+ testing...... [51%]Get : 1 to 1
+ testing...... [52%]Get : 2 to 2
+ testing...... [53%]Get : 3 to 3
+ testing...... [54%]Get : 4 to 4
+ testing...... [55%]Get : 5 to 5
+ testing...... [56%]Get : 6 to 6
+ testing...... [57%]Get : 7 to 7
+ testing...... [58%]Get : 8 to 8
+ testing...... [59%]Get : 9 to 9
+ testing...... [60%]Get : 0 to 33554432
+0:read none!
+ testing...... [61%]Get : 1 to 1
+ testing...... [62%]Get : 2 to 2
+ testing...... [63%]Get : 3 to 3
+ testing...... [64%]Get : 4 to 4
+ testing...... [65%]Get : 5 to 5
+ testing...... [66%]Get : 6 to 6
+ testing...... [67%]Get : 7 to 7
+ testing...... [68%]Get : 8 to 8
+ testing...... [69%]Get : 9 to 9
+ testing...... [70%]Get : 0 to 33554432
+0:read none!
+ testing...... [71%]Get : 1 to 1
+ testing...... [72%]Get : 2 to 2
+ testing...... [73%]Get : 3 to 3
+ testing...... [74%]Get : 4 to 4
+ testing...... [75%]Get : 5 to 5
+ testing...... [76%]Get : 6 to 6
+ testing...... [77%]Get : 7 to 7
+ testing...... [78%]Get : 8 to 8
+ testing...... [79%]Get : 9 to 9
+ testing...... [80%]Get : 0 to 33554432
+0:read none!
+ testing...... [81%]Get : 1 to 1
+ testing...... [82%]Get : 2 to 2
+ testing...... [83%]Get : 3 to 3
+ testing...... [84%]Get : 4 to 4
+ testing...... [85%]Get : 5 to 5
+ testing...... [86%]Get : 6 to 6
+ testing...... [87%]Get : 7 to 7
+ testing...... [88%]Get : 8 to 8
+ testing...... [89%]Get : 9 to 9
+ testing...... [90%]Get : 0 to 33554432
+0:read none!
+ testing...... [91%]Get : 1 to 1
+ testing...... [92%]Get : 2 to 2
+ testing...... [93%]Get : 3 to 3
+ testing...... [94%]Get : 4 to 4
+ testing...... [95%]Get : 5 to 5
+ testing...... [96%]Get : 6 to 6
+ testing...... [97%]Get : 7 to 7
+ testing...... [98%]Get : 8 to 8
+ testing...... [99%]Get : 9 to 9
+testing...... [100%] done!
+
+
+
+--------------------------------------------
+|            bench type:                   |
+--------------------------------------------
+----algorithm----
+[0~100(usec)]: 0
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----lower----
+[0~100(usec)]: 0
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----average----
+[avg_algo]: 0.0
+[avg_low]: 0.0
+-----lower_info----
+[write_op]: 55
+[read_op]: 45
+[trim_op]:0
+[WAF, RAF]: 0.550000, 0.450000
+[if rw test]: 1.100000(WAF), 0.900000(RAF)
+[all write Time]:0.61178
+[all read Time]:0.34263
+
+----summary----
+[all_time]: 1.13906
+[size]: 0.781250(mb)
+[FAIL NUM] 0
+[SUCCESS RATIO] 1.000000
+[throughput] 789.027780(kb/s)
+             0.770535(mb/s)
+[READ WRITE CNT] 0 100
+
+
+--------------------------------------------
+|            bench type:                   |
+--------------------------------------------
+----algorithm----
+[0~100(usec)]: 0
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----lower----
+[0~100(usec)]: 0
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----average----
+[avg_algo]: 0.0
+[avg_low]: 0.0
+-----lower_info----
+[write_op]: 1285
+[read_op]: 1295
+[trim_op]:10
+[WAF, RAF]: 12.850000, 12.950000
+[if rw test]: 25.700001(WAF), 25.900000(RAF)
+[all write Time]:0.78468
+[all read Time]:0.63674
+
+----summary----
+[all_time]: 2.420891
+[size]: 0.781250(mb)
+[FAIL NUM] 0
+[SUCCESS RATIO] 1.000000
+[throughput] 330.456844(kb/s)
+             0.322712(mb/s)
+[READ WRITE CNT] 100 0
+bye bye!

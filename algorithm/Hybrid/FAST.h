@@ -8,6 +8,7 @@
  */
 typedef struct {
     request* parents;
+    int test;
 } FAST_Parameters;
 
 typedef struct {
@@ -81,8 +82,8 @@ char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request* co
 
 /* FAST_Remove */
 char fast_SwitchSWLogBlock(uint32_t log_block_number, request* const req);
-char fast_MergeSWLogBlock(uint32_t log_block_number);
-char fast_MergeRWLogBLock(uint32_t log_block_number);
+char fast_MergeSWLogBlock(uint32_t log_block_number, request* const req);
+char fast_MergeRWLogBLock(uint32_t log_block_number, request* const req);
 
 char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address);
 char fast_SearchRWLogBlock(uint32_t logical_address, uint32_t* physical_address);

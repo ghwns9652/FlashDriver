@@ -21,5 +21,6 @@ char fast_SwitchSWLogBlock(uint32_t log_block_number, request* const req)
 
 	SET_BLOCK_STATE(log_block, DATA_BLOCK);
 
+    printf("Switch Merge " );
     return (eNOERROR);
 }
