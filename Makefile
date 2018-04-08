@@ -1,7 +1,8 @@
-export CC=g++
+export CC=gcc
 
 TARGET_LOWER=posix
 TARGET_ALGO=Hybrid
+
 PWD=$(pwd)
 
 export CFLAGS_ALGO=\
@@ -67,7 +68,7 @@ simulator: ./interface/main.c libsimulator.a
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 duma_simulator: ./interface/main.c libsimulator.a
-	$(CC) $(CFLAGS) -o $@ $^ -lduma -$(LIBS)
+	$(CC) $(CFLAGS) -DDUMA_SO_NO_LEAKDETECTION -o $@ $^ -lduma $(LIBS)
 	
 
 libsimulator.a: $(TARGETOBJ)
