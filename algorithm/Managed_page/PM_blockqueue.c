@@ -13,9 +13,9 @@ int IsEmpty(B_queue *queue)
 
 void Enqueue(B_queue *queue, Block* new_info)
 {
-	node *now = (node *)malloc(sizeof(node));
-	now->BINFO_node = new_info;
-	now->next = NULL; //make node and allocate information.
+	node_bqueue *now = (node_bqueue *)malloc(sizeof(node_bqueue));
+	now->block = new_info;
+	now->next = NULL; //make node_bqueue and allocate information.
 	
 	if (IsEmpty(queue)) // if queue is empty
 		queue->front = now;
@@ -27,16 +27,16 @@ void Enqueue(B_queue *queue, Block* new_info)
 	queue->count++; //component number inc.
 }
 
-BINFO* Dequeue(B_queue *queue)
+Block* Dequeue(B_queue *queue)
 {
-	BINFO* re = NULL;
-	node* now;
+	Block* re = NULL;
+	node_bqueue* now;
 	if (IsEmpty(queue))
 	{
 		return re;
 	}
 	now = queue->front;
-	re = now->BINFO_node;
+	re = now->block;
 	queue->front = now->next;
 	free(now);
 	queue->count--;

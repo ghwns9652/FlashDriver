@@ -3,8 +3,8 @@ SRCS +=\
 	   BM_Heap.c\
 	   BM_Interface.c\
 	   PM_blockqueue.c\
-	   PM_operation.c\
 	   page_PM.c\
+	   PM_operation.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\

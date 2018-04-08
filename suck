@@ -1,0 +1,223 @@
+mutex_t : 0x203c068
+BM_Init() Start..
+Start Bad-Block Manager..
+
+Read Flash..
+Allocate blockArray....End
+Initialize blockArray....End
+Bad Block Check....End
+Fill pointer maps....End
+Make virtual PBA array....End
+Test 0~4
+PBA: 0
+numValid: 100
+PE_cycle: 0
+v_PBA: 0
+o_PBA: 39
+PBA: 1
+numValid: 100
+PE_cycle: 0
+v_PBA: 0
+o_PBA: -1
+PBA: 2
+numValid: 100
+PE_cycle: 0
+v_PBA: 0
+o_PBA: -1
+PBA: 3
+numValid: 100
+PE_cycle: 0
+v_PBA: 0
+o_PBA: -1
+PBA: 4
+numValid: 100
+PE_cycle: 0
+v_PBA: 0
+o_PBA: -1
+BM_Init() End!
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+we've added empty_b
+making rand Set bench!
+ testing...... [0%]entered if
+new block's PBA is 1
+ testing...... [1%] testing...... [2%] testing...... [3%] testing...... [4%] testing...... [5%] testing...... [6%] testing...... [7%] testing...... [8%] testing...... [9%] testing...... [10%] testing...... [11%] testing...... [12%] testing...... [13%] testing...... [14%] testing...... [15%] testing...... [16%] testing...... [17%] testing...... [18%] testing...... [19%] testing...... [20%] testing...... [21%] testing...... [22%] testing...... [23%] testing...... [24%] testing...... [25%] testing...... [26%] testing...... [27%] testing...... [28%] testing...... [29%] testing...... [30%] testing...... [31%] testing...... [32%] testing...... [33%] testing...... [34%] testing...... [35%] testing...... [36%] testing...... [37%] testing...... [38%] testing...... [39%] testing...... [40%] testing...... [41%] testing...... [42%] testing...... [43%] testing...... [44%] testing...... [45%] testing...... [46%] testing...... [47%] testing...... [48%] testing...... [49%] testing...... [50%] testing...... [51%] testing...... [52%] testing...... [53%] testing...... [54%] testing...... [55%] testing...... [56%] testing...... [57%] testing...... [58%] testing...... [59%] testing...... [60%] testing...... [61%] testing...... [62%] testing...... [63%] testing...... [64%] testing...... [65%] testing...... [66%] testing...... [67%] testing...... [68%] testing...... [69%] testing...... [70%] testing...... [71%] testing...... [72%] testing...... [73%] testing...... [74%] testing...... [75%] testing...... [76%] testing...... [77%] testing...... [78%] testing...... [79%] testing...... [80%] testing...... [81%] testing...... [82%] testing...... [83%] testing...... [84%] testing...... [85%] testing...... [86%] testing...... [87%] testing...... [88%] testing...... [89%] testing...... [90%] testing...... [91%] testing...... [92%] testing...... [93%] testing...... [94%] testing...... [95%] testing...... [96%] testing...... [97%] testing...... [98%] testing...... [99%]testing...... [100%] done!
+
+making rand Get bench!
+ testing...... [0%] testing...... [1%] testing...... [2%] testing...... [3%] testing...... [4%] testing...... [5%]read an empty page!0:read none!
+ testing...... [6%]read an empty page!0:read none!
+ testing...... [7%] testing...... [8%]read an empty page!0:read none!
+ testing...... [9%] testing...... [10%]read an empty page!0:read none!
+ testing...... [11%] testing...... [12%]read an empty page!0:read none!
+ testing...... [13%] testing...... [14%] testing...... [15%]read an empty page!0:read none!
+ testing...... [16%]read an empty page!0:read none!
+ testing...... [17%]read an empty page!0:read none!
+ testing...... [18%]read an empty page!0:read none!
+ testing...... [19%] testing...... [20%] testing...... [21%] testing...... [22%]read an empty page!0:read none!
+ testing...... [23%]read an empty page!0:read none!
+ testing...... [24%]read an empty page!0:read none!
+ testing...... [25%]read an empty page!0:read none!
+ testing...... [26%] testing...... [27%]read an empty page!0:read none!
+ testing...... [28%]read an empty page!0:read none!
+ testing...... [29%] testing...... [30%] testing...... [31%] testing...... [32%]read an empty page!0:read none!
+ testing...... [33%]read an empty page!0:read none!
+ testing...... [34%] testing...... [35%]read an empty page!0:read none!
+ testing...... [36%]read an empty page!0:read none!
+ testing...... [37%] testing...... [38%] testing...... [39%] testing...... [40%]read an empty page!0:read none!
+ testing...... [41%]read an empty page!0:read none!
+ testing...... [42%] testing...... [43%] testing...... [44%] testing...... [45%] testing...... [46%] testing...... [47%] testing...... [48%] testing...... [49%] testing...... [50%] testing...... [51%] testing...... [52%] testing...... [53%] testing...... [54%]read an empty page!0:read none!
+ testing...... [55%] testing...... [56%] testing...... [57%] testing...... [58%] testing...... [59%]read an empty page!0:read none!
+ testing...... [60%]read an empty page!0:read none!
+ testing...... [61%] testing...... [62%] testing...... [63%]read an empty page!0:read none!
+ testing...... [64%]read an empty page!0:read none!
+ testing...... [65%] testing...... [66%] testing...... [67%]read an empty page!0:read none!
+ testing...... [68%] testing...... [69%] testing...... [70%] testing...... [71%] testing...... [72%] testing...... [73%] testing...... [74%] testing...... [75%] testing...... [76%] testing...... [77%]read an empty page!0:read none!
+ testing...... [78%] testing...... [79%] testing...... [80%] testing...... [81%] testing...... [82%] testing...... [83%]read an empty page!0:read none!
+ testing...... [84%]read an empty page!0:read none!
+ testing...... [85%]read an empty page!0:read none!
+ testing...... [86%]read an empty page!0:read none!
+ testing...... [87%] testing...... [88%] testing...... [89%] testing...... [90%] testing...... [91%] testing...... [92%] testing...... [93%] testing...... [94%]read an empty page!0:read none!
+ testing...... [95%]read an empty page!0:read none!
+ testing...... [96%] testing...... [97%] testing...... [98%]read an empty page!0:read none!
+ testing...... [99%]testing...... [100%] done!
+
+
+
+--------------------------------------------
+|            bench type:                   |
+--------------------------------------------
+----algorithm----
+[0~100(usec)]: 100
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----lower----
+[0~100(usec)]: 100
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----average----
+[avg_algo]: 0.0
+[avg_low]: 0.14
+-----lower_info----
+[write_op]: 100
+[read_op]: 0
+[trim_op]:0
+[WAF, RAF]: 1.000000, 0.000000
+[if rw test]: 2.000000(WAF), 0.000000(RAF)
+[all write Time]:0.1540
+[all read Time]:0.0
+
+----summary----
+[all_time]: 0.4606
+[size]: 0.781250(mb)
+[FAIL NUM] 0
+[SUCCESS RATIO] 1.000000
+[throughput] 173686.495875(kb/s)
+             169.615719(mb/s)
+[READ WRITE CNT] 0 100
+
+
+--------------------------------------------
+|            bench type:                   |
+--------------------------------------------
+----algorithm----
+[0~100(usec)]: 100
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----lower----
+[0~100(usec)]: 100
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----average----
+[avg_algo]: 0.0
+[avg_low]: 0.5
+-----lower_info----
+[write_op]: 0
+[read_op]: 100
+[trim_op]:0
+[WAF, RAF]: 0.000000, 1.000000
+[if rw test]: 0.000000(WAF), 2.000000(RAF)
+[all write Time]:0.0
+[all read Time]:0.649
+
+----summary----
+[all_time]: 0.2564
+[size]: 0.781250(mb)
+[FAIL NUM] 0
+[SUCCESS RATIO] 1.000000
+[throughput] 312012.480499(kb/s)
+             304.699688(mb/s)
+[READ WRITE CNT] 100 0
+bye bye!
+dequeued from reserved_q

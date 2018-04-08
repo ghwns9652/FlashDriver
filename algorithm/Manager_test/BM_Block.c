@@ -15,8 +15,8 @@
 
 /* Declaration of Data Structures */
 Block* blockArray;
-nV_T* numValid_map[_NOB];
-PE_T* PE_map[_NOB];
+nV_T** numValid_map;
+PE_T** PE_map;
 
 /* (IGNORE!) Incomplete */
 #if 0
@@ -68,6 +68,17 @@ int32_t BM_Init()
 
 	printf("Bad Block Check..");	BM_BadBlockCheck();	printf("..End\n");
 	printf("Fill pointer maps..");	BM_FillMap();		printf("..End\n");
+	printf("Make virtual PBA array..");	BM_MakeVirtualPBA();	printf("..End\n");
+
+	printf("Test 0~4\n");
+	for (int i=0; i<5; ++i){
+		printf("PBA: %d\n", blockArray[i].PBA);
+		printf("numValid: %d\n", blockArray[i].numValid);
+		printf("PE_cycle: %d\n", blockArray[i].PE_cycle);
+		printf("v_PBA: %d\n", blockArray[i].v_PBA);
+		printf("o_PBA: %d\n", blockArray[i].o_PBA);
+	}
+
 	
 	printf("BM_Init() End!\n");
 }
@@ -78,14 +89,8 @@ int32_t BM_InitBlock()
 {
 	blockArray= (Block*)malloc(sizeof(Block) * _NOB);
 	
-	//numValid_map = (uint8_t**)malloc(sizeof(uint8_t*) * _NOB);
-	//PE_map = (uint32_t**)malloc(sizeof(uint32_t*) * _NOB);
-	/*	
-	for (int i=0; i<_NOB; ++i){
-		numValid_map[i] = (nV_T**)malloc(sizeof(nV_T*));
-		PE_map[i] = (PE_T**)malloc(sizeof(PE_T*));
-	}
-	*/
+	numValid_map = (nV_T**)malloc(sizeof(nV_T*) * _NOB);
+	PE_map = (PE_T**)malloc(sizeof(PE_T*) * _NOB);
 	return(eNOERROR);
 }
 
@@ -105,10 +110,13 @@ int32_t BM_InitBlockArray()
 {
 	for (int i=0; i<_NOB; ++i){
 		blockArray[i].PBA = i;
-		memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(int8_t));
+		for (int j=0; j<_PPB; ++j)
+			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
 		blockArray[i].numValid = _PPB;
 		blockArray[i].PE_cycle = 0;
 		blockArray[i].BAD = _NOTBADSTATE;
+		blockArray[i].v_PBA = 0xffffffff; // -1
+		blockArray[i].o_PBA = 0xffffffff;
 	}
 }
 
@@ -161,6 +169,12 @@ int32_t BM_BadBlockCheck()
 		i++;
 
 		//blockArray[i].BAD = _BADSTATE;
+		// If BADBLOCK, then
+		// blockArray[i].VaplidP[_NOP] = -1;
+		// blockArray[i].numValid = 0; // meaningless. desired value is -1(no Valid pages), but numValid data type is unsigned. so unwillingly set 0. But It would not raise problems because numValid is not referenced if the block is BAD.
+		// blockArray[i].PE_cycle = 0xffffffff; // meaningful. If the block is BAD, PE_cycle of the block is regarded as a maximum-PE_cycle.
+		// blockArray[i].ptrNV_data = NULL;
+		// blockArray[i].ptrPE_data = NULL;
 	}
 }
 
@@ -175,12 +189,51 @@ int32_t BM_FillMap()
 			blockArray[i].ptrNV_data = &(numValid_map[i]);
 			blockArray[i].ptrPE_data = &(PE_map[i]);
 		}
+		else {
+			blockArray[i].numValid = -1;
+			blockArray[i].PE_cycle = 0xffffffff;
+			numValid_map[i] = NULL;
+			PE_map[i] = NULL;
+		}
+
 	}
 
 	return(eNOERROR);
 
 
 }
+
+/* Making virtual PBA of blockArray */
+int32_t BM_MakeVirtualPBA()
+{
+	/* If Bad Block, PE_cycle == 0xffffffff */
+	void* ptr_block;
+	
+	//BM_SortPE(blockArray, PE_map);
+	
+	for (int i=0; i<_NOB; ++i){
+
+		ptr_block = ((void*)PE_map[i] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T)); // If we only need BAD member variable, we can get BAD variable by PE_map[i]+sizeof(PE_T)+sizeof(uint8_t**)+sizeof(uint32_t**)
+		if (BM_GETBAD(ptr_block) == _NOTBADSTATE) {
+			blockArray[i].v_PBA = BM_GETPBA(ptr_block);
+			blockArray[blockArray[i].v_PBA].o_PBA = i;
+		}
+	}
+	return (eNOERROR);
+}
+
+		// if the block is BAD, the PE_cycle of block is 0xffffffff. so we don't need to consider about that.
+
+#if 0
+		// Don't care
+		else {
+			j = i+1;
+			ptr_block = (Block*)(PE_map[j] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T));
+			while (ptr_block[BAD] != _NOTBADSTATE){
+				j++;
+				ptr_block = (Block*)(PE_map[j] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T));
+#endif
+
 
 
 
@@ -193,6 +246,8 @@ int32_t BM_Shutdown()
 	/* Come Here! */
 
 	free(blockArray);
+	free(numValid_map);
+	free(PE_map);
 	/*
 	for (int i=0; i<_NOB; ++i){
 		free(numValid_map[i]);

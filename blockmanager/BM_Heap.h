@@ -7,19 +7,24 @@
 /*
  * Heap Functions for blockArray, numValid_map, PE_map
  */
-int32_t BM_Maxheap_numValid(Block* blockArray, uint8_t* numValid_map[]);
-int32_t BM__buildmaxheapNV(uint8_t* temp_NV, uint8_t* numValid_map[]);
-int32_t BM__maxheapifyNV(uint8_t* temp_NV, int32_t i, uint8_t* numValid_map[]);
 
-int32_t BM_Minheap_PEcycle(Block* blockArray, uint8_t* PE_map[]);
-int32_t BM__buildminheapPE(PE_T* temp_PE, uint8_t* PE_map[]);
-int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, uint8_t* PE_map[]);
+int32_t BM_Minheap_numValid(Block* blockArray, nV_T** numValid_map);
+int32_t BM__buildminheapNV(nV_T* temp_NV, nV_T** numValid_map);
+int32_t BM__minheapifyNV(nV_T* temp_NV, int32_t i, nV_T** numValid_map);
+
+int32_t BM_Maxheap_numValid(Block* blockArray, nV_T** numValid_map);
+int32_t BM__buildmaxheapNV(nV_T* temp_NV, nV_T** numValid_map);
+int32_t BM__maxheapifyNV(nV_T* temp_NV, int32_t i, nV_T** numValid_map);
+
+int32_t BM_Minheap_PEcycle(Block* blockArray, PE_T** PE_map);
+int32_t BM__buildminheapPE(PE_T* temp_PE, PE_T** PE_map);
+int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, PE_T** PE_map);
 
 
 
 /* Sorting algorithms foor blockArray and PE_map */
-int32_t BM_SortPE(Block* blockArray, uint32_t* PE_map[]);
-void BM__quicksort(uint32_t* temp_PE, int p, int r, uint32_t* PE_map[]); // If this function works, it would be maybe better to fix with 'quicksort_Optimized'
+int32_t BM_SortPE(Block* blockArray, PE_T** PE_map);
+void BM__quicksort(PE_T* temp_PE, int p, int r, PE_T** PE_map); // If this function works, it would be maybe better to fix with 'quicksort_Optimized'
 
 
 

@@ -82,7 +82,7 @@ void inf_init(){
 #ifdef normal
 	mp.algo=&__normal;
 #endif
-#ifdef page
+#ifdef Managed_page
 	mp.algo=&algo_pbase;
 #endif
 	mp.li->create(mp.li);

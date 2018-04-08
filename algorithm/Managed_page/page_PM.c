@@ -2,8 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "page.h"
-#include "../../bench/bench.h"
-#include "PM_operation.h"
 
 extern int64_t local_page_position;
 extern int64_t block_position;
@@ -13,8 +11,12 @@ extern int8_t GC_phase;
 //extern from Page Manager.
 
 extern Block* blockArray;
-extern uint8_t* numValid_map[_NOB];
+extern nV_T** numValid_map;
 //extern from Block Manager.
+
+extern B_queue empty_queue;
+extern B_queue reserved_queue;
+
 
 struct algorithm algo_pbase=
 {
@@ -92,7 +94,6 @@ uint32_t pbase_get(request* const req)
 	if (page_TABLE[req->key].lpa_to_ppa == -1)
 	{
 		printf("read an empty page!");
-		return;
 	}
 	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req,0);
 	//key-value operation.
@@ -113,7 +114,7 @@ uint32_t pbase_set(request* const req)
 	if (page_TABLE[req->key].lpa_to_ppa != -1)//already mapped case.
 	{
 		int temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
-		BM_invalidate_ppa(blcokArray, temp);
+		BM_invalidate_ppa(blockArray, temp);
 	}
 
 	PPA_status = Alloc_Page();//get available physical page addr.
@@ -121,7 +122,7 @@ uint32_t pbase_set(request* const req)
 	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map on table. 
 	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
 	KEYT set_target = PPA_status; //target set.
-	BM_update_block_with_push(blockArray, PPA);//update blockArray.
+	BM_update_block_with_push(blockArray, PPA_status);//update blockArray.
 	bench_algo_end(req);
 	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req,0);
 }
@@ -134,8 +135,8 @@ uint32_t pbase_remove(request* const req)
 
 uint32_t SRAM_load(int ppa, int a)
 {
-	value_set* value_PTR;
-	value_PTR =(value_set*)malloc(sizeof(value_PTR));
+	value_set* value_PTR; //make new value_set.
+	value_PTR =inf_get_valueset(NULL, 1);//set valueset as read mode.
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
@@ -147,17 +148,22 @@ uint32_t SRAM_load(int ppa, int a)
 
 uint32_t SRAM_unload(int ppa, int a)
 {
+	value_set *value_PTR; //make new value_set.
+	value_PTR = inf_get_valueset(page_SRAM[a].VPTR_RAM->value, 2);//set valueset as write mode.
+	
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->end_req = pbase_algo_end_req;
 	my_req->parents = NULL;
 	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,0,my_req,0);
 	
-	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa;
+	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa; //mapping table update.
 	blockArray[ppa/_PPB].ValidP[ppa/_PPB] = 1;
 	page_OOB[ppa].reverse_table = page_SRAM[a].lpa_RAM;
 	
+	inf_free_valueset(value_PTR, 2);
+	inf_free_valueset(page_SRAM[a].VPTR_RAM, 1);
+
 	page_SRAM[a].lpa_RAM = -1;
-	free(page_SRAM[a].VPTR_RAM);
 	page_SRAM[a].VPTR_RAM = NULL;
 }
 
@@ -173,7 +179,7 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 	int a = 0;
 	for (int i = 0; i < _PPB; i++)
 	{
-		if (blockArray[target_block].validP[i] == 1)
+		if (blockArray[target_block].ValidP[i] == 1)
 		{
 			SRAM_load(PPA_status + i, a);
 			a++;
@@ -184,7 +190,7 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 	BM_update_block_with_trim(blockArray, PPA_status);//give info to Manager.
 	algo_pbase.li->trim_block(PPA_status, false);//trim target block.
 
-	for (int i = 0; i<valid_component; i++)
+	for (int i = 0; i<valid_comp; i++)
 	{
 		SRAM_unload(rsv_ppa,i);
 		rsv_ppa++;
@@ -197,5 +203,5 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 	Enqueue(&empty_queue, new_emp);
 	Enqueue(&reserved_queue, new_rsv);
 
-	rsv_ppa = new_rsv.PBA * _PPB;//GC target became new reserved.
+	rsv_ppa = new_rsv->PBA * _PPB;//GC target became new reserved.
 }

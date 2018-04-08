@@ -59,10 +59,11 @@ int main(){/*
 */
 
 	inf_init();
-	bench_init(1);
+	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	bench_add(RANDRW,0,128*1024,1024*64);
+	bench_add(RANDSET,100,200,100);
+	bench_add(RANDGET,100,200,100);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;

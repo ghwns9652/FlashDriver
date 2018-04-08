@@ -1,7 +1,24 @@
 /* Badblock Manager */
 #include "BM_Interface.h"
 
-#define METHOD 1	// Which method has better performance?
+#define METHOD 2	// Which method has better performance?
+
+/* Interface Functions for editing blockArray */
+
+int32_t		BM_validate_ppa(Block* blockArray, PPA_T PPA)
+{
+	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	uint8_t offset = PPA % _PPB;
+
+	if (blockArray[PBA].ValidP[offset] == BM_VALIDPAGE)
+		return (eNOERROR);
+	else {
+		blockArray[PBA].ValidP[offset] = BM_VALIDPAGE;
+		blockArray[PBA].numValid++;
+		return (eNOERROR);
+	}
+}
+
 
 // Four basic interfaces
 
@@ -11,8 +28,10 @@ int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA)
 	uint8_t offset = PPA % _PPB;
 
 #if (METHOD == 1)
+	// This METHOD is wrong
 	blockArray[PBA].ValidP[offset] = BM_INVALIDPAGE;
-	blockArray[PBA].numValid--;
+	if (blockArray[PBA].ValidP[offset] != BM_INVALIDPAGE)
+		blockArray[PBA].numValid--;
 	return (eNOERROR);
 #endif
 
@@ -53,7 +72,7 @@ int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA)
 		ERR(eBADVALIDPAGE_BM);
 	}
 }
-uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
+uint32_t	BM_get_gc_victim(Block* blockArray, nV_T** numValid_map)
 {
 	/* Return PBA of victim block */
 	/*
@@ -63,16 +82,15 @@ uint32_t	BM_get_gc_victim(Block* blockArray, uint8_t* numValid_map[])
 
 
 	/* After this function, numValid_map will become Max-heap by numValid */
-	BM_Maxheap_numValid(blockArray, numValid_map);
+	BM_Minheap_numValid(blockArray, numValid_map);
 
 	/* Make Block_pointer from numValid_pointer */
-	void* ptr_max_nV_block = numValid_map[0] - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
+	void* ptr_min_nV_block = (void*)numValid_map[0] - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
 
-	return *((PBA_T*)ptr_max_nV_block); // This means value of PBA of maxnV block
-
+	return *((PBA_T*)ptr_min_nV_block); // This means value of PBA of maxnV block
 }
 
-uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[])
+uint32_t	BM_get_minPE_block(Block* blockArray, PE_T** PE_map)
 {
 	/* Return PBA of minPE block whose PE_cycle is minimum */
 	/*
@@ -92,7 +110,7 @@ uint32_t	BM_get_minPE_block(Block* blockArray, uint8_t* PE_map[])
 }
 
 
-uint32_t	BM_get_worn_block(Block *blockArray, uint32_t* PE_map[])
+uint32_t	BM_get_worn_block(Block *blockArray, PE_T** PE_map)
 {
 	/* Function which sorts PE_map by PE_cycle with ascending order */
 	/*@
@@ -123,7 +141,8 @@ int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
 	return (eNOERROR);
 }
 
-inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
+
+int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
 {
 	/* This function should be called when Push */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
@@ -133,12 +152,12 @@ inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
 
 	blockArray[PBA].PE_cycle++;
 }
-inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
+
+int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
 {
 	/* This function should be called when Trim */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 
 	blockArray[PBA].PE_cycle++;
-
-
 }
+

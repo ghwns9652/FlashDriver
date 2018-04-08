@@ -6,10 +6,12 @@ int64_t local_page_position = 0;
 int64_t reserved_local = 0;
 int64_t reserved_block = -1;
 int8_t GC_phase = 0;
+B_queue empty_queue;
+B_queue reserved_queue;
 
 extern Block* blockArray;
-extern nV_T* numValid_map[_NOB];
-extern PE_T* PE_map[_NOB];
+extern nV_T** numValid_map;
+extern PE_T** PE_map;
 
 void PM_Init()//initializes selector.
 {
@@ -23,11 +25,14 @@ void PM_Init()//initializes selector.
 	{
 		if ((OP_builder < OP_area) && (blockArray[i].BAD == _NOTBADSTATE))
 		{
-			Enqueue(&reserved_queue, blockArray[i]);
+			Enqueue(&reserved_queue, &blockArray[i]);
 			OP_builder++;
 		}//build OP area.
 		else if ((OP_builder >= OP_area) && (blockArray[i].BAD == _NOTBADSTATE))
-			Enqueue(&empty_queue, blockArray[i]);//build empty area.
+		{
+			printf("we've added empty_b\n");
+			Enqueue(&empty_queue, &blockArray[i]);//build empty area.
+		}
 	}
 }
 
@@ -36,9 +41,14 @@ void PM_Destroy()
 	int current_empty = empty_queue.count;
 	int current_reserved = reserved_queue.count;
 	for (int i = 0; i < current_empty; i++)
+	{
 		Dequeue(&empty_queue);
-	for (int j = 0; j < current_reserved; j++)
+	}
+	for (int i = 0; i < current_reserved; i++)
+	{
+		printf("dequeued from reserved_q\n");
 		Dequeue(&reserved_queue);
+	}
 //destroy queue of blocks.
 	BM_Shutdown();
 //destroy Block manager's structure array.
@@ -48,16 +58,18 @@ uint64_t Alloc_Page()//allocates available physical page sequentially.
 {					 //only use empty_queue.
 	if ((block_position == -1) || (local_page_position == _PPB))
 	{
+		printf("entered if\n");
 		Block* newbie = Dequeue(&empty_queue);
-		block_position = newbie->head_ppa /_PPB;
+		block_position = newbie->PBA;
 		local_page_position = 1;
-		return newbie->head_ppa;
+		printf("new block's PBA is %d\n",newbie->PBA);
+		return newbie->PBA * _PPB;
 	}//if it is first write or block is full, get another block.
 	else if ((GC_phase == 1)&&(!IsEmpty(&empty_queue)))
 	{
 		Block* newbie = Dequeue(&empty_queue);
-		block_position = newbie->head_ppa / _PPB;
-		return newbie->head_ppa + local_page_position;
+		block_position = newbie->PBA;
+		return (newbie->PBA * _PPB) + local_page_position;
 	}//if GC is done, select new block for set, with given offset for valid dat 
 	else
 	{

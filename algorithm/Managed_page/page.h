@@ -1,4 +1,11 @@
+#ifndef _PAGE_H_
+#define _PAGE_H_
+
+#include "../../interface/interface.h"
+#include "PM_operation.h"
 #include "../../include/container.h"
+#include "../../bench/bench.h"
+
 typedef struct pbase_params
 {
 	request *parents;
@@ -35,3 +42,4 @@ uint32_t SRAM_load(int ppa, int a); // loads info on SRAM.
 uint32_t SRAM_unload(int ppa, int a); // unloads info from SRAM.
 uint32_t pbase_garbage_collection(); // page- GC function. NOT tested yet.
 
+#endif //!_PAGE_H_

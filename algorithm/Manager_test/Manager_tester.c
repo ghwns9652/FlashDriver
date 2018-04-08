@@ -1,7 +1,7 @@
 #include "PM_operation.h"
 
 extern Block* blockArray;
-extern uint8_t* numValid_map[_NOB];
+extern nV_T** numValid_map;
 extern B_queue empty_queue;
 extern B_queue reserved_queue;
 int main(void)
