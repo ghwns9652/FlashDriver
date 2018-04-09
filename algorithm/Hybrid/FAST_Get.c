@@ -35,6 +35,7 @@ uint32_t FAST_Get(request* const req)
     //printf("Get : %d to %d", key, physical_address);
 
     // Pull data using translated address
+    /*
     params = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
     params->parents = req;
     params->test = -1;
@@ -44,6 +45,7 @@ uint32_t FAST_Get(request* const req)
     my_req->params = (void*)params;
     
     FAST_Algorithm.li->pull_data(physical_address, PAGESIZE, value, 0, my_req, 0);
-
+    */
+    fast_ReadPage(physical_address, req);
     return 1;
 }

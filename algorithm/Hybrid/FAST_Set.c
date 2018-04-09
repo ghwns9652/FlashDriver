@@ -11,7 +11,7 @@
  * @TODO        Should optimize Merge opeartion of SW log block to reduce unneccesary writing to RW log block
  */
 
-uint32_t FAST_Set(request* const req)
+uint32_t FAST_Set(const request *req)
 {
     FAST_Parameters*    params;
     algo_req*           my_req;
@@ -32,6 +32,7 @@ uint32_t FAST_Set(request* const req)
     printf("Set : %d to %d\n", key, physical_address);
     //printf("Set : %d to %d", key, physical_address);
 
+    /*
     //Push data using translated address
     params = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
     params->parents = req;
@@ -46,6 +47,9 @@ uint32_t FAST_Set(request* const req)
     //printf("Test finished\n");
     
     FAST_Algorithm.li->push_data(physical_address, PAGESIZE, value, 0, my_req, 0);
+    */
+
+    fast_WritePage(physical_address, value, req);
 
     return 1;
 }

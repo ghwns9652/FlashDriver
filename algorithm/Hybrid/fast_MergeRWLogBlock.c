@@ -1,7 +1,7 @@
 #include "FAST.h"
 
 static int fast_RenewRWLogBlockState(uint32_t logical_address, uint32_t order);
-static char fast_FullMerge(int block_number);
+static char fast_FullMerge(int block_number, request* const req);
 
 /**
  * Function :
@@ -32,7 +32,7 @@ char fast_MergeRWLogBlock(uint32_t log_block, request* const req)
     }
     for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
         if(GET_PAGE_STATE(ADDRESS(victim_block, i)) == VALID){
-            fast_FullMerge(data[i].logical_block);
+            //fast_FullMerge(data[i].logical_block);
         } 
     }
     

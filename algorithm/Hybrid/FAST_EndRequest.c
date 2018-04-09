@@ -15,7 +15,7 @@
 
 void* FAST_EndRequest(algo_req *input)
 {
-    /*
+    
     FAST_Parameters* params = (FAST_Parameters*)input->params;
 
     request* req = params->parents;
@@ -23,11 +23,12 @@ void* FAST_EndRequest(algo_req *input)
 
     free(params);
     free(input);
-    */
+    
+    /*
 	request *res = input->parents;
 	res->end_req(res);
 
 	free(input);
-
+    */
     return NULL;
 }

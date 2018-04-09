@@ -45,6 +45,8 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* const req)
 
         if(GET_PAGE_STATE(src_address) == VALID){
             dst_address = ADDRESS(sw_MappingTable->data->physical_block, i);
+            fast_ReadPage(src_address, req);
+            /*
             params_1 = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
             params_1->parents = req;
             params_1->test = -1;
@@ -61,8 +63,10 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* const req)
             free(my_req_1);
 
             printf("%d %d (Address Test)\n", src_address, dst_address);
-
+            */
             dst_address = ADDRESS(sw_MappingTable->data->physical_block, i);
+            fast_WritePage(dst_address, req->value, req);
+            /*
             params_2 = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
             params_2->parents = req;
             params_2->test = -1;
@@ -80,6 +84,7 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* const req)
             free(params_2);
             printf("%d %d (Address Test)\n", src_address, dst_address);
             free(my_req_2);
+            */
         }
 	}
 
@@ -119,4 +124,28 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* const req)
             __block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_block, 0, temp_req2, 0);
             free(temp_block);
          }
+*/
+
+/*
+void SRAM_load(int32_t ppa, int idx){
+	value_set *temp_value_set;
+
+	temp_value_set = inf_get_valueset(NULL, DMAREAD);
+	__demand.li->pull_data(ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Page load
+	d_sram[idx].valueset_RAM = temp_value_set;
+	d_sram[idx].OOB_RAM = demand_OOB[ppa];	// Page load
+	demand_OOB[ppa] = (D_OOB){-1, 0};	// OOB init
+}
+
+void SRAM_unload(int32_t ppa, int idx){
+	value_set *temp_value_set;
+
+	temp_value_set = inf_get_valueset(d_sram[idx].valueset_RAM->value, DMAWRITE);
+	__demand.li->push_data(ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0);	// Page unlaod
+	inf_free_valueset(temp_value_set, DMAWRITE);
+	inf_free_valueset(d_sram[idx].valueset_RAM, DMAREAD);
+	demand_OOB[ppa] = d_sram[idx].OOB_RAM;	// OOB unload
+	d_sram[idx].valueset_RAM = NULL;	// SRAM init
+	d_sram[idx].OOB_RAM = (D_OOB){-1, 0};
+}
 */
