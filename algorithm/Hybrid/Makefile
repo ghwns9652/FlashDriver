@@ -5,6 +5,8 @@ SRCS +=\
 		FAST_Get.c\
 		FAST_Set.c\
 		FAST_Remove.c\
+		fast_WritePage.c\
+		fast_ReadPage.c\
 		fast_AllocDataBlockEntry.c\
 		fast_AllocRWLogBlockEntry.c\
 		fast_AllocSWLogBlockEntry.c\
@@ -15,8 +17,7 @@ SRCS +=\
 		fast_SwitchSWLogBlock.c\
 		fast_MergeSWLogBlock.c\
 		fast_MergeRWLogBlock.c\
-		fast_WritePage.c\
-		fast_ReadPage.c\
+
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\

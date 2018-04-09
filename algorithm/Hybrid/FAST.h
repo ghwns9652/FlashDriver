@@ -2,6 +2,8 @@
 #include <malloc.h>
 #include <string.h>
 #include "../../include/container.h"
+#include "../../include/FS.h"
+#include "../../interface/interface.h"
 
 /*@
  * Structure Definition
@@ -59,7 +61,7 @@ typedef struct {
 uint32_t FAST_Create(lower_info* li, algorithm* algo);
 void FAST_Destroy(lower_info* li, algorithm* algo);
 uint32_t FAST_Get(request* const req);
-uint32_t FAST_Set(const request *req);
+uint32_t FAST_Set(request* const req);
 uint32_t FAST_Remove(request* const req);
 void* FAST_EndRequest(algo_req* input);
 
@@ -100,7 +102,7 @@ void SET_PAGE_STATE(uint32_t physical_address, char state);
 char GET_BLOCK_STATE(uint32_t physical_address);
 void SET_BLOCK_STATE(uint32_t physical_address, char state);
 
-void fast_WritePage(uint32_t address, value_set* value_to_write, const request *req);
+void fast_WritePage(uint32_t address, value_set* value_to_write, request *const req);
 value_set* fast_ReadPage(uint32_t address, request* const req);
 
 

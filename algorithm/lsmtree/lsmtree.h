@@ -82,5 +82,7 @@ bool lsm_kv_validcheck(uint8_t *, int idx);
 void lsm_kv_validset(uint8_t *,int idx);
 keyset* htable_find(keyset*, KEYT target);
 htable *htable_copy(htable *);
+htable *htable_assign();
 void htable_free(htable*);
+void htable_print(htable*);
 #endif

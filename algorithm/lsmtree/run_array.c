@@ -51,11 +51,10 @@ Entry *level_entry_copy(Entry *input){
 #endif
 	memcpy(res->bitset,input->bitset,sizeof(res->bitset));
 	res->iscompactioning=false;
-	res->version=input->version;
 	return res;
 }
 
-level *level_init(level *input,int all_entry,bool isTiering){
+level *level_init(level *input,int all_entry,float fpr, bool isTiering){
 	if(isTiering){
 		input->r_num=SIZEFACTOR;
 	}
@@ -90,6 +89,9 @@ level *level_init(level *input,int all_entry,bool isTiering){
 	input->start=UINT_MAX;
 	input->end=0;
 	input->iscompactioning=false;
+	input->fpr=fpr;
+	input->remain=NULL;
+	//input->version_info=0;
 	return input;
 }
 
@@ -131,6 +133,7 @@ Entry *level_find_fromR(Node *run, KEYT key){
 		if(mid_e->key <=key && mid_e->end>=key){
 #ifdef BLOOM
 			if(!bf_check(mid_e->filter,key)){
+				printf("false from filter\n");
 				return NULL;
 			}
 #endif
@@ -354,7 +357,6 @@ void level_free_entry(Entry *entry){
 			free(temp_table->sets);
 		}
 	}
-	free(entry->t_table);
 	free(entry);
 }
 void level_free_entry_inside(Entry * entry){
@@ -416,6 +418,25 @@ int level_range_find(level *input,KEYT start,KEYT end, Entry ***res, bool compac
 	(*res)=temp;
 	return rev;
 }
+
+int level_range_unmatch(level *input, KEYT start,Entry ***res,bool compactioning){
+	Iter *level_iter=level_get_Iter(input);
+	int rev=0;
+	Entry **temp;
+	temp=(Entry **)malloc(sizeof(Entry *)*input->m_num);
+	Entry *value;
+	while((value=level_get_next(level_iter))){
+		if(value->end<=start){
+			temp[rev++]=value;
+			if(compactioning) value->iscompactioning=true;
+		}
+	}
+	free(level_iter);
+	temp[rev]=NULL;
+	(*res)=temp;
+	return rev;
+}
+
 void level_check(level *input){
 	int cnt=0;
 	for(int i=0; i<input->r_n_num; i++){
@@ -423,14 +444,18 @@ void level_check(level *input){
 		for(int j=0; j<temp_run->n_num; j++){
 			Entry *temp_ent=ns_entry(temp_run,j);
 
+#ifdef BLOOM
 			if(temp_ent->filter->p>1){
 				printf("\r");
 			}
+#endif
+#ifdef CACHE
 			if(temp_ent->c_entry){
 				if(temp_ent->c_entry->entry==temp_ent){
 					printf("\r");
 				}
 			}
+#endif
 			if(temp_ent->t_table){
 				if(temp_ent->t_table->sets[10].lpa>10){
 					printf("\r");
@@ -445,7 +470,8 @@ void level_check(level *input){
 }
 void level_all_check(){
 	for(int i=0; i<LEVELN; i++){
-		level_check(LSM.disk[i]);
+		if(LSM.disk[i]!=0)
+			level_check(LSM.disk[i]);
 	}
 }
 /*

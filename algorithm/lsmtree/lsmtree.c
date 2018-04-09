@@ -27,16 +27,9 @@ uint32_t lsm_create(lower_info *li, algorithm *lsm){
 	LSM.memtable=skiplist_init();
 	unsigned long long sol=SIZEFACTOR;
 	float ffpr=RAF*(1-SIZEFACTOR)/(1-pow(SIZEFACTOR,LEVELN+0));
+	float target_fpr=0;
 	for(int i=0; i<LEVELN; i++){
 		LSM.disk[i]=(level*)malloc(sizeof(level));
-#ifdef TIERING
-		level_init(LSM.disk[i],sol,true);
-#else
-		level_init(LSM.disk[i],sol,false);
-#endif
-		sol*=SIZEFACTOR;
-
-		float target_fpr;
 #ifdef BLOOM
 #ifdef MONKEY
 		target_fpr=pow(SIZEFACTOR,i)*ffpr;
@@ -45,6 +38,13 @@ uint32_t lsm_create(lower_info *li, algorithm *lsm){
 #endif
 		LSM.disk[i]->fpr=target_fpr;
 #endif
+
+#ifdef TIERING
+		level_init(LSM.disk[i],sol,target_fpr,true);
+#else
+		level_init(LSM.disk[i],sol,target_fpr,false);
+#endif
+		sol*=SIZEFACTOR;
 		LSM.level_addr[i]=(PTR)LSM.disk[i];
 	}
 	pthread_mutex_init(&LSM.templock,NULL);
@@ -85,7 +85,8 @@ void* lsm_end_req(algo_req* const req){
 	bool havetofree=true;
 	void *req_temp_params=NULL;
 	PTR target=NULL;
-	htable *t_table=NULL;
+	htable **t_table=NULL;
+	htable *table=NULL;
 	switch(params->lsm_type){
 		case OLDDATA:
 			//do nothing
@@ -93,9 +94,9 @@ void* lsm_end_req(algo_req* const req){
 		case HEADERR:
 			if(!parents){ //end_req for compaction
 				//mem cpy for compaction
-				target=*params->target;
-				target=(PTR)malloc(PAGESIZE);
-				memcpy(target,params->value->value,PAGESIZE);
+				t_table=(htable**)params->target;
+				table=*t_table;
+				memcpy(table->sets,params->value->value,PAGESIZE);
 
 				comp_target_get_cnt++;
 				if(epc_check==comp_target_get_cnt){
@@ -105,7 +106,6 @@ void* lsm_end_req(algo_req* const req){
 					comp_target_get_cnt=0;
 #endif
 				}
-
 				//have to free
 				inf_free_valueset(params->value,FS_MALLOC_R);
 			}
@@ -227,7 +227,7 @@ uint32_t lsm_get(request *const req){
 	bench_algo_start(req);
 	int res=__lsm_get(req);
 	if(res==3){
-		printf("seq: %d, key:%u\n",nor++,req->key);
+	//	printf("seq: %d, key:%u\n",nor++,req->key);
 		req->type=FS_NOTFOUND_T;
 		req->end_req(req);
 	}
@@ -278,7 +278,7 @@ uint32_t __lsm_get(request *const req){
 				return 1;
 			}
 			bench_algo_end(req);
-			LSM.li->pull_data(target_node->ppa,PAGESIZE,req->value,0,lsm_req,0);
+			LSM.li->pull_data(target_node->ppa,PAGESIZE,req->value,ASYNC,lsm_req,0);
 			return 1;
 		}
 	}
@@ -291,7 +291,7 @@ uint32_t __lsm_get(request *const req){
 			params->lsm_type=DATAR;
 			bench_algo_end(req);
 
-			LSM.li->pull_data(target->ppa,PAGESIZE,req->value,0,lsm_req,0);
+			LSM.li->pull_data(target->ppa,PAGESIZE,req->value,ASYNC,lsm_req,0);
 			pthread_mutex_unlock(&LSM.entrylock);
 			return 1;
 		}
@@ -323,7 +323,7 @@ uint32_t __lsm_get(request *const req){
 			//read target data;
 			params->lsm_type=DATAR;
 			bench_algo_end(req);
-			LSM.li->pull_data(target->ppa,PAGESIZE,req->value,0,lsm_req,0);
+			LSM.li->pull_data(target->ppa,PAGESIZE,req->value,ASYNC,lsm_req,0);
 			return 1;
 		}
 	}
@@ -348,7 +348,7 @@ uint32_t __lsm_get(request *const req){
 					params->lsm_type=DATAR;
 					cache_update(LSM.lsm_cache,entry);
 					bench_algo_end(req);
-					LSM.li->pull_data(target->ppa,PAGESIZE,req->value,0,lsm_req,0);
+					LSM.li->pull_data(target->ppa,PAGESIZE,req->value,ASYNC,lsm_req,0);
 					free(entries);
 					return 1;
 				}
@@ -356,7 +356,7 @@ uint32_t __lsm_get(request *const req){
 			}
 #endif
 			//printf("header read!\n");
-			LSM.li->pull_data(entry->pbn,PAGESIZE,req->value,0,lsm_req,0);
+			LSM.li->pull_data(entry->pbn,PAGESIZE,req->value,ASYNC,lsm_req,0);
 			if(!req->isAsync){
 				pthread_mutex_lock(&params->lock); // wait until read table data;
 				mapinfo=(htable*)req->value;
@@ -374,7 +374,7 @@ uint32_t __lsm_get(request *const req){
 #endif
 					params->lsm_type=DATAR;
 					bench_algo_end(req);
-					LSM.li->pull_data(target->ppa,PAGESIZE,req->value,0,lsm_req,0);
+					LSM.li->pull_data(target->ppa,PAGESIZE,req->value,ASYNC,lsm_req,0);
 					free(entries);
 					return 1;
 				}
@@ -442,9 +442,22 @@ htable *htable_copy(htable *input){
 	return res;
 }
 
+htable *htable_assign(){
+	htable *res=(htable*)malloc(sizeof(htable));
+	res->sets=(keyset*)malloc(PAGESIZE);
+	res->t_b=0;
+	res->origin=NULL;
+	return res;
+}
+
 void htable_free(htable *input){
 	free(input->sets);
 	free(input);
 }
 
+void htable_print(htable * input){
+	for(int i=0; i<KEYNUM; i++){
+		printf("[%d] %u %u\n",i, input->sets[i].lpa, input->sets[i].ppa);
+	}
+}
 

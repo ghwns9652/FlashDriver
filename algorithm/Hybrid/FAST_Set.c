@@ -11,7 +11,7 @@
  * @TODO        Should optimize Merge opeartion of SW log block to reduce unneccesary writing to RW log block
  */
 
-uint32_t FAST_Set(const request *req)
+uint32_t FAST_Set(request *const req)
 {
     FAST_Parameters*    params;
     algo_req*           my_req;
