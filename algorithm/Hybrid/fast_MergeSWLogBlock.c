@@ -9,7 +9,7 @@
  * @return      Error code for function call
  */
 
-char fast_MergeSWLogBlock(uint32_t logical_block, request* const req)
+char fast_MergeSWLogBlock(uint32_t logical_block, request* req)
 {
     SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
     uint32_t data_block = BLOCK_TABLE(sw_MappingTable->data->logical_block);
@@ -45,7 +45,7 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* const req)
 
         if(GET_PAGE_STATE(src_address) == VALID){
             dst_address = ADDRESS(sw_MappingTable->data->physical_block, i);
-            fast_ReadPage(src_address, req);
+            fast_ReadPage(src_address, req, 1);
             /*
             params_1 = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
             params_1->parents = req;
@@ -65,7 +65,7 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* const req)
             printf("%d %d (Address Test)\n", src_address, dst_address);
             */
             dst_address = ADDRESS(sw_MappingTable->data->physical_block, i);
-            fast_WritePage(dst_address, req->value, req);
+            fast_WritePage(dst_address, req->value, req, 1);
             /*
             params_2 = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
             params_2->parents = req;

@@ -11,7 +11,7 @@
  * @TODO        Should optimize Merge opeartion of SW log block to reduce unneccesary writing to RW log block
  */
 
-uint32_t FAST_Set(request *const req)
+uint32_t FAST_Set(request* req)
 {
     FAST_Parameters*    params;
     algo_req*           my_req;
@@ -49,7 +49,7 @@ uint32_t FAST_Set(request *const req)
     FAST_Algorithm.li->push_data(physical_address, PAGESIZE, value, 0, my_req, 0);
     */
 
-    fast_WritePage(physical_address, value, req);
+    fast_WritePage(physical_address, value, req, 0);
 
     return 1;
 }

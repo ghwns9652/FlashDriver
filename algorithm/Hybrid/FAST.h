@@ -60,9 +60,9 @@ typedef struct {
 /* API Function */
 uint32_t FAST_Create(lower_info* li, algorithm* algo);
 void FAST_Destroy(lower_info* li, algorithm* algo);
-uint32_t FAST_Get(request* const req);
-uint32_t FAST_Set(request* const req);
-uint32_t FAST_Remove(request* const req);
+uint32_t FAST_Get(request* req);
+uint32_t FAST_Set(request* req);
+uint32_t FAST_Remove(request* req);
 void* FAST_EndRequest(algo_req* input);
 
 /* Internal Function */
@@ -79,13 +79,13 @@ int fast_ReadFromRWLogBlock(uint32_t physical_address);
 char fast_Write();
 char fast_WriteToLogBlock();
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address);
-char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* const req);
-char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request* const req);
+char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* req);
+char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request* req);
 
 /* FAST_Remove */
-char fast_SwitchSWLogBlock(uint32_t log_block_number, request* const req);
-char fast_MergeSWLogBlock(uint32_t log_block_number, request* const req);
-char fast_MergeRWLogBLock(uint32_t log_block_number, request* const req);
+char fast_SwitchSWLogBlock(uint32_t log_block_number, request* req);
+char fast_MergeSWLogBlock(uint32_t log_block_number, request* req);
+char fast_MergeRWLogBLock(uint32_t log_block_number, request* req);
 
 char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address);
 char fast_SearchRWLogBlock(uint32_t logical_address, uint32_t* physical_address);
@@ -102,9 +102,10 @@ void SET_PAGE_STATE(uint32_t physical_address, char state);
 char GET_BLOCK_STATE(uint32_t physical_address);
 void SET_BLOCK_STATE(uint32_t physical_address, char state);
 
-void fast_WritePage(uint32_t address, value_set* value_to_write, request *const req);
-value_set* fast_ReadPage(uint32_t address, request* const req);
-
+void fast_WritePage(uint32_t address, value_set* value_to_write, request* req, char type);
+value_set* fast_ReadPage(uint32_t address, request* req, char type);
+algo_req* assign_pseudo_req();
+void *pseudo_end_req(algo_req* input);
 
 /*@
  * Global Variables

@@ -1,6 +1,6 @@
 #include "FAST.h"
 
-void fast_WritePage(uint32_t address, value_set* value_to_write, request *const req)
+void fast_WritePage(uint32_t address, value_set* value_to_write, request* req, char type)
 {
 	value_set* value;
 	algo_req* my_req;
@@ -18,6 +18,11 @@ void fast_WritePage(uint32_t address, value_set* value_to_write, request *const 
     *value = *req->value;
 
 	value_set* value_in = inf_get_valueset(value->value, DMAWRITE);
-	FAST_Algorithm.li->push_data(address, PAGESIZE, value_in, 0, my_req, 0);	// Page unlaod
+    if(type){
+    	FAST_Algorithm.li->push_data(address, PAGESIZE, value_in, 0, assign_pseudo_req(), 0);	// Page unlaod
+    }
+    else{
+    	FAST_Algorithm.li->push_data(address, PAGESIZE, value_in, 0, my_req, 0);	// Page unlaod
+    }
 	//inf_free_valueset(value, DMAWRITE);
 }

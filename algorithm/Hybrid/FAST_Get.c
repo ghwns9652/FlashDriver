@@ -14,7 +14,7 @@
  *  No returns
  */
 
-uint32_t FAST_Get(request* const req)
+uint32_t FAST_Get(request* req)
 {
     uint32_t            key;
     value_set*          value;
@@ -46,6 +46,6 @@ uint32_t FAST_Get(request* const req)
     
     FAST_Algorithm.li->pull_data(physical_address, PAGESIZE, value, 0, my_req, 0);
     */
-    fast_ReadPage(physical_address, req);
+    fast_ReadPage(physical_address, req, 0);
     return 1;
 }

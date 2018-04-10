@@ -21,7 +21,7 @@
  *  No returns
  */
 
-char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* const req)
+char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* req)
 {
     //int physical_block;
     int logical_block;

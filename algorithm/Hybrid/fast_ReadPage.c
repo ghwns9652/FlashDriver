@@ -1,6 +1,6 @@
 #include "FAST.h"
 
-value_set* fast_ReadPage(uint32_t address, request* const req)
+value_set* fast_ReadPage(uint32_t address, request* req, char type)
 {
 	value_set *value;
 	algo_req* my_req;
@@ -17,7 +17,12 @@ value_set* fast_ReadPage(uint32_t address, request* const req)
     my_req->end_req = FAST_EndRequest;
     my_req->params = (void*)params;
 
-	FAST_Algorithm.li->pull_data(address, PAGESIZE, value, 0, my_req, 0); // Page
+	if(type){
+		FAST_Algorithm.li->pull_data(address, PAGESIZE, value, 0, assign_pseudo_req(), 0); // Page
+	}
+	else{
+		FAST_Algorithm.li->pull_data(address, PAGESIZE, value, 0, my_req, 0); // Page		
+	}
 
 	return value;
 }

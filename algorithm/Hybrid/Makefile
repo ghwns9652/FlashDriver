@@ -17,6 +17,7 @@ SRCS +=\
 		fast_SwitchSWLogBlock.c\
 		fast_MergeSWLogBlock.c\
 		fast_MergeRWLogBlock.c\
+		assign_pseudo_req.c\
 
 
 OBJS :=\

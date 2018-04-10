@@ -8,7 +8,7 @@
  *  No returns
  */
 
-char fast_SwitchSWLogBlock(uint32_t log_block_number, request* const req)
+char fast_SwitchSWLogBlock(uint32_t log_block_number, request* req)
 {
 	uint32_t data_block = BLOCK_TABLE(tableInfo->sw_MappingTable->data->logical_block);
 	uint32_t log_block = tableInfo->sw_MappingTable->data->physical_block;
