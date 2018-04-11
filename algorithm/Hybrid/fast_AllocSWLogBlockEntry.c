@@ -36,7 +36,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* re
     sw_logical_block = sw_MappingInfo->logical_block;
 	offset = OFFSET(key);
    	
-	
+	printf("%d ", sw_MappingInfo->number_of_stored_sector);
 	if(sw_MappingInfo->number_of_stored_sector == PAGE_PER_BLOCK){
 		fast_SwitchSWLogBlock(*physical_address, req);
 		sw_MappingInfo->number_of_stored_sector = 0;

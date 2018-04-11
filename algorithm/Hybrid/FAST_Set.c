@@ -32,23 +32,6 @@ uint32_t FAST_Set(request* req)
     printf("Set : %d to %d\n", key, physical_address);
     //printf("Set : %d to %d", key, physical_address);
 
-    /*
-    //Push data using translated address
-    params = (FAST_Parameters*)malloc(sizeof(FAST_Parameters));
-    params->parents = req;
-    params->test = -1;
-    
-    my_req = (algo_req*)malloc(sizeof(algo_req));
-    my_req->end_req = FAST_EndRequest;
-    my_req->params = (void*)params;
-
-    //printf("value %p \n", value);
-    //printf("my_req %p \n", my_req);
-    //printf("Test finished\n");
-    
-    FAST_Algorithm.li->push_data(physical_address, PAGESIZE, value, 0, my_req, 0);
-    */
-
     fast_WritePage(physical_address, req, 0);
 
     return 1;

@@ -23,7 +23,7 @@ char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
 
     // Translate logical block to physical block
     int physical_block = BLOCK_TABLE(logical_block);
-    printf("lobical_block : %d physical_block : %d ", logical_block, physical_block);
+    //printf("lobical_block : %d physical_block : %d ", logical_block, physical_block);
     // Check state of ssd using tasnlated address
     *physical_address = ADDRESS(physical_block, offset);
     char state = GET_PAGE_STATE(*physical_address);
