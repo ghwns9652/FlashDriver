@@ -102,7 +102,7 @@ void SET_PAGE_STATE(uint32_t physical_address, char state);
 char GET_BLOCK_STATE(uint32_t physical_address);
 void SET_BLOCK_STATE(uint32_t physical_address, char state);
 
-void fast_WritePage(uint32_t address, value_set* value_to_write, request* req, char type);
+void fast_WritePage(uint32_t address, request* req, char type);
 value_set* fast_ReadPage(uint32_t address, request* req, char type);
 algo_req* assign_pseudo_req();
 void *pseudo_end_req(algo_req* input);

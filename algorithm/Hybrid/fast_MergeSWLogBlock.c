@@ -13,31 +13,12 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* req)
 {
     SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
     uint32_t data_block = BLOCK_TABLE(sw_MappingTable->data->logical_block);
-    uint32_t new_block = data_block + 1;
 	//char state;
 	
 	uint32_t src_address;
 	uint32_t dst_address;
-	FAST_Parameters* params_1;
-	FAST_Parameters* params_2;
-	value_set* value = req->value;
-	algo_req* my_req_1;
-	algo_req* my_req_2;
 
-    printf("New block : %d Data block : %d\n", new_block, data_block);
-	while(new_block != data_block){
-        //printf("%d %d (Block Number)\n", new_block, data_block);
-		if(GET_BLOCK_STATE(new_block) == ERASED){
-			break;
-		}
-        //printf("%d", GET_BLOCK_STATE(new_block));
-        /*
-		if(new_block == data_block){
-			return (eUNEXPECTED);
-		}
-        */
-		new_block = (new_block + 1) % NUMBER_OF_BLOCK;
-	}
+	value_set* value = req->value;
 
 	for(unsigned int i = sw_MappingTable->data->number_of_stored_sector; i < PAGE_PER_BLOCK; i++){
         src_address = ADDRESS(BLOCK_TABLE(sw_MappingTable->data->logical_block), i);
@@ -45,7 +26,7 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* req)
             fast_ReadPage(src_address, req, 1);
 
             dst_address = ADDRESS(sw_MappingTable->data->physical_block, i);
-            fast_WritePage(dst_address, req->value, req, 1);
+            fast_WritePage(dst_address, req, 1);
         }
 	}
 
@@ -57,10 +38,9 @@ char fast_MergeSWLogBlock(uint32_t logical_block, request* req)
 		SET_PAGE_STATE(ADDRESS(dst_block, i), ERASED);
 	}
 
-	SET_BLOCK_STATE(sw_MappingTable->data->physical_block, ERASED);
+	SET_BLOCK_STATE(sw_MappingTable->data->physical_block, DATA_BLOCK);
 	SET_BLOCK_STATE(BLOCK_TABLE(sw_MappingTable->data->logical_block), ERASED);
-	SET_BLOCK_STATE(new_block, DATA_BLOCK);
-	printf("new block : %d", new_block);
+
     tableInfo->block_MappingTable->data[logical_block].physical_block = sw_MappingTable->data->physical_block;
     printf("Partial Merge ");
     return (eNOERROR);

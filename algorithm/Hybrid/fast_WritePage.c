@@ -1,6 +1,6 @@
 #include "FAST.h"
 
-void fast_WritePage(uint32_t address, value_set* value_to_write, request* req, char type)
+void fast_WritePage(uint32_t address, request* req, char type)
 {
 	value_set* value;
 	algo_req* my_req;

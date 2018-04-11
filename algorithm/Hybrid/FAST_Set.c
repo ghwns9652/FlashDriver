@@ -49,7 +49,7 @@ uint32_t FAST_Set(request* req)
     FAST_Algorithm.li->push_data(physical_address, PAGESIZE, value, 0, my_req, 0);
     */
 
-    fast_WritePage(physical_address, value, req, 0);
+    fast_WritePage(physical_address, req, 0);
 
     return 1;
 }

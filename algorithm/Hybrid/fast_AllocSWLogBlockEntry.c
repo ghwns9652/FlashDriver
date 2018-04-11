@@ -67,7 +67,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* re
 
 	*physical_address = ADDRESS(sw_MappingInfo->physical_block, offset);
 	sw_MappingInfo->number_of_stored_sector++;
-	printf("%d %d %d\t", sw_MappingInfo->physical_block, offset, *physical_address);
+	//printf("%d %d %d\t", sw_MappingInfo->physical_block, offset, *physical_address);
 	//printf("Why So Slow?\n");
 
 	//printf("    SW Log Block! ");
