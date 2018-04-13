@@ -23,3 +23,11 @@ char GET_BLOCK_STATE(uint32_t physical_address)
         { return *(BLOCK_STATE + physical_address); }
 void SET_BLOCK_STATE(uint32_t physical_address, char state)
         { *(BLOCK_STATE + physical_address) = state; }
+
+uint32_t FIND_ERASED_BLOCK()
+{
+    while(GET_BLOCK_STATE(BLOCK_LAST_USED) != ERASED){
+        BLOCK_LAST_USED = (BLOCK_LAST_USED + 1) % NUMBER_OF_BLOCK;
+    }
+    return BLOCK_LAST_USED;
+}

@@ -17,7 +17,7 @@ static char fast_FullMerge(int block_number, request* const req);
  * 
  * @return      Error code for function call
  */
-char fast_MergeRWLogBlock(uint32_t log_block, request* req)
+char fast_MergeRWLogBlock(uint32_t log_block, request *const req)
 { //TODO : Key, Value 다 가지고 와서 그것도 input할 필요가 있음.
     RW_MappingTable* rw_MappingTable = tableInfo->rw_MappingTable;
     unsigned int victim_block = rw_MappingTable->rw_log_block[0];

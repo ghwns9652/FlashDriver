@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "xmemory0": "c",
+        "system_error": "c",
+        "xtr1common": "c",
+        "deque": "c",
+        "queue": "c",
+        "vector": "c",
+        "xstring": "c",
+        "xutility": "c",
+        "fast.h": "c"
+    }
+}

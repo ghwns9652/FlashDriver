@@ -21,91 +21,41 @@
  *  No returns
  */
 
-char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* req)
+char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *const req)
 {
-    //int physical_block;
-    int logical_block;
-	uint32_t offset;
-   	int sw_logical_block;
-    int physical_block;
+    //int logical_block;
+    SW_MappingInfo*     sw_MappingInfo;
+    uint32_t            offset;
+    int                 block;
+    int                 logical_block;
+   	int                 sw_log_block;
 
-   	//SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
-    SW_MappingInfo* sw_MappingInfo = tableInfo->sw_MappingTable->data; 
-	logical_block = BLOCK(key);
-    physical_block = sw_MappingInfo->physical_block;
-    sw_logical_block = sw_MappingInfo->logical_block;
+    sw_MappingInfo = tableInfo->sw_MappingTable->data; 
 	offset = OFFSET(key);
+	block = BLOCK(key);
+    logical_block = sw_MappingInfo->logical_block;
+    sw_log_block = sw_MappingInfo->sw_log_block;
    	
-	printf("%d ", sw_MappingInfo->number_of_stored_sector);
 	if(sw_MappingInfo->number_of_stored_sector == PAGE_PER_BLOCK){
 		fast_SwitchSWLogBlock(*physical_address, req);
-		sw_MappingInfo->number_of_stored_sector = 0;
 	}
 	
-	if(offset == 0){
-        if(GET_BLOCK_STATE(physical_block) == SW_LOG_BLOCK){
-            fast_MergeSWLogBlock(logical_block, req);
-        }
-		sw_MappingInfo->logical_block = logical_block;
-		sw_MappingInfo->number_of_stored_sector = 0;
+	if(offset == 0 && GET_PAGE_STATE(ADDRESS(sw_log_block, 0)) != ERASED){
+        fast_MergeSWLogBlock(req);
+        sw_log_block = sw_MappingInfo->sw_log_block;
 	}
-	else if(logical_block == sw_logical_block){
-		// fast_MergeSWLogBlock(logical_block);
-
+	else if(block == logical_block){
 		if(offset != sw_MappingInfo->number_of_stored_sector){
-			//printf("Offset Different");
-			//printf("%d %d", sw_MappingInfo->number_of_stored_sector, offset);
-		    fast_MergeSWLogBlock(logical_block, req);
+		    fast_MergeSWLogBlock(req);
 			return (eNOTSEQUENTIAL);
-            // TODO : Add condition (if eNOTSEQUENTIAL -> just skip set operation because it is written already)
 		}
 	}
 	else{
-		//printf("Block Difference");
 		return (eNOTSEQUENTIAL);
 	}
-
-	*physical_address = ADDRESS(sw_MappingInfo->physical_block, offset);
+	*physical_address = ADDRESS(sw_MappingInfo->sw_log_block, offset);
 	sw_MappingInfo->number_of_stored_sector++;
-	//printf("%d %d %d\t", sw_MappingInfo->physical_block, offset, *physical_address);
-	//printf("Why So Slow?\n");
 
-	//printf("    SW Log Block! ");
+	printf("SW Log Block ");
 	return (eNOERROR);
-	/*
-	if(BLOCK(key) != sw_MappingTable->data->logical_block){
-		// TRIM & MAKE_NEW_ALLOCATION
-		if(offset == 0){
-			//if(sw_MappingTable->data->number_of_stored_sector == PAGE_PER_BLOCK){
-			if(fast_SwitchSWLogBlock() != eNOERROR){
-				fast_MergeSWLogBlock();
-			}
-			//else{
-			//	fast_MergeSWLogBlock();
-			//}
-			// TRIM
-			//
-			return (eNOERROR);
-		}
-		else{
-			return (eNOTSEQUENTIAL);
-		}
-	}
-	*/
-	
-    // @TODO : Trim
-	/*
-    if(sw_MappingTable->data->number_of_stored_sector == PAGE_PER_BLOCK){
-        // @TODO: TRIM
-        // Optimized with Switch-Merge
-        // fast_InitSWLogBlock();
-
-        // Initiate Sector Mapping for SW Log Block
-        memset(sw_MappingTable->data, 0, sizeof(SW_MappingInfo));
-        //return FULL
-		
-        return (eNOERROR);
-    }
-	*/
-
 }

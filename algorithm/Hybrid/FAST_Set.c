@@ -8,13 +8,11 @@
  * Returns :
  *  No returns
  * 
- * @TODO        Should optimize Merge opeartion of SW log block to reduce unneccesary writing to RW log block
+ * @TODO    Should optimize Merge opeartion of SW log block to reduce unneccesary writing to RW log block
  */
 
-uint32_t FAST_Set(request* req)
+uint32_t FAST_Set(request *const req)
 {
-    FAST_Parameters*    params;
-    algo_req*           my_req;
     KEYT                key;
     value_set*          value;
     uint32_t            physical_address;
@@ -30,9 +28,7 @@ uint32_t FAST_Set(request* req)
     }
 
     printf("Set : %d to %d\n", key, physical_address);
-    //printf("Set : %d to %d", key, physical_address);
-
-    fast_WritePage(physical_address, req, 0);
+    fast_WritePage(physical_address, req, value, 0);
 
     return 1;
 }

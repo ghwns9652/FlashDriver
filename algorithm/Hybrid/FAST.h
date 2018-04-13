@@ -10,12 +10,11 @@
  */
 typedef struct {
     request* parents;
-    int test;
 } FAST_Parameters;
 
 typedef struct {
     uint32_t logical_block;
-    uint32_t physical_block;
+    uint32_t sw_log_block;
     uint32_t number_of_stored_sector;
 } SW_MappingInfo;
 
@@ -60,9 +59,9 @@ typedef struct {
 /* API Function */
 uint32_t FAST_Create(lower_info* li, algorithm* algo);
 void FAST_Destroy(lower_info* li, algorithm* algo);
-uint32_t FAST_Get(request* req);
-uint32_t FAST_Set(request* req);
-uint32_t FAST_Remove(request* req);
+uint32_t FAST_Get(request *const req);
+uint32_t FAST_Set(request *const req);
+uint32_t FAST_Remove(request *const req);
 void* FAST_EndRequest(algo_req* input);
 
 /* Internal Function */
@@ -79,13 +78,13 @@ int fast_ReadFromRWLogBlock(uint32_t physical_address);
 char fast_Write();
 char fast_WriteToLogBlock();
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address);
-char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request* req);
-char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request* req);
+char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *const req);
+char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request *const req);
 
 /* FAST_Remove */
-char fast_SwitchSWLogBlock(uint32_t log_block_number, request* req);
-char fast_MergeSWLogBlock(uint32_t log_block_number, request* req);
-char fast_MergeRWLogBLock(uint32_t log_block_number, request* req);
+char fast_SwitchSWLogBlock(uint32_t log_block_number, request *const req);
+char fast_MergeSWLogBlock(request *const req);
+char fast_MergeRWLogBLock(uint32_t log_block_number, request *const req);
 
 char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address);
 char fast_SearchRWLogBlock(uint32_t logical_address, uint32_t* physical_address);
@@ -101,9 +100,10 @@ char GET_PAGE_STATE(uint32_t physical_address);
 void SET_PAGE_STATE(uint32_t physical_address, char state);
 char GET_BLOCK_STATE(uint32_t physical_address);
 void SET_BLOCK_STATE(uint32_t physical_address, char state);
+uint32_t FIND_ERASED_BLOCK();
 
-void fast_WritePage(uint32_t address, request* req, char type);
-value_set* fast_ReadPage(uint32_t address, request* req, char type);
+void fast_WritePage(uint32_t address, request *const req, value_set* value_in, char type);
+value_set* fast_ReadPage(uint32_t address, request *const req, value_set* value, char type);
 algo_req* assign_pseudo_req();
 void *pseudo_end_req(algo_req* input);
 
@@ -141,6 +141,7 @@ extern uint32_t PAGE_PER_BLOCK;
 extern uint32_t TOTAL_SIZE;
 
 extern uint32_t NUMBER_OF_DATA_BLOCK;
+extern uint32_t BLOCK_LAST_USED;
 
 extern const char DATA_BLOCK;
 extern const char SW_LOG_BLOCK;

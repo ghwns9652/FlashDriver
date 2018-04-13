@@ -16,7 +16,7 @@
  */
 
 // @TODO : Please use Circular Queue
-char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request* req)
+char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request *const req)
 {
     //uint32_t physical_block;
     //uint32_t offset;
