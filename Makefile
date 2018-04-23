@@ -1,4 +1,4 @@
-export CC=gcc
+export CC=g++
 
 TARGET_LOWER=posix
 TARGET_ALGO=dftl

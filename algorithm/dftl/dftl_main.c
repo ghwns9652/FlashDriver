@@ -30,7 +30,6 @@ uint32_t demand_get(request *const req){
 	my_req->end_req = demand_end_req;
 
 	lpa = req->key;
-	printf("get lpa : %d\n", lpa);
 	/* Cache hit */
 	if((CMT_i = CMT_check(lpa, &ppa)) != -1){
 		queue_update(CMT[CMT_i].queue_ptr);	// Update queue
@@ -66,6 +65,7 @@ uint32_t demand_get(request *const req){
 			my_req->end_req(my_req);
 		}
 	}
+	return 0;
 }
 
 uint32_t demand_set(request *const req){
@@ -101,6 +101,7 @@ uint32_t demand_set(request *const req){
 		bench_algo_end(req);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
 	}
+	return 0;
 }
 
 uint32_t demand_remove(request *const req){
@@ -140,6 +141,7 @@ uint32_t demand_remove(request *const req){
 	inf_free_valueset(temp_value_set, DMAREAD);
 	inf_free_valueset(temp_value_set2, DMAWRITE);
 	bench_algo_end(req);
+	return 0;
 }
 
 int CMT_check(int32_t lpa, int32_t *ppa){
@@ -202,5 +204,6 @@ uint32_t demand_eviction(int *CMT_i){
 	demand_OOB[ppa].cache_bit = 0; // Mark data page as t_page mapping
 	queue_delete(tail); // Delete queue
 	CMT[*CMT_i] = (C_TABLE){-1, -1, 0, NULL}; // Initialize CMT
+	return 0;
 }
 #endif

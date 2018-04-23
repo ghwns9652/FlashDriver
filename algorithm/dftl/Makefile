@@ -1,11 +1,8 @@
-CC=gcc
+CC=g++
 
 TARGET_CACHE_UNIT=UNIT_T
 
-CFLAGS +=\
-		 -g\
-		 -std=c99\
-		 -Wno-discarded-qualifiers\
+CFLAGS_ALGO +=\
 		 -D$(TARGET_CACHE_UNIT)\
 
 SRCS +=\
@@ -29,10 +26,10 @@ libnom.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)
 
 .c.o :
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 ../../object/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 clean : 
 	@$(RM) libnom.a

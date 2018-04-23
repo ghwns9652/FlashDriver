@@ -34,8 +34,8 @@ int lpa_compare(const void *a, const void *b){
 	uint32_t num1 = (uint32_t)(((D_SRAM*)a)->OOB_RAM.reverse_table);
 	uint32_t num2 = (uint32_t)(((D_SRAM*)b)->OOB_RAM.reverse_table);
 	if(num1 < num2) return -1;
-	if(num1 == num2) return 0;
-	if(num1 > num2) return 1;
+	else if(num1 == num2) return 0;
+	else return 1;
 }
 
 void dpage_GC(){
@@ -110,8 +110,8 @@ int ppa_compare(const void *a, const void *b){
 	uint32_t num1 = (uint32_t)(((D_TABLE*)a)->ppa);
 	uint32_t num2 = (uint32_t)(((D_TABLE*)a)->ppa);
 	if(num1 < num2) return -1;
-	if(num1 == num2) return 0;
-	if(num1 > num2) return 1;
+	else if(num1 == num2) return 0;
+	else return 1;
 }
 
 /* Please enhance the full merge algorithm !!! */
@@ -119,7 +119,6 @@ int ppa_compare(const void *a, const void *b){
 void tpage_GC(){
 	int n = 0;
 	int32_t head_ppa;
-	int32_t temp_ppa;
 	D_TABLE* GTDcpy = (D_TABLE*)malloc(GTDSIZE);
 	memcpy(GTDcpy, GTD, GTDSIZE);
 	qsort(GTDcpy, GTDENT, sizeof(D_TABLE), ppa_compare);

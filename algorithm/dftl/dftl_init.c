@@ -66,6 +66,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	PBA_status = 0;
 	needGC = 0;
 	tpage_onram_num = 0;
+	return 0;
 }
 
 void demand_destroy(lower_info *li, algorithm *algo){
@@ -77,15 +78,18 @@ void demand_destroy(lower_info *li, algorithm *algo){
 		queue_delete(head);
 }
 
+/* Does it need to return void pointer??? */
 void *demand_end_req(algo_req* input){
 	request *res = input->parents;
 	res->end_req(res);
 
 	free(input);
+	return NULL;
 }
 
 void *pseudo_end_req(algo_req* input){
 	free(input);
+	return NULL;
 }
 
 algo_req* assign_pseudo_req(){

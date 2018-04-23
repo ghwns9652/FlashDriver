@@ -19,7 +19,6 @@ uint32_t demand_get(request *const req){
 	int32_t lpa; // Logical data page address
 	int32_t ppa; // Physical data page address
 	int32_t t_ppa; // Translation page address
-	int CMT_i; // Cache mapping table index
 	D_TABLE* p_table; // Contains page table
 	value_set *temp_value_set;
 	
@@ -73,6 +72,7 @@ uint32_t demand_get(request *const req){
 			my_req->end_req(my_req);
 		}
 	}
+	return 0;
 }
 
 uint32_t demand_set(request *const req){
@@ -90,7 +90,7 @@ uint32_t demand_set(request *const req){
 
 	lpa = req->key;
 	/* Cache hit */
-	if(p_table = CMT_check(lpa, &ppa)){
+	if((p_table = CMT_check(lpa, &ppa))){
 		demand_OOB[ppa].valid_checker = 0; // Invalidate previous page
 		dp_alloc(&ppa); // Allocate data page
 		p_table[P_IDX].ppa = ppa;
@@ -134,6 +134,7 @@ uint32_t demand_set(request *const req){
 		bench_algo_end(req);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
 	}
+	return 0;
 }
 
 uint32_t demand_remove(request *const req){
@@ -141,7 +142,6 @@ uint32_t demand_remove(request *const req){
 	int32_t lpa;
 	int32_t ppa;
 	int32_t t_ppa;
-	int CMT_i;
 	D_TABLE *p_table;
 	value_set *temp_value_set;
 	
@@ -152,7 +152,7 @@ uint32_t demand_remove(request *const req){
 
 	/* Cache hit */
 	lpa = req->key;
-	if(p_table = CMT_check(lpa, &ppa)){
+	if((p_table = CMT_check(lpa, &ppa))){
 		demand_OOB[ppa].valid_checker = 0;
 		p_table[P_IDX].ppa = -1;
 	}
@@ -184,6 +184,7 @@ uint32_t demand_remove(request *const req){
 			printf("Error : No such data");
 		bench_algo_end(req);
 	}
+	return 0;
 }
 
 D_TABLE* CMT_check(int32_t lpa, int32_t *ppa){
@@ -195,8 +196,6 @@ D_TABLE* CMT_check(int32_t lpa, int32_t *ppa){
 
 // Make empty cache entry queue function
 uint32_t demand_eviction(){
-	int32_t victim_idx;
-	int32_t ppa;
 	int32_t t_ppa;
 	C_TABLE *cache_ptr;
 	D_TABLE *p_table;
@@ -225,5 +224,6 @@ uint32_t demand_eviction(){
 	free(p_table);
 	cache_ptr->p_table = NULL;
 	tpage_onram_num--;
+	return 0;
 }
 #endif

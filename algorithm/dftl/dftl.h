@@ -8,12 +8,12 @@
 
 #ifdef UNIT_D
 #define CACHESIZE (32*K)
-#define EPP (PAGESIZE / sizeof(D_TABLE)) //Number of table entries per page
+#define EPP (PAGESIZE / (int)sizeof(D_TABLE)) //Number of table entries per page
 #define NTP (_NOP / EPP) //Number of Translation Page
-#define	GTDSIZE (sizeof(D_TABLE) * NTP)
-#define GTDENT (GTDSIZE/sizeof(D_TABLE))	// Num of GTD entries
-#define CMTSIZE (sizeof(C_TABLE) * ((CACHESIZE - GTDSIZE) / sizeof(C_TABLE)))
-#define CMTENT (CMTSIZE/sizeof(C_TABLE))	// Num of CMT entries
+#define	GTDSIZE ((int)sizeof(D_TABLE) * NTP)
+#define GTDENT (GTDSIZE/(int)sizeof(D_TABLE))	// Num of GTD entries
+#define CMTSIZE ((int)sizeof(C_TABLE) * ((CACHESIZE - GTDSIZE) / (int)sizeof(C_TABLE)))
+#define CMTENT (CMTSIZE/(int)sizeof(C_TABLE))	// Num of CMT entries
 #define D_IDX (lpa/EPP)	// Idx of directory table
 #define P_IDX (lpa%EPP)	// Idx of page table
 #define DMAWRITE 1
@@ -70,9 +70,9 @@ void tp_alloc(int32_t *t_ppa);
 
 #ifdef UNIT_T
 #define CACHESIZE (32*K)
-#define EPP (PAGESIZE / sizeof(D_TABLE)) //Number of table entries per page
+#define EPP (PAGESIZE / (int)sizeof(D_TABLE)) //Number of table entries per page
 #define NTP (_NOP / EPP) //Number of Translation Page
-#define CMTSIZE (sizeof(C_TABLE) * NTP)
+#define CMTSIZE ((int)sizeof(C_TABLE) * NTP)
 #define CMTENT NTP // Num of CMT entries
 #define D_IDX (lpa/EPP)	// Idx of directory table
 #define P_IDX (lpa%EPP)	// Idx of page table
