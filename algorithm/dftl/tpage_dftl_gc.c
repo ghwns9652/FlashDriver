@@ -4,7 +4,6 @@
 extern algorithm __demand;
 
 extern C_TABLE *CMT; // Cached Mapping Table
-extern D_TABLE *GTD; // Global Translation Directory
 extern D_OOB *demand_OOB; // Page level OOB
 extern D_SRAM *d_sram; // SRAM for contain block data temporarily
 
@@ -23,8 +22,8 @@ char btype_check(int32_t PBA_status){
 	if(invalid_page_num == _PPB)
 		return 'N';
 
-	for(int i = 0; i < GTDENT; i++){
-		if(GTD[i].ppa != -1 && (GTD[i].ppa / _PPB) == PBA_status)
+	for(int i = 0; i < CMTENT; i++){
+		if(CMT[i].t_ppa != -1 && (CMT[i].t_ppa / _PPB) == PBA_status)
 			return 'T';
 	}
 	return 'D';
@@ -68,13 +67,13 @@ void dpage_GC(){
 	qsort(d_sram, _PPB, sizeof(D_SRAM), lpa_compare);	// Sort d_sram as lpa
 	
 	/* Mapping data manage */
-	for(int i = 0; i <= valid_page_num; i++){
+	for(int i = 0; i < valid_page_num; i++){
 		lpa = d_sram[i].OOB_RAM.reverse_table;
-		CMT_i = CMT_check(lpa, &ppa);
+		p_table = CMT_check(lpa, &ppa);
 		/* Cache update */
-		if(CMT_i != -1 && ppa == origin_ppa[i]){ // Check cache bit
-			CMT[CMT_i].p_table[P_IDX].ppa = PBA2PPA + i; // Cache ppa, flag update
-			CMT[CMT_i].flag = 1;
+		if(p_table != NULL && ppa == origin_ppa[i]){ // Check cache bit
+			p_table[P_IDX].ppa = PBA2PPA + i; // Cache ppa, flag update
+			CMT[D_IDX].flag = 1;
 		}
 		/* Batch update */
 		else{
@@ -88,15 +87,15 @@ void dpage_GC(){
 				__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set2, 0, assign_pseudo_req(), 0);
 				inf_free_valueset(temp_value_set2, DMAWRITE);
 				demand_OOB[t_ppa] = (D_OOB){vba, 1}; // OOB management
-				demand_OOB[GTD[vba].ppa].valid_checker = 0; // Invalidate previous tpage
-				GTD[vba].ppa = t_ppa; // GTD update
+				demand_OOB[CMT[vba].t_ppa].valid_checker = 0; // Invalidate previous tpage
+				CMT[vba].t_ppa = t_ppa; // GTD update
 				inf_free_valueset(temp_value_set, DMAREAD);
 				p_table = NULL;
 			}
 			if(p_table == NULL && i != valid_page_num){ // Start to make new tpage
 				vba = D_IDX; // vba calculation
 				temp_value_set = inf_get_valueset(NULL, DMAREAD);
-				__demand.li->pull_data(GTD[vba].ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Load tpage
+				__demand.li->pull_data(CMT[vba].t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Load tpage
 				p_table = (D_TABLE*)temp_value_set->value;
 				p_table[P_IDX].ppa = PBA2PPA + i; // Update tpage
 			}
@@ -121,11 +120,12 @@ void tpage_GC(){
 	int n = 0;
 	int32_t head_ppa;
 	int32_t temp_ppa;
-	D_TABLE* GTDcpy = (D_TABLE*)malloc(GTDSIZE);
-	memcpy(GTDcpy, GTD, GTDSIZE);
-	qsort(GTDcpy, GTDENT, sizeof(D_TABLE), ppa_compare);
+	D_TABLE* GTDcpy = (D_TABLE*)malloc(CMTENT * sizeof(D_TABLE));
+	for(int i = 0; i < CMTENT; i++)
+		GTDcpy[i].ppa = CMT[i].t_ppa;
+	qsort(GTDcpy, CMTENT, sizeof(D_TABLE), ppa_compare);
 
-	for(int i = 0; i < GTDENT; i++){
+	for(int i = 0; i < CMTENT; i++){
 		if(GTDcpy[i].ppa == -1)
 			break;
 		else{ //
@@ -135,7 +135,7 @@ void tpage_GC(){
 			if(n == _PPB){
 				__demand.li->trim_block(head_ppa, false);
 				for(int j = 0; j < _PPB; j++){
-					GTD[d_sram[j].OOB_RAM.reverse_table].ppa = head_ppa + j;
+					CMT[d_sram[j].OOB_RAM.reverse_table].t_ppa = head_ppa + j;
 					SRAM_unload(head_ppa + j, j);
 				}
 				n = -1;
@@ -146,7 +146,7 @@ void tpage_GC(){
 	if(n > 0){
 		__demand.li->trim_block(head_ppa, false);
 		for(int j = 0; j < n; j++){
-			GTD[d_sram[j].OOB_RAM.reverse_table].ppa = head_ppa + j;
+			CMT[d_sram[j].OOB_RAM.reverse_table].t_ppa = head_ppa + j;
 			SRAM_unload(head_ppa + j, j);
 		}
 		TPA_status = head_ppa + n;

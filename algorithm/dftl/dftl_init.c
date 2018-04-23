@@ -20,14 +20,13 @@ int32_t DPA_status; // Data page allocation
 int32_t TPA_status; // Translation page allocation
 int32_t PBA_status; // Block allocation
 int8_t needGC; // Indicates need of GC
+int32_t tpage_onram_num;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// Table Allocation
-	printf("GTDSIZE : %ld\n", GTDSIZE);
-	printf("CMTSIZE : %ld\n", CMTSIZE);
-	printf("GTDENT : %ld\n", GTDENT);
-	printf("CMTENT : %ld\n", CMTENT);
+#ifdef UNIT_D
 	GTD = (D_TABLE*)malloc(GTDSIZE);
+#endif
 	CMT = (C_TABLE*)malloc(CMTSIZE);
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * _NOP);
 	d_sram = (D_SRAM*)malloc(sizeof(D_SRAM) * _PPB);
@@ -49,10 +48,9 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
 #ifdef UNIT_T
 	// SRAM, OOB initialization
-	for(int i = 0; i < GTDENT; i++)
-		GTD[i].ppa = -1;
 	for(int i = 0; i < CMTENT; i++){
-		CMT[i].GTD_idx = -1;
+		CMT[i].t_ppa = -1;
+		CMT[i].p_table = NULL;
 		CMT[i].flag = 0;
 		CMT[i].queue_ptr = NULL;
 	}
@@ -67,6 +65,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	TPA_status = 0;
 	PBA_status = 0;
 	needGC = 0;
+	tpage_onram_num = 0;
 }
 
 void demand_destroy(lower_info *li, algorithm *algo){
