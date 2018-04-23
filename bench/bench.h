@@ -1,3 +1,5 @@
+#ifndef __H_BENCH__
+#define __H_BENCH__
 #include "../include/settings.h"
 #include "../include/container.h"
 #include "measurement.h"
@@ -7,6 +9,7 @@ typedef struct{
 	FSTYPE type;
 	KEYT key;
 	V_PTR value;
+	uint32_t length;
 	int mark;
 }bench_value;
 
@@ -72,3 +75,4 @@ void bench_reap_data(request *const,lower_info *);
 
 void free_bnech_all();
 void free_bench_one(bench_value *);
+#endif
