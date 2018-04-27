@@ -82,8 +82,8 @@ void dpage_GC(){
 				p_table[P_IDX].ppa = PBA2PPA + i;
 			else if(vba != INT32_MAX){ // Push t_ppa
 				tp_alloc(&t_ppa);
-				temp_value_set2 = inf_get_valueset(temp_value_set->value, DMAWRITE);
-				__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set2, 0, assign_pseudo_req(), 0);
+				temp_value_set2 = inf_get_valueset(temp_value_set->value, DMAWRITE, PAGESIZE);
+				__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set2, 0, assign_pseudo_req());
 				inf_free_valueset(temp_value_set2, DMAWRITE);
 				demand_OOB[t_ppa] = (D_OOB){vba, 1}; // OOB management
 				demand_OOB[CMT[vba].t_ppa].valid_checker = 0; // Invalidate previous tpage
@@ -93,8 +93,8 @@ void dpage_GC(){
 			}
 			if(p_table == NULL && i != valid_page_num){ // Start to make new tpage
 				vba = D_IDX; // vba calculation
-				temp_value_set = inf_get_valueset(NULL, DMAREAD);
-				__demand.li->pull_data(CMT[vba].t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Load tpage
+				temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
+				__demand.li->pull_data(CMT[vba].t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req()); // Load tpage
 				p_table = (D_TABLE*)temp_value_set->value;
 				p_table[P_IDX].ppa = PBA2PPA + i; // Update tpage
 			}
@@ -156,8 +156,8 @@ void tpage_GC(){
 void SRAM_load(int32_t ppa, int idx){
 	value_set *temp_value_set;
 
-	temp_value_set = inf_get_valueset(NULL, DMAREAD);
-	__demand.li->pull_data(ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Page load
+	temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
+	__demand.li->pull_data(ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req()); // Page load
 	d_sram[idx].valueset_RAM = temp_value_set;
 	d_sram[idx].OOB_RAM = demand_OOB[ppa];	// Page load
 	demand_OOB[ppa] = (D_OOB){-1, 0};	// OOB init
@@ -166,8 +166,8 @@ void SRAM_load(int32_t ppa, int idx){
 void SRAM_unload(int32_t ppa, int idx){
 	value_set *temp_value_set;
 
-	temp_value_set = inf_get_valueset(d_sram[idx].valueset_RAM->value, DMAWRITE);
-	__demand.li->push_data(ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0);	// Page unlaod
+	temp_value_set = inf_get_valueset(d_sram[idx].valueset_RAM->value, DMAWRITE, PAGESIZE);
+	__demand.li->push_data(ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req());	// Page unlaod
 	inf_free_valueset(temp_value_set, DMAWRITE);
 	inf_free_valueset(d_sram[idx].valueset_RAM, DMAREAD);
 	demand_OOB[ppa] = d_sram[idx].OOB_RAM;	// OOB unload

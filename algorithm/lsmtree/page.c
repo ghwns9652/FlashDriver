@@ -21,12 +21,22 @@ OOBT oob[_NOP];
 pm data_m;
 pm header_m;
 
-OOBT PBITSET(KEYT input){
+OOBT PBITSET(KEYT input,bool isFull){
+	input<<=1;
+	if(isFull){
+		input|=1;
+	}
+
 	OOBT value=input;
 	return value;
 }
-KEYT PBITGET(OOBT input){
-	return (KEYT)oob[input];
+KEYT PBITGET(KEYT ppa){
+	KEYT res=(KEYT)oob[ppa];
+	res>>=1;
+	return res;
+}
+bool PBITFULL(OOBT input){
+	return input&1?true:false;
 }
 void block_free_ppa(pm *m, block* b){
 	KEYT start=b->ppa;
@@ -71,7 +81,7 @@ void gc_data_read(KEYT ppa,htable_t *value){
 	lsm_params *params=(lsm_params*)malloc(sizeof(lsm_params));
 
 	params->lsm_type=GCR;
-	params->value=inf_get_valueset(NULL,FS_MALLOC_R);
+	params->value=inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
 	params->target=(PTR*)value->sets;
 	value->origin=params->value;
 
@@ -79,7 +89,7 @@ void gc_data_read(KEYT ppa,htable_t *value){
 	areq->end_req=lsm_end_req;
 	areq->params=(void*)params;
 
-	algo_lsm.li->pull_data(ppa,PAGESIZE,params->value,0,areq,0);
+	algo_lsm.li->pull_data(ppa,PAGESIZE,params->value,ASYNC,areq);
 	return;
 }
 
@@ -88,13 +98,13 @@ void gc_data_write(KEYT ppa,htable_t *value){
 	lsm_params *params=(lsm_params*)malloc(sizeof(lsm_params));
 
 	params->lsm_type=GCW;
-	params->value=inf_get_valueset((PTR)(value)->sets,FS_MALLOC_W);
+	params->value=inf_get_valueset((PTR)(value)->sets,FS_MALLOC_W,PAGESIZE);
 
 	areq->parents=NULL;
 	areq->end_req=lsm_end_req;
 	areq->params=(void*)params;
 
-	algo_lsm.li->push_data(ppa,PAGESIZE,params->value,0,areq,0);
+	algo_lsm.li->push_data(ppa,PAGESIZE,params->value,0,areq);
 	return;
 }
 void pm_a_init(pm *m,KEYT size,KEYT *_idx){
@@ -133,7 +143,7 @@ void pm_init(){
 KEYT getRPPA(pm* m,KEYT lpa){
 	KEYT res=pq_dequeue(m->r_ppa);
 	if(res!=UINT_MAX && lpa!=UINT_MAX)
-		oob[res]=PBITSET(lpa);
+		oob[res]=PBITSET(lpa,true);
 	return res;
 }
 
@@ -149,11 +159,11 @@ KEYT getHPPA(KEYT lpa){
 		}
 		res=pq_dequeue(header_m.ppa);
 	}
-	oob[res]=PBITSET(lpa);
+	oob[res]=PBITSET(lpa,true);
 	return res;
 }
 
-KEYT getDPPA(KEYT lpa){
+KEYT getDPPA(KEYT lpa,bool isfull){
 #ifdef NOGC
 	return __ppa++;
 #endif
@@ -165,7 +175,7 @@ KEYT getDPPA(KEYT lpa){
 		}
 		res=pq_dequeue(data_m.ppa);
 	}
-	oob[res]=PBITSET(lpa);
+	oob[res]=PBITSET(lpa,isfull);
 	return res;
 }
 void invalidate_PPA(KEYT ppa){
@@ -309,6 +319,7 @@ int gc_header(){
 		table=tables[i];
 		test->pbn=n_ppa;
 		gc_data_write(n_ppa,table);
+		free(tables[i]);
 	}
 	//printf("gc_header\n");
 	//level_all_print();
@@ -368,6 +379,7 @@ void gc_data_header_update(KEYT d_ppa, KEYT d_lpa, KEYT n_ppa){
 					}
 #endif
 					gc_data_write(n_hppa,tables[k]);
+					free(tables[k]);
 					doneflag=true;
 				}
 			}
@@ -429,8 +441,8 @@ int gc_data(){
 		KEYT d_lpa=PBITGET(d_ppa);
 		KEYT n_ppa=getRPPA(&data_m,d_lpa);
 		gc_data_header_update(d_ppa,d_lpa,n_ppa);
-
 		gc_data_write(n_ppa,data);
+		free(tables[i]);
 	}
 	free(tables);
 	algo_lsm.li->trim_block(target->ppa,0);

@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
-extern struct lower_info __posix;
+extern struct lower_info my_posix;
 extern struct algorithm __normal;
 extern struct algorithm __demand;
 extern struct algorithm algo_pbase;
@@ -15,6 +15,10 @@ extern struct algorithm algo_pbase;
 extern struct algorithm algo_lsm;
 #endif
 
+#ifdef bdbm_drv
+extern struct lower_info memio_info;
+#endif
+MeasureTime mt;
 master_processor mp;
 void *p_main(void*);
 static void assign_req(request* req){
@@ -73,9 +77,14 @@ void inf_init(){
 		pthread_create(&t->t_id,NULL,&p_main,NULL);
 	}
 	pthread_mutex_init(&mp.flag,NULL);
+	measure_init(&mt);
 #ifdef posix
-	mp.li=&__posix;
+	mp.li=&my_posix;
 #endif
+#ifdef bdbm_drv
+	mp.li=&memio_info;
+#endif
+
 
 #ifdef lsmtree
 	mp.algo=&algo_lsm;
@@ -90,6 +99,7 @@ void inf_init(){
 #ifdef page
 	mp.algo=&algo_pbase;
 #endif
+
 	mp.li->create(mp.li);
 	mp.algo->create(mp.li,mp.algo);
 }
@@ -102,11 +112,12 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->upper_req=NULL;
 	req->type=type;
 	req->key=key;
+	
+	req->value=inf_get_valueset(value->value,req->type,value->length);
 
-	req->value=inf_get_valueset(value->value,req->type);
 
 	req->end_req=inf_end_req;
-	req->isAsync=false;
+	req->isAsync=ASYNC;
 	req->params=NULL;
 #ifndef USINGAPP
 	req->algo.isused=false;
@@ -132,7 +143,7 @@ bool inf_make_req_Async(void *ureq, void *(*end_req)(void*)){
 	upper_request *u_req=(upper_request*)ureq;
 	req->type=u_req->type;
 	req->key=u_req->key;
-	req->value=inf_get_valueset(u_req->value,req->type);
+	req->value=inf_get_valueset(u_req->value,req->type,u_req->length);
 	req->isAsync=true;
 	switch(req->type){
 		case FS_GET_T:
@@ -156,14 +167,19 @@ bool inf_end_req( request * const req){
 	printf("inf_end_req!\n");
 #endif
 	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
-		int check;
-		memcpy(&check,req->value,sizeof(check));
+		//int check;
+		//memcpy(&check,req->value,sizeof(check));
 		/*
 		if((++end_req_num)%1024==0)
 			printf("get:%d, number: %d\n",check,end_req_num);*/
 	}
 	if(req->value){
-		inf_free_valueset(req->value, req->type);
+		if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+			inf_free_valueset(req->value, FS_MALLOC_R);
+		}
+		else if(req->type==FS_SET_T){
+			inf_free_valueset(req->value, FS_MALLOC_W);
+		}
 	}
 	if(!req->isAsync){
 		pthread_mutex_unlock(&req->async_mutex);
@@ -177,6 +193,8 @@ void inf_free(){
 	mp.li->stop();
 	mp.stopflag=true;
 	int *temp;
+	printf("result of ms:\n");
+	printf("---\n");
 	for(int i=0; i<THREADSIZE; i++){
 		processor *t=&mp.processors[i];
 		pthread_join(t->t_id,(void**)&temp);
@@ -230,17 +248,28 @@ void *p_main(void *__input){
 	printf("bye bye!\n");
 	return NULL;
 }
-value_set *inf_get_valueset(PTR in_v, int type){
+value_set *inf_get_valueset(PTR in_v, int type, uint32_t length){
 	value_set *res=(value_set*)malloc(sizeof(value_set));
 	//check dma alloc type
-	res->dmatag=F_malloc((void**)&(res->value),PAGESIZE,type);
+	if(length==PAGESIZE)
+		res->dmatag=F_malloc((void**)&(res->value),PAGESIZE,type);
+	else{
+		res->dmatag=-1;
+		res->value=(PTR)malloc(length);
+	}
+	res->length=length;
 	if(in_v){
-		memcpy(res->value,in_v,PAGESIZE);
+		memcpy(res->value,in_v,length);
 	}
 	return res;
 }
 
 void inf_free_valueset(value_set *in, int type){
-	F_free((void*)in->value,in->dmatag,type);
+	if(in->dmatag==-1){
+		free(in->value);
+	}
+	else{
+		F_free((void*)in->value,in->dmatag,type);
+	}
 	free(in);
 }

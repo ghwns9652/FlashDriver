@@ -33,7 +33,7 @@ uint32_t demand_get(request *const req){
 		queue_update(CMT[D_IDX].queue_ptr);	// Update queue
 		if(ppa != -1){
 			bench_algo_end(req); // Algorithm level benchmarking end
-			__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
+			__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req); // Get actual data
 		}
 		else{
 			printf("invalid ppa read\n");
@@ -50,15 +50,15 @@ uint32_t demand_get(request *const req){
 			CMT[D_IDX].queue_ptr = queue_insert((void*)(CMT + D_IDX));
 			p_table = (D_TABLE*)malloc(PAGESIZE);
 			CMT[D_IDX].p_table = p_table;
-			temp_value_set = inf_get_valueset(NULL, DMAREAD);
-			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Get page table
+			temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
+			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req()); // Get page table
 			memcpy(p_table, temp_value_set->value, PAGESIZE);
 			inf_free_valueset(temp_value_set, DMAREAD);
 			tpage_onram_num++;
 			ppa = p_table[P_IDX].ppa; // Find ppa
 			if(ppa != -1){
 				bench_algo_end(req); // Algorithm level benchmarking end
-				__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Get actual data
+				__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req); // Get actual data
 			}
 			else{ // lseek error avoid
 				printf("invalid ppa read\n");
@@ -101,7 +101,7 @@ uint32_t demand_set(request *const req){
 		queue_update(CMT[D_IDX].queue_ptr); // Update queue
 		demand_OOB[ppa] = (D_OOB){lpa, 1}; // Update OOB
 		bench_algo_end(req);
-		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
+		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req); // Set actual data
 	}
 	/* Cache miss */
 	else{
@@ -113,8 +113,8 @@ uint32_t demand_set(request *const req){
 		CMT[D_IDX].p_table = p_table;
 		// Load t_page or make new t_page
 		if(t_ppa != -1){ // Load t_page to cache
-			temp_value_set = inf_get_valueset(NULL, DMAREAD);
-			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0);
+			temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
+			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req());
 			memcpy(p_table, temp_value_set->value, PAGESIZE);
 			inf_free_valueset(temp_value_set, DMAREAD);
 			demand_OOB[t_ppa].valid_checker = 0;
@@ -132,7 +132,7 @@ uint32_t demand_set(request *const req){
 		p_table[P_IDX].ppa = ppa;
 		demand_OOB[ppa] = (D_OOB){lpa, 1}; // Update OOB
 		bench_algo_end(req);
-		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req, 0); // Set actual data
+		__demand.li->push_data(ppa, PAGESIZE, req->value, 0, my_req); // Set actual data
 	}
 	return 0;
 }
@@ -163,8 +163,8 @@ uint32_t demand_remove(request *const req){
 			demand_eviction();
 			p_table = (D_TABLE*)malloc(PAGESIZE);
 			CMT[D_IDX].p_table = p_table;
-			temp_value_set = inf_get_valueset(NULL, DMAREAD);
-			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0);
+			temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
+			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req());
 			memcpy(p_table, temp_value_set->value, PAGESIZE);
 			inf_free_valueset(temp_value_set, DMAREAD);
 			CMT[D_IDX].flag = 0;
@@ -211,9 +211,9 @@ uint32_t demand_eviction(){
 	if(cache_ptr->flag != 0){ // When CMT_i has changed
 		if((t_ppa = cache_ptr->t_ppa) != -1)	// When it's not a first t_page
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
-		temp_value_set = inf_get_valueset((PTR)(p_table), DMAWRITE);
+		temp_value_set = inf_get_valueset((PTR)(p_table), DMAWRITE, PAGESIZE);
 		tp_alloc(&t_ppa);
-		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req(), 0); // Get page table
+		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req()); // Get page table
 		inf_free_valueset(temp_value_set, DMAWRITE);
 		demand_OOB[t_ppa] = (D_OOB){(int)(cache_ptr - CMT), 1}; // Update OOB
 		cache_ptr->t_ppa = t_ppa; // Update GTD

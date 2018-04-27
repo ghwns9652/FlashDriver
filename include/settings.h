@@ -8,7 +8,7 @@
 #define T (1024L*G)
 #define P (1024L*T)
 
-#define TOTALSIZE (G/2)
+#define TOTALSIZE (30L*G)
 #define PAGESIZE (8*K)
 #define _PPB (256)
 //#define _PPB (4)
@@ -25,8 +25,7 @@
 #define OOBT uint64_t
 #define V_PTR char * const
 #define PTR char*
-
-#define SYNC (1)
+#define ASYNC 0
 #define QSIZE (1024)
 #define THREADSIZE (1)
 

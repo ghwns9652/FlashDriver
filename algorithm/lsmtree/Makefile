@@ -15,6 +15,7 @@ ifeq ($(CC),cc)
 
  endif
 endif
+
 SRCS +=\
 	   run_array.c\
 	   skiplist.c\
@@ -23,6 +24,7 @@ SRCS +=\
 	   compaction.c\
 	   page.c\
 	   pageQ.c\
+	   footer.c\
 cache.c\
 
 OBJS :=\
