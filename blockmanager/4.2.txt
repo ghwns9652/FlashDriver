@@ -1,0 +1,12 @@
+4.2 ~ 4.8 ugrp
+
+음....
+한 게... 일단 BM 쪽은 아무것도 없다.
+
+Block-level FTL 수정
+약간 있긴 한데.... 
+예전에 master update된 후로 value_set 넣은 것 뿐.
+
+뭐라 쓰지?
+예전에 master update된 후에 value가 value, dmatag로 묶여 value_set이 된 이후 그걸 반영하지 않았었다. FTL 내부에서 특정 페이지의 내용을 다른 블록으로 옮기기 위해 사용한 임시 request에 inf_get_valuese 함수 추가하여 사용할 수 있도록 수정
+
