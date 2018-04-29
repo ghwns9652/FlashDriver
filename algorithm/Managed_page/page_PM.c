@@ -95,7 +95,7 @@ uint32_t pbase_get(request* const req)
 	{
 		printf("read an empty page!");
 	}
-	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req,0);
+	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req);
 	//key-value operation.
 }
 
@@ -124,7 +124,7 @@ uint32_t pbase_set(request* const req)
 	KEYT set_target = PPA_status; //target set.
 	BM_update_block_with_push(blockArray, PPA_status);//update blockArray.
 	bench_algo_end(req);
-	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req,0);
+	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req);
 }
 
 uint32_t pbase_remove(request* const req)
@@ -136,11 +136,11 @@ uint32_t pbase_remove(request* const req)
 uint32_t SRAM_load(int ppa, int a)
 {
 	value_set* value_PTR; //make new value_set.
-	value_PTR =inf_get_valueset(NULL, 1);//set valueset as read mode.
+	value_PTR =inf_get_valueset(NULL, 1, PAGESIZE);//set valueset as read mode.
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
-	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req,0);
+	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req);
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
 	page_SRAM[a].VPTR_RAM = value_PTR;
 	
@@ -149,12 +149,12 @@ uint32_t SRAM_load(int ppa, int a)
 uint32_t SRAM_unload(int ppa, int a)
 {
 	value_set *value_PTR; //make new value_set.
-	value_PTR = inf_get_valueset(page_SRAM[a].VPTR_RAM->value, 2);//set valueset as write mode.
+	value_PTR = inf_get_valueset(page_SRAM[a].VPTR_RAM->value, 2,PAGESIZE);//set valueset as write mode.
 	
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->end_req = pbase_algo_end_req;
 	my_req->parents = NULL;
-	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,0,my_req,0);
+	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,0,my_req);
 	
 	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa; //mapping table update.
 	blockArray[ppa/_PPB].ValidP[ppa/_PPB] = 1;

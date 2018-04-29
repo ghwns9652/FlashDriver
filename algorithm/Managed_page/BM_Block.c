@@ -108,16 +108,16 @@ int32_t BM_LoadBlock(uint32_t PBA_BM)
 /* Initalize blockArray */
 int32_t BM_InitBlockArray()
 {
-	for (int i=0; i<_NOB; ++i){
-		blockArray[i].PBA = i;
-		for (int j=0; j<_PPB; ++j)
-			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
-		blockArray[i].numValid = _PPB;
-		blockArray[i].PE_cycle = 0;
-		blockArray[i].BAD = _NOTBADSTATE;
-		blockArray[i].v_PBA = 0xffffffff; // -1
-		blockArray[i].o_PBA = 0xffffffff;
-	}
+//	for (int i=0; i<_NOB; ++i){
+	//	blockArray[i].PBA = i;
+//		for (int j=0; j<_PPB; ++j)
+	//		blockArray[i].ValidP[j] = BM_INVALIDPAGE;
+	//	blockArray[i].numValid = _PPB;
+	//	blockArray[i].PE_cycle = 0;
+	//	blockArray[i].BAD = _NOTBADSTATE;
+	//	blockArray[i].v_PBA = 0xffffffff; // -1
+	//	blockArray[i].o_PBA = 0xffffffff;
+//	}
 }
 
 
@@ -131,12 +131,12 @@ int32_t BM_ScanFlash()
 {
 	/* Access and Read data in all flash blocks */
 	for (int i=0; i<_NOB; ++i){
-//		BM_ReadBlock(i);
+		BM_ReadBlock(i);
 
 	}
 }
 
-int32_t BM_ReadBlock(){//(int32_t PBA){
+int32_t BM_ReadBlock(int i){//(int32_t PBA){
 	/* (Later)Read OOB of PBA block and Fill blockArray */
 	/* (IGNORE!) It is incomplete */
 

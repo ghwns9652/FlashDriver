@@ -39,7 +39,7 @@ uint32_t	BM_get_worn_block(Block *blockArray, PE_T** PE_map);
 /* Function with primitive */
 int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA);
 
-inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
+static inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
 {
 	/* This function should be called when Push */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
@@ -50,7 +50,7 @@ inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
 	blockArray[PBA].PE_cycle++;
 }
 
-inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
+static inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
 {
 	/* This function should be called when Trim */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
@@ -61,7 +61,7 @@ inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
 
 // FTL -> Flash (Top -> Bottom)
 // If FTL wants to access(Read, Write, Trim, ...) contents of FLASH, use this function.
-inline PBA_T BM_FTLtoFLASH(Block* blockArray, PBA_T FTL_PBA)
+static inline PBA_T BM_FTLtoFLASH(Block* blockArray, PBA_T FTL_PBA)
 {
 	/* FTLs see virtual PBAs to ignore PE_cycle/BAD problems */
 	return (blockArray[FTL_PBA].v_PBA);
@@ -70,7 +70,7 @@ inline PBA_T BM_FTLtoFLASH(Block* blockArray, PBA_T FTL_PBA)
 // FTL <- Flash (Top <- Bottom)
 // If FTL wants to get contents of FLASH, use this function.
 // (WARNIG) FTLs don't need to use this function.
-inline PBA_T BM_FLASHtoFTL(Block* blockArray, PBA_T v_PBA)
+static inline PBA_T BM_FLASHtoFTL(Block* blockArray, PBA_T v_PBA)
 {
 	/* If you want the PBA whose v_PBA is 4, then the PBA is blockArray[4].o_PBA. */
 	return (blockArray[v_PBA].o_PBA);

@@ -2,6 +2,7 @@
 #define _BM_COMMON_H_
 
 #include "../include/container.h"
+#include "../include/settings.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -64,7 +64,7 @@ int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA)
 		return (0);
 	}
 	else if (blockArray[PBA].ValidP[offset] == BM_INVALIDPAGE) {
-		printf("Input PPA is UNVALID\n");
+		printf("Input PPA is INVALID\n");
 		return (1);
 	}
 	else {
@@ -103,7 +103,7 @@ uint32_t	BM_get_minPE_block(Block* blockArray, PE_T** PE_map)
 	BM_Minheap_PEcycle(blockArray, PE_map);
 
 	/* Make Block_pointer from PE_cycle pointer */
-	void* ptr_min_PE_block = PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
+	void* ptr_min_PE_block = (void*)PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
 
 	return *((PBA_T*)ptr_min_PE_block); // This means value of PBA of minPE block
 
@@ -140,24 +140,3 @@ int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
 
 	return (eNOERROR);
 }
-
-
-int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
-{
-	/* This function should be called when Push */
-	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-	uint8_t offset = PPA % _PPB;
-
-	blockArray[PBA].ValidP[offset] = BM_WRITTEN; /* Not Determined yet */ /* What is BM_WRITTEN? */
-
-	blockArray[PBA].PE_cycle++;
-}
-
-int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
-{
-	/* This function should be called when Trim */
-	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-
-	blockArray[PBA].PE_cycle++;
-}
-

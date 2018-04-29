@@ -64,7 +64,7 @@ int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA)
 		return (0);
 	}
 	else if (blockArray[PBA].ValidP[offset] == BM_INVALIDPAGE) {
-		printf("Input PPA is UNVALID\n");
+		printf("Input PPA is INVALID\n");
 		return (1);
 	}
 	else {
@@ -85,7 +85,7 @@ uint32_t	BM_get_gc_victim(Block* blockArray, nV_T** numValid_map)
 	BM_Minheap_numValid(blockArray, numValid_map);
 
 	/* Make Block_pointer from numValid_pointer */
-	void* ptr_min_nV_block = numValid_map[0] - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
+	void* ptr_min_nV_block = (void*)numValid_map[0] - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
 
 	return *((PBA_T*)ptr_min_nV_block); // This means value of PBA of maxnV block
 }
@@ -103,7 +103,7 @@ uint32_t	BM_get_minPE_block(Block* blockArray, PE_T** PE_map)
 	BM_Minheap_PEcycle(blockArray, PE_map);
 
 	/* Make Block_pointer from PE_cycle pointer */
-	void* ptr_min_PE_block = PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
+	void* ptr_min_PE_block = (void*)PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
 
 	return *((PBA_T*)ptr_min_PE_block); // This means value of PBA of minPE block
 
