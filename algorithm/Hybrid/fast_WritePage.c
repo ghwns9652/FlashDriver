@@ -13,12 +13,12 @@ void fast_WritePage(uint32_t address, request *const  req, value_set* value_in, 
     my_req->end_req = FAST_EndRequest;
     my_req->params = (void*)params;
 
+    value = inf_get_valueset(value_in->value, DMAWRITE);
+
     if(type){
-        value = inf_get_valueset(value_in->value, DMAWRITE);
     	FAST_Algorithm.li->push_data(address, PAGESIZE, value_in, 0, assign_pseudo_req(), 0);	// Page unlaod
     }
     else{
-        value = inf_get_valueset(value_in->value, DMAWRITE);
     	FAST_Algorithm.li->push_data(address, PAGESIZE, value, 0, my_req, 0);	// Page unlaod
     }
 	inf_free_valueset(value, DMAWRITE);

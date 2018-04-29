@@ -37,7 +37,9 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
     sw_log_block = sw_MappingInfo->sw_log_block;
    	
 	if(sw_MappingInfo->number_of_stored_sector == PAGE_PER_BLOCK){
-		fast_SwitchSWLogBlock(*physical_address, req);
+		fast_SwitchSWLogBlock();
+        sw_log_block = sw_MappingInfo->sw_log_block;
+        logical_block = sw_MappingInfo->logical_block;
 	}
 	
 	if(offset == 0 && GET_PAGE_STATE(ADDRESS(sw_log_block, 0)) != ERASED){

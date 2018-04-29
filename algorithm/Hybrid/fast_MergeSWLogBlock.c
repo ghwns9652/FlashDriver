@@ -11,29 +11,28 @@
 
 char fast_MergeSWLogBlock(request *const req)
 {
-    SW_MappingInfo* sw_MappingInfo;
-	uint32_t src_address;
-	uint32_t dst_address;
-    value_set* value;
+    SW_MappingInfo*     sw_MappingInfo;
+    value_set*          value;
+	uint32_t            src_address;
+	uint32_t            dst_address;
 
-    uint32_t logical_block;
-    uint32_t data_block;
-    uint32_t sw_log_block;
-    uint32_t new_sw_log_block;
+    uint32_t            logical_block;
+    uint32_t            data_block;
+    uint32_t            sw_log_block;
+    uint32_t            new_sw_log_block;
     
-    unsigned int i;
+    uint32_t            i;
 
     sw_MappingInfo = tableInfo->sw_MappingTable->data;
 
-    data_block = BLOCK_TABLE(sw_MappingInfo->logical_block);
     logical_block = sw_MappingInfo->logical_block;
+    data_block = BLOCK_TABLE(sw_MappingInfo->logical_block);
 	sw_log_block = sw_MappingInfo->sw_log_block;
 
 	for(i = sw_MappingInfo->number_of_stored_sector; i < PAGE_PER_BLOCK; i++){
         src_address = ADDRESS(BLOCK_TABLE(logical_block), i);
         if(GET_PAGE_STATE(src_address) == VALID){
             value = fast_ReadPage(src_address, req, NULL, 1);
-
             dst_address = ADDRESS(sw_log_block, i);
             fast_WritePage(dst_address, req, value, 1);
         }
