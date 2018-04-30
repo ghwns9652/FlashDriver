@@ -14,7 +14,8 @@ int32_t BM_Minheap_numValid(Block* blockArray, Block** numValid_map)
 
 	for (int i = 0; i < _NOB; ++i) {
 		if (blockArray[i].BAD == _NOTBADSTATE)
-			temp_NV[i] = blockArray[i].numValid;
+			//temp_NV[i] = blockArray[i].numValid;
+			temp_NV[i] = BM_GETNUMVALID(numValid_map[i]);
 		else
 			temp_NV[i] = 0xff; // Bad Block would go to leaf node.
 	}
@@ -68,7 +69,8 @@ int32_t BM_Maxheap_numValid(Block* blockArray, Block** numValid_map)
 	nV_T* temp_NV = (nV_T*)malloc(sizeof(nV_T) * _NOB);
 
 	for (int i = 0; i < _NOB; ++i) {
-		temp_NV[i] = blockArray[i].numValid;
+		//temp_NV[i] = blockArray[i].numValid;
+		temp_NV[i] = BM_GETNUMVALID(numValid_map[i]);
 	}
 
 	BM__buildmaxheapNV(temp_NV, numValid_map); 
@@ -118,7 +120,8 @@ int32_t BM_Minheap_PEcycle(Block* blockArray, Block** PE_map)
 	PE_T* temp_PE = (PE_T*)malloc(sizeof(PE_T) * _NOB);
 
 	for (int i = 0; i < _NOB; ++i) {
-		temp_PE[i] = blockArray[i].PE_cycle;
+		//temp_PE[i] = blockArray[i].PE_cycle;
+		temp_PE[i] = BM_GETPECYCLE(PE_map[i]);
 	}
 
 
@@ -169,7 +172,8 @@ int32_t BM_SortPE(Block* blockArray, Block** PE_map)
 	PE_T* temp_PE = (PE_T*)malloc(sizeof(PE_T) * _NOB);
 
 	for (int i = 0; i < _NOB; ++i) {
-		temp_PE[i] = blockArray[i].PE_cycle;
+		//temp_PE[i] = blockArray[i].PE_cycle;
+		temp_PE[i] = BM_GETPECYCLE(PE_map[i]);
 	}
 
 	BM__quicksort(temp_PE, 0, _NOB - 1, PE_map); // Need Verification of this function
