@@ -4,13 +4,15 @@
 #include "BM_common.h"
 
 
-typedef struct { // 40 bytes
+typedef struct { // 67 bytes
 	uint32_t	PBA;			/* PBA of this block */
 	uint64_t	ValidP[4];		/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
 	int16_t		numValid;		/* Number of Valid pages in this block*/
 	uint32_t	PE_cycle;		/* P/E cycles of this block */
-	int16_t**	ptrNV_data;		/* Pointer of numValid map */
-	uint32_t**	ptrPE_data;		/* Pointer of PE map */
+	//int16_t**	ptrNV_data;		/* Pointer of numValid map */
+	void**		ptrNV_data;		/* Pointer of numValid map */
+	//uint32_t**ptrPE_data;		/* Pointer of PE map */
+	void**		ptrPE_data;		/* Pointer of PE map */
 	int8_t		BAD;			/* Whether this block is bad or not */
 	uint32_t	v_PBA;			/* virtual PBA of this block. It is virtual block after Bad-Block check and wear-leveling by PE_cycle */
 	uint32_t	o_PBA;			/* original PBA of this block. We can find the PBA(index) of blockArray with v_PBA using o_PBA */
