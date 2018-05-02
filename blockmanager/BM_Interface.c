@@ -5,72 +5,89 @@
 
 /* Interface Functions for editing blockArray */
 
-int32_t		BM_validate_ppa(Block* blockArray, PPA_T PPA)
-{
-	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-	uint8_t offset = PPA % _PPB;
-
-	if (blockArray[PBA].ValidP[offset] == BM_VALIDPAGE)
-		return (eNOERROR);
-	else {
-		blockArray[PBA].ValidP[offset] = BM_VALIDPAGE;
-		blockArray[PBA].numValid++;
-		return (eNOERROR);
-	}
-}
-
-
-// Four basic interfaces
-
-int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA)
-{
-	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-	uint8_t offset = PPA % _PPB;
-
-#if (METHOD == 1)
-	// This METHOD is wrong
-	blockArray[PBA].ValidP[offset] = BM_INVALIDPAGE;
-	if (blockArray[PBA].ValidP[offset] != BM_INVALIDPAGE)
-		blockArray[PBA].numValid--;
-	return (eNOERROR);
-#endif
-
-#if (METHOD == 2)
-	if (blockArray[PBA].ValidP[offset] == BM_INVALIDPAGE) {
-		printf("Input PPA is already INVALID\n");
-		return (eNOERROR);
-	}
-	else {
-		blockArray[PBA].ValidP[offset] = BM_INVALIDPAGE;
-		blockArray[PBA].numValid--;
-		return (eNOERROR);
-	}
-#endif
-}
-int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA) 
+int32_t		BM_is_valid_ppa(Block* blockArray, PPA_T PPA) 
 {
 	/*
 	 * Return whether parameter PPA is VALID or INVALID
-	 * Current Implementation: using char array to express state
+	 * if valid -> return=1
+	 * if invalid -> return=0
 	 */
-
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 	uint8_t offset = PPA % _PPB;
+	int8_t index;
 
-
-	/* if - else if should be switched if invalid page is more than valid page */
-	if (blockArray[PBA].ValidP[offset] == BM_VALIDPAGE) {
-		printf("Input PPA is VALID\n");
-		return (0);
-	}
-	else if (blockArray[PBA].ValidP[offset] == BM_INVALIDPAGE) {
-		printf("Input PPA is INVALID\n");
-		return (1);
+	if (offset < 128) {
+		if (offset < 64)	index = 0;
+		else				index = 1;
 	}
 	else {
-		printf("Error!\n");
-		ERR(eBADVALIDPAGE_BM);
+		if (offset < 192)	index = 2;
+		else				index = 3;
 	}
+	offset %= 64;
+
+	if (blockArray[PBA].ValidP[index] & (1<<offset))
+		return 1; // is valid
+	else
+		return 0; // is invalid
+}
+
+int32_t		BM_validate_ppa(Block* blockArray, PPA_T PPA)
+{
+	/*
+	 * if valid -> do nothing, return=0
+	 * if invalid -> Update ValidP and numValid, return=1
+	 */
+	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	uint8_t offset = PPA % _PPB;
+	int8_t index;
+
+	if (offset < 128) {
+		if (offset < 64)	index = 0;
+		else				index = 1;
+	}
+	else {
+		if (offset < 192)	index = 2;
+		else				index = 3;
+	}
+	offset %= 64;
+
+	if (blockArray[PBA].ValidP[index] & (1<<offset)) // is valid?
+		return 0;
+	else { // is invalid.
+		blockArray[PBA].ValidP[index] |= (1<<offset);
+		blockArray[PBA].numValid++;
+		return 1;
+	}
+}
+
+int32_t		BM_invalidate_ppa(Block* blockArray, PPA_T PPA)
+{
+	/*
+	 * if valid -> Update ValidP and numValid, return=1
+	 * if invalid -> do nothing, return=0
+	 */
+	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	printf("target block is %d\n",PBA);
+	uint8_t offset = PPA % _PPB;
+	int8_t index;
+
+	if (offset < 128) {
+		if (offset < 64)	index = 0;
+		else				index = 1;
+	}
+	else {
+		if (offset < 192)	index = 2;
+		else				index = 3;
+	}
+	offset %= 64;
+	if (blockArray[PBA].ValidP[index] & (1<<offset)) { // is valid?
+		blockArray[PBA].ValidP[index] &= ~(1<<offset);
+		blockArray[PBA].numValid--;
+		return 1;
+	}
+	else  // is invalid.
+		return 0;
 }
 uint32_t	BM_get_gc_victim(Block* blockArray, nV_T** numValid_map)
 {
@@ -83,10 +100,9 @@ uint32_t	BM_get_gc_victim(Block* blockArray, nV_T** numValid_map)
 
 	/* After this function, numValid_map will become Max-heap by numValid */
 	BM_Minheap_numValid(blockArray, numValid_map);
-
+	printf("%d\n",numValid_map[0]);
 	/* Make Block_pointer from numValid_pointer */
-	void* ptr_min_nV_block = (void*)numValid_map[0] - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
-
+	void* ptr_min_nV_block = (void*)numValid_map[3] - sizeof(ValidP_T)*4 - sizeof(PBA_T);
 	return *((PBA_T*)ptr_min_nV_block); // This means value of PBA of maxnV block
 }
 
@@ -103,7 +119,7 @@ uint32_t	BM_get_minPE_block(Block* blockArray, PE_T** PE_map)
 	BM_Minheap_PEcycle(blockArray, PE_map);
 
 	/* Make Block_pointer from PE_cycle pointer */
-	void* ptr_min_PE_block = (void*)PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T);
+	void* ptr_min_PE_block = (void*)PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*4 - sizeof(PBA_T);
 
 	return *((PBA_T*)ptr_min_PE_block); // This means value of PBA of minPE block
 
@@ -136,7 +152,7 @@ int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 
 	blockArray[PBA].numValid = 0;
-	memset(blockArray[PBA].ValidP, BM_VALIDPAGE, _NOP);
+	memset(blockArray[PBA].ValidP, BM_VALIDPAGE, 4*sizeof(uint64_t));
 
 	return (eNOERROR);
 }

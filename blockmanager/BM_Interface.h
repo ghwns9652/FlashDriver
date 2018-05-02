@@ -14,7 +14,7 @@ int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA);
 
 
 /* Function to check whether PPA(argument) is VALID or not */
-int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA);
+int32_t		BM_is_valid_ppa(Block* blockArray, uint32_t PPA);
 
 
 /*
