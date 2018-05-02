@@ -3,16 +3,15 @@
 /**
  * Function : fast_AllocDataBlockEntry(int key, int* physical_address)
  * 
- * @deatils     Find a physical page in Data Block.
- *              First, seperate key into block and offset.
- *              Second, translate logical block to physical block using block table.
- *              Return state of translated address.
- *              If state is ERASED or VALID, update state.
+ * @deatils     Find a physical page in Data Block.\n
+ *              First, seperate key into block and offset.\n
+ *              Second, translate logical block to physical block using block table.\n
+ *              Return state of translated address.\n
+ *              If state is ERASED or VALID, update state.\n
  *              ERASED -> VALID, VALID -> INVALID
- * 
- * Returns : 
- *  physical_address
- * 
+ * @param key (IN) given address
+ * @param physical_address (OUT) address for data block address
+ * @returns State of the page corresponding to given key
  */
 
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
@@ -22,10 +21,10 @@ char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
     uint32_t offset = OFFSET(key);
 
     // Translate logical block to physical block
-    int physical_block = BLOCK_TABLE(logical_block);
-    //printf("lobical_block : %d physical_block : %d ", logical_block, physical_block);
+    int data_block = BLOCK_TABLE(logical_block);
+
     // Check state of ssd using tasnlated address
-    *physical_address = ADDRESS(physical_block, offset);
+    *physical_address = ADDRESS(data_block, offset);
     char state = GET_PAGE_STATE(*physical_address);
     
     // Should Use Block Mapping Table
