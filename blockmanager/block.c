@@ -1,13 +1,16 @@
 #include <string.h>
 #include <stdlib.h>
 #include "block.h"
+#include "BM_Interface.h"
 
 #include <stdio.h> // Temporary measure for printf
 
 int32_t *block_maptable; // pointer to LPA->PPA table 
-int8_t *exist_table; 
+int8_t *exist_table;  // ¿¿¿ ¿¿¿ ¿ ¿¿¿
 int8_t *block_valid_array;
 uint32_t set_pointer = 0;
+
+extern Block* blockArray;
 
 
 #define VALID 1
@@ -48,6 +51,8 @@ int32_t block_findsp(int32_t checker){
 uint32_t block_create (lower_info* li,algorithm *algo){
 	algo->li=li;
 
+	BM_Init();
+
 	block_maptable = (int32_t*)malloc(sizeof(int32_t) * li->NOB);
 	int32_t i=0;
 	for (; i<li->NOB; ++i){ // maptable initialization
@@ -57,6 +62,8 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 	exist_table = (int8_t*)malloc(sizeof(int8_t)*li->NOP);
 	for (i = 0; i < li->NOP; ++i)
 		exist_table[i] = NONEXIST;
+	BM_validate_all(blockArray); // Actually, BM initialization is validate.
+
 
 	block_valid_array = (int8_t*)malloc(sizeof(int8_t)*li->NOB);
 	for (i = 0; i < li->NOB; ++i)
@@ -69,6 +76,8 @@ void block_destroy (lower_info* li, algorithm *algo){
 	free(block_maptable);
 	free(exist_table);
 	free(block_valid_array);
+
+	BM_Shutdown();
 }
 uint32_t block_get(request *const req){
 //uint32_t block_get(request *req){
@@ -139,6 +148,9 @@ uint32_t block_set(request *const req){
 		PPA = set_pointer * __block.li->PPB + offset; // Equal to above 2 lines
 
 		exist_table[PPA] = EXIST;
+		BM_invalidate_ppa(blockArray, PPA);
+
+
 
 		// write
 		//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -163,10 +175,12 @@ uint32_t block_set(request *const req){
 			__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
 		}
 #endif
-		if (exist_table[PPA] == NONEXIST)
+		//if (exist_table[PPA] == NONEXIST)
+		if (BM_is_valid_ppa(blockArray, PPA))
 		{
 			//printf("Case 3\n");
 			exist_table[PPA] = EXIST;
+			BM_invalidate_ppa(blockArray, PPA);
 			block_valid_array[PBA] = VALID;
 #if 0
 			if (block_valid_array[PBA] == ERASE){
@@ -180,7 +194,8 @@ uint32_t block_set(request *const req){
 			//my_req->params = (void*)params;
 			__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
 		}
-		else if (exist_table[PPA] == EXIST) //!= NONEXIST)
+		else if (!BM_is_valid_ppa(blockArray, PPA))
+		//else if (exist_table[PPA] == EXIST) //!= NONEXIST)
 		{
 			//printf("Case GC\n");
 			// Cleaning
@@ -219,6 +234,8 @@ uint32_t block_set(request *const req){
 
 				exist_table[old_PPA_zero + i] = NONEXIST;
 				exist_table[new_PPA_zero + i] = EXIST;
+				BM_validate_ppa(blockArray, old_PPA_zero + i);
+				BM_invalidate_ppa(blockArray, new_PPA_zero + i);
 
 				algo_req *temp_req2=(algo_req*)malloc(sizeof(algo_req));
 				temp_req2->parents = NULL;
@@ -241,6 +258,9 @@ uint32_t block_set(request *const req){
 			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req, 0);
 			exist_table[old_PPA_zero + offset] = NONEXIST;
 			exist_table[new_PPA_zero + offset] = EXIST;
+			BM_validate_ppa(blockArray, old_PPA_zero + offset);
+			BM_invalidate_ppa(blockArray, new_PPA_zero + offset);
+
 			
 			if (offset < __block.li->PPB - 1) {
 				for (i = offset + 1; i < __block.li->PPB; ++i) {
@@ -256,6 +276,8 @@ uint32_t block_set(request *const req){
 
 					exist_table[old_PPA_zero + i] = NONEXIST;
 					exist_table[new_PPA_zero + i] = EXIST;
+					BM_validate_ppa(blockArray, old_PPA_zero + i);
+					BM_invalidate_ppa(blockArray, new_PPA_zero + i);
 
 					algo_req *temp_req2=(algo_req*)malloc(sizeof(algo_req));
 					temp_req2->parents = NULL;

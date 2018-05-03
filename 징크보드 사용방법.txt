@@ -1,0 +1,14 @@
+﻿[zcu102내부 bdbm 뻑가거나 zcu_102보드 껐다 킬때]
+데스크탑 kukania 로그인, 비번 임준수123
+zcu102 보드(징크보드) 전원 올리자마자
+./zcu102_files/program_vivado.sh 실행
+위 쉘스크립트 수행 후 징크보드 전원 껐다 켜서 다시 수행
+
+징크보드로 접속 id:koo,pwd:191066
+징크보드 안에서 cd ./zcu102_files:w/exe/ 
+디렉토리 내부에서 명령어 [fpgjtag -m fpga-veta_어쩌고저쩌고] 실행
+그 후 ./erase_어쩌고저쩌고.sh 실행해서 flash 지워줌
+
+준비끝
+
+

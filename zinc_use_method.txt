@@ -1,0 +1,16 @@
+﻿  1 [zcu102내부 bdbm 뻑가거나 zcu_102보드 껐다 킬때]
+  2 데스크탑 접속 : ssh kukania@10.150.3.107
+  3 아이디 kukania
+  4 비번 임준수123
+  5 zcu102 보드(징크보드) 전원 올리자마자
+  6 ./zcu102_files/program_vivado.sh 실행
+  7 위 쉘스크립트 수행 후 징크보드 전원 껐다 켜서 다시 수행
+  8 
+  9 징크보드로 접속 : ssh koo@192.168.1.7
+ 10 아이디 koo
+ 11 비밀번호 191066 
+ 12 징크보드 안에서 cd ./zcu102_files/exe/
+ 13 디렉토리 내부에서 명령어 [fpgajtag -m fpgaImage-beta-v1.0] 실행
+ 14 그 후 ./eraseAll_zcu102.exe 실행해서 flash 지워줌
+ 15 
+ 16 준비끝

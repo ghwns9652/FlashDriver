@@ -2,9 +2,9 @@
 
 #include "BM_Interface.h"
 
-extern Block* blockArray;
-extern Block** numValid_map;
-extern Block** PE_map;
+//extern Block* blockArray;
+//extern Block** numValid_map;
+//extern Block** PE_map;
 
 int main(void)
 {
