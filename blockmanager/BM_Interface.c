@@ -195,13 +195,15 @@ uint32_t	BM_get_worn_block(Block *blockArray, Block** PE_map)
 	return (eNOERROR);
 }
 
-int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
+#if 0
+int32_t BM_update_block_with_gc(Block* blockArray, PPA_T PPA)
 {
 	/* This function should be called when GC */
 	/*
 	 * Parameter: PPA(or PBA?)
 	 * Update status of corresponding block
 	 * numValid = 0, ValidP[] = 0
+	 * This function is trash! no NEED!
 	 */
 
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
@@ -211,3 +213,4 @@ int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA)
 
 	return (eNOERROR);
 }
+#endif

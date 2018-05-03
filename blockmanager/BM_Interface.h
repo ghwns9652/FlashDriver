@@ -39,20 +39,20 @@ uint32_t	BM_get_worn_block(Block *blockArray, Block** PE_map);
 
 
 /* Function with primitive */
-int32_t BM_update_block_with_gc(Block* blockArray, uint32_t PPA);
+//int32_t BM_update_block_with_gc(Block* blockArray, PPA_T PPA);
 
-static inline int32_t BM_update_block_with_push(Block* blockArray, uint32_t PPA)
+static inline int32_t BM_update_block_with_push(Block* blockArray, PPA_T PPA)
 {
 	/* This function should be called when Push */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-	uint8_t offset = PPA % _PPB;
+	//uint8_t offset = PPA % _PPB;
 
-	blockArray[PBA].ValidP[offset] = BM_WRITTEN; /* Not Determined yet */ /* What is BM_WRITTEN? */
+	//blockArray[PBA].ValidP[offset] = BM_WRITTEN; /* Not Determined yet */ /* What is BM_WRITTEN? */
 
 	blockArray[PBA].PE_cycle++;
 }
 
-static inline int32_t BM_update_block_with_trim(Block* blockArray, uint32_t PPA)
+static inline int32_t BM_update_block_with_trim(Block* blockArray, PPA_T PPA)
 {
 	/* This function should be called when Trim */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
