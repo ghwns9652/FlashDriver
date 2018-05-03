@@ -1,5 +1,14 @@
 *.o
 *.a
+
+blockmanager/libbm.a
+blockmanager/memset.c
+blockmanager/test.c
+blockmanager/bm
+blockmanager/comp.sh
+blockmanager/*.o
+blockmanager/*.a
+
 simulator
 simulator_memory_check
 data/

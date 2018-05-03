@@ -26,7 +26,7 @@ int32_t		BM_is_valid_ppa(Block* blockArray, PPA_T PPA)
 	}
 	offset %= 64;
 
-	if (blockArray[PBA].ValidP[index] & (1<<offset))
+	if (blockArray[PBA].ValidP[index] & ((uint64_t)1<<offset))
 		return 1; // is valid
 	else
 		return 0; // is invalid
@@ -52,10 +52,10 @@ int32_t		BM_validate_ppa(Block* blockArray, PPA_T PPA)
 	}
 	offset %= 64;
 
-	if (blockArray[PBA].ValidP[index] & (1<<offset)) // is valid?
+	if (blockArray[PBA].ValidP[index] & ((uint64_t)1<<offset)) // is valid?
 		return 0;
 	else { // is invalid.
-		blockArray[PBA].ValidP[index] |= (1<<offset);
+		blockArray[PBA].ValidP[index] |= ((uint64_t)1<<offset);
 		blockArray[PBA].numValid++;
 		return 1;
 	}
@@ -80,8 +80,8 @@ int32_t		BM_invalidate_ppa(Block* blockArray, PPA_T PPA)
 		else				index = 3;
 	}
 	offset %= 64;
-	if (blockArray[PBA].ValidP[index] & (1<<offset)) { // is valid?
-		blockArray[PBA].ValidP[index] &= ~(1<<offset);
+	if (blockArray[PBA].ValidP[index] & ((uint64_t)1<<offset)) { // is valid?
+		blockArray[PBA].ValidP[index] &= ~((uint64_t)1<<offset);
 		blockArray[PBA].numValid--;
 		return 1;
 	}
