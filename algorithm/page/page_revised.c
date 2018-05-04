@@ -2,8 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "page.h"
-#include "../../bench/bench.h"
-#include "PM_operation.h"
 
 struct algorithm algo_pbase=
 {
@@ -50,8 +48,8 @@ uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize map
 	{
 		invalid_per_block[i] = 0;
 	}
+	printf("pbase_create done!\n");
 
-	fake_bp_maker(fake_bp);
 	//init mapping table.
 }	//now we can use page table after pbase_create operation.
 
@@ -61,9 +59,8 @@ void pbase_destroy(lower_info* li, algorithm *algo)
 {					  
         free(page_OOB);
         free(invalid_per_block);
-		  free(page_SRAM);
-		  free(page_TABLE);
-		  free(fake_bp);
+		free(page_SRAM);
+		free(page_TABLE);
 }
 
 void *pbase_end_req(algo_req* input)
@@ -89,10 +86,9 @@ uint32_t pbase_get(request* const req)
 	my_req->end_req=pbase_end_req;//allocate end_req for request.
 	KEYT target = page_TABLE[req->key].lpa_to_ppa;
 	bench_algo_end(req);
-
-	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req,0);
+	
+	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req);
 	//key-value operation.
-	//Question: why value type is char*?
 }
 
 uint32_t pbase_set(request* const req)
@@ -128,7 +124,8 @@ uint32_t pbase_set(request* const req)
 	KEYT set_target = PPA_status;
 	PPA_status++;
 	bench_algo_end(req);
-	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req,0);
+	printf("length : %d\n", req->value->length);
+	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req);
 }
 
 uint32_t pbase_remove(request* const req)
@@ -139,30 +136,34 @@ uint32_t pbase_remove(request* const req)
 
 uint32_t SRAM_load(int ppa, int a)
 {
-	PTR value_PTR;
-	value_PTR =(PTR)malloc(PAGESIZE);
+	value_set* value_PTR ; //make new value_set
+	value_PTR = inf_get_valueset(NULL,1,PAGESIZE);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
- my_req->parents = NULL;
+	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
-	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req,0);
+	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req);
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
 	page_SRAM[a].VPTR_RAM = value_PTR;
+	inf_free_valueset(value_PTR,1);
 	
 }
 
 uint32_t SRAM_unload(int ppa, int a)
 {
+	value_set *value_PTR;
+	value_PTR = inf_get_valueset(page_SRAM[a].VPTR_RAM->value,2,PAGESIZE);//set valueset as write mode.
+
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->end_req = pbase_algo_end_req;
 	my_req->parents = NULL;
-	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,0,my_req,0);
+	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,0,my_req);
 	
 	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa;
 	page_TABLE[ppa].valid_checker = 1;
 	page_OOB[ppa].reverse_table = page_SRAM[a].lpa_RAM;
 	
+	inf_free_valueset(value_PTR,2);
 	page_SRAM[a].lpa_RAM = -1;
-	free(page_SRAM[a].VPTR_RAM);
 	page_SRAM[a].VPTR_RAM = NULL;
 }
 

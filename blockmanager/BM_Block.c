@@ -15,8 +15,10 @@
 
 /* Declaration of Data Structures */
 Block* blockArray;
-nV_T** numValid_map;
-PE_T** PE_map;
+//nV_T** numValid_map;
+//PE_T** PE_map;
+Block** numValid_map;
+Block** PE_map;
 
 /* (IGNORE!) Incomplete */
 #if 0
@@ -68,7 +70,7 @@ int32_t BM_Init()
 
 	printf("Bad Block Check..");	BM_BadBlockCheck();	printf("..End\n");
 	printf("Fill pointer maps..");	BM_FillMap();		printf("..End\n");
-	printf("Make virtual PBA array..");//	BM_MakeVirtualPBA();	printf("..End\n");
+	printf("Make virtual PBA array..");	BM_MakeVirtualPBA();	printf("..End\n");
 
 	printf("Test 0~4\n");
 	for (int i=0; i<5; ++i){
@@ -89,8 +91,10 @@ int32_t BM_InitBlock()
 {
 	blockArray= (Block*)malloc(sizeof(Block) * _NOB);
 	
-	numValid_map = (nV_T**)malloc(sizeof(nV_T*) * _NOB);
-	PE_map = (PE_T**)malloc(sizeof(PE_T*) * _NOB);
+	//numValid_map = (nV_T**)malloc(sizeof(nV_T*) * _NOB);
+	//PE_map = (PE_T**)malloc(sizeof(PE_T*) * _NOB);
+	numValid_map = (Block**)malloc(sizeof(Block*) * _NOB);
+	PE_map = (Block**)malloc(sizeof(Block*) * _NOB);
 	return(eNOERROR);
 }
 
@@ -110,8 +114,9 @@ int32_t BM_InitBlockArray()
 {
 	for (int i=0; i<_NOB; ++i){
 		blockArray[i].PBA = i;
-		for (int j=0; j<_PPB; ++j)
-			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
+		//for (int j=0; j<_PPB; ++j)
+			//blockArray[i].ValidP[j] = BM_INVALIDPAGE;
+		memset(blockArray[i].ValidP, BM_INVALIDPAGE, sizeof(ValidP_T)*4);
 		blockArray[i].numValid = _PPB;
 		blockArray[i].PE_cycle = 0;
 		blockArray[i].BAD = _NOTBADSTATE;
@@ -183,11 +188,13 @@ int32_t BM_FillMap()
 {
 	for (int i = 0; i < _NOB; ++i) {
 		if (blockArray[i].BAD != _BADSTATE) { /* Does this condition need? Anyway we know the state of BAD.. So we wouldn't need to prevent filling maps */
-			numValid_map[i] = &(blockArray[i].numValid);
-			PE_map[i] = &(blockArray[i].PE_cycle);
+			//numValid_map[i] = &(blockArray[i].numValid);
+			//PE_map[i] = &(blockArray[i].PE_cycle);
+			numValid_map[i] = &(blockArray[i]);
+			PE_map[i] = &(blockArray[i]);
 
-			blockArray[i].ptrNV_data = &(numValid_map[i]);
-			blockArray[i].ptrPE_data = &(PE_map[i]);
+			blockArray[i].ptrNV_data = (void*)(&(numValid_map[i]));
+			blockArray[i].ptrPE_data = (void*)(&(PE_map[i]));
 		}
 		else {
 			blockArray[i].numValid = -1;
@@ -213,7 +220,8 @@ int32_t BM_MakeVirtualPBA()
 	
 	for (int i=0; i<_NOB; ++i){
 
-		ptr_block = ((void*)PE_map[i] - sizeof(nV_T) - sizeof(ValidP_T)*_NOP - sizeof(PBA_T)); // If we only need BAD member variable, we can get BAD variable by PE_map[i]+sizeof(PE_T)+sizeof(uint8_t**)+sizeof(uint32_t**)
+		//ptr_block = ((void*)PE_map[i] - sizeof(nV_T) - sizeof(ValidP_T)*4 - sizeof(PBA_T)); // If we only need BAD member variable, we can get BAD variable by PE_map[i]+sizeof(PE_T)+sizeof(uint8_t**)+sizeof(uint32_t**)
+		ptr_block = ((void*)PE_map[i]);
 		if (BM_GETBAD(ptr_block) == _NOTBADSTATE) {
 			blockArray[i].v_PBA = BM_GETPBA(ptr_block);
 			blockArray[blockArray[i].v_PBA].o_PBA = i;

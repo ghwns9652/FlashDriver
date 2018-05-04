@@ -14,26 +14,26 @@ int32_t		BM_invalidate_ppa(Block* blockArray, uint32_t PPA);
 
 
 /* Function to check whether PPA(argument) is VALID or not */
-int32_t		BM_is_valid_ppa(Block* blockArray, uint32_t PPA);
+int32_t		BM_is_invalid_ppa(Block* blockArray, uint32_t PPA);
 
 
 /*
  * Function returning PBA of GC victim block
  * Select GC vimtim block which has maximum numValid
  */
-uint32_t	BM_get_gc_victim(Block* blockArray, nV_T** numValid_map);
+uint32_t	BM_get_gc_victim(Block* blockArray, Block** numValid_map);
 
 
 /*
  * Function returning PBA of minPE block
  */
-uint32_t	BM_get_minPE_block(Block* blockArray, PE_T** PE_map);
+uint32_t	BM_get_minPE_block(Block* blockArray, Block** PE_map);
 
 
 /* 
  * Function to wear-leveling 
  */
-uint32_t	BM_get_worn_block(Block *blockArray, PE_T** PE_map);
+uint32_t	BM_get_worn_block(Block *blockArray, Block** PE_map);
 
 
 /* Function with primitive */

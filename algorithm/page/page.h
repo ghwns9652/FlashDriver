@@ -1,4 +1,11 @@
+#ifndef _PAGE_H_
+#define _PAGE_H_
+
+#include "../../interface/interface.h"
 #include "../../include/container.h"
+#include "../../bench/bench.h"
+#include "../../include/settings.h"
+
 typedef struct pbase_params
 {
 	request *parents;
@@ -7,7 +14,7 @@ typedef struct pbase_params
 
 typedef struct mapping_table{
 	int32_t lpa_to_ppa;
-	int32_t  valid_checker;
+	int8_t  valid_checker;
 }TABLE; //table[lpa].lpa_to_ppa = ppa & table[ppa].valid_checker = 0 or 1.
 
 typedef struct virtual_OOB{
@@ -34,5 +41,6 @@ uint32_t pbase_remove(request* const);
 void *pbase_end_req(algo_req*);
 uint32_t SRAM_load(int ppa, int a); // loads info on SRAM.
 uint32_t SRAM_unload(int ppa, int a); // unloads info from SRAM.
-uint32_t pbase_garbage_collection(); // page- GC function. NOT tested yet.
-
+uint32_t pbase_garbage_collection(); // page- GC function.
+ 
+#endif //!_PAGE_H_
