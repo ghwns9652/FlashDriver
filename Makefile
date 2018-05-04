@@ -1,6 +1,6 @@
 export CC=g++
 
-<<<<<<< HEAD
+
 TARGET_LOWER=posix
 TARGET_ALGO=page
 PWD=$(pwd)

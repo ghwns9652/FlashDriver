@@ -93,6 +93,7 @@ uint32_t pbase_get(request* const req)
 
 uint32_t pbase_set(request* const req)
 {
+	printf("length : %d\n",req->value->length);
 	bench_algo_start(req);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
@@ -124,7 +125,7 @@ uint32_t pbase_set(request* const req)
 	KEYT set_target = PPA_status;
 	PPA_status++;
 	bench_algo_end(req);
-	printf("length : %d\n", req->value->length);
+	printf("actual length : %d\n", PAGESIZE);
 	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req);
 }
 
