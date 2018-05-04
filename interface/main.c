@@ -71,6 +71,7 @@ int main(){/*
 	temp.dmatag=-1;
 	temp.length=0;
 	while((value=get_bench())){
+		printf("value->length in main%d\n",value->length);
 		temp.length=value->length;
 		inf_make_req(value->type,value->key,&temp,value->mark);
 	}
@@ -84,4 +85,4 @@ int main(){/*
 	bench_free();
 	inf_free();
 	return 0;
-}
+

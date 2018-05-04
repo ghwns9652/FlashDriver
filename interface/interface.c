@@ -107,7 +107,7 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->upper_req=NULL;
 	req->type=type;
 	req->key=key;
-	
+	printf("make req value length.. %d \n",value->length);	
 	req->value=inf_get_valueset(value->value,req->type,value->length);
 
 
