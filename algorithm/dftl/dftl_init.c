@@ -20,8 +20,13 @@ int32_t DPA_status; // Data page allocation
 int32_t TPA_status; // Translation page allocation
 int32_t PBA_status; // Block allocation
 int8_t needGC; // Indicates need of GC
-int32_t tpage_onram_num;
+int32_t tpage_onram_num; // Number of translation page on cache
 
+/* demand_create
+ * Initialize data structures that are used in DFTL
+ * Initialize global variables
+ * Use different code according to DFTL version
+ */
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// Table Allocation
 #ifdef UNIT_D
@@ -40,10 +45,10 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 		CMT[i] = (C_TABLE){-1, -1, 0, NULL};
 	for(int i = 0; i < _PPB; i++){
 		d_sram[i].valueset_RAM = NULL;
-		d_sram[i].OOB_RAM = (D_OOB){-1, 0, 0};
+		d_sram[i].OOB_RAM = (D_OOB){-1, 0};
 	}
 	for(int i = 0; i < _NOP; i++)
-		demand_OOB[i] = (D_OOB){-1, 0, 0};
+		demand_OOB[i] = (D_OOB){-1, 0};
 #endif
 
 #ifdef UNIT_T
@@ -69,6 +74,9 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	return 0;
 }
 
+/* demand_destroy
+ * Free data structures that are used in DFTL
+ */
 void demand_destroy(lower_info *li, algorithm *algo){
 	free(CMT);
 	free(GTD);
@@ -78,6 +86,9 @@ void demand_destroy(lower_info *li, algorithm *algo){
 		queue_delete(head);
 }
 
+/* demand_end_req
+ * Free my_req from interface level
+ */
 /* Does it need to return void pointer??? */
 void *demand_end_req(algo_req* input){
 	request *res = input->parents;
@@ -87,11 +98,18 @@ void *demand_end_req(algo_req* input){
 	return NULL;
 }
 
+/* pseudo_end_req
+ * Free pseudo_end_req data structure
+ */
 void *pseudo_end_req(algo_req* input){
 	free(input);
 	return NULL;
 }
 
+/* assign_pseudo_req
+ * Make pseudo_my_req
+ * psudo_my_req is req from algorithm, not from the interface
+ */
 algo_req* assign_pseudo_req(){
 	algo_req *pseudo_my_req = (algo_req*)malloc(sizeof(algo_req));
 	pseudo_my_req->parents = NULL;
@@ -100,6 +118,11 @@ algo_req* assign_pseudo_req(){
 	return pseudo_my_req;
 }
 
+/* dp_alloc
+ * Find allocatable page address for data page allocation
+ * Guaranteed to search block linearly to find allocatable page address (from 0 to _NOB)
+ * Saves allocatable page address to ppa
+ */
 void dp_alloc(int32_t *ppa){ // Data page allocation
 	if(DPA_status % _PPB == 0){
 		if(PBA_status == _NOB) 
@@ -116,6 +139,11 @@ void dp_alloc(int32_t *ppa){ // Data page allocation
 	DPA_status++;
 }
 
+/* tp_alloc
+ * Find allocatable page address for translation page allocation
+ * Guaranteed to search block linearly to find allocatable page address (from 0 to _NOB)
+ * Saves allocatable page address to t_ppa
+ */
 void tp_alloc(int32_t *t_ppa){ // Translation page allocation
 	if(TPA_status % _PPB == 0){
 		if(PBA_status == _NOB) 
