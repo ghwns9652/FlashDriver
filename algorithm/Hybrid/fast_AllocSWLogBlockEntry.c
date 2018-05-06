@@ -31,8 +31,8 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
    	int                 sw_log_block;
 
     sw_MappingInfo = tableInfo->sw_MappingTable->data; 
-	offset = OFFSET(key);
 	block = BLOCK(key);
+	offset = OFFSET(key);
     logical_block = sw_MappingInfo->logical_block;
     sw_log_block = sw_MappingInfo->sw_log_block;
    	

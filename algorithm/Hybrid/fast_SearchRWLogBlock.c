@@ -23,7 +23,7 @@ char fast_SearchRWLogBlock(uint32_t logical_address, uint32_t* physical_address)
     uint32_t number_of_written_page = (rw_MappingTable->number_of_full_log_block*PAGE_PER_BLOCK)+rw_MappingTable->offset;
 
     // Should cast into integer to test correctly (if not, doesn't work properly)
-    for (entry=rw_MappingTable->data+(number_of_written_page-1); (int)(entry-rw_MappingTable->data) >= 0; entry--) {    
+    for (entry = rw_MappingTable->data+(number_of_written_page-1); (int)(entry-rw_MappingTable->data) >= 0; entry--) {    
         if (logical_address == ADDRESS(entry->logical_block, entry->logical_offset)) {
             *physical_address = ADDRESS(entry->physical_block, entry->physical_offset);
             return (eNOERROR);

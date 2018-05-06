@@ -13,9 +13,9 @@ typedef struct {
 } FAST_Parameters;
 
 typedef struct {
-    uint32_t logical_block;
-    uint32_t sw_log_block;
-    uint32_t number_of_stored_sector;
+    int logical_block;
+    int sw_log_block;
+    int number_of_stored_sector;
 } SW_MappingInfo;
 
 typedef struct {
@@ -23,10 +23,10 @@ typedef struct {
 } SW_MappingTable;
 
 typedef struct {
-    uint32_t physical_block;
-    uint32_t logical_block;
-    uint32_t physical_offset;
-    uint32_t logical_offset;
+    int physical_block;
+    int physical_offset;
+    int logical_block;
+    int logical_offset;
     char state;
 } RW_MappingInfo;
 
@@ -34,12 +34,12 @@ typedef struct {
     int* rw_log_block;
     char current_position;
     int number_of_full_log_block;
-    uint32_t offset;
+    int offset;
     RW_MappingInfo* data;       /* Should allocate with value of lower_info */
 } RW_MappingTable;
 
 typedef struct {
-    uint32_t physical_block;
+    int physical_block;
 } Block_MappingInfo;
 
 typedef struct {

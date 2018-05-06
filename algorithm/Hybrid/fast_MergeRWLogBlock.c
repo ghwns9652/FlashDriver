@@ -25,12 +25,15 @@ char fast_MergeRWLogBlock(uint32_t log_block, request *const req)
     RW_MappingInfo* data = rw_MappingTable->data;
 
     // TODO : Check Original Paper
+    
     for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
         if(GET_PAGE_STATE(ADDRESS(victim_block, i)) == VALID){
             fast_RenewRWLogBlockState(victim_block, i);
         }
     }
+    
     for(unsigned int i = 0; i < PAGE_PER_BLOCK; i++){
+        //fast_RenewRWLogBlockState(ADDRESS(victim_block, i));
         if(GET_PAGE_STATE(ADDRESS(victim_block, i)) == VALID){
             //fast_FullMerge(data[i].logical_block);
         } 
@@ -64,6 +67,9 @@ char fast_MergeRWLogBlock(uint32_t log_block, request *const req)
  * @param       logical_address     Logical address which log pages correspond to
  * @param       order               Offset of victim in RW log block
  * @return      Offset of up-to-date page
+ */
+/**
+ * 갱신하고자 하는 블럭의 주소, 오프셋이 필요함.
  */
 static int fast_RenewRWLogBlockState(uint32_t logical_address, uint32_t order)
 {

@@ -90,10 +90,12 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
     tableInfo->sw_MappingTable->data = 
         (SW_MappingInfo*)malloc(sizeof(SW_MappingInfo) * PAGE_PER_BLOCK);
     memset(tableInfo->sw_MappingTable->data, 0, sizeof(SW_MappingInfo) * PAGE_PER_BLOCK);
+    tableInfo->sw_MappingTable->data->logical_block = -1;
+    tableInfo->sw_MappingTable->data->sw_log_block = -1;
 
     tableInfo->rw_MappingTable->data = 
-        (RW_MappingInfo*)malloc(sizeof(RW_MappingInfo) * PAGE_PER_BLOCK);
-    memset(tableInfo->rw_MappingTable->data, 0, sizeof(RW_MappingInfo) * PAGE_PER_BLOCK);
+        (RW_MappingInfo*)malloc(sizeof(RW_MappingInfo) * (PAGE_PER_BLOCK*NUMBER_OF_RW_LOG_BLOCK));
+    memset(tableInfo->rw_MappingTable->data, 0, sizeof(RW_MappingInfo) * (PAGE_PER_BLOCK*NUMBER_OF_RW_LOG_BLOCK));
 
     tableInfo->block_MappingTable->data = 
         (Block_MappingInfo*)malloc(sizeof(Block_MappingInfo) * NUMBER_OF_DATA_BLOCK);
@@ -109,11 +111,11 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
 
     memset(tableInfo->rw_MappingTable->rw_log_block, -1, sizeof(int)*NUMBER_OF_RW_LOG_BLOCK);
     // Test
-    for(unsigned int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
+    /*for(unsigned int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
         printf("%d ", tableInfo->rw_MappingTable->rw_log_block[i]);
     }
     printf("\n");
-
+    */
     memset(BLOCK_STATE, ERASED, NUMBER_OF_BLOCK+1+NUMBER_OF_RW_LOG_BLOCK);
     memset(PAGE_STATE, ERASED, NUMBER_OF_PAGE);
 
@@ -121,12 +123,13 @@ uint32_t FAST_Create(lower_info* li, algorithm* algo)
         tableInfo->block_MappingTable->data[i].physical_block = i;
         SET_BLOCK_STATE(i, DATA_BLOCK);
     }
-    tableInfo->sw_MappingTable->data->physical_block = NUMBER_OF_DATA_BLOCK;
+    tableInfo->sw_MappingTable->data->sw_log_block = NUMBER_OF_DATA_BLOCK;
     SET_BLOCK_STATE(NUMBER_OF_DATA_BLOCK, SW_LOG_BLOCK);
 
     for(unsigned int i = 0; i < NUMBER_OF_RW_LOG_BLOCK; i++){
         SET_BLOCK_STATE(NUMBER_OF_DATA_BLOCK+1 + i, RW_LOG_BLOCK);
         tableInfo->rw_MappingTable->rw_log_block[i] = NUMBER_OF_DATA_BLOCK+1 + i;
+        printf("%d %d\n", i, tableInfo->rw_MappingTable->rw_log_block[i]);
     }
     
     BLOCK_LAST_USED = NUMBER_OF_DATA_BLOCK + NUMBER_OF_RW_LOG_BLOCK;
