@@ -85,4 +85,4 @@ int main(){/*
 	bench_free();
 	inf_free();
 	return 0;
-
+}
