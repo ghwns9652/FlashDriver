@@ -15,6 +15,15 @@ blockmanager/**
 !blockmanager/Makefile_test
 !blockmanager/YouHaveToDo.txt
 
+blockmanager_dirt/
+macro.sh
+algorithm/practice
+
+algorithm/block/**
+!algorithm/block/block.c
+!algorithm/block/block_withBM.c
+!algorithm/block/block.h
+!algorithm/block/Makefile
 			
 #blockmanager/libbm.a
 #blockmanager/memset.c
