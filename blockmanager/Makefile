@@ -1,18 +1,28 @@
-test : BM_Main.o BM_Block.o BM_Heap.o BM_Interface.o
-		gcc -o test BM_Main.o BM_Block.o BM_Heap.o BM_Interface.o
+CC = g++
 
-BM_Main.o : BM_Block.h BM_Main.c
-		gcc -c BM_Main.c
+SRCS +=\
+		BM_Block.c\
+		BM_Heap.c\
+		BM_Interface.c\
 
-BM_Block.o : BM_Block.h BM_Block.c
-		gcc -c BM_Block.c
+OBJS :=\
+	$(patsubst %.c,%.o,$(SRCS))\
 
-BM_Heap.o : BM_Heap.h BM_Heap.c
-		gcc -c  BM_Heap.c
+TARGETOBJ:=\
+	$(addprefix ../object/,$(OBJS))\
 
-BM_Interface.o : BM_Interface.h BM_Interface.c
-		gcc -c BM_Interface.c
+LEAK: all
+all: $(TARGETOBJ) 
 
-clean :
-		rm -rf *.o
-		rm test
+libbm.a : $(TARGETOBJ)
+	$(AR) r $(@) $(TARGETOBJ)
+
+.c.o :
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
+
+../object/%.o: %.c
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
+
+clean : 
+	@$(RM) libbm.a
+	@$(RM) *.o

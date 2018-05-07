@@ -2,9 +2,6 @@ CC = g++
 
 SRCS +=\
 		block_withBM.c\
-		BM_Block.c\
-		BM_Heap.c\
-		BM_Interface.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\

@@ -2,11 +2,15 @@
 #include<math.h>
 #include<stdio.h>
 #include<string.h>
+#include<unistd.h>
 #ifdef __GNUC__
 #define FORCE_INLINE __attribute__((always_inline)) inline
 #else
 #define FORCE_INLINE inline
 #endif
+
+extern int save_fd;
+
 void BITSET(char *input, char offset){
 	char test=1;
 	test<<=offset;
@@ -144,24 +148,27 @@ uint64_t bf_bits(int entry, float fpr){
 }
 void bf_set(BF *input, KEYT key){
 	KEYT h;
+	int block;
+	int offset;
 	for(int i=0; i<input->k; i++){
 		//MurmurHash3_x86_32(&key,sizeof(key),i,&h);
 		h=hashfunction(key+i);
 		h%=input->m;
-		int block=h/8;
-		int offset=h%8;
+		block=h/8;
+		offset=h%8;
 		BITSET(&input->body[block],offset);
 	}
 }
 
 bool bf_check(BF* input, KEYT key){
 	KEYT h;
+	int block,offset;
 	for(int i=0; i<input->k; i++){
 		//MurmurHash3_x86_32(&key,sizeof(key),i,&h);
 		h=hashfunction(key+i);
 		h%=input->m;
-		int block=h/8;
-		int offset=h%8;
+		block=h/8;
+		offset=h%8;
 		if(!BITGET(input->body[block],offset))
 			return false;
 	}
@@ -170,6 +177,18 @@ bool bf_check(BF* input, KEYT key){
 void bf_free(BF *input){
 	free(input->body);
 	free(input);
+}
+void bf_save(BF* input){
+	write(save_fd,input,sizeof(BF));
+	write(save_fd,input->body,input->targetsize);
+}
+
+BF* bf_load(){
+	BF *res=(BF*)malloc(sizeof(BF));
+	read(save_fd,res,sizeof(BF));
+	res->body=(char*)malloc(res->targetsize);
+	read(save_fd,res->body,res->targetsize);
+	return res;
 }
 /*
    int main(){

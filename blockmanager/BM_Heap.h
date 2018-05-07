@@ -35,14 +35,10 @@ void BM__quicksort(PE_T* temp_PE, int p, int r, Block** PE_map); // If this func
 
 #define SWAP_PE(a, b)	\
 	{ PE_T temp; temp=a; a=b; b=temp; }
-//#define SWAP_PE_PTR(a, b)	\
-	//{ PE_T* temp; temp=a; a=b; b=temp; }
 #define SWAP_PE_PTR(a, b)	\
 	{ Block* temp; temp=a; a=b; b=temp; }
 #define SWAP_NV(a, b)	\
 	{ nV_T temp; temp=a; a=b; b=temp; }
-//#define SWAP_NV_PTR(a, b)	\
-	//{ nV_T* temp; temp=a; a=b; b=temp; }
 #define SWAP_NV_PTR(a, b)	\
 	{ Block* temp; temp=a; a=b; b=temp; }
 

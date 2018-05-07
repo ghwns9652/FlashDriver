@@ -23,6 +23,7 @@ int32_t BM_Minheap_numValid(Block* blockArray, Block** numValid_map)
 	BM__buildminheapNV(temp_NV, numValid_map); 
 
 	free(temp_NV); 
+	return 0;
 }
 
 
@@ -34,6 +35,7 @@ int32_t BM__buildminheapNV(nV_T* temp_NV, Block** numValid_map)
 	for (i = _NOB / 2; i >= 0; --i) {
 		BM__minheapifyNV(temp_NV, i, numValid_map);
 	}
+	return 0;
 }
 
 //int32_t BM__minheapifyNV(nV_T* temp_NV, int32_t i, nV_T** numValid_map)
@@ -54,6 +56,7 @@ int32_t BM__minheapifyNV(nV_T* temp_NV, int32_t i, Block** numValid_map)
 		
 		BM__minheapifyNV(temp_NV, smallest, numValid_map);
 	}
+	return 0;
 }
 
 
@@ -76,6 +79,7 @@ int32_t BM_Maxheap_numValid(Block* blockArray, Block** numValid_map)
 	BM__buildmaxheapNV(temp_NV, numValid_map); 
 
 	free(temp_NV); 
+	return 0;
 }
 
 
@@ -87,6 +91,7 @@ int32_t BM__buildmaxheapNV(nV_T* temp_NV, Block** numValid_map)
 	for (i = _NOB / 2; i >= 0; --i) {
 		BM__maxheapifyNV(temp_NV, i, numValid_map);
 	}
+	return 0;
 }
 
 //int32_t BM__maxheapifyNV(nV_T* temp_NV, int32_t i, nV_T** numValid_map)
@@ -107,6 +112,7 @@ int32_t BM__maxheapifyNV(nV_T* temp_NV, int32_t i, Block** numValid_map)
 		
 		BM__maxheapifyNV(temp_NV, largest, numValid_map);
 	}
+	return 0;
 }
 
 /*
@@ -128,6 +134,7 @@ int32_t BM_Minheap_PEcycle(Block* blockArray, Block** PE_map)
 	BM__buildminheapPE(temp_PE, PE_map); 
 
 	free(temp_PE); 
+	return 0;
 }
 
 
@@ -138,6 +145,7 @@ int32_t BM__buildminheapPE(PE_T* temp_PE, Block** PE_map)
 	for (i = _NOB / 2; i >= 0; --i) {
 		BM__minheapifyPE(temp_PE, i, PE_map); // Is that OKAY?? I don't know about 'MINheapify'
 	}
+	return 0;
 }
 
 int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, Block** PE_map)
@@ -157,6 +165,7 @@ int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, Block** PE_map)
 		
 		BM__minheapifyPE(temp_PE, smallest, PE_map);
 	}
+	return 0;
 }
 
 
@@ -186,7 +195,8 @@ int32_t BM_SortPE(Block* blockArray, Block** PE_map)
 void BM__quicksort(PE_T* temp_PE, int p, int r, Block** PE_map) 
 {
 	int q;
-	int x;
+	//int x;
+	PE_T x;
 	int i;
 	int j;
 	if (p < r) { // partitioning code

@@ -83,6 +83,7 @@ int32_t BM_Init()
 
 	
 	printf("BM_Init() End!\n");
+	return 0;
 }
 
 
@@ -106,6 +107,7 @@ int32_t BM_LoadBlock(uint32_t PBA_BM)
 {
 	printf("Loading Block Data..\n");
 	// This functon is a prototype. Suppose that this function is completed.
+	return 0;
 }
 
 
@@ -124,6 +126,7 @@ int32_t BM_InitBlockArray()
 		blockArray[i].v_PBA = 0xffffffff; // -1
 		blockArray[i].o_PBA = 0xffffffff;
 	}
+	return 0;
 }
 
 
@@ -140,6 +143,7 @@ int32_t BM_ScanFlash()
 		BM_ReadBlock(i);
 
 	}
+	return 0;
 }
 
 int32_t BM_ReadBlock(int i){//(int32_t PBA){
@@ -160,6 +164,7 @@ int32_t BM_ReadBlock(int i){//(int32_t PBA){
 	}
 	blockArray[PBA].PBA = PBA;
 	#endif
+	return 0;
 }
 
 #endif
@@ -182,6 +187,7 @@ int32_t BM_BadBlockCheck()
 		// blockArray[i].ptrNV_data = NULL;
 		// blockArray[i].ptrPE_data = NULL;
 	}
+	return 0;
 }
 
 /* Fill numValid_map, PE_map from blockArray */
@@ -265,5 +271,6 @@ int32_t BM_Shutdown()
 	*/
 	//free(numValid_map);
 	//free(PE_map);
+	return 0;
 }
 

@@ -1,18 +1,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include "block.h"
-#include "BM_Interface.h"
+//#include "BM_Interface.h"
 
 #include <stdio.h> // Temporary measure for printf
 
 int32_t *block_maptable; // pointer to LPA->PPA table 
-int8_t *exist_table;  // ¿¿¿ ¿¿¿ ¿ ¿¿¿
+//int8_t *exist_table;  // ¿¿¿ ¿¿¿ ¿ ¿¿¿
 int8_t *block_valid_array;
 uint32_t set_pointer = 0;
 
-extern Block* blockArray;
-extern Block** numValid_map;
-extern Block** PE_map;
 
 
 #define VALID 1
@@ -56,14 +53,14 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 	BM_Init();
 
 	block_maptable = (int32_t*)malloc(sizeof(int32_t) * li->NOB);
-	int32_t i=0;
+	uint32_t i=0;
 	for (; i<li->NOB; ++i){ // maptable initialization
 		block_maptable[i] = NIL;
 	}
 
-	exist_table = (int8_t*)malloc(sizeof(int8_t)*li->NOP);
-	for (i = 0; i < li->NOP; ++i)
-		exist_table[i] = NONEXIST;
+	//exist_table = (int8_t*)malloc(sizeof(int8_t)*li->NOP);
+	//for (i = 0; i < li->NOP; ++i)
+		//exist_table[i] = NONEXIST;
 	BM_validate_all(blockArray); // Actually, BM initialization is validate.
 
 
@@ -72,11 +69,13 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 		block_valid_array[i] = ERASE; // 0 means ERASED, 1 means VALID
 	// memset(block_valid_array, 0, li->NOB * li->SOB); 
 
+	return 0; // I don't know
+
 }
 void block_destroy (lower_info* li, algorithm *algo){
 
 	free(block_maptable);
-	free(exist_table);
+	//free(exist_table);
 	free(block_valid_array);
 
 	BM_Shutdown();
@@ -106,8 +105,10 @@ uint32_t block_get(request *const req){
 	uint32_t PPA = PBA * __block.li->PPB + offset;
 
 	//__block.li->pull_data(req->key,PAGESIZE,req->value,0,my_req,0);
-	__block.li->pull_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
+	__block.li->pull_data(PPA, PAGESIZE, req->value, 0, my_req);
 	bench_algo_end(req);
+
+	return 0; // I don't know
 }
 uint32_t block_set(request *const req){
 //uint32_t block_set(request *req){
@@ -149,7 +150,7 @@ uint32_t block_set(request *const req){
 		//PPA = PBA * PPB + offset;
 		PPA = set_pointer * __block.li->PPB + offset; // Equal to above 2 lines
 
-		exist_table[PPA] = EXIST;
+		//exist_table[PPA] = EXIST;
 		BM_invalidate_ppa(blockArray, PPA);
 
 
@@ -158,7 +159,7 @@ uint32_t block_set(request *const req){
 		//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 		//my_req->end_req = block_end_req;
 		//my_req->params = (void*)params;
-		__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
+		__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req);
 	}
 
 	else
@@ -181,7 +182,7 @@ uint32_t block_set(request *const req){
 		if (BM_is_valid_ppa(blockArray, PPA))
 		{
 			//printf("Case 3\n");
-			exist_table[PPA] = EXIST;
+			//exist_table[PPA] = EXIST;
 			BM_invalidate_ppa(blockArray, PPA);
 			block_valid_array[PBA] = VALID;
 #if 0
@@ -194,7 +195,7 @@ uint32_t block_set(request *const req){
 			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			//my_req->end_req = block_end_req;
 			//my_req->params = (void*)params;
-			__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req, 0);
+			__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req);
 		}
 		else if (!BM_is_valid_ppa(blockArray, PPA))
 		//else if (exist_table[PPA] == EXIST) //!= NONEXIST)
@@ -215,7 +216,7 @@ uint32_t block_set(request *const req){
 			// Data move to new block
 			//int8_t* temp_block = (int8_t*)malloc(sizeof(int8_t)*__block.li->PPB); // ÀÌ°Å vale¸¦ Á¦´ë·Î ´ãÀ» ¼ö ÀÖ´Â °É·Î ¸¸µé¾î¾ß..
 			//int8_t* temp_block = (int8_t*)malloc(PAGESIZE);
-			int i;
+			uint32_t i;
 
 			/* Followings: ASC consideartion */
 
@@ -224,18 +225,18 @@ uint32_t block_set(request *const req){
 			for (i = 0; i < offset; ++i) {
 				algo_req *temp_req=(algo_req*)malloc(sizeof(algo_req));
 				/* (DELETED) int8_t* temp_block = (int8_t*)malloc(PAGESIZE); */
-				value_set* temp_value_set = inf_get_valueset(NULL, DMA_READ);
+				value_set* temp_value_set = inf_get_valueset(NULL, DMA_READ, PAGESIZE);
 				//temp_req->end_req=block_end_req;
 				//temp_req->params=(void*)params;
 				temp_req->parents = NULL;
 				temp_req->end_req = block_algo_end_req;
 				//printf("Before %d-th pull_data\n", i);
-				__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_value_set, 0, temp_req, 0);
+				__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_value_set, 0, temp_req);
 				//printf("After pull_data\n");
 				//temp_value_set->value addess of pulled page
 
-				exist_table[old_PPA_zero + i] = NONEXIST;
-				exist_table[new_PPA_zero + i] = EXIST;
+				//exist_table[old_PPA_zero + i] = NONEXIST;
+				//exist_table[new_PPA_zero + i] = EXIST;
 				BM_validate_ppa(blockArray, old_PPA_zero + i);
 				BM_invalidate_ppa(blockArray, new_PPA_zero + i);
 
@@ -246,8 +247,8 @@ uint32_t block_set(request *const req){
 				//my_req->end_req = block_end_req;
 				//my_req->params = (void*)params;
 				//printf("Before %d-th push_data\n", i);
-				value_set* temp_write_value_set = inf_get_valueset(temp_value_set->value, DMA_WRITE);
-				__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_write_value_set, 0, temp_req2, 0);
+				value_set* temp_write_value_set = inf_get_valueset(temp_value_set->value, DMA_WRITE, PAGESIZE);
+				__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_write_value_set, 0, temp_req2);
 				inf_free_valueset(temp_write_value_set, DMA_WRITE);
 				inf_free_valueset(temp_value_set, DMA_READ);
 				//printf("After push_data\n");
@@ -257,9 +258,9 @@ uint32_t block_set(request *const req){
 			//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			//my_req->end_req = block_end_req;
 			//my_req->params = (void*)params;
-			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req, 0);
-			exist_table[old_PPA_zero + offset] = NONEXIST;
-			exist_table[new_PPA_zero + offset] = EXIST;
+			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req);
+			//exist_table[old_PPA_zero + offset] = NONEXIST;
+			//exist_table[new_PPA_zero + offset] = EXIST;
 			BM_validate_ppa(blockArray, old_PPA_zero + offset);
 			BM_invalidate_ppa(blockArray, new_PPA_zero + offset);
 
@@ -268,16 +269,16 @@ uint32_t block_set(request *const req){
 				for (i = offset + 1; i < __block.li->PPB; ++i) {
 					algo_req *temp_req = (algo_req*)malloc(sizeof(algo_req));
 					/* (DELETED) int8_t* temp_block = (int8_t*)malloc(PAGESIZE); */
-					value_set* temp_read_value_set = inf_get_valueset(NULL, DMA_READ);
+					value_set* temp_read_value_set = inf_get_valueset(NULL, DMA_READ, PAGESIZE);
 					//temp_req->end_req = block_end_req;
 					//temp_req->params = (void*)params;
 					temp_req->parents = NULL;
 					temp_req->end_req = block_algo_end_req;
 					//__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_block, 0, temp_req, 0);
-					__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_read_value_set, 0, temp_req, 0);
+					__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_read_value_set, 0, temp_req);
 
-					exist_table[old_PPA_zero + i] = NONEXIST;
-					exist_table[new_PPA_zero + i] = EXIST;
+					//exist_table[old_PPA_zero + i] = NONEXIST;
+					//exist_table[new_PPA_zero + i] = EXIST;
 					BM_validate_ppa(blockArray, old_PPA_zero + i);
 					BM_invalidate_ppa(blockArray, new_PPA_zero + i);
 
@@ -287,9 +288,9 @@ uint32_t block_set(request *const req){
 					//algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 					//my_req->end_req = block_end_req;
 					//my_req->params = (void*)params;
-					value_set* temp_write_value_set = inf_get_valueset(temp_read_value_set->value, DMA_WRITE);
+					value_set* temp_write_value_set = inf_get_valueset(temp_read_value_set->value, DMA_WRITE, PAGESIZE);
 					//__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_block, 0, temp_req2, 0);
-					__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_write_value_set, 0, temp_req2, 0);
+					__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_write_value_set, 0, temp_req2);
 					inf_free_valueset(temp_write_value_set, DMA_WRITE);
 					inf_free_valueset(temp_read_value_set, DMA_READ);
 					//free(temp_block);
@@ -336,12 +337,16 @@ uint32_t block_set(request *const req){
 	}
 	bench_algo_end(req);
 
+	return 0; // I don't know
+
 }
 uint32_t block_remove(request *const req){
 	//	block->li->trim_block()
+
+	return 0;
 }
 
-void *block_end_req(algo_req* input){
+void* block_end_req(algo_req* input){
 	//block_params* params=(block_params*)input->params;
 
 	//request *res=params->parents;
@@ -350,11 +355,13 @@ void *block_end_req(algo_req* input){
 
 	//free(params);
 	free(input);
+	return (void*)0;
 }
 
 
 
 /* From gyeongtaek idea */
-void *block_algo_end_req(algo_req* input){
+void* block_algo_end_req(algo_req* input){
 	free(input);
+	return (void*)0;
 }

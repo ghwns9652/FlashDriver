@@ -1,16 +1,9 @@
 If you want to use BM(Block Manager), have to do following lists.
 
-1. blockmanager/ directory에 있는 파일 중 다음의 파일들을 자신의 ftl directory에 복사한다(옮겨 놓는다)
-	BM_common.h
-	BM_Block.c
-	BM_Block.h
-	BM_Heap.c
-	BM_Heap.h
-	BM_Interface.c
-	BM_Interface.h
+1. blockmanager/ 디렉토리가 제대로 FlashSimulator 안에 들어있는지 확인한다.
 
-2. 자신의 ftl의 실행부분 초반에 다음의 코드를 추가한다.
-	#include "BM_Interface.h"
+2. ftl에서 c파일들이 모두 blockmanager의 자료구조를 사용할 수 있도록 header에 다음의 코드를 추가한다.
+	#include "../../blockmanager/BM_Interface.h"  // blockmanager 디렉토리의 BM_Interface.h 를 include하면 된다.
 	extern Block* blockArray;
 	extern Block** numValid_map;
 	extern Block** PE_map;

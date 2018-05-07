@@ -50,6 +50,7 @@ static inline int32_t BM_update_block_with_push(Block* blockArray, PPA_T PPA)
 	//blockArray[PBA].ValidP[offset] = BM_WRITTEN; /* Not Determined yet */ /* What is BM_WRITTEN? */
 
 	blockArray[PBA].PE_cycle++;
+	return 0;
 }
 
 static inline int32_t BM_update_block_with_trim(Block* blockArray, PPA_T PPA)
@@ -58,6 +59,7 @@ static inline int32_t BM_update_block_with_trim(Block* blockArray, PPA_T PPA)
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 
 	blockArray[PBA].PE_cycle++;
+	return 0;
 }
 
 

@@ -1,18 +1,34 @@
 *.o
 *.a
 
-blockmanager/libbm.a
-blockmanager/memset.c
-blockmanager/test.c
-blockmanager/bm
-blockmanager/comp.sh
-blockmanager/*.o
-blockmanager/*.a
+# blockmanager
+blockmanager/**
+!blockmanager/BM_Block.c
+!blockmanager/BM_Block.h
+!blockmanager/BM_common.h
+!blockmanager/BM_Heap.c
+!blockmanager/BM_Heap.h
+!blockmanager/BM_Interface.c
+!blockmanager/BM_Interface.h
+!blockmanager/BM_Main.c
+!blockmanager/Makefile
+!blockmanager/Makefile_test
+!blockmanager/YouHaveToDo.txt
+
+			
+#blockmanager/libbm.a
+#blockmanager/memset.c
+#blockmanager/test.c
+#blockmanager/bm
+#blockmanager/comp.sh
+#blockmanager/*.o
+#blockmanager/*.a
 
 simulator
 simulator_memory_check
 data/
 object/
 tags
-log
+*log
 .
+*log
