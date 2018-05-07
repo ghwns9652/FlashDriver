@@ -15,7 +15,9 @@ blockmanager/**
 !blockmanager/Makefile_test
 !blockmanager/YouHaveToDo.txt
 
-blockmanager_dirt/
+
+
+blockmanager_dirt_trash/
 macro.sh
 algorithm/practice
 
