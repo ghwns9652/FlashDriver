@@ -14,6 +14,7 @@ blockmanager/**
 !blockmanager/Makefile
 !blockmanager/Makefile_test
 !blockmanager/YouHaveToDo.txt
+!blockmanager/Makefile_changed.png
 
 
 

@@ -1,9 +1,0 @@
-3.29 BM 한 일
-
-
-Debug - inline function을 밖에서 쓰려면, header file에 그냥 inline이 아니라 static inline이라고 해야 한다.
-BM_Block.c, BM_Block.h에서 parameter 에러 수정
-그외 각종 디버깅(ptrNV_data: uint16_t** -> int16_t**
-
-Bad Block의 경우, numValid를 -1로 초기화한다. 따라서 minheap_numValid 에서 별다른 조치를 취하지 않으면 minheap의 root로 Bad Block이 와버려서 문제가 발생한다.
-따라서, minheapify에서 두 수를 비교할 때 (unsigned)로 casting하면 -1을 매우 큰 수로 인식하기 때문에(0xffff) minheap이 정상적으로 작동한다.
