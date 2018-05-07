@@ -25,8 +25,6 @@ D_SRAM *d_sram; // SRAM for contain block data temporarily
 /*
 k:
    block 영역 분리를 확실히 할것.
-   reserved block을 하나 둬서 gc block을 trim 한 다음 두개를 교환하는 식으로
-   gc 구현
  */
 
 int32_t DPA_status; // Data page allocation
@@ -129,6 +127,7 @@ algo_req* assign_pseudo_req(){
 	algo_req *pseudo_my_req = (algo_req*)malloc(sizeof(algo_req));
 	pseudo_my_req->parents = NULL;
 	pseudo_my_req->end_req = pseudo_end_req;
+
 	return pseudo_my_req;
 }
 
@@ -142,11 +141,6 @@ void dp_alloc(int32_t *ppa){ // Data page allocation
 		if(PBA_status == _NOB) 
 			needGC = 1;
 		if(needGC == 1){
-			/*
-			 영역을 나누면 linear search 불필요
-			 translation block -> using heap
-			 data block -> too much to use linear search, using heap
-			 */
 			while(!demand_GC('D'))	// Find GC-able d_block and GC
 				PBA_status++;
 		}

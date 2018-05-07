@@ -38,7 +38,7 @@ uint32_t demand_get(request *const req){
 	lpa = req->key;
 	/* Cache hit */
 	if(CMT_check(lpa, &ppa)){
-		queue_update(CMT[D_IDX].queue_ptr);	// Update CMT queue
+		queue_update(CMT[D_IDX].queue_ptr);	// Update CMT queue k:move to cache
 		if(ppa != -1){ // Exist mapping in t_page on cache
 			bench_algo_end(req); 
 			__demand.li->pull_data(ppa, PAGESIZE, req->value, 1, my_req); // Get data in ppa
@@ -72,6 +72,7 @@ uint32_t demand_get(request *const req){
 			}
 			else{ // lseek error avoid
 				printf("invalid ppa read\n");
+				//k : req->type=FS_NOTFOUND_T로 바꿀것
 				bench_algo_end(req);
 				my_req->end_req(my_req);
 			}
@@ -182,6 +183,7 @@ uint32_t demand_remove(request *const req){
 	if((p_table = CMT_check(lpa, &ppa))){
 		demand_OOB[ppa].valid_checker = 0; // Invalidate data page
 		p_table[P_IDX].ppa = -1; // Erase mapping in cache
+		//k:change flag data
 	}
 	/* Cache miss */
 	else{

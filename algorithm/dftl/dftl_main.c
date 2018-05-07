@@ -37,7 +37,7 @@ uint32_t demand_get(request *const req){
 	lpa = req->key;
 	/* Cache hit */
 	if((CMT_i = CMT_check(lpa, &ppa)) != -1){
-		queue_update(CMT[CMT_i].queue_ptr);	// Update CMT queue
+		queue_update(CMT[CMT_i].queue_ptr);	// Update CMT queue ->k:move to cache
 		bench_algo_end(req); 
 		__demand.li->pull_data(ppa, PAGESIZE, req->value, 1, my_req); // Get data in ppa
 	}
@@ -97,7 +97,7 @@ uint32_t demand_set(request *const req){
 		dp_alloc(&ppa); // Allocate data page
 		CMT[CMT_i].ppa = ppa; // Update ppa in CMT
 		CMT[CMT_i].flag = 1; // Update flag in CMT (mapping changed)
-		queue_update(CMT[CMT_i].queue_ptr); // Update queue in CMT
+		queue_update(CMT[CMT_i].queue_ptr); // Update queue in CMT -> k:move to cache
 		demand_OOB[ppa] = (D_OOB){lpa, 1}; // Update OOB
 		bench_algo_end(req);
 		__demand.li->push_data(ppa, PAGESIZE, req->value, 1, my_req); // Write actual data in ppa
@@ -175,6 +175,7 @@ int CMT_check(int32_t lpa, int32_t *ppa){
 			CMT_idx = 0;
 		if(CMT[CMT_idx].lpa == lpa){ // Find lpa in CMT
 			*ppa = CMT[CMT_idx].ppa; // Return ppa in CMT
+			//k : cache LRU update 옮기기
 			return CMT_idx; //CMT_i
 		}
 		CMT_idx++;
@@ -199,12 +200,14 @@ uint32_t demand_eviction(int *CMT_i){
 	value_set *temp_value_set2;
 
 	/* Check empty entry */
+	/* k: inefficient logic, please edit*/
 	for(int i = 0; i < CMTENT; i++){
 		if(CMT[i].lpa == -1){
 			*CMT_i = i; // Empty entry
 			return 0; 
 		}
 	}
+
 	/* Eviction */
 	*CMT_i = (int)((C_TABLE*)(tail->DATA) - CMT); // Load CMT_i of tail of a queue
 	lpa = CMT[*CMT_i].lpa; // Get lpa of CMT_i
@@ -214,7 +217,7 @@ uint32_t demand_eviction(int *CMT_i){
 			temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req()); // Get page mapping table in (t_ppa) page
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
-			temp_value_set2 = inf_get_valueset(temp_value_set->value, DMAWRITE, PAGESIZE);
+			temp_value_set2 = inf_get_valueset(temp_value_set->value, DMAWRITE, PAGESIZE); //k : move data to user and copy to dma
 			inf_free_valueset(temp_value_set, DMAREAD);
 			p_table = (D_TABLE*)temp_value_set2->value; // p_table = page mapping table
 		}
