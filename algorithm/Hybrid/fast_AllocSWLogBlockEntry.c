@@ -55,6 +55,7 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
 	else{
 		return (eNOTSEQUENTIAL);
 	}
+    
 	*physical_address = ADDRESS(sw_MappingInfo->sw_log_block, offset);
 	sw_MappingInfo->number_of_stored_sector++;
 

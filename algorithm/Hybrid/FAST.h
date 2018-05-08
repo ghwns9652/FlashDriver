@@ -84,7 +84,7 @@ char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
 /* FAST_Remove */
 char fast_SwitchSWLogBlock();
 char fast_MergeSWLogBlock(request *const req);
-char fast_MergeRWLogBLock(uint32_t log_block_number, request *const req);
+char fast_MergeRWLogBlock(uint32_t log_block, request *const req);
 
 char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address);
 char fast_SearchRWLogBlock(uint32_t logical_address, uint32_t* physical_address);
@@ -107,6 +107,9 @@ value_set* fast_ReadPage(uint32_t address, request *const req, value_set* value,
 algo_req* assign_pseudo_req();
 void *pseudo_end_req(algo_req* input);
 
+char fast_UpdateRWLogBlockState(uint32_t logical_address, uint32_t order);
+char fast_FullMerge(int block_number, request* const req);
+
 /*@
  * Global Variables
  */
@@ -118,13 +121,14 @@ extern const char VALID;
 extern const char INVALID;
 
 extern const char eNOERROR;
+extern const char eNOTFOUND;
+extern const char UNEXPECTED;
 extern const char eNOTWRITTEN;
 extern const char eOVERWRITTED;
 extern const char eUNEXPECTED;
 extern const char eNOTSEQUENTIAL;
+extern const char eALREADYINVALID;
 
-extern const char eNOTFOUND;
-extern const char UNEXPECTED;
 
 extern const char NIL;
 

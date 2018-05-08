@@ -31,3 +31,15 @@ uint32_t FIND_ERASED_BLOCK()
     }
     return BLOCK_LAST_USED;
 }
+
+algo_req* assign_pseudo_req(){
+	algo_req *pseudo_my_req = (algo_req*)malloc(sizeof(algo_req));
+	pseudo_my_req->parents = NULL;
+	pseudo_my_req->end_req = pseudo_end_req;
+
+	return pseudo_my_req;
+}
+
+void *pseudo_end_req(algo_req* input){
+	free(input);
+}

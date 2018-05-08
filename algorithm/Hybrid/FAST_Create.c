@@ -43,7 +43,7 @@ uint32_t SIZE_OF_BLOCK;
 uint32_t PAGE_PER_BLOCK;
 uint32_t TOTAL_SIZE;
 
-const uint32_t NUMBER_OF_RW_LOG_BLOCK = 15;
+const uint32_t NUMBER_OF_RW_LOG_BLOCK = 3;
 
 const char ERASED = 0;
 const char VALID = 1;
@@ -56,6 +56,7 @@ const char eNOTWRITTEN = -3;
 const char eOVERWRITTED = -4;
 const char eUNEXPECTED = -5;
 const char eNOTSEQUENTIAL = -6;
+const char eALREADYINVALID = -7;
 
 const char NIL = -1;
 
