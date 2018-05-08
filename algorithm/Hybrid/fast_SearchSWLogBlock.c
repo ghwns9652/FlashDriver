@@ -27,7 +27,7 @@ char fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address)
     SW_MappingTable* sw_MappingTable = tableInfo->sw_MappingTable;
 
     uint32_t sw_log_block = sw_MappingTable->data->logical_block;
-    uint32_t physical_block = sw_MappingTable->data->physical_block;
+    uint32_t physical_block = sw_MappingTable->data->sw_log_block;
     uint32_t number_of_stored_sector = sw_MappingTable->data->number_of_stored_sector;
 
     if(logical_block == sw_log_block && offset < number_of_stored_sector){

@@ -51,8 +51,8 @@ char fast_MergeRWLogBlock(uint32_t log_block, request *const req)
     rw_log_block[NUMBER_OF_RW_LOG_BLOCK - 1] = new_rw_log_block;
     SET_BLOCK_STATE(new_rw_log_block, RW_LOG_BLOCK);
 
-    for(i = 0; i < PAGE_PER_NUMBER*(NUMBER_OF_RW_LOG_BLOCK - 1); i++){
-        data[i] = data[i + PAGE_PER_NUMBER];
+    for(i = 0; i < PAGE_PER_BLOCK*(NUMBER_OF_RW_LOG_BLOCK - 1); i++){
+        data[i] = data[i + PAGE_PER_BLOCK];
     }
     //memcpy(data, data+PAGE_PER_BLOCK, sizeof(RW_MappingInfo)*PAGE_PER_BLOCK*(NUMBER_OF_RW_LOG_BLOCK - 1));
     printf("Merge RW Log Block\n");
