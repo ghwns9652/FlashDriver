@@ -1,16 +1,20 @@
 #include "skiplist.h"
 
+//merge 할때 flag따라 무시될수있는지 확인 필요
+//test set 재설정
+//node에서 다시 불러올때 offset이 아닌 value값 자체가 들어갈 수 있게 함수 추가해야함
+//key value 값이 제대로 들어갔는지 체크하는 함수 필요
+
 #define INPUTSIZE 1024 //input size for DEBUG
 
 int main()
 {
 	skiplist * temp = skiplist_init(); //make new skiplist
 	uint8_t offset;
-	bool flg = false;
 	for(int i = 0; i < INPUTSIZE; i++)
 	{
 		offset = i % 256;
-		skiplist_insert(temp, i / 256, offset, flg); //the value is copied
+		skiplist_insert(temp, i, offset, 0); //the value is copied
 	}
 
 	snode *node;
@@ -36,10 +40,11 @@ int main()
 	for(int i = INPUTSIZE; i < 2 * INPUTSIZE; i++)
 	{
 		offset = i % 256;
-		skiplist_insert(temp, i / 256, offset, flg); //the value is copied
+		skiplist_insert(temp, i, offset, 0); //the value is copied
 	}
 
-	skiplist_dump(temp); //dump key and node's level
+	//skiplist_dump_key(temp); //dump key and node's level
+	skiplist_dump_key_value(temp); //dump key and value
 	snode *finded = skiplist_find(temp, 6);
 	printf("find : [%d]\n", finded->key);
 	skiplist_free(temp);

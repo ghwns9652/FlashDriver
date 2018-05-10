@@ -40,7 +40,7 @@ static int getLevel()
 	return level;
 }
 //여기부터 수정
-snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, bool flag)
+snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 {
 	snode *update[MAX_L + 1];
 	snode *x = list->header;
@@ -53,14 +53,14 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, bool flag)
 	x = x->list[1];
 	if(key == x->key)
 	{
-		if(flag == true)
+		if(flag == 1)
 		{
 			for(int i = 0; i < 4; i++)
 				x->VBM[i] = 0;
 			x->erase = flag;
 		}
 		else
-			x->VBM[offset / 64] |= ((uint64_t)1 << (offset % 64));
+			x->VBM[offset / VALUE] |= ((uint64_t)1 << (offset % VALUE));
 		return x;
 	}
 	else
@@ -76,7 +76,7 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, bool flag)
 		x = (snode*)malloc(sizeof(snode));
 		x->list = (snode**)malloc(sizeof(snode*) * (level + 1));
 		x->key = key;
-		if(flag == true)
+		if(flag == 1)
 		{
 			for(int i = 0; i < 4; i++)
 				x->VBM[i] = 0;
@@ -86,8 +86,8 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, bool flag)
 		{
 			for(int i = 0; i < 4; i++)
 				x->VBM[i] = 0;
-			x->erase = false;
-			x->VBM[offset / 64] |= ((uint64_t)1 << (offset % 64));	
+			x->erase = 0;
+			x->VBM[offset / VALUE] |= ((uint64_t)1 << (offset % VALUE));	
 		}
 		for(int i = 1; i <= level; i++)
 		{
@@ -151,20 +151,6 @@ snode *skiplist_get_next(sk_iter* iter)
 	}
 }
 
-// for test
-void skiplist_dump(skiplist * list)
-{
-	sk_iter *iter = skiplist_get_iterator(list);
-	snode *now;
-	while((now = skiplist_get_next(iter)) != NULL)
-	{
-		for(int i = 1; i <= now->level; i++)
-			printf("%u ",now->key);
-		printf("\n");
-	}
-	free(iter);
-}
-
 void skiplist_clear(skiplist *list)
 {
 	snode *now = list->header->list[1];
@@ -190,4 +176,30 @@ void skiplist_free(skiplist *list)
 	free(list->header);
 	free(list);
 	return ;
+}
+// for test
+void skiplist_dump_key(skiplist * list)
+{
+	sk_iter *iter = skiplist_get_iterator(list);
+	snode *now;
+	while((now = skiplist_get_next(iter)) != NULL)
+	{
+		for(int i = 1; i <= now->level; i++)
+			printf("%u ", now->key);
+		printf("\n");
+	}
+	free(iter);
+}
+// for test
+void skiplist_dump_key_value(skiplist * list)
+{
+	sk_iter *iter = skiplist_get_iterator(list);
+	snode *now;
+	while((now = skiplist_get_next(iter)) != NULL)
+	{//수정하자 너무 이상함
+		printf("key(%u): hexvalue1(0x%" PRIx64 "), hexvalue2(0x%" PRIx64 "),\
+ hexvalue3(0x%" PRIx64 "), hexvalue4(0x%" PRIx64 "), erase(%d)\n", 
+		now->key, now->VBM[0], now->VBM[1], now->VBM[2], now->VBM[3], now->erase);
+	}
+	free(iter);
 }
