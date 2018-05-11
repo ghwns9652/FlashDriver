@@ -87,6 +87,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	return 0;
 }
 
+// When FTL is destroyed, move CMT to SSD
 /* demand_destroy
  * Free data structures that are used in DFTL
  */
