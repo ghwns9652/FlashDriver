@@ -1,4 +1,4 @@
-#include "./header/skiplist.h"
+#include "skiplist.h"
 
 #define DEB1
 //#define DEB2

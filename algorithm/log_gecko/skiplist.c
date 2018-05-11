@@ -1,4 +1,4 @@
-#include "./header/skiplist.h"
+#include "skiplist.h"
 
 skiplist *skiplist_init()
 {
@@ -39,7 +39,7 @@ static int getLevel()
 	}
 	return level;
 }
-//여기부터 수정
+
 snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 {
 	snode *update[MAX_L + 1];
@@ -196,7 +196,7 @@ void skiplist_dump_key_value(skiplist * list)
 	sk_iter *iter = skiplist_get_iterator(list);
 	snode *now;
 	while((now = skiplist_get_next(iter)) != NULL)
-	{//수정하자 너무 이상함
+	{
 		printf("key(%u): hexvalue1(0x%" PRIx64 "), hexvalue2(0x%" PRIx64 "),\
  hexvalue3(0x%" PRIx64 "), hexvalue4(0x%" PRIx64 "), erase(%d)\n", 
 		now->key, now->VBM[0], now->VBM[1], now->VBM[2], now->VBM[3], now->erase);
