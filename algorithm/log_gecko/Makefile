@@ -1,6 +1,5 @@
 CC = gcc
-INCLUDE = ./header
-CFLAGS = -g -std=c99 -I$(INCLUDE)
+CFLAGS = -g -std=c99
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
 TARGET = test

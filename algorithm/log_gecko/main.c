@@ -3,11 +3,7 @@
 #define DEB1
 //#define DEB2
 #define DEB3
-
-//merge 할때 flag따라 무시될수있는지 확인 필요
-//node에서 다시 불러올때 offset이 아닌 value값 자체가 들어갈 수 있게 함수 추가해야함
-//flush하는 함수 추가 필요
-//insert 이후 flush 하는 함수 삽입 필요
+//#define DEB4
 
 #define INPUTSIZE 10000 //input size for DEBUG
 #define INPUTTABLE 100000
@@ -30,7 +26,7 @@ int main()
 		skiplist_insert(temp, i / 256, i % 256, 0); //the value is copied
 #endif
 
-/*
+#ifdef DEB4
 	snode *node;
 	int cnt = 0;
 	while(temp->size != 0)
@@ -50,10 +46,8 @@ int main()
 		if(cnt == 10)
 			break;
 	}
-*/
+#endif
 
-	//skiplist_dump_key(temp); //dump key and node's level
-	//skiplist_dump_key_value(temp); //dump key and value
 #ifdef DEB3
 	for(int i = INPUTSIZE * set; i < INPUTSIZE * (set + 1); i++)
 	{

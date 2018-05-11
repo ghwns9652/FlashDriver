@@ -61,7 +61,6 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 		}
 		else
 			x->VBM[offset / VALUE] |= ((uint64_t)1 << (offset % VALUE));
-		return x;
 	}
 	else
 	{
@@ -97,10 +96,12 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 		x->level = level;
 		list->size++;
 	}
+	if(list->size == MAX_PER_PAGE)
+		skiplist_flush(list);
 	return x;
 }
 
-int skiplist_delete(skiplist* list, KEYT key)
+int skiplist_delete(skiplist *list, KEYT key)
 {
 	if(list->size == 0)
 		return -1;
@@ -138,7 +139,7 @@ sk_iter* skiplist_get_iterator(skiplist *list)
 	return res;
 }
 
-snode *skiplist_get_next(sk_iter* iter)
+snode *skiplist_get_next(sk_iter *iter)
 {
 	if(iter->now->list[1] == iter->list->header) //end
 	{
@@ -178,7 +179,7 @@ void skiplist_free(skiplist *list)
 	return ;
 }
 // for test
-void skiplist_dump_key(skiplist * list)
+void skiplist_dump_key(skiplist *list)
 {
 	sk_iter *iter = skiplist_get_iterator(list);
 	snode *now;
@@ -191,7 +192,7 @@ void skiplist_dump_key(skiplist * list)
 	free(iter);
 }
 // for test
-void skiplist_dump_key_value(skiplist * list)
+void skiplist_dump_key_value(skiplist *list)
 {
 	sk_iter *iter = skiplist_get_iterator(list);
 	snode *now;
@@ -202,4 +203,77 @@ void skiplist_dump_key_value(skiplist * list)
 		now->key, now->VBM[0], now->VBM[1], now->VBM[2], now->VBM[3], now->erase);
 	}
 	free(iter);
+}
+
+int skiplist_flush(skiplist *list)
+{
+
+}
+
+value_set **skiplist_make_valueset(skiplist *input){
+	value_set **res=(value_set**)malloc(sizeof(value_set*)*KEYNUM);
+	memset(res,0,sizeof(value_set*)*KEYNUM);
+	l_bucket b;
+	memset(&b,0,sizeof(b));
+
+	snode *target;
+	sk_iter* iter=skiplist_get_iterator(input);
+	int total_size=0;
+	while((target=skiplist_get_next(iter))){
+		b.bucket[target->value->length][b.idx[target->value->length]++]=target;
+		total_size+=target->value->length;
+	}
+	free(iter);
+	
+	int res_idx=0;
+	for(int i=0; i<b.idx[PAGESIZE/PIECE]; i++){
+		snode *target=b.bucket[PAGESIZE/PIECE][i];
+		res[res_idx]=target->value; //if target->value==PAGESIZE
+		target->value=NULL;
+		res[res_idx]->ppa=getDPPA(target->key,true);
+		res_idx++;
+	}
+
+	b.idx[PAGESIZE/PIECE]=0;
+	while(1){
+		PTR page=NULL;
+		int ptr=0;
+		int remain=PAGESIZE-PIECE;
+		footer *foot=f_init();
+
+		res[res_idx]=inf_get_valueset(page,FS_MALLOC_W,PAGESIZE); //assign new dma in page
+		res[res_idx]->ppa=getDPPA(0,false);
+		page=res[res_idx]->value;
+
+		while(remain>0){
+			int target_length=remain/PIECE;
+			while(b.idx[target_length]==0 && target_length!=0) --target_length;
+			if(target_length==0){
+				break;
+			}
+			target=b.bucket[target_length][b.idx[target_length]];
+			target->ppa=res[res_idx]->ppa;
+			f_insert(foot,target->key,target_length);
+
+			memcpy(&page[ptr],target->value,target_length*PIECE);
+			b.idx[target_length]--;
+
+			ptr+=target_length*PIECE;
+			remain-=target_length*PIECE;
+		}
+		memcpy(&page[(PAGESIZE/PIECE-1)*PIECE],foot,sizeof(footer));
+		
+		res_idx++;
+
+		free(foot);
+		bool stop=0;
+		for(int i=0; i<PAGESIZE/PIECE; i++){
+			if(b.idx[i]!=0)
+				break;
+			if(i==PAGESIZE/PIECE) stop=true;
+		}
+		if(stop) break;
+	}
+
+	return res;
 }
