@@ -1,6 +1,6 @@
 export CC=g++
 
-TARGET_LOWER=posix
+TARGET_LOWER=bdbm_drv
 TARGET_ALGO=dftl
 PWD=$(pwd)
 
