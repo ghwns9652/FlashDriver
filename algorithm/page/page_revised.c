@@ -73,7 +73,7 @@ void *pbase_end_req(algo_req* input)
 void *pbase_algo_end_req(algo_req* input)
 {
 	free(input);
-}
+}//there may be warning.
 
 uint32_t pbase_get(request* const req)
 {
