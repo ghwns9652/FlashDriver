@@ -10,17 +10,15 @@
 #include <sys/types.h>
 #include <inttypes.h>
 #include "../../include/container.h"
+#include "../../include/settings.h"
 
 #define MAX_L 30 //max level number
 #define PROB 4 //the probaility of level increasing : 1/PROB => 1/4
-#define KEYT uint32_t //key type
-#define VALUE 64
 #define MAX_PER_PAGE 221
+#define GE_SIZ 37
 #define ERASET uint8_t //erase type
 
-//typedef enum {false, true} bool;
-/* 수정 */
-typedef struct snode{ //skiplist's node
+typedef struct snode{ //skiplist's node for Gecko Entry
 	KEYT key;
 	uint8_t level;
 	uint64_t VBM[4];
@@ -52,5 +50,5 @@ void skiplist_dump_key_value(skiplist*); //for test
 sk_iter* skiplist_get_iterator(skiplist*); //get read only iterator
 snode *skiplist_get_next(sk_iter*); //get next snode by iterator
 
-value_set **skiplist_make_valueset(skiplist*);
+PTR skiplist_make_valueset(skiplist*);
 #endif
