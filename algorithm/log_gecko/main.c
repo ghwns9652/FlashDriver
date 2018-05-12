@@ -1,9 +1,9 @@
 #include "skiplist.h"
 
-#define DEB1
-//#define DEB2
-#define DEB3
-//#define DEB4
+//#define DEB1
+#define DEB2
+//#define DEB3
+#define DEB4
 
 #define INPUTSIZE 10000 //input size for DEBUG
 #define INPUTTABLE 100000
@@ -22,8 +22,8 @@ int main()
 #endif
 
 #ifdef DEB2
-	for(int i = 0; i < INPUTSIZE; i++)
-		skiplist_insert(temp, i / 256, i % 256, 0); //the value is copied
+	for(int i = 0; i < 200; i++)
+		skiplist_insert(temp, i, 0, 0); //the value is copied
 #endif
 
 #ifdef DEB4
@@ -46,6 +46,7 @@ int main()
 		if(cnt == 10)
 			break;
 	}
+	skiplist_dump_key(temp);
 #endif
 
 #ifdef DEB3

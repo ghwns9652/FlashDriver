@@ -29,6 +29,8 @@ typedef struct snode{ //skiplist's node for Gecko Entry
 typedef struct skiplist{
 	uint8_t level;
 	uint64_t size;
+	KEYT start;
+	KEYT end;
 	snode *header;
 }skiplist;
 
@@ -41,6 +43,7 @@ typedef struct{
 skiplist *skiplist_init(); //return initialized skiplist*
 snode *skiplist_find(skiplist*, KEYT); //find snode having key in skiplist, return NULL:no snode
 snode *skiplist_insert(skiplist*, KEYT, uint8_t, ERASET); //insert skiplist, return inserted snode
+snode *skiplist_merge_insert(skiplist*, KEYT, uint64_t*, ERASET);
 int skiplist_delete(skiplist*, KEYT); //delete by key, return 0:normal -1:empty -2:no key
 int skiplist_flush(skiplist*); //
 void skiplist_free(skiplist*);  //free skiplist
