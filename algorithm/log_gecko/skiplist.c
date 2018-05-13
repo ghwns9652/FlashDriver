@@ -104,8 +104,6 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 		x->level = level;
 		list->size++;
 	}
-	if(list->size == MAX_PER_PAGE)
-		skiplist_flush(list);
 	return x;
 }
 
@@ -122,14 +120,7 @@ snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET 
 	x = x->list[1];
 	if(key == x->key)
 	{
-		if(flag == 1)
-		{
-			for (int i = 0; i < 4; i++)
-				x->VBM[i] = 0;
-			x->erase = flag;
-		}
-		else
-			x->VBM[offset / 64] |= ((uint64_t)1 << (offset % 64));
+		
 	}
 	else
 	{
@@ -146,16 +137,9 @@ snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET 
 		x->key = key;
 		if(flag == 1)
 		{
-			for(int i = 0; i < 4; i++)
-				x->VBM[i] = 0;
-			x->erase = flag;
 		}
 		else
 		{
-			for(int i = 0; i < 4; i++)
-				x->VBM[i] = 0;
-			x->erase = 0;
-			x->VBM[offset / 64] |= ((uint64_t)1 << (offset % 64));
 		}
 		for(int i = 1; i <= level; i++)
 		{
@@ -248,15 +232,17 @@ void skiplist_free(skiplist *list)
 	return;
 }
 
-int skiplist_flush(skiplist *list)
+node* skiplist_flush(skiplist *list)
 {
-	node 
-	skiplist_make_valueset(list);
+	node* temp = (node *)malloc(sizeof(node));
+	temp->memptr = skiplist_make_valueset(list);
+	temp->max = list->start;
+	temp->min = list->end;
 	skiplist_free(list);
 	list = skiplist_init();
 }
 
-PTR skiplist_make_valueset(skiplist *input)
+PTR skiplist_make_data(skiplist *input)
 {
 	PTR GE = (PTR)malloc(GE_SIZ);
 	PTR Wrappage = (PTR)malloc(PAGESIZE);

@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <inttypes.h>
+#include <lsmtree.h>
 #include "../../include/container.h"
 #include "../../include/settings.h"
 
@@ -53,5 +54,5 @@ void skiplist_dump_key_value(skiplist*); //for test
 sk_iter* skiplist_get_iterator(skiplist*); //get read only iterator
 snode *skiplist_get_next(sk_iter*); //get next snode by iterator
 
-PTR skiplist_make_valueset(skiplist*);
+PTR skiplist_make_data(skiplist*);
 #endif

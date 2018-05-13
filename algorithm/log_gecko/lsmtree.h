@@ -13,12 +13,13 @@
 typedef struct node{
     KEYT max;
     KEYT min;
-    uint8_t *memptr;
+    PTR memptr;
 }node;
 
 typedef struct level{
     int indxes;
-    node *array;
+    int cnt;
+    node **array;
 }level;
 
 typedef struct lsmtree{
@@ -30,5 +31,6 @@ level *level_init();
 void level_free(level*);
 lsmtree *lsm_init();
 void lsm_free(lsmtree*);
+void lsm_buf_update(lsmtree *lsm, KEYT key, uint8_t offset, ERASET flag)
 
 #endif
