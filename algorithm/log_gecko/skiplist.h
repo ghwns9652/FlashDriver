@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <inttypes.h>
-#include <lsmtree.h>
+#include "lsmtree.h"
 #include "../../include/container.h"
 #include "../../include/settings.h"
 

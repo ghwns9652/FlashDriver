@@ -120,7 +120,9 @@ snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET 
 	x = x->list[1];
 	if(key == x->key)
 	{
-		
+		for (int i = 0; i < 4; i++)
+			x->VBM[i] |= bitmap[i];
+		x->erase = flag;
 	}
 	else
 	{
@@ -135,12 +137,9 @@ snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET 
 		x = (snode *)malloc(sizeof(snode));
 		x->list = (snode **)malloc(sizeof(snode *) * (level + 1));
 		x->key = key;
-		if(flag == 1)
-		{
-		}
-		else
-		{
-		}
+		for(int i = 0; i < 4; i++)
+			x->VBM[i] = bitmap[i];
+		x->erase = flag;
 		for(int i = 1; i <= level; i++)
 		{
 			x->list[i] = update[i]->list[i];
@@ -149,8 +148,6 @@ snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET 
 		x->level = level;
 		list->size++;
 	}
-	if(list->size == MAX_PER_PAGE)
-		skiplist_flush(list);
 	return x;
 }
 // start end 수정 안함
@@ -240,6 +237,7 @@ node* skiplist_flush(skiplist *list)
 	temp->min = list->end;
 	skiplist_free(list);
 	list = skiplist_init();
+	return temp;
 }
 
 PTR skiplist_make_data(skiplist *input)

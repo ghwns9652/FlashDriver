@@ -7,8 +7,6 @@
 #include <math.h>
 
 #define T_value 2
-#define MAX_LEVEL (int)ceil(log((double)_NOB / (double)MAX_PER_PAGE) / log(T_value))
-#define MAX_PAGE (int)ceil((double)_NOB / (double)MAX_PER_PAGE)
 
 typedef struct node{
     KEYT max;
@@ -18,19 +16,22 @@ typedef struct node{
 
 typedef struct level{
     int indxes;
-    int cnt;
+    int cur_cap;
+    int max_cap;
     node **array;
 }level;
 
 typedef struct lsmtree{
 	skiplist *buffer;
 	level *levels;
+    int max_level;
 }lsmtree;
 
-level *level_init();
-void level_free(level*);
+level *level_init(int);
+void level_free(level*, int);
 lsmtree *lsm_init();
 void lsm_free(lsmtree*);
-void lsm_buf_update(lsmtree *lsm, KEYT key, uint8_t offset, ERASET flag)
+void lsm_buf_update(lsmtree *lsm, KEYT key, uint8_t offset, ERASET flag);
+void lsm_node_insert(lsmtree *lsm, node *data);
 
 #endif
