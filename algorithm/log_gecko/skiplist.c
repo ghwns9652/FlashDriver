@@ -106,7 +106,7 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 	}
 	return x;
 }
-
+//must insert newest node first
 snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET flag)
 {
 	snode *update[MAX_L + 1];
@@ -120,9 +120,12 @@ snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET 
 	x = x->list[1];
 	if(key == x->key)
 	{
-		for (int i = 0; i < 4; i++)
-			x->VBM[i] |= bitmap[i];
-		x->erase = flag;
+		if(x->erase != 1)
+		{
+			for (int i = 0; i < 4; i++)
+				x->VBM[i] |= bitmap[i];
+			x->erase = flag;
+		}
 	}
 	else
 	{
@@ -229,10 +232,10 @@ void skiplist_free(skiplist *list)
 	return;
 }
 
-node* skiplist_flush(skiplist *list)
+struct node* skiplist_flush(skiplist *list)
 {
 	node* temp = (node *)malloc(sizeof(node));
-	temp->memptr = skiplist_make_valueset(list);
+	temp->memptr = skiplist_make_data(list);
 	temp->max = list->start;
 	temp->min = list->end;
 	skiplist_free(list);
@@ -249,11 +252,12 @@ PTR skiplist_make_data(skiplist *input)
 	snode *now;
 	while(now = skiplist_get_next(iter))
 	{
-		memcpy(GE, &now->key, 4);
-		memcpy(GE + 4, now->VBM, 32);
-		memcpy(GE + 36, &now->erase, 1);
-		memcpy(Wrappage + loc, GE, GE_SIZ);
-		loc += 37;
+		memcpy(Wrappage + loc, &now->key, 4);
+		loc += 4;
+		memcpy(Wrappage + loc, now->VBM, 32);
+		loc += 32;
+		memcpy(Wrappage + loc, &now->erase, 1);
+		loc += 1;
 	}
 	free(iter);
 	free(GE);

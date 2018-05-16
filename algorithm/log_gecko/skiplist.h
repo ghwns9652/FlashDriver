@@ -46,7 +46,7 @@ snode *skiplist_find(skiplist*, KEYT); //find snode having key in skiplist, retu
 snode *skiplist_insert(skiplist*, KEYT, uint8_t, ERASET); //insert skiplist, return inserted snode
 snode *skiplist_merge_insert(skiplist*, KEYT, uint64_t*, ERASET);
 int skiplist_delete(skiplist*, KEYT); //delete by key, return 0:normal -1:empty -2:no key
-int skiplist_flush(skiplist*); //
+struct node* skiplist_flush(skiplist*); //
 void skiplist_free(skiplist*);  //free skiplist
 void skiplist_clear(skiplist*); //clear all snode in skiplist and  reinit skiplist
 void skiplist_dump_key(skiplist*); //for test

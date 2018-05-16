@@ -36,7 +36,7 @@ lsmtree *lsm_init()
 void lsm_free(lsmtree *lsm)
 {
 	skiplist_free(lsm->buffer);
-	level_free(lsm->levels, res->max_level);
+	level_free(lsm->levels, lsm->max_level);
 	free(lsm);
 }
 
