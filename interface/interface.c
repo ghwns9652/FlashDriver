@@ -253,9 +253,12 @@ value_set *inf_get_valueset(PTR in_v, int type, uint32_t length){
 		res->value=(PTR)malloc(length);
 	}
 	res->length=length;
+
 	if(in_v){
 		memcpy(res->value,in_v,length);
 	}
+	else
+		memset(res->value,0,length);
 	return res;
 }
 
