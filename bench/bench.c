@@ -317,6 +317,8 @@ void seqset(KEYT start, KEYT end,monitor *m){
 		m->body[i].key=start+(i%(end-start));
 #ifdef DVALUE
 		m->body[i].length=(rand()%16+1)*512;
+#else
+		m->body[i].length=PAGESIZE;
 #endif
 		m->body[i].type=FS_SET_T;
 		m->body[i].mark=m->mark;
