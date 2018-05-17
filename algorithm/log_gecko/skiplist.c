@@ -234,18 +234,15 @@ void skiplist_free(skiplist *list)
 
 struct node* skiplist_flush(skiplist *list)
 {
-	node* temp = (node *)malloc(sizeof(node));
+	struct node* temp = (struct node *)malloc(sizeof(struct node));
 	temp->memptr = skiplist_make_data(list);
 	temp->max = list->start;
 	temp->min = list->end;
-	skiplist_free(list);
-	list = skiplist_init();
 	return temp;
 }
 
 PTR skiplist_make_data(skiplist *input)
 {
-	PTR GE = (PTR)malloc(GE_SIZ);
 	PTR Wrappage = (PTR)malloc(PAGESIZE);
 	int loc = 0;
 	sk_iter *iter = skiplist_get_iterator(input);
@@ -260,7 +257,6 @@ PTR skiplist_make_data(skiplist *input)
 		loc += 1;
 	}
 	free(iter);
-	free(GE);
 	return Wrappage;
 }
 // for test
