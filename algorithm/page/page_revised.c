@@ -145,8 +145,7 @@ uint32_t SRAM_load(int ppa, int a)
 	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req);
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
 	page_SRAM[a].VPTR_RAM = value_PTR;
-	inf_free_valueset(value_PTR,1);
-	
+	inf_free_valueset(value_PTR,1);	
 }
 
 uint32_t SRAM_unload(int ppa, int a)
