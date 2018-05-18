@@ -10,7 +10,7 @@
 
 #define TOTALSIZE (512L*G)
 #define PAGESIZE (8*K)
-#define _PPB (256) // After master merge, _PPB becomes 512
+#define _PPB (512) // After master merge, _PPB becomes 512
 #define BLOCKSIZE (_PPB*PAGESIZE)
 #define _NOB (TOTALSIZE/BLOCKSIZE)
 #define _NOP (TOTALSIZE/PAGESIZE)

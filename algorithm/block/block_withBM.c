@@ -47,7 +47,7 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 	for (i = 0; i < li->NOB; ++i)
 		block_valid_array[i] = ERASE; // 0 means ERASED, 1 means VALID
 
-	printf("block_create End!\n");
+	//printf("block_create End!\n");
 	return 0;
 
 }
@@ -83,16 +83,18 @@ uint32_t block_get(request *const req){
 
 	return 0;
 }
+static int set_seq=0;
 uint32_t block_set(request *const req){
 	bench_algo_start(req);
 
-	printf("block_set Start!\n");
+	//printf("block_set Start!\n");
 	/* Request production */
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
 	my_req->end_req = block_end_req;
 
-	printf("block_set 1!\n");
+	//printf("seq:%d\n",set_seq++);
+	//printf("block_set 1!\n");
 	uint32_t LBA = my_req->parents->key / __block.li->PPB;
 	uint32_t offset = my_req->parents->key % __block.li->PPB;
 	uint32_t PBA;
@@ -121,10 +123,10 @@ uint32_t block_set(request *const req){
 		BM_invalidate_ppa(blockArray, PPA);
 
 		// write
-		printf("block_set 2!\n");
-		printf("my_req -> length: %d\n", my_req->parents->value->length);
+		//printf("block_set 2!\n");
+		//printf("my_req -> length: %d\n", my_req->parents->value->length);
 		__block.li->push_data(PPA, PAGESIZE, req->value, 0, my_req);
-		printf("block_set 3!\n");
+		//printf("block_set 3!\n");
 	}
 
 	else
@@ -162,14 +164,14 @@ uint32_t block_set(request *const req){
 			for (i = 0; i < offset; ++i) {
 				/* Allocate temporary request, value set for read */
 				algo_req *temp_req=(algo_req*)malloc(sizeof(algo_req));
-				printf("before inf_get_valueset, PAGESIZE: %d\n", PAGESIZE);
+				//printf("before inf_get_valueset, PAGESIZE: %d\n", PAGESIZE);
 				value_set* temp_read_value_set = inf_get_valueset(NULL, DMA_READ, PAGESIZE);
-				printf("after inf_get_valueset, PAGESIZE: %d\n", PAGESIZE);
+				//printf("after inf_get_valueset, PAGESIZE: %d\n", PAGESIZE);
 				temp_req->parents = NULL;
 				temp_req->end_req = block_algo_end_req;
 
-				__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_read_value_set, 0, temp_req);
-				printf("after gc pull\n");
+				__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_read_value_set, ASYNC, temp_req);
+				//printf("after gc pull\n");
 
 
 				/* Validate old PPA and Invalidate new PPA */
@@ -183,7 +185,7 @@ uint32_t block_set(request *const req){
 				temp_req2->parents = NULL;
 				temp_req2->end_req = block_algo_end_req;
 
-				__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_write_value_set, 0, temp_req2);
+				__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_write_value_set, ASYNC, temp_req2);
 
 				/* Free valueset */
 				inf_free_valueset(temp_write_value_set, DMA_WRITE);
@@ -198,6 +200,7 @@ uint32_t block_set(request *const req){
 			/* Start move(bigger index than target) */
 			if (offset < __block.li->PPB - 1) {
 				for (i = offset + 1; i < __block.li->PPB; ++i) {
+				//printf("i:%d\n",i);
 					/* Allocate temporary request, value set for read */
 					algo_req *temp_req = (algo_req*)malloc(sizeof(algo_req));
 					value_set* temp_read_value_set = inf_get_valueset(NULL, DMA_READ, PAGESIZE);
@@ -227,7 +230,7 @@ uint32_t block_set(request *const req){
 			}
 					
 			/* Trim the block of old PPA */
-			__block.li->trim_block(old_PPA_zero, false);
+			//__block.li->trim_block(old_PPA_zero, false); // trim is corrupted: wait master update
 		}
 	}
 	bench_algo_end(req);

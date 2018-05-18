@@ -1,13 +1,13 @@
 export CC=g++
 
-TARGET_LOWER=posix # bdbm_drv
+TARGET_LOWER=bdbm_drv#posix
 TARGET_ALGO=block
 PWD=$(pwd)
 
 export CFLAGS_ALGO=\
 			 -g\
 			 -Wall\
--DDVALUE\
+#-DDVALUE\
 
 export CFLAGS_LOWER=\
 			-g\

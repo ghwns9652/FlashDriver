@@ -43,7 +43,6 @@ void bench_make_data(){
 	_m->n_num=0;
 	_m->r_num=0;
 	_m->m_num=_meta->number;
-	_m->type=_meta->type;
 	KEYT start=_meta->start;
 	KEYT end=_meta->end;
 
@@ -172,44 +171,20 @@ void bench_print(){
 		bench_li_print(&_master->li[i],_m);
 #endif
 		printf("\n----summary----\n");
-		if(_m->type==RANDRW || _m->type==SEQRW){
-			uint64_t total_data=(PAGESIZE * _m->m_num/2)/1024;
-			double total_time2=_m->benchTime.adding.tv_sec+(double)_m->benchTime.adding.tv_usec/1000000;
-			double total_time1=_m->benchTime2.adding.tv_sec+(double)_m->benchTime2.adding.tv_usec/1000000;
-			double throughput1=(double)total_data/total_time1;
-			double throughput2=(double)total_data/total_time2;
-			double sr=1-((double)_m->notfound/_m->m_num);
-			throughput2*=sr;
-
-			printf("[all_time1]: %ld.%ld\n",_m->benchTime.adding.tv_sec,_m->benchTime.adding.tv_usec);
-			printf("[all_time2]: %ld.%ld\n",_m->benchTime2.adding.tv_sec,_m->benchTime2.adding.tv_usec);
-			printf("[size]: %lf(mb)\n",(double)total_data/1024);
-
-			printf("[FAIL NUM] %ld\n",_m->notfound);
-			printf("[SUCCESS RATIO] %lf\n",sr);
-			printf("[throughput1] %lf(kb/s)\n",throughput1);
-			printf("             %lf(mb/s)\n",throughput1/1024);
-			printf("[throughput2] %lf(kb/s)\n",throughput2);
-			printf("             %lf(mb/s)\n",throughput2/1024);
-			printf("[cache hit cnt,ratio] %ld, %lf\n",_m->cache_hit,(double)_m->cache_hit/(_m->m_num/2));
-			printf("[READ WRITE CNT] %ld %ld\n",_m->read_cnt,_m->write_cnt);
-		}
-		else{
-			_m->benchTime.adding.tv_sec+=_m->benchTime.adding.tv_usec/1000000;
-			_m->benchTime.adding.tv_usec%=1000000;
-			printf("[all_time]: %ld.%ld\n",_m->benchTime.adding.tv_sec,_m->benchTime.adding.tv_usec);
-			uint64_t total_data=(PAGESIZE * _m->m_num)/1024;
-			printf("[size]: %lf(mb)\n",(double)total_data/1024);
-			double total_time=_m->benchTime.adding.tv_sec+(double)_m->benchTime.adding.tv_usec/1000000;
-			double throughput=(double)total_data/total_time;
-			double sr=1-((double)_m->notfound/_m->m_num);
-			throughput*=sr;
-			printf("[FAIL NUM] %ld\n",_m->notfound);
-			printf("[SUCCESS RATIO] %lf\n",sr);
-			printf("[throughput] %lf(kb/s)\n",throughput);
-			printf("             %lf(mb/s)\n",throughput/1024);
-			printf("[READ WRITE CNT] %ld %ld\n",_m->read_cnt,_m->write_cnt);
-		}
+		_m->benchTime.adding.tv_sec+=_m->benchTime.adding.tv_usec/1000000;
+		_m->benchTime.adding.tv_usec%=1000000;
+		printf("[all_time]: %ld.%ld\n",_m->benchTime.adding.tv_sec,_m->benchTime.adding.tv_usec);
+		uint64_t total_data=(PAGESIZE * _m->m_num)/1024;
+		printf("[size]: %lf(mb)\n",(double)total_data/1024);
+		double total_time=_m->benchTime.adding.tv_sec+(double)_m->benchTime.adding.tv_usec/1000000;
+		double throughput=(double)total_data/total_time;
+		double sr=1-((double)_m->notfound/_m->m_num);
+		throughput*=sr;
+		printf("[FAIL NUM] %ld\n",_m->notfound);
+		printf("[SUCCESS RATIO] %lf\n",sr);
+		printf("[throughput] %lf(kb/s)\n",throughput);
+		printf("             %lf(mb/s)\n",throughput/1024);
+		printf("[READ WRITE CNT] %ld %ld\n",_m->read_cnt,_m->write_cnt);
 	}
 }
 void bench_algo_start(request *const req){
@@ -277,12 +252,6 @@ void bench_reap_data(request *const req,lower_info *li){
 	if(_m->m_num==++_m->r_num){
 		_data->bench=_m->benchTime;
 	}
-	if(_m->r_num==_m->m_num/2 && (_m->type==SEQRW || _m->type==RANDRW)){
-		MA(&_m->benchTime);
-		_m->benchTime2=_m->benchTime;
-		measure_init(&_m->benchTime);
-		MS(&_m->benchTime);
-	}
 #ifdef BENCH
 	if(req->algo.isused)
 		__bench_time_maker(req->algo,_data,true);
@@ -327,24 +296,6 @@ void bench_li_print(lower_info* li,monitor *m){
 	printf("[all read Time]:%ld.%ld\n",sec,usec);
 }
 
-// Before MASTER MERGE
-void seqget(KEYT start, KEYT end,monitor *m){
-	printf("making seq Get bench!\n");
-	for(KEYT i=0; i<m->m_num; i++){
-		m->body[i].key=start+(i%(end-start));
-#ifdef DVALUE
-		m->body[i].length=0;
-#else
-		m->body[i].length=PAGESIZE;
-#endif
-		m->body[i].type=FS_GET_T;
-		m->body[i].mark=m->mark;
-		m->read_cnt++;
-	}
-}
-#if 0
-After MASTER MERGE
-
 void seqget(KEYT start, KEYT end,monitor *m){
 	printf("making seq Get bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
@@ -355,15 +306,14 @@ void seqget(KEYT start, KEYT end,monitor *m){
 		m->read_cnt++;
 	}
 }
-#endif
 
 void seqset(KEYT start, KEYT end,monitor *m){
 	printf("making seq Set bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
 		m->body[i].key=start+(i%(end-start));
 #ifdef DVALUE
-		m->body[i].length=(rand()%16+1)*512;
-#else
+		m->body[i].length=0;
+#else	
 		m->body[i].length=PAGESIZE;
 #endif
 		m->body[i].type=FS_SET_T;
@@ -386,11 +336,7 @@ void seqrw(KEYT start, KEYT end, monitor *m){
 		m->write_cnt++;
 		m->body[i+m->m_num/2].key=start+(i%(end-start));
 		m->body[i+m->m_num/2].type=FS_GET_T;
-#ifdef DVALUE
-		m->body[i+m->m_num/2].length=0; // BEFORE MERGE. MERGE 전에는 그냥 length=PAGESIZE
-#else
 		m->body[i+m->m_num/2].length=PAGESIZE;
-#endif
 		m->body[i+m->m_num/2].mark=m->mark;
 		m->read_cnt++;
 	}
@@ -401,7 +347,11 @@ void randget(KEYT start, KEYT end,monitor *m){
 	for(KEYT i=0; i<m->m_num; i++){
 		m->body[i].key=start+rand()%(end-start)+1;
 		m->body[i].type=FS_GET_T;
+#ifdef DVALUE
+		m->body[i].length=0;
+#else	
 		m->body[i].length=PAGESIZE;
+#endif
 		m->body[i].mark=m->mark;
 		m->read_cnt++;
 	}
@@ -436,7 +386,11 @@ void randrw(KEYT start, KEYT end, monitor *m){
 		m->write_cnt++;
 		m->body[m->m_num/2+i].key=m->body[i].key;
 		m->body[m->m_num/2+i].type=FS_GET_T;
+#ifdef DVALUE
+		m->body[m->m_num/2+i].length=0;
+#else	
 		m->body[m->m_num/2+i].length=PAGESIZE;
+#endif
 		m->body[m->m_num/2+i].mark=m->mark;
 		m->read_cnt++;
 	}
@@ -448,16 +402,10 @@ void mixed(KEYT start, KEYT end,int percentage, monitor *m){
 		m->body[i].key=rand()%m->m_num;
 		if(rand()%100<percentage){
 			m->body[i].type=FS_SET_T;
-#ifdef DVALUE
-			m->body[i].length=(rand()%16+1)*512;
-#else
-			m->body[i].length=PAGESIZE;
-#endif
 			m->write_cnt++;
 		}
 		else{
 			m->body[i].type=FS_GET_T;
-			m->body[i].length=PAGESIZE;
 			m->read_cnt++;
 		}
 		m->body[i].mark=m->mark;
@@ -494,9 +442,4 @@ void bench_lower_t(lower_info *li){
 #ifdef BENCH
 	li->trim_op++;
 #endif
-}
-
-void bench_cache_hit(int mark){
-	monitor *_m=&_master->m[mark];
-	_m->cache_hit++;
 }
