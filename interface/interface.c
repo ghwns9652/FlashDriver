@@ -112,6 +112,7 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->type=type;
 	req->key=key;
 	
+	printf("value->length in interface.c: %d\n", value->length);
 	req->value=inf_get_valueset(value->value,req->type,value->length);
 
 
@@ -250,16 +251,22 @@ void *p_main(void *__input){
 value_set *inf_get_valueset(PTR in_v, int type, uint32_t length){
 	value_set *res=(value_set*)malloc(sizeof(value_set));
 	//check dma alloc type
+	printf("\n(inf_get_valueset argument)length: %d\n", length);
+	//length = PAGESIZE;
 	if(length==PAGESIZE)
 		res->dmatag=F_malloc((void**)&(res->value),PAGESIZE,type);
 	else{
+		printf("length != PAGESIZE!!! current length: %d\n", length);
 		res->dmatag=-1;
 		res->value=(PTR)malloc(length);
 	}
 	res->length=length;
+
 	if(in_v){
 		memcpy(res->value,in_v,length);
 	}
+	else
+		memset(res->value,0,length);
 	return res;
 }
 

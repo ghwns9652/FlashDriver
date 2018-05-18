@@ -9,11 +9,16 @@
 #define KEYSIZE ()
 #define CTHREAD 1
 #define CQSIZE 2
+
+#define FTHREAD 1
+#define FQSIZE 2
+
 #define EPC 20 //size factor have to be multiple of SIZEFACTOR
 #define TIERING
-#define TIERFACTOR 10
+//#define TIERFACTOR 10
 
-#define HEADERB (512)
+#define HEADERB (10)
+#define BLOCKMB (10)
 #define ONETHREAD
 //#define NOGC
 #define BLOOM

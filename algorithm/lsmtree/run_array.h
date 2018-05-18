@@ -7,6 +7,8 @@
 #include "lsmtree.h"
 #include "bloomfilter.h"
 #include "skiplist.h"
+#include "page.h"
+#include "heap.h"
 
 struct htable;
 struct skiplis;
@@ -36,11 +38,15 @@ typedef struct Node{
 }Node;
 
 typedef struct level{
+	heap *h;
+	block *now_block;
+	int level_idx;
 	int r_num;
 	int r_n_num;
 	int m_num;//number of entries
 	int n_num;
 	int entry_p_run;
+	int entry_size;
 	int r_size;//size of run
 	float fpr;
 	bool isTiering;
@@ -61,10 +67,11 @@ typedef struct iterator{
 	int idx;
 	bool flag;
 }Iter;
+
 Entry *level_make_entry(KEYT,KEYT,KEYT);//
 Entry* level_entcpy(Entry *src,char *des);//
 Entry *level_entry_copy(Entry *src);
-level *level_init(level *,int size,float fpr,bool);//
+level *level_init(level *,int size,int idx,float fpr,bool);//
 level *level_clear(level *);//
 level *level_copy(level *);//
 Entry **level_find(level *,KEYT key);//
@@ -74,6 +81,14 @@ int level_range_unmatch(level *,KEYT start, Entry ***,bool);
 bool level_check_overlap(level*,KEYT start, KEYT end);//a
 bool level_check_seq(level *);
 bool level_full_check(level *);//
+KEYT level_get_page(level *,uint8_t plength);
+KEYT level_get_front_page(level*);
+void level_move_heap(level * des, level *src);
+bool level_now_block_fchk(level *in);
+#ifdef DVALUE
+void level_move_next_page(level *);
+void level_save_blocks(level *);
+#endif
 Node *level_insert(level *,Entry*);//
 Node *level_insert_seq(level *, Entry *);
 Entry *level_get_next(Iter *);//
