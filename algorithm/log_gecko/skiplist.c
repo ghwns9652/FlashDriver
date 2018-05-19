@@ -238,6 +238,7 @@ struct node* skiplist_flush(skiplist *list)
 	temp->memptr = skiplist_make_data(list);
 	temp->max = list->start;
 	temp->min = list->end;
+	skiplist_free(list);
 	return temp;
 }
 

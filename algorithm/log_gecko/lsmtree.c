@@ -53,11 +53,7 @@ void lsm_buf_update(lsmtree *lsm, KEYT key, uint8_t offset, ERASET flag)
 	printf("key %d\n", key);
 	skiplist_insert(lsm->buffer, key, offset, flag);
 	if(lsm->buffer->size == MAX_PER_PAGE)
-	{
 		lsm_node_insert(lsm, skiplist_flush(lsm->buffer));
-		skiplist_free(lsm->buffer);
-		lsm->buffer = skiplist_init();
-	}
 }
 
 void lsm_node_fwrite(lsmtree *lsm, int lv_off, int nd_off)
@@ -87,6 +83,7 @@ void lsm_node_insert(lsmtree *lsm, node *data)
 	}
 	if(lsm->max_level != i)
 		lsm_node_fwrite(lsm, i, lsm->levels[i].cur_cap - 1);
+	lsm->buffer = skiplist_init();
 }
 
 void lsm_node_recover(lsmtree *lsm, int lv_off, int nd_off)

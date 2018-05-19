@@ -15,6 +15,7 @@ int main()
 	uint32_t* key = (uint32_t*)malloc(sizeof(uint32_t)*INPUTTABLE);
 	for(int i = 0; i < INPUTTABLE; i++)
 		key[i] = rand() % INT_MAX;
+
 #ifdef DEB1
 	int set = rand() % 10;
 	printf("set %d\n",set);
@@ -28,7 +29,7 @@ int main()
 		lsm_buf_update(temp, i, 0, 0); //the value is copied
 	printf("update end\n");
 	printf("dump 0, 0\n");
-	lsm_node_recover(temp, 0, 0);
+	lsm_node_recover(temp, 0, 1);
 	printf("dump end\n");
 #endif
 

@@ -53,6 +53,7 @@ void skiplist_dump_key(skiplist*); //for test
 void skiplist_dump_key_value(skiplist*); //for test
 sk_iter* skiplist_get_iterator(skiplist*); //get read only iterator
 snode *skiplist_get_next(sk_iter*); //get next snode by iterator
+void sflush(skiplist *list);
 
 PTR skiplist_make_data(skiplist*);
 #endif
