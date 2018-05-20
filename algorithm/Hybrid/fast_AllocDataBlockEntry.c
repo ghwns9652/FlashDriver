@@ -9,11 +9,10 @@
  *              Return state of translated address.\n
  *              If state is ERASED or VALID, update state.\n
  *              ERASED -> VALID, VALID -> INVALID
- * @param key (IN) given address
- * @param physical_address (OUT) address for data block address
- * @returns State of the page corresponding to given key
+ * @param       key                 (IN) given address
+ * @param       physical_address    (OUT) address for data block address
+ * @returns     State of the page corresponding to given key
  */
-
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
 {
     // Seperate key into block and offset
