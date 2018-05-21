@@ -120,6 +120,9 @@ uint32_t block_set(request *const req){
 		//PPA = PBA * PPB + offset;
 		PPA = set_pointer * __block.li->PPB + offset; // Equal to above 2 lines
 
+		if (!BM_is_valid_ppa(blockArray, PPA))
+			while(1)
+				printf("ERROROROROROR!\n");
 		BM_invalidate_ppa(blockArray, PPA);
 
 		// write
@@ -145,6 +148,14 @@ uint32_t block_set(request *const req){
 		{
 			// Cleaning
 			// Maptable update for data moving
+#if 1
+			printf("Start GC!\n");
+			printf("offset: %d\n", offset);
+			printf("PBA: %d\n", PBA);
+			printf("PPA: %d\n", PPA);
+			//exit(1);
+#endif
+
 			checker = block_findsp(checker);
 			block_maptable[LBA] = set_pointer;
 			block_valid_array[set_pointer] = VALID;

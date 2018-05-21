@@ -5,6 +5,8 @@
 #include "BM_Block.h"
 #include "BM_Heap.h"
 
+/* Type of offset(0~511) */
+typedef uint16_t	offset_t;
 
 /* Function to validate the state of PPA corresponding PPA(argument) */
 int32_t		BM_validate_ppa(Block* blockArray, PPA_T PPA);
@@ -18,6 +20,51 @@ int32_t		BM_is_valid_ppa(Block* blockArray, PPA_T PPA);
 
 int32_t		BM_invalidate_all(Block* blockArray);
 int32_t		BM_validate_all(Block* blockArray);
+
+static inline int8_t BM_getindex_256(offset_t* ptr_offset)
+{
+	int8_t index;
+	if (*ptr_offset < 128) {
+		if (*ptr_offset < 64)	index = 0;
+		else					index = 1;
+	}
+	else {
+		if (*ptr_offset < 192)	index = 2;
+		else					index = 3;
+	}
+	*ptr_offset %= 64;
+	//printf("index: %d, offset: %d\n", index, *ptr_offset);
+	return index;
+}
+static inline int8_t BM_getindex_512(offset_t* ptr_offset)
+{
+	int8_t index;
+	//printf("getindex, offset: %d\n", *ptr_offset);
+	if (*ptr_offset < 256) {
+		if (*ptr_offset < 128) {
+			if (*ptr_offset < 64)	index = 0;
+			else					index = 1;
+		}
+		else {
+			if (*ptr_offset < 192)	index = 2;
+			else					index = 3;
+		}
+	}
+	else {
+		// *ptr_offset -= 256;
+		if (*ptr_offset < 384) {
+			if (*ptr_offset < 320)	index = 4;
+			else					index = 5;
+		}
+		else {
+			if (*ptr_offset < 448)	index = 6;
+			else					index = 7;
+		}
+	}
+	*ptr_offset %= 64;
+	//printf("getindex, index: %d\n", index);
+	return index;
+}
 
 /*
  * Function returning PBA of GC victim block

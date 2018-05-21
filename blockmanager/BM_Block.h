@@ -7,7 +7,12 @@
 
 typedef struct { // 67 bytes
 	uint32_t	PBA;			/* PBA of this block */
+#if (_PPB == 256)
 	uint64_t	ValidP[4];		/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
+#endif
+#if (_PPB == 512)
+	uint64_t	ValidP[8];		/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
+#endif
 	int16_t		numValid;		/* Number of Valid pages in this block*/
 	uint32_t	PE_cycle;		/* P/E cycles of this block */
 	//int16_t**	ptrNV_data;		/* Pointer of numValid map */
@@ -44,7 +49,7 @@ typedef uint32_t	PPA_T;
 #define BM_PPA_TO_PBA(PPA)	PPA/_PPB
 
 /* Macros that indicate whether the page is valid or not */
-#define BM_VALIDPAGE	0xff // 1
+#define BM_VALIDPAGE	0xffffffffffffffff //64 bits //////0xff // 1 
 #define BM_INVALIDPAGE	0x00
 #define BM_WRITTEN		1	/* (IGNORE!) Not Determined yet */
 

@@ -119,7 +119,16 @@ int32_t BM_InitBlockArray()
 		//for (int j=0; j<_PPB; ++j)
 			//blockArray[i].ValidP[j] = BM_INVALIDPAGE;
 		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, sizeof(ValidP_T)*4);
-		memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(ValidP_T)*4); // Initial ValidP is VALID. all bits are 1.
+#if (_PPB == 256)
+		for (int j=0; j<4; ++j)
+			blockArray[i].ValidP[j] = BM_VALIDPAGE;
+#endif
+#if (_PPB == 512)
+		for (int j=0; j<8; ++j)
+			blockArray[i].ValidP[j] = BM_VALIDPAGE;
+#endif
+
+		//memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(ValidP_T)*8); // Initial ValidP is VALID. all bits are 1.
 		blockArray[i].numValid = _PPB;
 		blockArray[i].PE_cycle = 0;
 		blockArray[i].BAD = _NOTBADSTATE;

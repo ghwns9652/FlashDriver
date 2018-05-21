@@ -17,7 +17,7 @@ int32_t BM_Minheap_numValid(Block* blockArray, Block** numValid_map)
 			//temp_NV[i] = blockArray[i].numValid;
 			temp_NV[i] = BM_GETNUMVALID(numValid_map[i]);
 		else
-			temp_NV[i] = 0xff; // Bad Block would go to leaf node.
+			temp_NV[i] = _PPB;//before: 0xff // Bad Block would go to leaf node.
 	}
 
 	BM__buildminheapNV(temp_NV, numValid_map); 
@@ -73,6 +73,7 @@ int32_t BM_Maxheap_numValid(Block* blockArray, Block** numValid_map)
 
 	for (int i = 0; i < _NOB; ++i) {
 		//temp_NV[i] = blockArray[i].numValid;
+		// Maybe need to add badblock check in here
 		temp_NV[i] = BM_GETNUMVALID(numValid_map[i]);
 	}
 
