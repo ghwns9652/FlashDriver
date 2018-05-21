@@ -64,6 +64,8 @@ int main(){/*
 	memset(t_value,'x',PAGESIZE);
 	bench_add(RANDSET,0,15*1024,15*1024);
 	bench_add(RANDGET,0,15*1024,15*1024);
+//	bench_add(RANDSET,0,15*1024,15*1024);
+//	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
 
 	value_set temp;
