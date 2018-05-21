@@ -62,24 +62,19 @@ int main(){/*
 	bench_init(1);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	bench_add(RANDRW,0,128*1024,1024*64);
+	bench_add(SEQRW,0,1024*1024,4*128*1024);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
-#ifdef SNU_TEST
-	while(1){
-		char *data=(char*)malloc(PAGESIZE);
-		memset(data,0,PAGESIZE);
-		inf_make_req(FS_SET_T,rand()%UINT_MAX,data,0);
-	}
-#else
+
 	value_set temp;
 	temp.value=t_value;
-	temp.dmatag=0;
+	temp.dmatag=-1;
+	temp.length=0;
 	while((value=get_bench())){
+		temp.length=value->length;
 		inf_make_req(value->type,value->key,&temp,value->mark);
 	}
-#endif
 	
 	while(!bench_is_finish()){
 #ifdef LEAKCHECK

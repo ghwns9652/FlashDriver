@@ -1,12 +1,13 @@
 export CC=g++
 
 TARGET_LOWER=posix
-TARGET_ALGO=normal
+TARGET_ALGO=lsmtree
 PWD=$(pwd)
 
 export CFLAGS_ALGO=\
 			 -g\
 			 -Wall\
+-DDVALUE\
 
 export CFLAGS_LOWER=\
 			-g\
@@ -45,6 +46,11 @@ MEMORYOBJ =\
 DEBUGOBJ =\
 		   	$(patsubst %.c,%_d.o,$(SRCS))\
 
+
+ifeq ($(TARGET_LOWER),bdbm_drv)
+	ARCH +=./object/libmemio.a
+endif
+
 LIBS +=\
 		-lpthread\
 		-lm\
@@ -57,17 +63,17 @@ memory_leak: simulator_memory_check
 
 duma_sim: duma_simulator
 	
-simulator_memory_check: ./interface/main.c mem_libsimulator.a $(LOWER_LIB) $(ALGO_LIB)
-	$(CC) $(CFLAGS) -DLEAKCHECK -o $@ $^ $(LIBS)
+simulator_memory_check: ./interface/main.c mem_libsimulator.a
+	$(CC) $(CFLAGS) -DLEAKCHECK -o $@ $^ $(ARCH) $(LIBS)
 
 debug_simulator: ./interface/main.c libsimulator_d.a
 	$(CC) $(CFLAGS) -DDEBUG -o $@ $^ $(LIBS)
 
 simulator: ./interface/main.c libsimulator.a
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(ARCH) $(LIBS)
 
 duma_simulator: ./interface/main.c libsimulator.a
-	$(CC) $(CFLAGS) -o $@ $^ -lduma -$(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ -lduma $(ARCH) $(LIBS)
 	
 
 libsimulator.a: $(TARGETOBJ)
@@ -75,21 +81,21 @@ libsimulator.a: $(TARGETOBJ)
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
-	$(AR) r $(@) ./object/*.o
+	$(AR) r $(@) ./object/*
 
 libsimulator_d.a:$(MEMORYOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) DEBUG && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) DEBUG && cd ../../ 
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
-	$(AR) r $(@) ./object/*.o
+	$(AR) r $(@) ./object/*
 
 mem_libsimulator.a:$(MEMORYOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) LEAK && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
 	mv ./interface/*.o ./object/ & mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
-	$(AR) r $(@) ./object/*.o
+	$(AR) r $(@) ./object/*
 
 %_mem.o: %.c
 	$(CC) $(CFLAGS) -DLEAKCHECK -c $< -o $@ $(LIBS)

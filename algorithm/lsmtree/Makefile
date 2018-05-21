@@ -1,3 +1,20 @@
+ifeq ($(CC),cc)
+ CC=gcc
+ CFLAGS_ALGO=\
+		 -g\
+		 -Wall\
+
+ ifeq ($(CC),gcc)
+  CFLAGS_ALGO+=\
+			   -Wno-discarded-qualifiers\
+			   -std=c99\
+
+ else
+  CFLAGS_ALGO+=\
+			   -std=c++11\
+
+ endif
+endif
 
 SRCS +=\
 	   run_array.c\
@@ -7,6 +24,10 @@ SRCS +=\
 	   compaction.c\
 	   page.c\
 	   pageQ.c\
+	   heap.c\
+	   footer.c\
+	   log_list.c\
+	   factory.c\
 cache.c\
 
 OBJS :=\
@@ -52,7 +73,7 @@ set_check:../../include/lsm_settings.h
 	$(CC) $(CFLAGS_ALGO) -DLEAKCHECK -c $< -o $@
 
 ../../object/%.o: %.c
-	$(CC) $(CFLAGS_ALGO) -c $< -o $@
+	$(CC) $(CFLAGS) $(CFLAGS_ALGO) -c $< -o $@
 
 run_test:run_array.c
 	$(CC) $(CFLAGS_ALGO) -o $@ $^
