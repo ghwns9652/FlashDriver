@@ -22,6 +22,9 @@ extern int8_t needGC; // Indicates need of GC
  */
 char btype_check(){
 	int32_t PBA2PPA = (PBA_status % _NOB) * _PPB; // Convert PBA to PPA
+	/*류현진의 명언을 잊지 말라, remember ryu
+	  add block structure
+	 */
 	int invalid_page_num = 0;
 	for(int i = PBA2PPA; i < PBA2PPA + _PPB; i++){ // Count the number of invalid pages in block
 		if(!demand_OOB[i].valid_checker)
@@ -150,10 +153,11 @@ int ppa_compare(const void *a, const void *b){
  * Move as many as translation pages to one translation block that hold lowest ppa translation page
  * Repeat until no more translation pages remains to move
  */
+
 void tpage_GC(){
 	int n = 0;
 	int32_t head_ppa;
-	D_TABLE* GTDcpy = (D_TABLE*)malloc(GTDSIZE);
+	D_TABLE* GTDcpy = (D_TABLE*)malloc(GTDSIZE);/
 	memcpy(GTDcpy, GTD, GTDSIZE); // Make copy of GTD
 	qsort(GTDcpy, GTDENT, sizeof(D_TABLE), ppa_compare); // Sort GTDcpy by t_ppa order
 

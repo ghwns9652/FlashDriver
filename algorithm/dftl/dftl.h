@@ -7,6 +7,11 @@
 #include "../../interface/interface.h"
 #include "../../interface/queue.h"
 #include "dftl_queue.h"
+/*
+k:
+define 된 변수들을 하나의 파일로 따로 빼서 관리할것.
+../../include/dftl_settings.h
+ */
 
 #define TYPE uint8_t
 #define DATA_R 0
@@ -32,13 +37,13 @@
 
 // Page table data structure
 typedef struct demand_mapping_table{
-	int32_t ppa; //Index = lpa
+	int32_t ppa; //Index = lpa ->k: uint32_t
 }D_TABLE;
 
 // Cache mapping table data strcuture
 typedef struct cached_table{
-	int32_t lpa;
-	int32_t ppa;
+	int32_t lpa; // k:KEYT ex)-1==UINT_MAX(header - limits.h)
+	int32_t ppa; // k:KEYT
 	unsigned char flag; // 0: unchanged, 1: changed
 	LINKED_LIST *queue_ptr;
 }C_TABLE;
@@ -46,7 +51,7 @@ typedef struct cached_table{
 // OOB data structure
 typedef struct demand_OOB{
 	int32_t reverse_table;
-	unsigned char valid_checker; // 0: invalid, 1: valid
+	unsigned char valid_checker; // 0: invalid, 1: valid -> k:따로 빼시오,bit로 바꿔
 }D_OOB;
 
 // SRAM data structure (used to hold pages temporarily when GC)

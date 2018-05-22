@@ -112,6 +112,7 @@ uint32_t demand_get(request *const req){
 			}
 			else{ // lseek error avoid
 				printf("invalid ppa read\n");
+				//k : req->type=FS_NOTFOUND_T로 바꿀것
 				bench_algo_end(req);
 				my_req->end_req(my_req);
 			}
@@ -279,6 +280,7 @@ uint32_t demand_remove(request *const req){
 	if(p_table){
 		demand_OOB[ppa].valid_checker = 0; // Invalidate data page
 		p_table[P_IDX].ppa = -1; // Erase mapping in cache
+		//k:change flag data
 	}
 	/* Cache miss */
 	else{
