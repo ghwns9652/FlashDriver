@@ -43,7 +43,6 @@ int32_t tpage_onram_num; // Number of translation page on cache
  */
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// Table Allocation
-	printf("demand_create!\n");
 #ifdef UNIT_D
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 #endif
@@ -51,7 +50,6 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * _NOP);
 	d_sram = (D_SRAM*)malloc(sizeof(D_SRAM) * _PPB);
 	algo->li = li;
-	printf("CMTENT : %ld\n", CMTENT);
 
 #ifdef UNIT_D
 	// SRAM, OOB initialization
