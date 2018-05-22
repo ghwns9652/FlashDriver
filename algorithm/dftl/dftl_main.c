@@ -39,7 +39,7 @@ uint32_t demand_get(request *const req){
 	if((CMT_i = CMT_check(lpa, &ppa)) != -1){
 		queue_update(CMT[CMT_i].queue_ptr);	// Update CMT queue
 		bench_algo_end(req); 
-		__demand.li->pull_data(ppa, PAGESIZE, req->value, 1, my_req); // Get data in ppa
+		__demand.li->pull_data(ppa, PAGESIZE, req->value, 0, my_req); // Get data in ppa
 	}
 	/* Cache miss */
 	else{
@@ -47,7 +47,7 @@ uint32_t demand_get(request *const req){
 		t_ppa = GTD[D_IDX].ppa; // Get t_ppa from GTD
 		if(t_ppa != -1){ // t_ppa mapping is on GTD
 			temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
-			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req()); // Get page mapping table in (t_ppa) page
+			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req()); // Get page mapping table in (t_ppa) page
 			p_table = (D_TABLE*)temp_value_set->value; // p_table = page mapping table
 			ppa = p_table[P_IDX].ppa; // Find ppa
 			if(ppa != -1){ // ppa mapping is on page_mapping table
@@ -197,6 +197,7 @@ uint32_t demand_eviction(int *CMT_i){
 	D_TABLE *p_table;
 	value_set *temp_value_set;
 	value_set *temp_value_set2;
+//	pthread_mutex_t mutex;
 
 	/* Check empty entry */
 	for(int i = 0; i < CMTENT; i++){
@@ -205,28 +206,29 @@ uint32_t demand_eviction(int *CMT_i){
 			return 0; 
 		}
 	}
+	printf("demand_eviction\n");
+//	pthread_mutex_init(&mutex, NULL);
 	/* Eviction */
 	*CMT_i = (int)((C_TABLE*)(tail->DATA) - CMT); // Load CMT_i of tail of a queue
 	lpa = CMT[*CMT_i].lpa; // Get lpa of CMT_i
 	ppa = CMT[*CMT_i].ppa; // Get ppa of CMT_i
 	if(CMT[*CMT_i].flag != 0){ // When CMT_i has changed
+		p_table = (D_TABLE*)malloc(PAGESIZE); // p_table = page mapping table
 		if((t_ppa = GTD[D_IDX].ppa) != -1){	// When it's not a first t_page
 			temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req()); // Get page mapping table in (t_ppa) page
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
-			temp_value_set2 = inf_get_valueset(temp_value_set->value, DMAWRITE, PAGESIZE);
+			memcpy(p_table, temp_value_set->value, PAGESIZE);
 			inf_free_valueset(temp_value_set, DMAREAD);
-			p_table = (D_TABLE*)temp_value_set2->value; // p_table = page mapping table
 		}
 		else{ // p_table initialization
-			temp_value_set2 = inf_get_valueset(NULL, DMAWRITE, PAGESIZE);
-			p_table = (D_TABLE*)temp_value_set2->value; // p_table = page mapping table
 			for(int i = 0; i < EPP; i++) // new p_table initialization
 				p_table[i].ppa = -1;
 		}
 		if(p_table[P_IDX].ppa != -1)
 			demand_OOB[p_table[P_IDX].ppa].valid_checker = 0; // Invalidate previous ppa
 		p_table[P_IDX].ppa = ppa; // Update page table
+		temp_value_set2 = inf_get_valueset((PTR)p_table, DMAWRITE, PAGESIZE);
 		tp_alloc(&t_ppa); // Translation page allocation
 		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set2, 1, assign_pseudo_req()); // Set translation page
 		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1}; // Update OOB of t_ppa

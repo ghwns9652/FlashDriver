@@ -2,9 +2,19 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include "../../include/container.h"
 #include "../../interface/interface.h"
+#include "../../interface/queue.h"
 #include "dftl_queue.h"
+
+#define TYPE uint8_t
+#define DATA_R 0
+#define DATA_W 1
+#define MAPPING_R 2
+#define MAPPING_W 3
+#define GC_R 4
+#define GC_W 5
 
 /* Data page unit DFTL header */
 #ifdef UNIT_D
@@ -47,6 +57,8 @@ typedef struct demand_SRAM{
 
 typedef struct demand_params{
 	int test;
+	TYPE type;
+	pthread_mutex_t *lock;
 }demand_params;
 
 uint32_t demand_create(lower_info*, algorithm*);
@@ -56,7 +68,7 @@ uint32_t demand_set(request *const);
 uint32_t demand_remove(request *const);
 void *demand_end_req(algo_req*);
 void *pseudo_end_req(algo_req*);
-algo_req* assign_pseudo_req();
+algo_req* assign_pseudo_req(TYPE type);
 int CMT_check(int32_t lpa, int32_t *ppa);
 uint32_t demand_eviction(int *CMT_i);
 char btype_check();
@@ -71,6 +83,8 @@ void dp_alloc(int32_t *ppa);
 void tp_alloc(int32_t *t_ppa);
 #endif
 
+// use more space to gain performance improvement or use less space while costs some cache performance
+// Consider!!
 /* Translation page unit DFTL */
 #ifdef UNIT_T
 #define CACHESIZE (32*K)
@@ -82,7 +96,7 @@ void tp_alloc(int32_t *t_ppa);
 #define P_IDX (lpa%EPP)	// Idx of page table
 #define DMAWRITE 1
 #define DMAREAD 2
-#define MAXTPAGENUM 4 // max number of tpage on ram
+#define MAXTPAGENUM 4 // max number of tpage on ram // Must be changed according to cache size
 
 // Page table data structure
 typedef struct demand_mapping_table{
@@ -111,6 +125,8 @@ typedef struct demand_SRAM{
 
 typedef struct demand_params{
 	int test;
+	TYPE type;
+	pthread_mutex_t *lock;
 }demand_params;
 
 uint32_t demand_create(lower_info*, algorithm*);
@@ -120,7 +136,7 @@ uint32_t demand_set(request *const);
 uint32_t demand_remove(request *const);
 void *demand_end_req(algo_req*);
 void *pseudo_end_req(algo_req*);
-algo_req* assign_pseudo_req();
+algo_req* assign_pseudo_req(TYPE type);
 D_TABLE* CMT_check(int32_t lpa, int32_t *ppa);
 uint32_t demand_eviction();
 char btype_check();

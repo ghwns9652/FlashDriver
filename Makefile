@@ -1,12 +1,14 @@
 export CC=g++
 
-TARGET_LOWER=posix
+TARGET_LOWER=bdbm_drv
 TARGET_ALGO=dftl
 PWD=$(pwd)
 
 export CFLAGS_ALGO=\
 			 -g\
 			 -Wall\
+
+#-D_VALUE
 
 export CFLAGS_LOWER=\
 			-g\

@@ -55,16 +55,17 @@ int main(){
 */
 
 	inf_init();
-	bench_init(1);
+	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	bench_add(RANDRW,0,1024*30,1024*30);
-//	bench_add(RANDSET,0,15*1024,15*1024);
-//	bench_add(RANDGET,0,15*1024,15*1024);
+//	bench_add(RANDRW,0,1024*30,1024*30);
+	bench_add(SEQSET,0,15*1024,15*1024);
+	bench_add(SEQGET,0,15*1024,15*1024);
 	bench_value *value;
 
 	value_set temp;
 	temp.value=t_value;
+	//temp.value=NULL;
 	temp.dmatag=-1;
 	temp.length=0;
 	while((value=get_bench())){

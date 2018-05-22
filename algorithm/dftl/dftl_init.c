@@ -10,6 +10,7 @@ struct algorithm __demand={
 
 extern LINKED_LIST* head;
 extern LINKED_LIST* tail;
+queue *algo_req_q;
 
 C_TABLE *CMT; // Cached Mapping Table
 D_TABLE *GTD; // Global Translation Directory
@@ -29,6 +30,7 @@ int32_t tpage_onram_num; // Number of translation page on cache
  */
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// Table Allocation
+	printf("demand_create!\n");
 #ifdef UNIT_D
 	GTD = (D_TABLE*)malloc(GTDSIZE);
 #endif
@@ -36,6 +38,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * _NOP);
 	d_sram = (D_SRAM*)malloc(sizeof(D_SRAM) * _PPB);
 	algo->li = li;
+	printf("CMTENT : %ld\n", CMTENT);
 
 #ifdef UNIT_D
 	// SRAM, OOB initialization
@@ -71,6 +74,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	PBA_status = 0;
 	needGC = 0;
 	tpage_onram_num = 0;
+
+	q_init(&algo_req_q, 1024);
 	return 0;
 }
 
@@ -92,8 +97,26 @@ void demand_destroy(lower_info *li, algorithm *algo){
 /* Does it need to return void pointer??? */
 void *demand_end_req(algo_req* input){
 	request *res = input->parents;
-	res->end_req(res);
-
+	demand_params *params = (demand_params*)input->params;
+	switch(params->type){
+		case DATA_R:
+			break;
+		case DATA_W:
+			break;
+		case MAPPING_R:
+			//cache_insert
+			break;
+		case MAPPING_W:
+			//mapping free
+			//value_set free
+			break;
+		case GC_W:
+			break;
+		case GC_R:
+			break;
+	}
+	if(res)
+		res->end_req(res);
 	free(input);
 	return NULL;
 }
@@ -102,7 +125,30 @@ void *demand_end_req(algo_req* input){
  * Free pseudo_end_req data structure
  */
 void *pseudo_end_req(algo_req* input){
-	free(input);
+	demand_params *params = (demand_params*)input->params;
+	switch(params->type){
+		case DATA_R:
+			break;
+		case DATA_W:
+			break;
+		case MAPPING_R:
+			pthread_mutex_unlock(&(input->algo_mutex));
+			//cache_insert
+			break;
+		case MAPPING_W:
+			pthread_mutex_unlock(&(input->algo_mutex));
+			//mapping free
+			//value_set free
+			break;
+		case GC_W:
+			break;
+		case GC_R:
+			break;
+	}
+	free(params);
+	if(!(input->isAsync)){
+		free(input);
+	}
 	return NULL;
 }
 
@@ -110,11 +156,33 @@ void *pseudo_end_req(algo_req* input){
  * Make pseudo_my_req
  * psudo_my_req is req from algorithm, not from the interface
  */
-algo_req* assign_pseudo_req(){
+algo_req* assign_pseudo_req(TYPE type){
 	algo_req *pseudo_my_req = (algo_req*)malloc(sizeof(algo_req));
 	pseudo_my_req->parents = NULL;
+	demand_params *params=(demand_params*)malloc(sizeof(demand_params));//allocation;
+	params->type=type;
+	switch(type){
+		case DATA_R:
+			break;
+		case DATA_W:
+			break;
+		case MAPPING_R:
+			pseudo_my_req->isAsync = true;
+			pthread_mutex_init(&(pseudo_my_req->algo_mutex), NULL);
+			pthread_mutex_lock(&(pseudo_my_req->algo_mutex));
+			break;
+		case MAPPING_W:
+			pseudo_my_req->isAsync = true;
+			pthread_mutex_init(&(pseudo_my_req->algo_mutex), NULL);
+			pthread_mutex_lock(&(pseudo_my_req->algo_mutex));
+			break;
+		case GC_W:
+			break;
+		case GC_R:
+			break;
+	}
 	pseudo_my_req->end_req = pseudo_end_req;
-
+	pseudo_my_req->params = params;
 	return pseudo_my_req;
 }
 
