@@ -9,9 +9,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include "skiplist.h"
-
-#define T_value 2
-#define ERASET uint8_t
+#include "lsmsetting.h"
 
 typedef struct node{
     KEYT max;

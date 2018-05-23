@@ -4,12 +4,17 @@ LDFLAGS = -lm
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
 TARGET = test
- 
-all : $(TARGET)
+
+test: all
+
+all : $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
  
-$(TARGET) :
-	$(CC) $(CFLAGS) -c $(SRCS) $(LDFLAGS)
- 
+#$(TARGET) :
+#	$(CC) $(CFLAGS) -c $(SRCS) $(LDFLAGS)
+
+.c.o:
+	$(CC) $(CFLAGS) -c $< -o $@
+
 clean :
-	rm -f $(TARGET) *.o
+	$(RM) -f $(TARGET) *.o

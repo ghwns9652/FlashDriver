@@ -10,20 +10,18 @@
 #include <sys/types.h>
 #include <inttypes.h>
 #include "lsmtree.h"
+#include "lsmsetting.h"
 #include "../../include/container.h"
 #include "../../include/settings.h"
 
 #define MAX_L 30 //max level number
 #define PROB 4 //the probaility of level increasing : 1/PROB => 1/4
-#define MAX_PER_PAGE 221
-#define GE_SIZ 37
-#define ERASET uint8_t //erase type
 
 typedef struct snode{ //skiplist's node for Gecko Entry
-	KEYT key;
-	uint8_t level;
 	uint64_t VBM[4];
+	KEYT key;
 	ERASET erase;
+	uint8_t level;
 	struct snode **list;
 }snode;
 
@@ -44,7 +42,7 @@ typedef struct{
 skiplist *skiplist_init(); //return initialized skiplist*
 snode *skiplist_find(skiplist*, KEYT); //find snode having key in skiplist, return NULL:no snode
 snode *skiplist_insert(skiplist*, KEYT, uint8_t, ERASET); //insert skiplist, return inserted snode
-snode *skiplist_merge_insert(skiplist*, KEYT, uint64_t*, ERASET);
+snode *skiplist_merge_insert(skiplist*, snode*);
 int skiplist_delete(skiplist*, KEYT); //delete by key, return 0:normal -1:empty -2:no key
 struct node* skiplist_flush(skiplist*); //
 void skiplist_free(skiplist*);  //free skiplist
@@ -53,7 +51,6 @@ void skiplist_dump_key(skiplist*); //for test
 void skiplist_dump_key_value(skiplist*); //for test
 sk_iter* skiplist_get_iterator(skiplist*); //get read only iterator
 snode *skiplist_get_next(sk_iter*); //get next snode by iterator
-void sflush(skiplist *list);
 
 PTR skiplist_make_data(skiplist*);
 #endif

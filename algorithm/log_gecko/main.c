@@ -4,7 +4,7 @@
 #define DEB2
 //#define DEB3
 
-#define INPUTSIZE 1000 //input size for DEBUG
+#define INPUTSIZE 226304 //15360 //input size for DEBUG
 #define INPUTTABLE 100000
 
 int main()
@@ -14,7 +14,7 @@ int main()
 	printf("lsm init done\n");
 	uint32_t* key = (uint32_t*)malloc(sizeof(uint32_t)*INPUTTABLE);
 	for(int i = 0; i < INPUTTABLE; i++)
-		key[i] = rand() % INT_MAX;
+		key[i] = rand() % 15360;
 
 #ifdef DEB1
 	int set = rand() % 10;
@@ -26,10 +26,14 @@ int main()
 #ifdef DEB2
 	printf("update start\n");
 	for(int i = 0; i < INPUTSIZE; i++)
-		lsm_buf_update(temp, i, 0, 0); //the value is copied
+		lsm_buf_update(temp, i / 256, i % 256, 0);
 	printf("update end\n");
 	printf("dump 0, 0\n");
+	lsm_node_recover(temp, 0, 0);
+	printf("dump 0, 1\n");
 	lsm_node_recover(temp, 0, 1);
+	printf("dump 0, 2\n");
+	lsm_node_recover(temp, 0, 2);
 	printf("dump end\n");
 #endif
 

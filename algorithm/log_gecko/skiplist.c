@@ -1,5 +1,4 @@
 #include "skiplist.h"
-
 skiplist *skiplist_init()
 {
 	skiplist *point = (skiplist *)malloc(sizeof(skiplist));
@@ -107,24 +106,24 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 	return x;
 }
 //must insert newest node first
-snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET flag)
+snode *skiplist_merge_insert(skiplist *list, snode *input)
 {
 	snode *update[MAX_L + 1];
 	snode *x = list->header;
 	for(int i = list->level; i >= 1; i--)
 	{
-		while(x->list[i]->key < key)
+		while(x->list[i]->key < input->key)
 			x = x->list[i];
 		update[i] = x;
 	}
 	x = x->list[1];
-	if(key == x->key)
+	if(input->key == x->key)
 	{
 		if(x->erase != 1)
 		{
 			for (int i = 0; i < 4; i++)
-				x->VBM[i] |= bitmap[i];
-			x->erase = flag;
+				x->VBM[i] |= input->VBM[i];
+			x->erase = input->erase;
 		}
 	}
 	else
@@ -139,10 +138,10 @@ snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET 
 
 		x = (snode *)malloc(sizeof(snode));
 		x->list = (snode **)malloc(sizeof(snode *) * (level + 1));
-		x->key = key;
+		x->key = input->key;
 		for(int i = 0; i < 4; i++)
-			x->VBM[i] = bitmap[i];
-		x->erase = flag;
+			x->VBM[i] = input->VBM[i];
+		x->erase = input->erase;
 		for(int i = 1; i <= level; i++)
 		{
 			x->list[i] = update[i]->list[i];
@@ -154,27 +153,24 @@ snode *skiplist_merge_insert(skiplist *list, KEYT key, uint64_t* bitmap, ERASET 
 	return x;
 }
 // start end 수정 안함
-int skiplist_delete(skiplist *list, KEYT key)
-{
-	if(list->size == 0)
+int skiplist_delete(skiplist* list, KEYT key){
+	if(list->size==0)
 		return -1;
-	snode *update[MAX_L + 1];
-	snode *x = list->header;
-	for(int i = list->level; i >= 1; i--)
-	{
-		while(x->list[i]->key < key)
-			x = x->list[i];
-		update[i] = x;
+	snode *update[MAX_L+1];
+	snode *x=list->header;
+	for(int i=list->level; i>=1; i--){
+		while(x->list[i]->key<key)
+			x=x->list[i];
+		update[i]=x;
 	}
-	x = x->list[1];
+	x=x->list[1];
 
-	if(x->key != key)
-		return -2;
+	if(x->key!=key)
+		return -2; 
 
-	for(int i = x->level; i >= 1; i--)
-	{
-		update[i]->list[i] = x->list[i];
-		if(update[i] == update[i]->list[i])
+	for(int i=x->level; i>=1; i--){
+		update[i]->list[i]=x->list[i];
+		if(update[i]==update[i]->list[i])
 			list->level--;
 	}
 
@@ -245,17 +241,14 @@ struct node* skiplist_flush(skiplist *list)
 PTR skiplist_make_data(skiplist *input)
 {
 	PTR Wrappage = (PTR)malloc(PAGESIZE);
+	memset(Wrappage, 0, PAGESIZE); //나중엔 노쓸모
 	int loc = 0;
 	sk_iter *iter = skiplist_get_iterator(input);
 	snode *now;
 	while(now = skiplist_get_next(iter))
 	{
-		memcpy(Wrappage + loc, &now->key, 4);
-		loc += 4;
-		memcpy(Wrappage + loc, now->VBM, 32);
-		loc += 32;
-		memcpy(Wrappage + loc, &now->erase, 1);
-		loc += 1;
+		memcpy(&Wrappage[loc], now, sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET));
+		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
 	}
 	free(iter);
 	return Wrappage;
@@ -280,8 +273,8 @@ void skiplist_dump_key_value(skiplist *list)
 	snode *now;
 	while(now = skiplist_get_next(iter))
 	{
-		printf("key(%u): hexvalue1(0x%" PRIx64 "), hexvalue2(0x%" PRIx64 "),\
- hexvalue3(0x%" PRIx64 "), hexvalue4(0x%" PRIx64 "), erase(%d)\n",
+		printf("key(%u): hexvalue1(0x%" PRIx64 "), hexvalue2(0x%" PRIx64 "), \
+hexvalue3(0x%" PRIx64 "), hexvalue4(0x%" PRIx64 "), erase(%d)\n",
 			   now->key, now->VBM[0], now->VBM[1], now->VBM[2], now->VBM[3], now->erase);
 	}
 	free(iter);
