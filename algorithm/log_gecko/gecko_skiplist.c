@@ -1,4 +1,5 @@
-#include "skiplist.h"
+#include "gecko_skiplist.h"
+
 skiplist *skiplist_init()
 {
 	skiplist *point = (skiplist *)malloc(sizeof(skiplist));

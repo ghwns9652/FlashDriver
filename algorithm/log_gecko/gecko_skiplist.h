@@ -1,5 +1,5 @@
-#ifndef __SKIPLIST_HEADER
-#define __SKIPLIST_HEADER
+#ifndef __GECKO_SKIPLIST_HEADER
+#define __GECKO_SKIPLIST_HEADER
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,10 +9,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <inttypes.h>
-#include "lsmtree.h"
-#include "lsmsetting.h"
-#include "../../include/container.h"
-#include "../../include/settings.h"
+#include "gecko_lsmtree.h"
+#include "gecko_setting.h"
 
 #define MAX_L 30 //max level number
 #define PROB 4 //the probaility of level increasing : 1/PROB => 1/4
@@ -42,7 +40,7 @@ typedef struct{
 skiplist *skiplist_init(); //return initialized skiplist*
 snode *skiplist_find(skiplist*, KEYT); //find snode having key in skiplist, return NULL:no snode
 snode *skiplist_insert(skiplist*, KEYT, uint8_t, ERASET); //insert skiplist, return inserted snode
-snode *skiplist_merge_insert(skiplist*, snode*);
+snode *skiplist_merge_insert(skiplist*, snode*); //insert skiplist, return inserted snode
 int skiplist_delete(skiplist*, KEYT); //delete by key, return 0:normal -1:empty -2:no key
 struct node* skiplist_flush(skiplist*); //
 void skiplist_free(skiplist*);  //free skiplist

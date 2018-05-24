@@ -1,5 +1,5 @@
 #define _LARGEFILE64_SOURCE
-#include "lsmtree.h"
+#include "gecko_lsmtree.h"
 
 level *level_init(int max_lv)
 {
@@ -53,7 +53,7 @@ void lsm_buf_update(lsmtree *lsm, KEYT key, uint8_t offset, ERASET flag)
 	//printf("key %d\n", key);
 	skiplist_insert(lsm->buffer, key, offset, flag);
 	if(lsm->buffer->size == MAX_PER_PAGE)
-		lsm_node_insert(lsm, skiplist_flush(lsm->buffer));
+		lsm_buffer_flush(lsm, skiplist_flush(lsm->buffer));
 }
 
 void lsm_node_fwrite(lsmtree *lsm, int lv_off, int nd_off)
@@ -67,28 +67,18 @@ void lsm_node_fwrite(lsmtree *lsm, int lv_off, int nd_off)
 	free(lsm->levels[lv_off].array[nd_off]->memptr);
 }
 
-void lsm_node_insert(lsmtree *lsm, node *data)
+void lsm_buffer_flush(lsmtree *lsm, node *data)
 {
-	int i = 0;
-	while(lsm->max_level > i)
-	{
-		if(lsm->levels[i].cur_cap == lsm->levels[i].max_cap)
-		{
-			i++;
-			continue;
-		}
-		lsm->levels[i].array[lsm->levels[i].cur_cap++] = data;
-		break;
-	}
-	if(lsm->max_level != i)
-		lsm_node_fwrite(lsm, i, lsm->levels[i].cur_cap - 1);
+	if(lsm->levels[0].cur_cap == lsm->levels[0].max_cap)
+		lsm_merge(lsm, 0);
+	lsm->levels[0].array[lsm->levels[0].cur_cap] = data;
+	lsm_node_fwrite(lsm, 0, lsm->levels[0].cur_cap++);
 	lsm->buffer = skiplist_init();
 }
 
 void lsm_node_recover(lsmtree *lsm, int lv_off, int nd_off)
 {
 	int off_cal = 0, loc = 0;
-	snode *t;
 	PTR temp = (PTR)malloc(PAGESIZE);
 	lsm->mixbuf = skiplist_init();
 	for(int i = 0; i < lv_off; i++)
@@ -98,11 +88,29 @@ void lsm_node_recover(lsmtree *lsm, int lv_off, int nd_off)
 	read(lsm->fd, temp, PAGESIZE);
 	for(int i = 0; i < MAX_PER_PAGE; i++)
 	{
-		t = (snode*)&temp[loc];
-		skiplist_merge_insert(lsm->mixbuf, t);
+		skiplist_merge_insert(lsm->mixbuf, (snode*)&temp[loc]);
 		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
 	}
 	free(temp);
-	skiplist_dump_key_value(lsm->mixbuf);
+	//skiplist_dump_key_value(lsm->mixbuf);
+	skiplist_free(lsm->mixbuf);
+}
+
+void lsm_merge(lsmtree *lsm, int lv_off)
+{
+	int off_cal = 0, loc = 0;
+	PTR temp = (PTR)malloc(PAGESIZE);
+	lsm->mixbuf = skiplist_init();
+	for(int i = 0; i < lv_off; i++)
+		off_cal += lsm->levels[i].max_cap;
+	lseek64(lsm->fd, (off64_t)(PAGESIZE * off_cal), SEEK_SET);
+	read(lsm->fd, temp, PAGESIZE);
+	for(int i = 0; i < MAX_PER_PAGE; i++)
+	{
+		skiplist_merge_insert(lsm->mixbuf, (snode*)&temp[loc]);
+		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
+	}
+	free(temp);
+	//skiplist_dump_key_value(lsm->mixbuf);
 	skiplist_free(lsm->mixbuf);
 }
