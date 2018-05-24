@@ -5,7 +5,7 @@
 #define DEB2
 //#define DEB3
 
-#define INPUTSIZE 226304 //15360 //input size for DEBUG
+#define INPUTSIZE 1000 //15360 //input size for DEBUG
 #define INPUTTABLE 100000
 
 int main()
@@ -27,14 +27,16 @@ int main()
 #ifdef DEB2
 	printf("update start\n");
 	for(int i = 0; i < INPUTSIZE; i++)
-		lsm_buf_update(temp, i / 256, i % 256, 0);
+		lsm_buf_update(temp, i, 0, 0);
 	printf("update end\n");
-	printf("dump 0, 0\n");
-	lsm_node_recover(temp, 0, 0);
-	printf("dump 0, 1\n");
-	lsm_node_recover(temp, 0, 1);
-	printf("dump 0, 2\n");
-	lsm_node_recover(temp, 0, 2);
+	printf("dump 1, 0\n");
+	lsm_node_recover(temp, 1, 0);
+	printf("dump 1, 1\n");
+	lsm_node_recover(temp, 1, 1);
+	printf("dump 2, 0\n");
+	lsm_node_recover(temp, 2, 0);
+	printf("dump 2, 1\n");
+	lsm_node_recover(temp, 2, 1);
 	printf("dump end\n");
 #endif
 

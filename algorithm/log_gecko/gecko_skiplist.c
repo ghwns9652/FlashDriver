@@ -189,6 +189,14 @@ sk_iter *skiplist_get_iterator(skiplist *list)
 	return res;
 }
 
+sk_iter *skiplist_get_iter_from_here(skiplist *list, snode* here)
+{
+	sk_iter *res = (sk_iter *)malloc(sizeof(sk_iter));
+	res->list = list;
+	res->now = here;
+	return res;
+}
+
 snode *skiplist_get_next(sk_iter *iter)
 {
 	if(iter->now->list[1] == iter->list->header) //end
@@ -251,6 +259,29 @@ PTR skiplist_make_data(skiplist *input)
 		memcpy(&Wrappage[loc], now, sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET));
 		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
 	}
+	free(iter);
+	return Wrappage;
+}
+//for compaction
+PTR skiplist_lsm_merge(skiplist *input, KEYT key, KEYT *nxtkey, KEYT *last)
+{
+	PTR Wrappage = (PTR)malloc(PAGESIZE);
+	memset(Wrappage, 0, PAGESIZE); //나중엔 노쓸모
+	int loc = 0;
+	snode *now = skiplist_find(input, key);
+	sk_iter *iter = skiplist_get_iter_from_here(input, now);
+	for(int i = 0; i < MAX_PER_PAGE; i++)
+	{
+		memcpy(&Wrappage[loc], now, sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET));
+		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
+		if(i == MAX_PER_PAGE - 1)
+			*last = now->key;
+		now = skiplist_get_next(iter);
+		if(now == NULL)
+			break;
+	}
+	if(now != NULL)
+		*nxtkey = now->key;
 	free(iter);
 	return Wrappage;
 }

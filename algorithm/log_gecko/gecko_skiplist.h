@@ -42,13 +42,15 @@ snode *skiplist_find(skiplist*, KEYT); //find snode having key in skiplist, retu
 snode *skiplist_insert(skiplist*, KEYT, uint8_t, ERASET); //insert skiplist, return inserted snode
 snode *skiplist_merge_insert(skiplist*, snode*); //insert skiplist, return inserted snode
 int skiplist_delete(skiplist*, KEYT); //delete by key, return 0:normal -1:empty -2:no key
-struct node* skiplist_flush(skiplist*); //
+struct node* skiplist_flush(skiplist*);
 void skiplist_free(skiplist*);  //free skiplist
 void skiplist_clear(skiplist*); //clear all snode in skiplist and  reinit skiplist
 void skiplist_dump_key(skiplist*); //for test
 void skiplist_dump_key_value(skiplist*); //for test
 sk_iter* skiplist_get_iterator(skiplist*); //get read only iterator
+sk_iter *skiplist_get_iter_from_here(skiplist *, snode*);
 snode *skiplist_get_next(sk_iter*); //get next snode by iterator
 
 PTR skiplist_make_data(skiplist*);
+PTR skiplist_lsm_merge(skiplist*, KEYT, KEYT*, KEYT*);
 #endif

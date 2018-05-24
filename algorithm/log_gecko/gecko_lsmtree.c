@@ -3,23 +3,29 @@
 
 level *level_init(int max_lv)
 {
-	level *res = (level *)malloc(sizeof(level) * max_lv);
-	for(int i = 0; i < max_lv; i++)
+	level *res = (level *)malloc(sizeof(level) * (max_lv + 1));
+	uint32_t lpa = 0;
+	for(int i = 0; i <= max_lv; i++)
 	{
-		res[i].indxes = i + 1;
 		res[i].cur_cap = 0;
-		res[i].max_cap = pow(T_value, res[i].indxes);
-		res[i].array = (node **)malloc(sizeof(node *) * res[i].max_cap);
+		res[i].max_cap = pow(T_value, i);
+		//res[i].array = (node **)malloc(sizeof(node *) * res[i].max_cap);
+		res[i].array = (node *)malloc(sizeof(node) * res[i].max_cap);
+		if(i > 0)
+			for(int j = 0; j < res[i].max_cap; j++)
+				res[i].array[j].LPA = lpa++;
 	}
 	return res;
 }
 
 void level_free(level *lv, int max_lv)
 {
-	for(int i = 0; i < max_lv; i++)
+	for(int i = 0; i <= max_lv; i++)
 	{
-		for(int j = 0; j < lv[i].max_cap; j++) // 문제 있음
+		/*
+		for(int j = 0; j < lv[i].cur_cap; j++)
 			free(lv[i].array[j]);
+		*/
 		free(lv[i].array);
 	}
 	free(lv);
@@ -58,33 +64,30 @@ void lsm_buf_update(lsmtree *lsm, KEYT key, uint8_t offset, ERASET flag)
 
 void lsm_node_fwrite(lsmtree *lsm, int lv_off, int nd_off)
 {
-	int off_cal = 0;
-	for(int i = 0; i < lv_off; i++)
-		off_cal += lsm->levels[i].max_cap;
-	off_cal += nd_off;
-	lseek64(lsm->fd, (off64_t)(PAGESIZE * off_cal), SEEK_SET);
-	write(lsm->fd, lsm->levels[lv_off].array[nd_off]->memptr, PAGESIZE);
-	free(lsm->levels[lv_off].array[nd_off]->memptr);
+	uint32_t offset = lsm->levels[lv_off].array[nd_off].LPA;
+	lseek64(lsm->fd, (off64_t)(PAGESIZE * offset), SEEK_SET);
+	write(lsm->fd, lsm->levels[lv_off].array[nd_off].memptr, PAGESIZE);
+	free(lsm->levels[lv_off].array[nd_off].memptr);
+	lsm->levels[lv_off].array[nd_off].memptr = NULL;
 }
 
 void lsm_buffer_flush(lsmtree *lsm, node *data)
 {
-	if(lsm->levels[0].cur_cap == lsm->levels[0].max_cap)
-		lsm_merge(lsm, 0);
-	lsm->levels[0].array[lsm->levels[0].cur_cap] = data;
-	lsm_node_fwrite(lsm, 0, lsm->levels[0].cur_cap++);
+	printf("flush\n");
+	if(lsm->levels[1].cur_cap == lsm->levels[1].max_cap)
+		lsm_merge(lsm, 1);
+	memcpy(&lsm->levels[1].array[lsm->levels[1].cur_cap], data, sizeof(node));
+	lsm_node_fwrite(lsm, 1, lsm->levels[1].cur_cap++); //범위가 작은게 뒤로 가도 되는가? 일단은 최근값이 뒤로 들어가는것으로로
 	lsm->buffer = skiplist_init();
 }
 
 void lsm_node_recover(lsmtree *lsm, int lv_off, int nd_off)
 {
-	int off_cal = 0, loc = 0;
+	uint32_t offset, loc = 0;
 	PTR temp = (PTR)malloc(PAGESIZE);
 	lsm->mixbuf = skiplist_init();
-	for(int i = 0; i < lv_off; i++)
-		off_cal += lsm->levels[i].max_cap;
-	off_cal += nd_off;
-	lseek64(lsm->fd, (off64_t)(PAGESIZE * off_cal), SEEK_SET);
+	offset = lsm->levels[lv_off].array[nd_off].LPA;
+	lseek64(lsm->fd, (off64_t)(PAGESIZE * offset), SEEK_SET);
 	read(lsm->fd, temp, PAGESIZE);
 	for(int i = 0; i < MAX_PER_PAGE; i++)
 	{
@@ -92,25 +95,65 @@ void lsm_node_recover(lsmtree *lsm, int lv_off, int nd_off)
 		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
 	}
 	free(temp);
-	//skiplist_dump_key_value(lsm->mixbuf);
+	skiplist_dump_key_value(lsm->mixbuf);
 	skiplist_free(lsm->mixbuf);
 }
 
-void lsm_merge(lsmtree *lsm, int lv_off)
+int lsm_merge(lsmtree *lsm, int lv_off) //뒤에부터 들어가야됨 일단은 전부 꺼내서 전부 merge하는것으로로
 {
-	int off_cal = 0, loc = 0;
+	printf("merge start w/ level %d\n", lv_off);
+	if(lsm->levels[lv_off + 1].cur_cap == lsm->levels[lv_off + 1].max_cap)
+		if(lv_off + 1 != lsm->max_level)
+			lsm_merge(lsm, lv_off + 1);
+	uint32_t offset, loc;
 	PTR temp = (PTR)malloc(PAGESIZE);
 	lsm->mixbuf = skiplist_init();
-	for(int i = 0; i < lv_off; i++)
-		off_cal += lsm->levels[i].max_cap;
-	lseek64(lsm->fd, (off64_t)(PAGESIZE * off_cal), SEEK_SET);
-	read(lsm->fd, temp, PAGESIZE);
-	for(int i = 0; i < MAX_PER_PAGE; i++)
+	for(int i = 0; i < lsm->levels[lv_off].cur_cap; i++)
 	{
-		skiplist_merge_insert(lsm->mixbuf, (snode*)&temp[loc]);
-		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
+		loc = 0;
+		offset = lsm->levels[lv_off].array[lsm->levels[lv_off].cur_cap - 1 - i].LPA;
+		lseek64(lsm->fd, (off64_t)(PAGESIZE * offset), SEEK_SET);
+		read(lsm->fd, temp, PAGESIZE);
+		for(int j = 0; j < MAX_PER_PAGE; j++) // 221개 전부 차있다고 가정하고 작성
+		{
+			skiplist_merge_insert(lsm->mixbuf, (snode*)&temp[loc]);
+			loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
+		}
+	}
+	lsm->levels[lv_off].cur_cap = 0;
+	//lv_off + 1
+	if(lsm->levels[lv_off + 1].cur_cap > 0)
+	{
+		for(int i = 0; i < lsm->levels[lv_off + 1].cur_cap; i++)
+		{
+			offset = lsm->levels[lv_off + 1].array[lsm->levels[lv_off + 1].cur_cap - 1 - i].LPA;
+			lseek64(lsm->fd, (off64_t)(PAGESIZE * offset), SEEK_SET);
+			loc = 0;
+			read(lsm->fd, temp, PAGESIZE);
+			for(int j = 0; j < MAX_PER_PAGE; j++)
+			{
+				skiplist_merge_insert(lsm->mixbuf, (snode*)&temp[loc]);
+				loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
+			}
+			lseek64(lsm->fd, -(off64_t)(PAGESIZE * 2), SEEK_CUR);
+		}
+		lsm->levels[lv_off + 1].cur_cap = 0;
 	}
 	free(temp);
+	//fwrite 미완
+	KEYT key = lsm->mixbuf->start;
+	KEYT end;
+	printf("s %ld\n", lsm->mixbuf->size);
+	printf("i %ld\n", lsm->mixbuf->size/MAX_PER_PAGE);
+	for(int i = 0; i <= lsm->mixbuf->size/MAX_PER_PAGE; i++)
+	{
+		lsm->levels[lv_off + 1].array[i].min = key;
+		lsm->levels[lv_off + 1].array[i].memptr = skiplist_lsm_merge(lsm->mixbuf, key, &key, &end);
+		lsm->levels[lv_off + 1].array[i].max = end;
+		lsm->levels[lv_off + 1].cur_cap++;
+		lsm_node_fwrite(lsm, lv_off + 1, i);
+	}
 	//skiplist_dump_key_value(lsm->mixbuf);
 	skiplist_free(lsm->mixbuf);
+	return 1;
 }
