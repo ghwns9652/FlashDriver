@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "page.h"
 
 struct algorithm algo_pbase=
@@ -57,17 +58,17 @@ uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize map
 
 void pbase_destroy(lower_info* li, algorithm *algo)
 {					  
-        free(page_OOB);
-        free(invalid_per_block);
-		free(page_SRAM);
-		free(page_TABLE);
+	free(page_OOB);
+	free(invalid_per_block);
+	free(page_SRAM);
+	free(page_TABLE);
 }
 
 void *pbase_end_req(algo_req* input)
 {
 	request *res=input->parents;
-	res->end_req(res);
-	free(input);
+	res->end_req(res);//call end_req of parent req.
+	free(input); //free target algo_req.
 }
 
 void *pbase_algo_end_req(algo_req* input)
@@ -85,15 +86,27 @@ uint32_t pbase_get(request* const req)
 	my_req->parents = req;
 	my_req->end_req=pbase_end_req;//allocate end_req for request.
 	KEYT target = page_TABLE[req->key].lpa_to_ppa;
-	bench_algo_end(req);
-	
-	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req);
+	bench_algo_end(req);	
+	if (target == -1)
+	{
+		printf("\nNO data.\n");
+		pbase_end_req(my_req);
+		return 0;
+	}
+	else
+	{
+		algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req);
+		printf("\n==== get data ===\n");
+		printf("target is : %d\n",req->key);
+		printf("assigned ppa is %d\n",target);
+		printf("==== get done ===\n");
+	}
+	sleep(1);
 	//key-value operation.
 }
 
 uint32_t pbase_set(request* const req)
 {
-	printf("length : %d\n",req->value->length);
 	bench_algo_start(req);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
@@ -117,6 +130,7 @@ uint32_t pbase_set(request* const req)
 		int temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
 		page_TABLE[temp].valid_checker = 0; //set that ppa validity to 0.
 		invalid_per_block[temp/_PPB] += 1;
+		printf("phys page %d is invalid.\n",temp);
 	}
 	
 	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
@@ -124,9 +138,15 @@ uint32_t pbase_set(request* const req)
 	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
 	KEYT set_target = PPA_status;
 	PPA_status++;
-	bench_algo_end(req);
-	printf("actual length : %d\n", PAGESIZE);
+	bench_algo_end(req);	
+	
+	printf("\n==== set data ===\n");
+	printf("target is : %d\n",req->key);
+	printf("value is : %c\n",req->value->value[0]);
+	printf("==== set done ===\n");
+
 	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req);
+
 }
 
 uint32_t pbase_remove(request* const req)
@@ -143,9 +163,12 @@ uint32_t SRAM_load(int ppa, int a)
 	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
 	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req);
+	printf("\n===RAMLOAD===\n");
+	printf("loaded item : %c\n",value_PTR->value[0]);
+	printf("===RAM_END===\n");
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
 	page_SRAM[a].VPTR_RAM = value_PTR;
-	inf_free_valueset(value_PTR,1);	
+	sleep(1);
 }
 
 uint32_t SRAM_unload(int ppa, int a)
@@ -157,14 +180,15 @@ uint32_t SRAM_unload(int ppa, int a)
 	my_req->end_req = pbase_algo_end_req;
 	my_req->parents = NULL;
 	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,0,my_req);
-	
+   printf("\npushed data is %c\n",page_SRAM[a].VPTR_RAM->value[0]);	
 	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa;
 	page_TABLE[ppa].valid_checker = 1;
 	page_OOB[ppa].reverse_table = page_SRAM[a].lpa_RAM;
-	
+   inf_free_valueset(page_SRAM[a].VPTR_RAM,1);	
 	inf_free_valueset(value_PTR,2);
 	page_SRAM[a].lpa_RAM = -1;
 	page_SRAM[a].VPTR_RAM = NULL;
+	sleep(1);
 }
 
 uint32_t pbase_garbage_collection()//do pbase_read and pbase_set 
@@ -179,7 +203,7 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 			target_block = i;
 			invalid_num = invalid_per_block[i];
 		}
-	}//found block with the most invalid block.
+	}//find block with the most invalid block.
 	PPA_status = target_block* _PPB;
 	int valid_component = _PPB - invalid_num;
 	int a = 0;

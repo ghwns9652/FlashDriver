@@ -62,18 +62,18 @@ int main(){/*
 	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	bench_add(RANDSET,0,15*1024,15*1024);
-	bench_add(RANDGET,0,15*1024,15*1024);
+	bench_add(RANDSET,0,40,60);
+	bench_add(SEQGET,0,40,40);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
 
 	value_set temp;
+	printf("input data is : %c\n",t_value[0]);
 	temp.value=t_value;
 	temp.dmatag=-1;
 	temp.length=0;
 	while((value=get_bench())){
-		printf("value->length in main%d\n",value->length);
 		temp.length=value->length;
 		inf_make_req(value->type,value->key,&temp,value->mark);
 	}
