@@ -95,13 +95,13 @@ uint32_t pbase_get(request* const req)
 	}
 	else
 	{
-		algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req);
+	//	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req);
+		pbase_end_req(my_req);
 		printf("\n==== get data ===\n");
 		printf("target is : %d\n",req->key);
 		printf("assigned ppa is %d\n",target);
 		printf("==== get done ===\n");
 	}
-	sleep(1);
 	//key-value operation.
 }
 
@@ -163,12 +163,12 @@ uint32_t SRAM_load(int ppa, int a)
 	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
 	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req);
+	sleep(1);
 	printf("\n===RAMLOAD===\n");
 	printf("loaded item : %c\n",value_PTR->value[0]);
 	printf("===RAM_END===\n");
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
 	page_SRAM[a].VPTR_RAM = value_PTR;
-	sleep(1);
 }
 
 uint32_t SRAM_unload(int ppa, int a)
