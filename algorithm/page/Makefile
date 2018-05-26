@@ -1,5 +1,5 @@
 SRCS +=\
-	   page_revised.c\
+	   page_bdbm.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -14,10 +14,10 @@ libnom.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)
 
 .c.o :
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 ../../object/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 clean : 
 	@$(RM) libnom.a

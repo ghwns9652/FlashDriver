@@ -34,6 +34,7 @@ void pbase_destroy(lower_info* li, algorithm *algo)
 
 void *pbase_end_req(algo_req* input)
 {
+	printf("test");
 	pbase_params* params=(pbase_params*)input->params;
 	request *res=params->parents;
 	res->end_req(res);

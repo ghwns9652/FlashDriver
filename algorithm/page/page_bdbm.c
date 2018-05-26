@@ -15,7 +15,7 @@ struct algorithm algo_pbase=
 
 uint32_t PPA_status = 0;
 int init_done = 0;//check if initial write is done.
-
+extern master *_master;
 TABLE *page_TABLE;
 OOB *page_OOB;
 SRAM *page_SRAM;
@@ -50,7 +50,7 @@ uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize map
 		invalid_per_block[i] = 0;
 	}
 	printf("pbase_create done!\n");
-
+	return 0;
 	//init mapping table.
 }	//now we can use page table after pbase_create operation.
 
@@ -69,44 +69,47 @@ void *pbase_end_req(algo_req* input)
 	request *res=input->parents;
 	res->end_req(res);//call end_req of parent req.
 	free(input); //free target algo_req.
+	return 0;
 }
 
 void *pbase_algo_end_req(algo_req* input)
 {
+	printf("end_req\n");
 	free(input);
+	return 0;
 }//there may be warning.
 
 uint32_t pbase_get(request* const req)
 {
 	//put request in normal_param first.
 	//request has a type, key and value.
-
+	
 	bench_algo_start(req);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req)); //init reqeust
 	my_req->parents = req;
 	my_req->end_req=pbase_end_req;//allocate end_req for request.
-	KEYT target = page_TABLE[req->key].lpa_to_ppa;
+	int target = page_TABLE[req->key].lpa_to_ppa;
 	bench_algo_end(req);	
 	if (target == -1)
 	{
-		printf("\nNO data.\n");
 		pbase_end_req(my_req);
 		return 0;
 	}
 	else
 	{
-	//	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req);
-		pbase_end_req(my_req);
-		printf("\n==== get data ===\n");
+		algo_pbase.li->pull_data(target,PAGESIZE,req->value,ASYNC,my_req);
+/*		printf("\n==== get data ===\n");
 		printf("target is : %d\n",req->key);
 		printf("assigned ppa is %d\n",target);
-		printf("==== get done ===\n");
+		printf("==== get done ===\n"); */
 	}
 	//key-value operation.
+	return 0;
 }
 
 uint32_t pbase_set(request* const req)
 {
+
 	bench_algo_start(req);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
@@ -124,13 +127,11 @@ uint32_t pbase_set(request* const req)
 		pbase_garbage_collection();
 	}
 	//!garbage_collection.
-	
 	if (page_TABLE[req->key].lpa_to_ppa != -1)
 	{
 		int temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
 		page_TABLE[temp].valid_checker = 0; //set that ppa validity to 0.
 		invalid_per_block[temp/_PPB] += 1;
-		printf("phys page %d is invalid.\n",temp);
 	}
 	
 	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
@@ -140,46 +141,86 @@ uint32_t pbase_set(request* const req)
 	PPA_status++;
 	bench_algo_end(req);	
 	
-	printf("\n==== set data ===\n");
+/*	printf("\n==== set data ===\n");
 	printf("target is : %d\n",req->key);
 	printf("value is : %c\n",req->value->value[0]);
-	printf("==== set done ===\n");
-
-	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req);
-
+	printf("==== set done ===\n"); */
+/*	if (PPA_status % _PPB == 0){
+		printf("start loadcheck.\n");
+		for (int i=0;i<_PPB;i++){
+			value_set* value_PTR ; //make new value_set
+			value_PTR = inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
+			algo_req * inf_test = (algo_req*)malloc(sizeof(algo_req));
+			inf_test->parents = NULL;
+			inf_test->end_req = pbase_algo_end_req; //request termination.
+			int ppa = PPA_status - _PPB + i;
+			algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,inf_test);
+			printf("\n=====LOADCHECK=====\n");
+			printf("target ppa : %d\n",ppa);
+			printf("loaded item : %d\n",value_PTR->value[0]);
+			printf("===LOADCHECK_END===\n");
+		}
+	}
+*/
+/*	if (PPA_status % _PPB == 0){
+		printf("start trim test. remove written data.\n");
+		int targ = (PPA_status-1)/_PPB;
+		printf("targ %d\n",targ);
+		algo_pbase.li->trim_block(targ,false);
+		for (int i = 0; i< _PPB;i++)
+		{
+			value_set* value_PTR ; //make new value_set
+			value_PTR = inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
+			algo_req * inf_test = (algo_req*)malloc(sizeof(algo_req));
+			inf_test->parents = NULL;
+			inf_test->end_req = pbase_algo_end_req; //request termination.
+			int ppa = PPA_status - _PPB + i;
+			algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,inf_test);
+			printf("\n=====TRIMCHECK=====\n");
+			printf("target ppa : %d\n",ppa);
+			printf("loaded item : %d\n",value_PTR->value[0]);
+			printf("===TRIMCHECK_END===\n");
+		}
+	}*/
+	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,ASYNC,my_req);
+	return 0;
 }
 
 uint32_t pbase_remove(request* const req)
 {
 	page_TABLE[req->key].lpa_to_ppa = -1; //reset to default.
 	page_OOB[req->key].reverse_table = -1; //reset reverse_table to default.
+	return 0;
 }
 
 uint32_t SRAM_load(int ppa, int a)
 {
 	value_set* value_PTR ; //make new value_set
-	value_PTR = inf_get_valueset(NULL,1,PAGESIZE);
+	value_PTR = inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
-	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,my_req);
-	sleep(1);
+	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,ASYNC,my_req);
 	printf("\n===RAMLOAD===\n");
-	printf("loaded item : %c\n",value_PTR->value[0]);
+	printf("target ppa : %d\n",ppa);
+	printf("loaded item : %d\n",value_PTR->value[0]);
 	printf("===RAM_END===\n");
+
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
 	page_SRAM[a].VPTR_RAM = value_PTR;
+	return 0;
 }
 
 uint32_t SRAM_unload(int ppa, int a)
 {
 	value_set *value_PTR;
-	value_PTR = inf_get_valueset(page_SRAM[a].VPTR_RAM->value,2,PAGESIZE);//set valueset as write mode.
+	value_PTR = inf_get_valueset(page_SRAM[a].VPTR_RAM->value,FS_MALLOC_W,PAGESIZE);//set valueset as write mode.
 
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->end_req = pbase_algo_end_req;
 	my_req->parents = NULL;
-	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,0,my_req);
+	printf("pagesize : %d\n",PAGESIZE);
+	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,ASYNC,my_req);
    printf("\npushed data is %c\n",page_SRAM[a].VPTR_RAM->value[0]);	
 	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa;
 	page_TABLE[ppa].valid_checker = 1;
@@ -189,11 +230,12 @@ uint32_t SRAM_unload(int ppa, int a)
 	page_SRAM[a].lpa_RAM = -1;
 	page_SRAM[a].VPTR_RAM = NULL;
 	sleep(1);
+	return 0;
 }
 
 uint32_t pbase_garbage_collection()//do pbase_read and pbase_set 
 {
-	printf("enterged GC..!");
+	printf("enterged GC..!\n");
 	int target_block = 0;
 	int invalid_num = 0;
 	for (int i = 0; i < _NOB; i++)
@@ -204,6 +246,7 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 			invalid_num = invalid_per_block[i];
 		}
 	}//find block with the most invalid block.
+	printf("target block is <%d>, and invalid_num is <%d>",target_block, invalid_num); 
 	PPA_status = target_block* _PPB;
 	int valid_component = _PPB - invalid_num;
 	int a = 0;
@@ -225,4 +268,5 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 	}
 
 	invalid_per_block[target_block] = 0;
+	return 0;
 }
