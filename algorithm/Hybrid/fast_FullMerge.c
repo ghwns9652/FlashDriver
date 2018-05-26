@@ -1,7 +1,11 @@
 #include "FAST.h"
 
 /**
- * 
+ * @brief
+ * @detail
+ * @param       logical_block   Block number for victim block
+ * @param       req             request from FAST_Set function
+ * @return      Error code
  */
 char fast_FullMerge(int logical_block, request* const req)
 {

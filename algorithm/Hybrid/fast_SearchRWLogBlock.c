@@ -1,6 +1,12 @@
 #include "FAST.h"
 
 /**
+ * @brief
+ * @detail
+ * @param       logical_address     (IN)
+ * @param       physical_address    (OUT)
+ * @return      Error number
+ * 
  * Function :
  *  char fast_SearchRWLogBlock(uint32_t logical_address, uint32_t* physical_address)
  * 

@@ -1,6 +1,15 @@
 #include "FAST.h"
 
 /**
+ * @brief
+ * @brief       Search SW Log Block and translate logical_address to physical_address \n
+ *                  if SW log block have corresponding entry.
+ * @detail      First, logical_address is divided into logical_block and offset.
+ *              Then, get informaiton about SW log block which logicl block corresponding to.
+ *              If logical block correspond to SW log block, check offset.
+ *              ???
+ * @param       logical_block       (IN)
+ * @param       physical_blodk      (OUT)
  * Function :
  *  fast_SearchSWLogBlock(uint32_t logical_address, uint32_t* physical_address)
  * 

@@ -18,7 +18,6 @@
  */
 char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *const req)
 {
-    //int logical_block;
     SW_MappingInfo*     sw_MappingInfo;
     uint32_t            offset;
     int                 block;
@@ -26,17 +25,16 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
    	int                 sw_log_block;
 
     sw_MappingInfo = tableInfo->sw_MappingTable->data; 
-	block = BLOCK(key);
-	offset = OFFSET(key);
-    logical_block = sw_MappingInfo->logical_block;
-    sw_log_block = sw_MappingInfo->sw_log_block;
-   	
+
 	if (sw_MappingInfo->number_of_stored_sector == PAGE_PER_BLOCK) {
 		fast_SwitchSWLogBlock();
-        sw_log_block = sw_MappingInfo->sw_log_block;
-        logical_block = sw_MappingInfo->logical_block;
 	}
 	
+	block = BLOCK(key);
+	offset = OFFSET(key);
+	logical_block = sw_MappingInfo->logical_block;
+    sw_log_block = sw_MappingInfo->sw_log_block;
+
 	if (offset == 0 && GET_PAGE_STATE(ADDRESS(sw_log_block, 0)) != ERASED) {
         fast_MergeSWLogBlock(req);
         sw_log_block = sw_MappingInfo->sw_log_block;

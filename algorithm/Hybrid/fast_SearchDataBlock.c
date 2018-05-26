@@ -2,17 +2,19 @@
 
 /**
  * Function : int fast_SearchDataBlock(uint32_t logical_address, uint32_t* physical_address)
+ * @brief
+ * @detail          Convert logical address into physical address using block mapping table. \n
+ *                  +
+ * 
+ * @param           logical_address     (IN)
+ * @param           physical_address    (OUT)
+ * @return          Error code
+ * @sideeffect      Hello
+ * 
  * 
  * Description : 
  *  Convert logical addrerss into physical address using block mapping table.
  *  Returns state of data written in physical address.
- * 
- * Returns :
- *  error code
- *   eNOERROR
- *   eNOTWRITTEN
- *   eOVERWRITTED
- *   eUNEXPECTED
  * 
  * Side effects :
  *  Converted physical address is saved in physical_address

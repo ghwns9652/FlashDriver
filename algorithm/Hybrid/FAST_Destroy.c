@@ -1,6 +1,9 @@
 #include "FAST.h"
 
 /**
+ * @brief       Free all memory used for FAST FTL
+ * @detail
+ * 
  * Function :
  * 
  * Description : 

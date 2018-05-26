@@ -1,5 +1,14 @@
 #include "FAST.h"
 
+/**
+ * @brief
+ * @detail
+ * @param	address
+ * @param	req
+ * @param	value
+ * @param	type
+ * @return	
+ */
 value_set* fast_ReadPage(uint32_t address, request *const req, value_set* value, char type)
 {
 	algo_req* my_req;

@@ -1,8 +1,7 @@
 #include "FAST.h"
 
 /**
- * Function : fast_AllocDataBlockEntry(int key, int* physical_address)
- * 
+ * @brief       Allocate an empty page in data block for set operation
  * @deatils     Find a physical page in Data Block.\n
  *              First, seperate key into block and offset.\n
  *              Second, translate logical block to physical block using block table.\n
@@ -27,10 +26,10 @@ char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
     char state = GET_PAGE_STATE(*physical_address);
     
     // Should Use Block Mapping Table
-	if(state == VALID){
+	if (state == VALID) {
 		SET_PAGE_STATE(*physical_address, INVALID);
 	}
-	else if(state == ERASED){
+	else if (state == ERASED) {
 		SET_PAGE_STATE(*physical_address, VALID);
 	}
     return state;
