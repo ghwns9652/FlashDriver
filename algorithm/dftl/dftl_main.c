@@ -46,19 +46,19 @@ uint32_t demand_get(request *const req){
 		demand_eviction(&CMT_i); // Evict one entry in CMT
 		t_ppa = GTD[D_IDX].ppa; // Get t_ppa from GTD
 		if(t_ppa != -1){ // t_ppa mapping is on GTD
-			temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
+			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 0, assign_pseudo_req()); // Get page mapping table in (t_ppa) page
 			p_table = (D_TABLE*)temp_value_set->value; // p_table = page mapping table
 			ppa = p_table[P_IDX].ppa; // Find ppa
 			if(ppa != -1){ // ppa mapping is on page_mapping table
 				CMT[CMT_i] = (C_TABLE){lpa, ppa, 0, queue_insert((void*)(CMT + CMT_i))}; // Insert mapping to CMT
-				inf_free_valueset(temp_value_set, DMAREAD);
+				inf_free_valueset(temp_value_set, FS_MALLOC_R);
 				bench_algo_end(req); 
 				__demand.li->pull_data(ppa, PAGESIZE, req->value, 1, my_req); // Get actual data in ppa
 			}
 			else{ // lseek error avoid
 				printf("invalid ppa read\n");
-				inf_free_valueset(temp_value_set, DMAREAD);
+				inf_free_valueset(temp_value_set, FS_MALLOC_R);
 				bench_algo_end(req);
 				my_req->end_req(my_req);
 			}
@@ -146,7 +146,7 @@ uint32_t demand_remove(request *const req){
 
 	/* Both cache hit or miss */
 	t_ppa = GTD[D_IDX].ppa; // Evict one entry in CMT
-	temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
+	temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 	__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req()); // Get page mapping table in (t_ppa) page
 	p_table = (D_TABLE*)temp_value_set->value; // p_table = page mapping table
 	ppa = p_table[P_IDX].ppa; // Get ppa
@@ -154,10 +154,10 @@ uint32_t demand_remove(request *const req){
 	p_table[P_IDX].ppa = -1; // Invalidte mapping data
 	tp_alloc(&t_ppa); // Translation page allocation
 	GTD[D_IDX].ppa = t_ppa; // GTD update
-	temp_value_set2 = inf_get_valueset(temp_value_set->value, DMAWRITE, PAGESIZE);
+	temp_value_set2 = inf_get_valueset(temp_value_set->value, FS_MALLOC_W, PAGESIZE);
 	__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set2, 1, my_req); // Update page table in t_ppa
-	inf_free_valueset(temp_value_set, DMAREAD);
-	inf_free_valueset(temp_value_set2, DMAWRITE);
+	inf_free_valueset(temp_value_set, FS_MALLOC_R);
+	inf_free_valueset(temp_value_set2, FS_MALLOC_W);
 	bench_algo_end(req);
 	return 0;
 }
@@ -217,11 +217,11 @@ uint32_t demand_eviction(int *CMT_i){
 	if(CMT[*CMT_i].flag != 0){ // When CMT_i has changed
 		p_table = (D_TABLE*)malloc(PAGESIZE); // p_table = page mapping table
 		if((t_ppa = GTD[D_IDX].ppa) != -1){	// When it's not a first t_page
-			temp_value_set = inf_get_valueset(NULL, DMAREAD, PAGESIZE);
+			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req()); // Get page mapping table in (t_ppa) page
 			demand_OOB[t_ppa].valid_checker = 0; // Invalidate translation page
 			memcpy(p_table, temp_value_set->value, PAGESIZE);
-			inf_free_valueset(temp_value_set, DMAREAD);
+			inf_free_valueset(temp_value_set, FS_MALLOC_R);
 		}
 		else{ // p_table initialization
 			for(int i = 0; i < EPP; i++) // new p_table initialization
@@ -230,12 +230,12 @@ uint32_t demand_eviction(int *CMT_i){
 		if(p_table[P_IDX].ppa != -1)
 			demand_OOB[p_table[P_IDX].ppa].valid_checker = 0; // Invalidate previous ppa
 		p_table[P_IDX].ppa = ppa; // Update page table
-		temp_value_set2 = inf_get_valueset((PTR)p_table, DMAWRITE, PAGESIZE);
+		temp_value_set2 = inf_get_valueset((PTR)p_table, FS_MALLOC_W, PAGESIZE);
 		tp_alloc(&t_ppa); // Translation page allocation
 		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set2, 1, assign_pseudo_req()); // Set translation page
 		demand_OOB[t_ppa] = (D_OOB){D_IDX, 1}; // Update OOB of t_ppa
 		GTD[D_IDX].ppa = t_ppa; // Update GTD to t_ppa
-		inf_free_valueset(temp_value_set2, DMAWRITE);
+		inf_free_valueset(temp_value_set2, FS_MALLOC_W);
 	}
 	queue_delete(tail); // Delete queue of evicted CMT entry
 	CMT[*CMT_i] = (C_TABLE){-1, -1, 0, NULL}; // Initialize CMT

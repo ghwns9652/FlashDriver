@@ -46,9 +46,7 @@ struct request {
 struct algo_req{
 	request * parents;
 	void *(*end_req)(struct algo_req *const);
-	bool isAsync;
 	void *params;
-	pthread_mutex_t algo_mutex;
 };
 
 struct lower_info {
