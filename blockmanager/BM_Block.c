@@ -10,15 +10,15 @@
  */
 
 
-
-
-
 /* Declaration of Data Structures */
 Block* blockArray;
 //nV_T** numValid_map;
 //PE_T** PE_map;
 Block** numValid_map;
 Block** PE_map;
+
+
+
 
 /* (IGNORE!) Incomplete */
 #if 0
@@ -83,6 +83,7 @@ int32_t BM_Init()
 
 	
 	printf("BM_Init() End!\n");
+	return 0;
 }
 
 
@@ -106,6 +107,7 @@ int32_t BM_LoadBlock(uint32_t PBA_BM)
 {
 	printf("Loading Block Data..\n");
 	// This functon is a prototype. Suppose that this function is completed.
+	return 0;
 }
 
 
@@ -116,13 +118,24 @@ int32_t BM_InitBlockArray()
 		blockArray[i].PBA = i;
 		//for (int j=0; j<_PPB; ++j)
 			//blockArray[i].ValidP[j] = BM_INVALIDPAGE;
-		memset(blockArray[i].ValidP, BM_INVALIDPAGE, sizeof(ValidP_T)*4);
+		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, sizeof(ValidP_T)*4);
+#if (_PPB == 256)
+		for (int j=0; j<4; ++j)
+			blockArray[i].ValidP[j] = BM_VALIDPAGE;
+#endif
+#if (_PPB == 512)
+		for (int j=0; j<8; ++j)
+			blockArray[i].ValidP[j] = BM_VALIDPAGE;
+#endif
+
+		//memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(ValidP_T)*8); // Initial ValidP is VALID. all bits are 1.
 		blockArray[i].numValid = _PPB;
 		blockArray[i].PE_cycle = 0;
 		blockArray[i].BAD = _NOTBADSTATE;
 		blockArray[i].v_PBA = 0xffffffff; // -1
 		blockArray[i].o_PBA = 0xffffffff;
 	}
+	return 0;
 }
 
 
@@ -139,6 +152,7 @@ int32_t BM_ScanFlash()
 		BM_ReadBlock(i);
 
 	}
+	return 0;
 }
 
 int32_t BM_ReadBlock(int i){//(int32_t PBA){
@@ -159,6 +173,7 @@ int32_t BM_ReadBlock(int i){//(int32_t PBA){
 	}
 	blockArray[PBA].PBA = PBA;
 	#endif
+	return 0;
 }
 
 #endif
@@ -181,6 +196,7 @@ int32_t BM_BadBlockCheck()
 		// blockArray[i].ptrNV_data = NULL;
 		// blockArray[i].ptrPE_data = NULL;
 	}
+	return 0;
 }
 
 /* Fill numValid_map, PE_map from blockArray */
@@ -193,8 +209,8 @@ int32_t BM_FillMap()
 			numValid_map[i] = &(blockArray[i]);
 			PE_map[i] = &(blockArray[i]);
 
-			blockArray[i].ptrNV_data = (void*)(&(numValid_map[i]));
-			blockArray[i].ptrPE_data = (void*)(&(PE_map[i]));
+			blockArray[i].ptrNV_data = (void**)(&(numValid_map[i]));
+			blockArray[i].ptrPE_data = (void**)(&(PE_map[i]));
 		}
 		else {
 			blockArray[i].numValid = -1;
@@ -264,5 +280,6 @@ int32_t BM_Shutdown()
 	*/
 	//free(numValid_map);
 	//free(PE_map);
+	return 0;
 }
 
