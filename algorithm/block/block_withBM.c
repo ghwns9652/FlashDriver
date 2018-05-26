@@ -148,7 +148,7 @@ uint32_t block_set(request *const req){
 		{
 			// Cleaning
 			// Maptable update for data moving
-#if 1
+#if 0
 			printf("Start GC!\n");
 			printf("offset: %d\n", offset);
 			printf("PBA: %d\n", PBA);
@@ -176,7 +176,7 @@ uint32_t block_set(request *const req){
 				/* Allocate temporary request, value set for read */
 				algo_req *temp_req=(algo_req*)malloc(sizeof(algo_req));
 				//printf("before inf_get_valueset, PAGESIZE: %d\n", PAGESIZE);
-				value_set* temp_read_value_set = inf_get_valueset(NULL, DMA_READ, PAGESIZE);
+				value_set* temp_read_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 				//printf("after inf_get_valueset, PAGESIZE: %d\n", PAGESIZE);
 				temp_req->parents = NULL;
 				temp_req->end_req = block_algo_end_req;
@@ -192,15 +192,15 @@ uint32_t block_set(request *const req){
 
 				/* Allocate temporary request, value set for write */
 				algo_req *temp_req2=(algo_req*)malloc(sizeof(algo_req));
-				value_set* temp_write_value_set = inf_get_valueset(temp_read_value_set->value, DMA_WRITE, PAGESIZE);
+				value_set* temp_write_value_set = inf_get_valueset(temp_read_value_set->value, FS_MALLOC_W, PAGESIZE);
 				temp_req2->parents = NULL;
 				temp_req2->end_req = block_algo_end_req;
 
 				__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_write_value_set, ASYNC, temp_req2);
 
 				/* Free valueset */
-				inf_free_valueset(temp_write_value_set, DMA_WRITE);
-				inf_free_valueset(temp_read_value_set, DMA_READ);
+				inf_free_valueset(temp_write_value_set, FS_MALLOC_W);
+				inf_free_valueset(temp_read_value_set, FS_MALLOC_R);
 			}
 
 			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req);
@@ -214,7 +214,7 @@ uint32_t block_set(request *const req){
 				//printf("i:%d\n",i);
 					/* Allocate temporary request, value set for read */
 					algo_req *temp_req = (algo_req*)malloc(sizeof(algo_req));
-					value_set* temp_read_value_set = inf_get_valueset(NULL, DMA_READ, PAGESIZE);
+					value_set* temp_read_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 					temp_req->parents = NULL;
 					temp_req->end_req = block_algo_end_req;
 
@@ -228,20 +228,20 @@ uint32_t block_set(request *const req){
 
 					/* Allocate temporary request, value set for write */
 					algo_req *temp_req2=(algo_req*)malloc(sizeof(algo_req));
-					value_set* temp_write_value_set = inf_get_valueset(temp_read_value_set->value, DMA_WRITE, PAGESIZE);
+					value_set* temp_write_value_set = inf_get_valueset(temp_read_value_set->value, FS_MALLOC_W, PAGESIZE);
 					temp_req2->parents = NULL;
 					temp_req2->end_req = block_algo_end_req;
 
 					__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_write_value_set, 0, temp_req2);
 
 					/* Free valueset */
-					inf_free_valueset(temp_write_value_set, DMA_WRITE);
-					inf_free_valueset(temp_read_value_set, DMA_READ);
+					inf_free_valueset(temp_write_value_set, FS_MALLOC_W);
+					inf_free_valueset(temp_read_value_set, FS_MALLOC_R);
 				}
 			}
 					
 			/* Trim the block of old PPA */
-			//__block.li->trim_block(old_PPA_zero, false); // trim is corrupted: wait master update
+			__block.li->trim_block(old_PPA_zero, false); // trim is corrupted: wait master update
 		}
 	}
 	bench_algo_end(req);

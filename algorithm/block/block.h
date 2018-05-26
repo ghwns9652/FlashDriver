@@ -23,8 +23,8 @@ uint32_t set_pointer = 0;
 #define EXIST 1
 #define NONEXIST 0
 
-#define DMA_WRITE	1
-#define DMA_READ	2
+#define DMA_WRITE	1 // FS_MALLOC_W
+#define DMA_READ	2 // FS_MALLOC_R
 
 uint32_t block_create (lower_info*, algorithm *);
 void block_destroy (lower_info*,  algorithm *);

@@ -104,6 +104,15 @@ static inline int32_t BM_update_block_with_trim(Block* blockArray, PPA_T PPA)
 {
 	/* This function should be called when Trim */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	blockArray[PBA].numValid = _PPB;
+#if (_PPB == 256)
+	for (int i=0; i<4; i++) {
+		blockArray[PBA].ValidP[i] = BM_VALIDPAGE;
+#endif
+#if (_PPB == 512)
+	for (int i=0; i<8; i++) {
+		blockArray[PBA].ValidP[i] = BM_VALIDPAGE;
+#endif
 
 	blockArray[PBA].PE_cycle++;
 	return 0;
