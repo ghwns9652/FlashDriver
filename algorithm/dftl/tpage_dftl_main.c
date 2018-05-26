@@ -199,7 +199,6 @@ uint32_t demand_remove(request *const req){
 	int32_t t_ppa;
 	D_TABLE *p_table;
 	value_set *temp_value_set;
-	algo_req *pseudo_algo_req;
 	request *temp_req = NULL;
 
 	lpa = req->key;
@@ -243,8 +242,6 @@ uint32_t demand_remove(request *const req){
 			CMT[D_IDX].p_table = p_table;
 			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_R, temp_value_set, req));
-			pthread_mutex_lock(&(pseudo_algo_req->algo_mutex));
-			free(pseudo_algo_req);
 			memcpy(p_table, temp_value_set->value, PAGESIZE); // Load page table to CMT
 			inf_free_valueset(temp_value_set, FS_MALLOC_R);
 			CMT[D_IDX].flag = 0;
@@ -293,7 +290,6 @@ uint32_t demand_eviction(){
 	C_TABLE *cache_ptr; // Hold pointer that points one cache entry
 	D_TABLE *p_table;
 	value_set *temp_value_set;
-	algo_req *pseudo_algo_req;
 
 	/* Check capability to load tpage */
 
