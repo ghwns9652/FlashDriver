@@ -23,6 +23,8 @@ D_TABLE *GTD; // Global Translation Directory
 D_OOB *demand_OOB; // Page level OOB
 D_SRAM *d_sram; // SRAM for contain block data temporarily
 
+pthread_mutex_t cache_mutex;
+
 /*
 k:
    block 영역 분리를 확실히 할것.
@@ -86,7 +88,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	needGC = 0;
 	tpage_onram_num = 0;
 
-	q_init(&dftl_q, 512);
+	pthread_mutex_init(&cache_mutex, NULL);
+	q_init(&dftl_q, 1024);
 	return 0;
 }
 
@@ -111,37 +114,46 @@ void *demand_end_req(algo_req* input){
 	demand_params *params = (demand_params*)input->params;
 	value_set *temp_v = params->value;
 	request *res = input->parents;
+	D_TABLE *dest;
+	D_TABLE *src;
 	int32_t lpa;
 	if(res){
 		lpa = res->key;
 	}
 	switch(params->type){
 		case DATA_R:
+			if(res)
+				res->end_req(res);
 			break;
 		case DATA_W:
+			if(res)
+				res->end_req(res);
 			break;
 		case MAPPING_R:
-			//mutex??
-			CMT[D_IDX].p_table = (D_TABLE*)malloc(PAGESIZE);
-			memcpy(CMT[D_IDX].p_table, temp_v->value, PAGESIZE);
-			tpage_onram_num++;
-			//mutex??
+			if(CMT[D_IDX].t_ppa != -1){
+				dest = CMT[D_IDX].p_table;
+				src = (D_TABLE*)(temp_v->value);
+				for(int i = 0; i < EPP; i++){
+					if(dest[i].ppa == -1){
+						dest[i].ppa = src[i].ppa;
+					}
+				}
+				CMT[D_IDX].t_ppa = -1;
+			}
 			inf_free_valueset(temp_v, FS_MALLOC_R);
-			q_enqueue(res, dftl_q);
+			if(res){
+				q_enqueue(res, dftl_q);
+			}
 			break;
 		case MAPPING_W:
-			//mutex??
 			tpage_onram_num--;
-			//mutex??
 			inf_free_valueset(temp_v, FS_MALLOC_W);
-			break;
-		case GC_W:
 			break;
 		case GC_R:
 			break;
+		case GC_W:
+			break;
 	}
-	if(res)
-		res->end_req(res);
 	free(params);
 	free(input);
 	return NULL;
@@ -221,4 +233,3 @@ void tp_alloc(int32_t *t_ppa){ // Translation page allocation
 	}
 	*t_ppa = TPA_status;
 	TPA_status++;
-}
