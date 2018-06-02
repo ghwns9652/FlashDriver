@@ -53,12 +53,6 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 		update[i] = x;
 	}
 	x = x->list[1];
-
-	if(key > list->start)
-		list->start = key;
-	if(key < list->end)
-		list->end = key;
-
 	if(key == x->key)
 	{
 		if(flag == 1)
@@ -72,6 +66,10 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag)
 	}
 	else
 	{
+		if(key > list->start)
+			list->start = key;
+		if(key < list->end)
+			list->end = key;
 		int level = getLevel();
 		if(level > list->level)
 		{
@@ -129,6 +127,10 @@ snode *skiplist_merge_insert(skiplist *list, snode *input)
 	}
 	else
 	{
+		if(input->key > list->start)
+			list->start = input->key;
+		if(input->key < list->end)
+			list->end = input->key;
 		int level = getLevel();
 		if(level > list->level)
 		{

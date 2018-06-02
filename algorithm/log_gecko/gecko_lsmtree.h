@@ -39,5 +39,6 @@ void lsm_buffer_flush(lsmtree*, node*);
 void lsm_node_fwrite(lsmtree*, int, int);
 void lsm_node_recover(lsmtree*, int, int);
 int lsm_merge(lsmtree*, int);
+void print_level_status(lsmtree*);
 
 #endif

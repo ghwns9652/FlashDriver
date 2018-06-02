@@ -1,11 +1,11 @@
 #include "gecko_skiplist.h"
 #include "gecko_lsmtree.h"
 
-//#define DEB1
-#define DEB2
+#define DEB1
+//#define DEB2
 //#define DEB3
 
-#define INPUTSIZE 1000 //15360 //input size for DEBUG
+#define INPUTSIZE 15360 //input size for DEBUG
 #define INPUTTABLE 100000
 
 int main()
@@ -18,10 +18,20 @@ int main()
 		key[i] = rand() % 15360;
 
 #ifdef DEB1
-	int set = rand() % 10;
-	printf("set %d\n",set);
-	for(int i = INPUTSIZE * set; i < INPUTSIZE * (set + 1); i++)
-		skiplist_insert(temp, i, 0, 0); //the value is copied
+	//int set = rand() % 10;
+	//printf("set %d\n",set);
+	printf("update start\n");
+	for(int i = 0; i < INPUTSIZE; i++)
+		lsm_buf_update(temp, key[i], key[i] % 256, key[i] % 256 == 0? 1 : 0); //the value is copied
+	printf("update end\n");
+	print_level_status(temp);
+	getchar();
+	printf("dump start\n");
+	getchar();
+	printf("dump 1, 0\n");
+	lsm_node_recover(temp, 1, 0);
+	printf("dump end\n");
+
 #endif
 
 #ifdef DEB2

@@ -73,10 +73,11 @@ void lsm_node_fwrite(lsmtree *lsm, int lv_off, int nd_off)
 
 void lsm_buffer_flush(lsmtree *lsm, node *data)
 {
-	printf("flush\n");
+	//printf("flush\n");
 	if(lsm->levels[1].cur_cap == lsm->levels[1].max_cap)
 		lsm_merge(lsm, 1);
 	memcpy(&lsm->levels[1].array[lsm->levels[1].cur_cap], data, sizeof(node));
+	free(data);
 	lsm_node_fwrite(lsm, 1, lsm->levels[1].cur_cap++); //범위가 작은게 뒤로 가도 되는가? 일단은 최근값이 뒤로 들어가는것으로로
 	lsm->buffer = skiplist_init();
 }
@@ -86,12 +87,16 @@ void lsm_node_recover(lsmtree *lsm, int lv_off, int nd_off)
 	uint32_t offset, loc = 0;
 	PTR temp = (PTR)malloc(PAGESIZE);
 	lsm->mixbuf = skiplist_init();
+	snode* t;
 	offset = lsm->levels[lv_off].array[nd_off].LPA;
 	lseek64(lsm->fd, (off64_t)(PAGESIZE * offset), SEEK_SET);
 	read(lsm->fd, temp, PAGESIZE);
 	for(int i = 0; i < MAX_PER_PAGE; i++)
 	{
-		skiplist_merge_insert(lsm->mixbuf, (snode*)&temp[loc]);
+		t = (snode*)&temp[loc];
+		if(t->key == 0 && t->VBM[0] == 0 && t->VBM[1] == 0 && t->VBM[2] == 0 && t->VBM[3] == 0 && t->erase == 0)
+			break;
+		skiplist_merge_insert(lsm->mixbuf, t);
 		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
 	}
 	free(temp);
@@ -150,10 +155,22 @@ int lsm_merge(lsmtree *lsm, int lv_off) //뒤에부터 들어가야됨 일단은
 		lsm->levels[lv_off + 1].array[i].min = key;
 		lsm->levels[lv_off + 1].array[i].memptr = skiplist_lsm_merge(lsm->mixbuf, key, &key, &end);
 		lsm->levels[lv_off + 1].array[i].max = end;
+		if(i == lsm->mixbuf->size/MAX_PER_PAGE)
+			lsm->levels[lv_off + 1].array[i].max = lsm->mixbuf->end;
 		lsm->levels[lv_off + 1].cur_cap++;
 		lsm_node_fwrite(lsm, lv_off + 1, i);
 	}
+	printf("merge end\n");
 	//skiplist_dump_key_value(lsm->mixbuf);
 	skiplist_free(lsm->mixbuf);
 	return 1;
+}
+
+void print_level_status(lsmtree* lsm)
+{
+	for(int i = 1; i <= lsm->max_level; i++)
+	{
+		if(lsm->levels[i].cur_cap > 0)
+			printf("level %d's cur_cap is %d\n", i, lsm->levels[i].cur_cap);
+	}
 }
