@@ -1,12 +1,20 @@
 #include "FAST.h"
 
+/**
+ * @brief
+ * @detail
+ * @param       address
+ * @param       req
+ * @param       value_in
+ * @param       type        Type of writing
+ */
 void fast_WritePage(uint32_t address, request *const  req, value_set* value_in, char type)
 {
 	value_set*          value;
 	algo_req*           my_req;
 	FAST_Parameters*    params;
 
-    if(type){
+    if (type) {
     	FAST_Algorithm.li->push_data(address, PAGESIZE, value_in, 0, assign_pseudo_req(), 0);	// Page unlaod
 	    inf_free_valueset(value_in, DMAWRITE);        
     }

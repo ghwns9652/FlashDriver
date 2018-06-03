@@ -33,6 +33,6 @@ char fast_UpdateRWLogBlockState(uint32_t logical_address, uint32_t offset)
         }
         current_offset++;
     }
-
+// @TODO
     return eNOERROR;
 }

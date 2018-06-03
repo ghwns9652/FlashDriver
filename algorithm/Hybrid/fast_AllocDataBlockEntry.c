@@ -32,5 +32,7 @@ char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
 	else if (state == ERASED) {
 		SET_PAGE_STATE(*physical_address, VALID);
 	}
+
+    // printf("%d ", state);
     return state;
 }

@@ -14,7 +14,7 @@ value_set* fast_ReadPage(uint32_t address, request *const req, value_set* value,
 	algo_req* my_req;
 	FAST_Parameters* params;
 
-    printf("Address: %d ", address);
+    // printf("Address: %d ", address);
 
 	if(type){
     	value = inf_get_valueset(NULL, DMAREAD);
@@ -29,7 +29,6 @@ value_set* fast_ReadPage(uint32_t address, request *const req, value_set* value,
         my_req->params = (void*)params;
 
        	value = inf_get_valueset(req->value->value, DMAREAD);
-        //printf("Why not read?\n");
 		FAST_Algorithm.li->pull_data(address, PAGESIZE, value, 0, my_req, 0); // Page		
 	}
 

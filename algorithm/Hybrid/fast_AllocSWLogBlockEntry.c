@@ -27,7 +27,11 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
     sw_MappingInfo = tableInfo->sw_MappingTable->data; 
 
 	if (sw_MappingInfo->number_of_stored_sector == PAGE_PER_BLOCK) {
+    	block = BLOCK(key);
+		// printf("Before Merge %d %d %d \n", block, sw_MappingInfo->sw_log_block, BLOCK_TABLE(sw_MappingInfo->logical_block));
 		fast_SwitchSWLogBlock();
+    	// printf("After Merge %d %d %d \n", block, sw_MappingInfo->sw_log_block, BLOCK_TABLE(sw_MappingInfo->logical_block));
+		sw_MappingInfo->logical_block = BLOCK(key);
 	}
 	
 	block = BLOCK(key);
@@ -35,13 +39,20 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
 	logical_block = sw_MappingInfo->logical_block;
     sw_log_block = sw_MappingInfo->sw_log_block;
 
-	if (offset == 0 && GET_PAGE_STATE(ADDRESS(sw_log_block, 0)) != ERASED) {
-        fast_MergeSWLogBlock(req);
-        sw_log_block = sw_MappingInfo->sw_log_block;
+	if (offset == 0) {
+    	// printf("Before Merge %d %d \n", block, sw_MappingInfo->sw_log_block);
+		if (sw_MappingInfo->number_of_stored_sector != 0) {
+		// if (GET_PAGE_STATE(ADDRESS(sw_log_block, 0)) != ERASED) {
+        	fast_MergeSWLogBlock(req);
+		}
+        // sw_log_block = sw_MappingInfo->sw_log_block;
+		sw_MappingInfo->logical_block = block;
+    	// printf("After Merge %d %d \n", block, sw_MappingInfo->sw_log_block);
 	}
 	else if (block == logical_block) {
 		if (offset != sw_MappingInfo->number_of_stored_sector) {
-		    fast_MergeSWLogBlock(req);
+		    // fast_MergeSWLogBlock(req);
+			// sw_MappingInfo->logical_block = block;
 			return (eNOTSEQUENTIAL);
 		}
 	}

@@ -37,7 +37,8 @@ char fast_MergeSWLogBlock(request *const req)
         }
 	}
 
-	FAST_Algorithm.li->trim_block(ADDRESS(BLOCK_TABLE(logical_block), 0), false);
+	FAST_Algorithm.li->trim_block(ADDRESS(data_block, 0), false);
+	SET_BLOCK_STATE(data_block, ERASED);
 	for(i = 0; i < PAGE_PER_BLOCK; i++){
 		SET_PAGE_STATE(ADDRESS(data_block, i), ERASED);
 	}
@@ -49,9 +50,10 @@ char fast_MergeSWLogBlock(request *const req)
 	sw_MappingInfo->number_of_stored_sector = 0;
 
 	SET_BLOCK_STATE(sw_log_block, DATA_BLOCK);
-	SET_BLOCK_STATE(data_block, ERASED);
     SET_BLOCK_STATE(new_sw_log_block, SW_LOG_BLOCK);
 
     printf("Partial Merge\n");
     return (eNOERROR);
 }
+
+// 지금 가지고 있는 정보 위주로 Erase
