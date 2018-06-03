@@ -14,6 +14,11 @@ struct algorithm __block={
 
 /* Set set_pointer to first-meet ERASE index from current set_pointer like a round-robin */
 int32_t block_findsp(int32_t checker){
+	// temporary..
+	//if (set_pointer > 0)
+		//set_pointer--;
+	set_pointer = 0;
+
 	for (; set_pointer < __block.li->NOB; ++set_pointer) {
 		if (block_valid_array[set_pointer] == ERASE) {
 			checker = 1;
@@ -172,6 +177,7 @@ uint32_t block_set(request *const req){
 			/* Followings: ASC consideartion */
 
 			/* Start move(smaller index than target) */
+			//printf("Start move 1!\n");
 			for (i = 0; i < offset; ++i) {
 				/* Allocate temporary request, value set for read */
 				algo_req *temp_req=(algo_req*)malloc(sizeof(algo_req));
@@ -202,13 +208,19 @@ uint32_t block_set(request *const req){
 				inf_free_valueset(temp_write_value_set, FS_MALLOC_W);
 				inf_free_valueset(temp_read_value_set, FS_MALLOC_R);
 			}
+			//printf("End move 1!\n");
 
+			//printf("Start push!\n");
 			__block.li->push_data(new_PPA, PAGESIZE, req->value, 0, my_req);
+			//printf("End push!\n");
+			//printf("Start validate, invalidate in BM!\n");
 			BM_validate_ppa(blockArray, old_PPA_zero + offset);
 			BM_invalidate_ppa(blockArray, new_PPA_zero + offset);
+			//printf("End validate, invalidate in BM!\n");
 
 			
 			/* Start move(bigger index than target) */
+			//printf("Start move 2!\n");
 			if (offset < __block.li->PPB - 1) {
 				for (i = offset + 1; i < __block.li->PPB; ++i) {
 				//printf("i:%d\n",i);
@@ -239,9 +251,12 @@ uint32_t block_set(request *const req){
 					inf_free_valueset(temp_read_value_set, FS_MALLOC_R);
 				}
 			}
+			//printf("End move 2!\n");
 					
 			/* Trim the block of old PPA */
+			//printf("trim!\n");
 			__block.li->trim_block(old_PPA_zero, false); // trim is corrupted: wait master update
+			//printf("trim end!\n");
 		}
 	}
 	bench_algo_end(req);

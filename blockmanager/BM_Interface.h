@@ -5,8 +5,8 @@
 #include "BM_Block.h"
 #include "BM_Heap.h"
 
-/* Type of offset(0~511) */
-typedef uint16_t	offset_t;
+/* Type of offset */
+typedef uint32_t	offset_t;
 
 /* Function to validate the state of PPA corresponding PPA(argument) */
 int32_t		BM_validate_ppa(Block* blockArray, PPA_T PPA);
@@ -104,14 +104,14 @@ static inline int32_t BM_update_block_with_trim(Block* blockArray, PPA_T PPA)
 {
 	/* This function should be called when Trim */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+#if 0
 	blockArray[PBA].numValid = _PPB;
-#if (_PPB == 256)
-	for (int i=0; i<4; i++) {
-		blockArray[PBA].ValidP[i] = BM_VALIDPAGE;
-#endif
-#if (_PPB == 512)
-	for (int i=0; i<8; i++) {
-		blockArray[PBA].ValidP[i] = BM_VALIDPAGE;
+
+	uint32_t numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
+	if (_PPB/8 > 0)	numItem++;
+
+	for (int j=0; j<numItem; ++j)
+		blockArray[PBA].ValidP[j] = BM_VALIDPAGE;
 #endif
 
 	blockArray[PBA].PE_cycle++;

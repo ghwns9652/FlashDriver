@@ -32,21 +32,21 @@ int main(void)
 	BM_Init();
 	if (BM_is_valid_ppa(blockArray, _PPB))
 		printf("Block 1의 0번째 page는 valid이다\n");
-	printf("Block 1의 0번째 page validity: %16lx\n", blockArray[1].ValidP[0]);
+	printf("Block 1의 0번째 page validity: %.2x\n", blockArray[1].ValidP[0]);
 
 	BM_invalidate_ppa(blockArray, _PPB);
-	printf("After invalidate, Block 1의 0번째 page validity: 0x%.16lx\n", blockArray[1].ValidP[0]);
+	printf("After invalidate, Block 1의 0번째 page validity: 0x%.2x\n", blockArray[1].ValidP[0]);
 	BM_invalidate_ppa(blockArray, _PPB+1);
-	printf("After invalidate, Block 1의 1번째 page validity: 0x%.16lx\n", blockArray[1].ValidP[0]);
+	printf("After invalidate, Block 1의 1번째 page validity: 0x%.2x\n", blockArray[1].ValidP[0]);
 
 	BM_invalidate_all(blockArray);
-	printf("After all_invalidate, Block 1의 page validity: 0x%.16lx\n", blockArray[1].ValidP[0]);
+	printf("After all_invalidate, Block 1의 page validity: 0x%.2x\n", blockArray[1].ValidP[0]);
 
 	BM_validate_ppa(blockArray, _PPB+2); // 2번째 page
-	printf("After validate, Block 1의 validity: 0x%.16lx\n", blockArray[1].ValidP[0]);
+	printf("After validate, Block 1의 validity: 0x%.2x\n", blockArray[1].ValidP[0]);
 	
 	BM_validate_all(blockArray);
-	printf("After validate_all, Block 1의 validity: 0x%.16lx\n", blockArray[1].ValidP[0]);
+	printf("After validate_all, Block 1의 validity: 0x%.2x\n", blockArray[1].ValidP[0]);
 
 	printf("get_minPE_block PBA: %d\n", BM_get_minPE_block(blockArray, PE_map));
 

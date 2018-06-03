@@ -14,39 +14,26 @@ int32_t		BM_is_valid_ppa(Block* blockArray, PPA_T PPA)
 	 */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 	offset_t offset = PPA % _PPB;
-	int8_t index;
-	//printf("First, offset: %d\n", offset);
 
-	/* 지금은 _PPB = 256인 경우에만 된다! ValidP 수정해야한다!!! */
-	// 지금은 512 버전.
-#if (_PPB == 256)
-	index = BM_getindex_256(&offset);
-#endif
-#if (_PPB == 512)
-	index = BM_getindex_512(&offset);
-#endif
-#if 0
-	if (offset < 128) {
-		if (offset < 64)	index = 0;
-		else				index = 1;
-	}
-	else {
-		if (offset < 192)	index = 2;
-		else				index = 3;
-	}
-	offset %= 64;
-#endif
+	uint32_t index = offset / 8;
+	offset = offset % 8;
+
+	if (blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset))
+		return 1; // is valid
+	else
+		return 0; // is invalid
+
 #if 0
 	printf("index: %d\n", index);
-	printf("ValidP[%d]: %lx\n", index, blockArray[PBA].ValidP[index]);
+	printf("ValidP[%d]: %x\n", index, blockArray[PBA].ValidP[index]);
 	printf("numValid: %d\n", blockArray[PBA].numValid);
-	if (blockArray[PBA].ValidP[index] & ((uint64_t)1<<offset))
+	if (blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset))
 		printf("is valid!!\n");
 	else
 		printf("is invalid!!!!!!!!\n");
 #endif
 
-	if (blockArray[PBA].ValidP[index] & ((uint64_t)1<<offset))
+	if (blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset))
 		return 1; // is valid
 	else
 		return 0; // is invalid
@@ -60,30 +47,15 @@ int32_t		BM_validate_ppa(Block* blockArray, PPA_T PPA)
 	 */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 	offset_t offset = PPA % _PPB;
-	int8_t index;
 
-#if (_PPB == 256)
-	index = BM_getindex_256(&offset);
-#endif
-#if (_PPB == 512)
-	index = BM_getindex_512(&offset);
-#endif
-#if 0
-	if (offset < 128) {
-		if (offset < 64)	index = 0;
-		else				index = 1;
-	}
-	else {
-		if (offset < 192)	index = 2;
-		else				index = 3;
-	}
-	offset %= 64;
-#endif
+	uint32_t index = offset / 8;
+	offset = offset % 8;
+	uint8_t off_num = (uint8_t)1<<offset;
 
-	if (blockArray[PBA].ValidP[index] & ((uint64_t)1<<offset)) // is valid?
+	if (blockArray[PBA].ValidP[index] & (off_num)) // is valid?
 		return 0;
-	else { // is invalid.
-		blockArray[PBA].ValidP[index] |= ((uint64_t)1<<offset);
+	else { // is invalid. Do Validate.
+		blockArray[PBA].ValidP[index] |= (off_num);
 		blockArray[PBA].numValid++;
 		return 1;
 	}
@@ -97,27 +69,13 @@ int32_t		BM_invalidate_ppa(Block* blockArray, PPA_T PPA)
 	 */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 	offset_t offset = PPA % _PPB;
-	int8_t index;
 
-#if (_PPB == 256)
-	index = BM_getindex_256(&offset);
-#endif
-#if (_PPB == 512)
-	index = BM_getindex_512(&offset);
-#endif
-#if 0
-	if (offset < 128) {
-		if (offset < 64)	index = 0;
-		else				index = 1;
-	}
-	else {
-		if (offset < 192)	index = 2;
-		else				index = 3;
-	}
-	offset %= 64;
-#endif
-	if (blockArray[PBA].ValidP[index] & ((uint64_t)1<<offset)) { // is valid?
-		blockArray[PBA].ValidP[index] &= ~((uint64_t)1<<offset);
+	uint32_t index = offset / 8;
+	offset = offset % 8;
+	uint8_t off_num = (uint8_t)1<<offset;
+
+	if (blockArray[PBA].ValidP[index] & (off_num)) { // is valid?
+		blockArray[PBA].ValidP[index] &= ~(off_num);
 		blockArray[PBA].numValid--;
 		return 1;
 	}
@@ -127,17 +85,11 @@ int32_t		BM_invalidate_ppa(Block* blockArray, PPA_T PPA)
 int32_t		BM_invalidate_all(Block* blockArray)
 {
 	/* Invalidate All pages */
+	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
+	if (_PPB/8 > 0)	numItem++;
+
 	for (int i=0; i<_NOB; i++) {
-#if (_PPB == 256)
-		for (int j=0; j<4; j++)
-			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
-		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, sizeof(ValidP_T)*4);
-#endif
-#if (_PPB == 512)
-		for (int j=0; j<8; j++)
-			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
-		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, sizeof(ValidP_T)*8);
-#endif
+		memset(blockArray[i].ValidP, BM_INVALIDPAGE, numItem);
 		blockArray[i].numValid = 0;
 	}
 	return (eNOERROR);
@@ -145,17 +97,13 @@ int32_t		BM_invalidate_all(Block* blockArray)
 
 int32_t		BM_validate_all(Block* blockArray)
 {
-	/* Invalidate All pages */
-	for (int i=0; i<_NOB; i++) {
-#if (_PPB == 256)
-		for (int j=0; j<4; ++j)
+	/* Validate All pages */
+	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
+	if (_PPB/8 > 0)	numItem++;
+
+	for (int i=0; i<_NOB; ++i) {
+		for (int j=0; j<numItem; ++j)
 			blockArray[i].ValidP[j] = BM_VALIDPAGE;
-#endif
-#if (_PPB == 512)
-		for (int j=0; j<8; ++j)
-			blockArray[i].ValidP[j] = BM_VALIDPAGE;
-#endif
-		//memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(ValidP_T)*4);
 		blockArray[i].numValid = _PPB;
 	}
 	return (eNOERROR);

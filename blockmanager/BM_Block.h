@@ -7,12 +7,7 @@
 
 typedef struct { // 67 bytes
 	uint32_t	PBA;			/* PBA of this block */
-#if (_PPB == 256)
-	uint64_t	ValidP[4];		/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
-#endif
-#if (_PPB == 512)
-	uint64_t	ValidP[8];		/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
-#endif
+	uint8_t*	ValidP;			/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
 	int16_t		numValid;		/* Number of Valid pages in this block*/
 	uint32_t	PE_cycle;		/* P/E cycles of this block */
 	//int16_t**	ptrNV_data;		/* Pointer of numValid map */
@@ -27,7 +22,7 @@ typedef struct { // 67 bytes
 
 /* Type of member variable */
 typedef uint32_t	PBA_T;
-typedef uint64_t	ValidP_T;  /* Caution: ValidP type is actually ARRAY of uint64_t */
+typedef uint8_t		ValidP_T;  /* Caution: ValidP type is actually ARRAY of uint64_t */
 typedef int16_t		nV_T;
 typedef uint32_t	PE_T;
 typedef int8_t		BAD_T;
@@ -49,8 +44,9 @@ typedef uint32_t	PPA_T;
 #define BM_PPA_TO_PBA(PPA)	PPA/_PPB
 
 /* Macros that indicate whether the page is valid or not */
-#define BM_VALIDPAGE	0xffffffffffffffff //64 bits //////0xff // 1 
-#define BM_INVALIDPAGE	0x00
+//#define BM_VALIDPAGE	0xffffffffffffffff //64 bits //////0xff // 1 
+#define BM_VALIDPAGE	(0xff) // 8 bits
+#define BM_INVALIDPAGE	(0x00)
 #define BM_WRITTEN		1	/* (IGNORE!) Not Determined yet */
 
 /* Macros for finding member variables from Block ptr */

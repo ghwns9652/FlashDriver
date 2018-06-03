@@ -90,7 +90,7 @@ int32_t BM_Init()
 /* Initialization of Block structures */
 int32_t BM_InitBlock()
 {
-	blockArray= (Block*)malloc(sizeof(Block) * _NOB);
+	blockArray = (Block*)malloc(sizeof(Block) * _NOB);
 	
 	//numValid_map = (nV_T**)malloc(sizeof(nV_T*) * _NOB);
 	//PE_map = (PE_T**)malloc(sizeof(PE_T*) * _NOB);
@@ -114,21 +114,18 @@ int32_t BM_LoadBlock(uint32_t PBA_BM)
 /* Initalize blockArray */
 int32_t BM_InitBlockArray()
 {
+	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
+	if (_PPB/8 > 0)	numItem++;
+
 	for (int i=0; i<_NOB; ++i){
 		blockArray[i].PBA = i;
 		//for (int j=0; j<_PPB; ++j)
 			//blockArray[i].ValidP[j] = BM_INVALIDPAGE;
 		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, sizeof(ValidP_T)*4);
-#if (_PPB == 256)
-		for (int j=0; j<4; ++j)
+		blockArray[i].ValidP = (ValidP_T*)malloc(numItem);
+		for (int j=0; j<numItem; ++j)
 			blockArray[i].ValidP[j] = BM_VALIDPAGE;
-#endif
-#if (_PPB == 512)
-		for (int j=0; j<8; ++j)
-			blockArray[i].ValidP[j] = BM_VALIDPAGE;
-#endif
 
-		//memset(blockArray[i].ValidP, BM_VALIDPAGE, sizeof(ValidP_T)*8); // Initial ValidP is VALID. all bits are 1.
 		blockArray[i].numValid = _PPB;
 		blockArray[i].PE_cycle = 0;
 		blockArray[i].BAD = _NOTBADSTATE;
@@ -269,6 +266,8 @@ int32_t BM_Shutdown()
 	/* PUSH blockArray, numValid_map, PE_map to Flash */ 
 	/* Come Here! */
 
+	for (int i=0; i<_NOB; ++i)
+		free(blockArray[i].ValidP);
 	free(blockArray);
 	free(numValid_map);
 	free(PE_map);

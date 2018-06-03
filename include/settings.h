@@ -10,7 +10,7 @@
 
 #define TOTALSIZE (512L*G)
 #define PAGESIZE (8*K)
-#define _PPB (512) // After master merge, _PPB becomes 512
+#define _PPB (16384) // After master merge, _PPB becomes 512. superblock: 2^14=16384
 #define BLOCKSIZE (_PPB*PAGESIZE)
 #define _NOB (TOTALSIZE/BLOCKSIZE)
 #define _NOP (TOTALSIZE/PAGESIZE)

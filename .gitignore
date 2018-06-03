@@ -17,7 +17,7 @@ blockmanager/**
 !blockmanager/Makefile_changed.png
 
 
-
+blockmanager_6.2/
 blockmanager_dirt_trash/
 macro.sh
 algorithm/practice
