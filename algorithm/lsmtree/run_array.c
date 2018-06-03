@@ -9,9 +9,10 @@
 
 extern int save_fd;
 extern lsmtree LSM;
+extern block bl[_NOB];
 void level_free_entry_inside(Entry *);
 Node *ns_run(level*input ,int n){
-	if(n>input->r_num) return NULL;
+	if(n>=input->r_num) return NULL;
 	return (Node*)&input->body[input->r_size*n];
 }
 Entry *ns_entry(Node *input, int n){
@@ -33,7 +34,7 @@ Entry *level_entcpy(Entry *src, char *des){
 
 bool level_full_check(level *input){
 	if(input->isTiering){
-		if(input->r_n_num==input->r_num)
+		if(input->r_n_idx+1==input->r_num)
 			return true;
 	}
 	else{
@@ -48,7 +49,7 @@ bool level_check_seq(level *input){
 	KEYT start=run->start;
 	KEYT end=run->end;
 	int delta=0;
-	for(int i=1; i<input->r_n_num; i++){
+	for(int i=1; i<=input->r_n_idx; i++){
 		run=ns_run(input,i);
 		if(start>run->end || end<run->start){
 			if(delta==0){
@@ -95,7 +96,7 @@ Entry *level_entry_copy(Entry *input){
 	return res;
 }
 
-level *level_init(level *input,int all_entry,float fpr, bool isTiering){
+level *level_init(level *input,int all_entry,int idx,float fpr, bool isTiering){
 	if(isTiering){
 		input->r_num=SIZEFACTOR;
 	}
@@ -127,23 +128,24 @@ level *level_init(level *input,int all_entry,float fpr, bool isTiering){
 	}
 
 	input->entry_p_run=entry_p_run;
-	input->r_n_num=isTiering?0:1;
+	input->r_n_idx=0;
 	input->start=UINT_MAX;
 	input->end=0;
 	input->iscompactioning=false;
 	input->fpr=fpr;
 	input->remain=NULL;
 	//input->version_info=0;
+	input->level_idx=idx;
+	//heap init
+	input->now_block=NULL;
+	input->h=heap_init(all_entry*(KEYNUM/_PPB));
 	return input;
-}
-void level_tier_insert_done(level *input){
-	input->r_n_num++;
 }
 
 Entry **level_find(level *input,KEYT key){
 	if(input->n_num==0)
 		return NULL;
-	Entry **res=(Entry**)malloc(sizeof(Entry*)*(input->r_n_num+1));
+	Entry **res=(Entry**)malloc(sizeof(Entry*)*(input->r_n_idx+1));
 	bool check=false;
 	int cnt=0;
 	for(int i=0; i<input->r_num; i++){
@@ -206,19 +208,12 @@ Node *level_insert_seq(level *input, Entry *entry){
 		exit(1);
 		return NULL;
 	}
-	int r=input->n_num/input->entry_p_run;
-	if(input->isTiering)
-		r=input->r_n_num;
-	else{
-		if(input->r_n_num==r)
-			input->r_n_num++;
-	}
-	Node *temp_run=ns_run(input,r);//active run
+	
+	Node *temp_run=ns_run(input,input->r_n_idx);//active run
 	if(temp_run->start>entry->key)
 		temp_run->start=entry->key;
 	if(temp_run->end<entry->key)
 		temp_run->end=entry->key;
-
 	int o=temp_run->n_num;
 	Entry *temp_entry=ns_entry(temp_run,o);
 	level_entcpy(entry,(char*)temp_entry);
@@ -237,8 +232,21 @@ Node *level_insert_seq(level *input, Entry *entry){
 	temp_entry->iscompactioning=false;
 	temp_run->n_num++;
 	input->n_num++;
+	
+	if(temp_run->start>entry->key){
+		temp_run->start=entry->key;
+	}
+	if(temp_run->end<entry->end){
+		temp_run->end=entry->end;
+	}
+
+	if(temp_run->n_num==temp_run->m_num){
+		if(input->r_num!=input->r_n_idx+1)
+			input->r_n_idx++;
+	}
 	return temp_run;
 }
+
 Node *level_insert(level *input,Entry *entry){//always sequential	
 	if(input->start>entry->key)
 		input->start=entry->key;
@@ -251,15 +259,8 @@ Node *level_insert(level *input,Entry *entry){//always sequential
 		exit(1);
 		return NULL;
 	}
-	int r=input->n_num/input->entry_p_run;	
-	if(input->isTiering){
-		r=input->r_n_num;
-	}
-	else{
-		if(input->r_n_num==r)
-			input->r_n_num++;
-	}
-	Node *temp_run=ns_run(input,r);//active run
+
+	Node *temp_run=ns_run(input,input->r_n_idx);//active run
 	if(temp_run->start>entry->key)
 		temp_run->start=entry->key;
 	if(temp_run->end<entry->key)
@@ -284,6 +285,18 @@ Node *level_insert(level *input,Entry *entry){//always sequential
 	temp_entry->iscompactioning=false;
 	temp_run->n_num++;
 	input->n_num++;
+
+	if(temp_run->start>entry->key){
+		temp_run->start=entry->key;
+	}
+	if(temp_run->end<entry->end){
+		temp_run->end=entry->end;
+	}
+
+	if(temp_run->n_num==temp_run->m_num){
+		if(input->r_num!=input->r_n_idx+1)
+			input->r_n_idx++;
+	}
 	return temp_run;
 }
 Entry *level_get_next(Iter * input){
@@ -296,12 +309,12 @@ Entry *level_get_next(Iter * input){
 	if(input->now->n_num==0) return NULL;
 	Entry *res=ns_entry(input->now,input->idx++);
 	if(input->idx==input->now->n_num){
-		if(input->lev->r_n_num == input->r_idx){
+		if(input->lev->r_n_idx == input->r_idx){
 			input->flag=false;
 		}
 		else{
 			input->r_idx++;
-			if(input->r_idx==input->lev->r_n_num){
+			if(input->r_idx==input->lev->r_n_idx){
 				input->flag=false;
 			}
 			else{
@@ -323,14 +336,16 @@ Iter *level_get_Iter(level *input){
 }
 void level_all_print(){
 	for(int i=0; i<LEVELN; i++){
+		if(LSM.disk[i]->n_num==0)
+			continue;
 		level_print(LSM.disk[i]);
 		printf("------\n");
 	}
 }
 void level_print(level *input){
 	int test1=0,test2;
-	printf("level:%p\n",input);
-	for(int i=0; i<input->r_n_num; i++){
+	printf("level[%d]:%p\n",input->level_idx,input);
+	for(int i=0; i<=input->r_n_idx; i++){
 		Node* temp_run=ns_run(input,i);
 		printf("start_run[%d]\n",i);
 		for(int j=0; j<temp_run->n_num; j++){
@@ -358,19 +373,22 @@ void level_print(level *input){
 	}
 }
 void level_free(level *input){
-	for(int i=0; i<input->r_n_num; i++){
+	for(int i=0; i<=input->r_n_idx; i++){
 		Node *temp_run=ns_run(input,i);
 		for(int j=0; j<temp_run->n_num; j++){
+	//		printf("temp_run->n_num %d\n",temp_run->n_num);
 			Entry *temp_ent=ns_entry(temp_run,j);
 			level_free_entry_inside(temp_ent);
 		}
 	}
+	if(input->h)
+		heap_free(input->h);
 	free(input->body);
 	free(input);
 }
 level *level_clear(level *input){
 	input->n_num=0;
-	input->r_n_num=0;
+	input->r_n_idx=0;
 	for(int i=0; i<input->r_num; i++){
 		Node *temp_run=ns_run(input,i);
 		temp_run->n_num=0;
@@ -446,7 +464,7 @@ bool level_check_overlap(level *input ,KEYT start, KEYT end){
 
 level *level_copy(level *input){
 	level *res=(level *)malloc(sizeof(level));
-	level_init(res,input->m_num,input->fpr,input->isTiering);
+	level_init(res,input->m_num,input->level_idx,input->fpr,input->isTiering);
 	Iter *iter=level_get_Iter(input);
 	Entry *value;
 	while((value=level_get_next(iter))){
@@ -461,7 +479,7 @@ int level_range_find(level *input,KEYT start,KEYT end, Entry ***res, bool compac
 	Iter *level_iter=level_get_Iter(input);
 	int rev=0;
 	Entry **temp;
-	temp=(Entry **)malloc(sizeof(Entry *)*input->m_num);
+	temp=(Entry **)malloc(sizeof(Entry *)*(input->m_num+1));
 	Entry *value;
 	while((value=level_get_next(level_iter))){
 		if(value->iscompactioning==1) continue;
@@ -496,7 +514,7 @@ int level_range_unmatch(level *input, KEYT start,Entry ***res,bool compactioning
 
 void level_check(level *input){
 	int cnt=0;
-	for(int i=0; i<input->r_n_num; i++){
+	for(int i=0; i<=input->r_n_idx; i++){
 		Node *temp_run=ns_run(input,i);
 		for(int j=0; j<temp_run->n_num; j++){
 			Entry *temp_ent=ns_entry(temp_run,j);
@@ -532,6 +550,7 @@ void level_all_check(){
 			level_check(LSM.disk[i]);
 	}
 }
+
 void level_save(level* input){
 	write(save_fd,input,sizeof(level));
 	uint64_t level_body_size=(sizeof(Node)+sizeof(Entry)*(input->m_num/input->r_num))*input->r_num;
@@ -562,6 +581,114 @@ level* level_load(){
 	pthread_mutex_init(&res->level_lock,NULL);
 	return res;
 }
+KEYT level_get_page(level *in,uint8_t plength){
+	KEYT res=0;
+#ifdef DVALUE
+	res=in->now_block->ppage_array[in->now_block->ppage_idx];
+	in->now_block->length_data[in->now_block->ppage_idx]=plength<<1;
+	in->now_block->ppage_idx+=plength;
+#else
+	res=in->now_block->ppa+in->now_block->ppage_idx++;
+#endif
+	return res;
+}
+
+bool level_now_block_fchk(level *in){
+	bool res=false;
+#ifdef DVALUE
+	if(!in->now_block || in->now_block->ppage_idx>=(_PPB-1)*(PAGESIZE/PIECE)){
+#else
+	if(!in->now_block || in->now_block->ppage_idx==_PPB){
+#endif
+		res=true;
+	}
+	return res;
+}
+
+KEYT level_get_front_page(level *in){
+	KEYT res=0;
+	if(level_now_block_fchk(in)){
+#if DVALUE
+		if(in->now_block!=NULL){
+			block_save(in->now_block);
+		}
+#endif
+		KEYT blockn=getDPPA(UINT_MAX,true);//get block
+		
+		in->now_block=&bl[blockn/_PPB];
+		in->now_block->level=in->level_idx;
+		in->now_block->ppage_idx=0;
+		
+//		printf("new block [%d]\n",in->now_block->ppa);
+		heap_insert(in->h,(void*)in->now_block);
+#ifdef DVALUE
+		if(!in->now_block->isused){	
+			block_meta_init(in->now_block);
+			in->now_block->isused=true;
+		}
+		else{
+			printf("it can;t be\n");
+		}
+
+		in->now_block->ppage_array=(KEYT*)malloc(sizeof(KEYT)*(_PPB*(PAGESIZE/PIECE)));
+		int _idx=in->now_block->ppa*(PAGESIZE/PIECE);
+		for(int i=0; i<_PPB*(PAGESIZE/PIECE); i++){
+			in->now_block->ppage_array[i]=_idx+i;
+		}
+		res=in->now_block->ppage_array[0];
+#else
+		res=in->now_block->ppa;
+#endif
+	}
+	else{
+#ifdef DVALUE
+		level_move_next_page(in);
+		res=in->now_block->ppage_array[in->now_block->ppage_idx];
+#else
+		res=in->now_block->ppa+in->now_block->ppage_idx;
+#endif
+	}
+	return res;
+}
+
+void level_tier_align(level* input){
+	Node *temp_run=ns_run(input,input->r_n_idx);
+	if(temp_run->n_num!=temp_run->m_num && temp_run->n_num){
+		if(input->r_num!=input->r_n_idx+1)
+			input->r_n_idx++;
+	}
+}
+
+#ifdef DVALUE
+void level_move_next_page(level *in){
+	if(in->now_block->ppage_idx%(PAGESIZE/PIECE)==0) return;
+	int page=in->now_block->ppage_idx/(PAGESIZE/PIECE);
+	in->now_block->ppage_idx=(page+1)*(PAGESIZE/PIECE);
+}
+#endif
+void level_move_heap(level *des, level *src){
+	heap *des_h=des->h;
+	heap *h=src->h;
+	void *data;
+	while((data=heap_get_max(h))!=NULL){
+		block *bl=(block*)data;
+		bl->level=des->level_idx;
+		heap_insert(des_h,data);
+	}
+}
+#ifdef DVALUE
+void level_save_blocks(level *in){
+	heap *h=in->h;
+	block *t_block=(block*)h->body[1].value;
+	int idx=1;
+	while(idx<h->max_size &&t_block!=NULL){
+		if(t_block->length_data){
+			block_save(t_block);
+		}
+		t_block=(block*)h->body[idx++].value;
+	}
+}
+#endif
 /*
    int main(){
    level *temp_lev=(level*)malloc(sizeof(level));

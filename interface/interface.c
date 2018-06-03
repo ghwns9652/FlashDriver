@@ -115,7 +115,6 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	
 	req->value=inf_get_valueset(value->value,req->type,value->length);
 
-
 	req->end_req=inf_end_req;
 	req->isAsync=ASYNC;
 	req->params=NULL;
@@ -258,9 +257,12 @@ value_set *inf_get_valueset(PTR in_v, int type, uint32_t length){
 		res->value=(PTR)malloc(length);
 	}
 	res->length=length;
+
 	if(in_v){
 		memcpy(res->value,in_v,length);
 	}
+	else
+		memset(res->value,0,length);
 	return res;
 }
 

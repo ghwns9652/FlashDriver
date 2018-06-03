@@ -3,6 +3,7 @@
 #include "skiplist.h"
 #include "page.h"
 #include "pageQ.h"
+#include "run_array.h"
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +17,7 @@
 #endif
 
 #ifdef CACHE
-KEYT memcpy_cnt;
+int memcpy_cnt;
 #endif
 extern lsmtree LSM;
 extern int comp_target_get_cnt;
@@ -25,6 +26,34 @@ compM compactor;
 pthread_mutex_t compaction_wait;
 int compactino_target_cnt;
 
+void compaction_sub_pre(){
+	pthread_mutex_lock(&compaction_wait);
+}
+
+void compaction_sub_wait(){
+#ifdef CACHE
+#ifdef MUTEXLOCK
+	if(epc_check==comp_target_get_cnt+memcpy_cnt)
+		pthread_mutex_unlock(&compaction_wait);
+#elif defined (SPINLOCK)
+#endif
+#endif
+
+#ifdef MUTEXLOCK
+	pthread_mutex_lock(&compaction_wait);
+#elif defined (SPINLOCK)
+	while(comp_target_get_cnt!=epc_check){}
+#endif
+#ifdef CACHE
+	memcpy_cnt=0;
+#endif
+	comp_target_get_cnt=0;
+}
+
+void compaction_sub_post(){
+	pthread_mutex_unlock(&compaction_wait);
+}
+
 void htable_checker(htable *table){
 	for(int i=0; i<KEYNUM; i++){
 		if(table->sets[i].ppa<512 && table->sets[i].ppa!=0){
@@ -32,6 +61,14 @@ void htable_checker(htable *table){
 		}
 	}
 }
+
+void compaction_heap_setting(level *a, level* b){
+	heap_free(a->h);
+	a->h=b->h;
+	a->now_block=b->now_block;
+	b->h=NULL;
+}
+
 bool compaction_init(){
 	compactor.processors=(compP*)malloc(sizeof(compP)*CTHREAD);
 	memset(compactor.processors,0,sizeof(compP)*CTHREAD);
@@ -95,7 +132,7 @@ void compaction_assign(compR* req){
 
 htable *compaction_data_write(skiplist *mem){
 	//for data
-	value_set **data_sets=skiplist_make_valueset(mem);
+	value_set **data_sets=skiplist_make_valueset(mem,LSM.disk[0]);
 	for(int i=0; data_sets[i]!=NULL; i++){	
 		algo_req *lsm_req=(algo_req*)malloc(sizeof(algo_req));
 		lsm_params *params=(lsm_params*)malloc(sizeof(lsm_params));
@@ -104,8 +141,11 @@ htable *compaction_data_write(skiplist *mem){
 		params->value=data_sets[i];
 		lsm_req->params=(void*)params;
 		lsm_req->end_req=lsm_end_req;
-
+#ifdef DVALUE
+		LSM.li->push_data(data_sets[i]->ppa/(PAGESIZE/PIECE),PAGESIZE,params->value,ASYNC,lsm_req);
+#else
 		LSM.li->push_data(data_sets[i]->ppa,PAGESIZE,params->value,ASYNC,lsm_req);
+#endif
 	}
 	free(data_sets);
 
@@ -269,7 +309,6 @@ void compaction_check(){
 			LSM.temptable=LSM.memtable;
 			LSM.memtable=skiplist_init();
 		}
-
 		compaction_assign(req);
 #ifdef ONETHREAD
 		while(!compaction_idle){}
@@ -399,31 +438,9 @@ void compaction_subprocessing_CMI(skiplist * target,level * t,bool final,KEYT li
 	}
 }
 
-void compaction_read_wait(int param){
-#ifdef MUTEXLOCK
-	pthread_mutex_lock(&compaction_wait);
-#elif defined (SPINLOCK)
-	while(comp_taget_get_cnt!=param){}
-#endif
-	comp_target_get_cnt=0;
-}
 void compaction_subprocessing(skiplist *target,level *t, htable** datas,bool final,bool existIgnore){
 	//wait all header read
-#ifdef CACHE
-	comp_target_get_cnt+=memcpy_cnt;
-#ifdef MUTEXLOCK
-	if(epc_check==comp_target_get_cnt)
-		pthread_mutex_unlock(&compaction_wait);
-#elif defined (SPINLOCK)
-#endif
-#endif
-
-#ifdef MUTEXLOCK
-	pthread_mutex_lock(&compaction_wait);
-#elif defined (SPINLOCK)
-	while(comp_target_get_cnt!=epc_check){}
-#endif
-
+	compaction_sub_wait();
 	KEYT limit=0;
 	for(int i=0; i<epc_check; i++){//insert htable into target
 		htable *table=datas[i];
@@ -437,36 +454,34 @@ void compaction_subprocessing(skiplist *target,level *t, htable** datas,bool fin
 				skiplist_insert_wP(target,table->sets[j].lpa,table->sets[j].ppa,lsm_kv_validcheck(table->bitset,j));
 		}
 	}
-
 	if(final)
 		compaction_subprocessing_CMI(target,t,final,UINT_MAX);
 	else
 		compaction_subprocessing_CMI(target,t,final,limit);
-#ifdef CACHE
-	memcpy_cnt=0;
-#endif
-	comp_target_get_cnt=0;
 }
 
 void compaction_lev_seq_processing(level *src, level *des, int headerSize){
 #ifdef MONKEY
 	if(src->m_num!=des->m_num){
 		compaction_seq_MONKEY(src,headerSize,des);
-		if(des->isTiering)
-			level_tier_insert_done(des);
+		level_tier_align(des);
 		return;
 	}
 #endif
-	for(int i=0; i<src->r_n_num; i++){
+	for(int i=0; i<=src->r_n_idx; i++){
 		Node* temp_run=ns_run(src,i);
-		for(int j=0; j<temp_run->n_num; j++){
+		for(int j=0; j<temp_run->n_num; j++){			
 			Entry *temp_ent=ns_entry(temp_run,j);
 			level_insert_seq(des,temp_ent); //level insert seq deep copy in bf
 		}
-		if(des->isTiering)
-			level_tier_insert_done(des);
+		if(src->m_num==des->m_num){
+			level_tier_align(des);
+		}
 	}
+	if(src->m_num!=des->m_num)
+		level_tier_align(des);
 }
+
 int leveling_cnt;
 uint32_t leveling(int from, int to, Entry *entry){
 	//range find of targe lsm, 
@@ -475,7 +490,8 @@ uint32_t leveling(int from, int to, Entry *entry){
 	skiplist *body;
 	level *target_origin=LSM.disk[to];
 	level *target=(level *)malloc(sizeof(level));
-	level_init(target,target_origin->m_num, target_origin->fpr,false);
+	level_init(target,target_origin->m_num, target_origin->level_idx,target_origin->fpr,false);
+
 	LSM.c_level=target;
 	level *src=NULL;
 	if(from==-1){
@@ -483,14 +499,14 @@ uint32_t leveling(int from, int to, Entry *entry){
 		LSM.temptable=NULL;
 		pthread_mutex_unlock(&LSM.templock); // unlock
 		if(!level_check_overlap(target_origin,body->start,body->end)){
-			//		printf("-1 1 .... ttt\n");
+			compaction_heap_setting(target,target_origin);
+	//		printf("-1 1 .... ttt\n");
 			skiplist_free(body);
 			bool target_processed=false;
 			if(entry->key > target_origin->end){
 				target_processed=true;
 				compaction_lev_seq_processing(target_origin,target,target_origin->n_num);
 			}
-
 #ifdef CACHE
 			//cache must be inserted befor level insert
 			htable *temp_table=htable_copy(entry->t_table);
@@ -507,25 +523,29 @@ uint32_t leveling(int from, int to, Entry *entry){
 			pthread_mutex_lock(&LSM.entrylock);
 			LSM.tempent=NULL;
 			pthread_mutex_unlock(&LSM.entrylock);
-
+#ifdef DVALUE
+			//level_save_blocks(target);
+#endif
 			level_free_entry(entry);
 			if(!target_processed){
 				compaction_lev_seq_processing(target_origin,target,target_origin->n_num);
 			}
 		}
 		else{
-			//		printf("-1 2 .... ttt\n");
+	//				printf("-1 2 .... ttt\n");
 			partial_leveling(target,target_origin,body,NULL);
 			skiplist_free(body);
 			pthread_mutex_lock(&LSM.entrylock);
 			LSM.tempent=NULL;
 			pthread_mutex_unlock(&LSM.entrylock);
+			compaction_heap_setting(target,target_origin);
 			level_free_entry(entry);
 		}
 	}else{
 		src=LSM.disk[from];
 		if(!level_check_overlap(target_origin,src->start,src->end)){//if seq
-			//		printf("1 ee:%u end:%ufrom:%d n_num:%d \n",src->start,src->end,from,src->n_num);
+			compaction_heap_setting(target,target_origin);
+	//				printf("1 ee:%u end:%ufrom:%d n_num:%d \n",src->start,src->end,from,src->n_num);
 			bool target_processed=false;
 			if(target_origin->start>src->end){
 				target_processed=true;
@@ -537,37 +557,35 @@ uint32_t leveling(int from, int to, Entry *entry){
 			}
 		}
 		else{
-			//		printf("2 ee:%u end:%ufrom:%d n_num:%d \n",src->start,src->end,from,src->n_num);
+	//				printf("2 ee:%u end:%ufrom:%d n_num:%d \n",src->start,src->end,from,src->n_num);
 			Entry **target_s=NULL;
 			body=skiplist_init();
 			level_range_find(src,src->start,src->end,&target_s,false);
 			partial_leveling(target,target_origin,body,target_s);
+			compaction_heap_setting(target,target_origin);
 			skiplist_free(body);
 			free(target_s);
 		}
+
+#ifdef DVALUE
+		level_save_blocks(src);
+		level_save_blocks(target);
+#endif
+		level_move_heap(target,src);
 	}
 
 	level **des_ptr=NULL;
-	for(int i=0; i<LEVELN; i++){
-		if(target_origin==LSM.disk[i]){
-			des_ptr=&LSM.disk[i];
-			break;
-		}
-	}
+	des_ptr=&LSM.disk[target_origin->level_idx];
 
 	level *temp;
 	level **src_ptr=NULL;
 	if(from!=-1){ 
 		temp=src;
-		for(int i=0; i<LEVELN; i++){
-			if(src==LSM.disk[i]){
-				src_ptr=&LSM.disk[i];
-				break;
-			}
-		}
+		src_ptr=&LSM.disk[src->level_idx];
+
 		pthread_mutex_lock(&((temp)->level_lock));
 		(*src_ptr)=(level*)malloc(sizeof(level));
-		level_init(*(src_ptr),src->m_num,src->fpr,src->isTiering);
+		level_init(*(src_ptr),src->m_num,src->level_idx,src->fpr,src->isTiering);
 		(*src_ptr)->fpr=src->fpr;
 		pthread_mutex_unlock(&((temp)->level_lock));
 		level_free(src);
@@ -591,6 +609,7 @@ void compaction_seq_MONKEY(level *t,int num,level *des){
 	int target_round=headerSize/EPC+(headerSize%EPC ? 1:0);
 	int idx=0,pr_idx=0;
 	for(int round=0; round<target_round; round++){
+		compaction_sub_pre();
 		table=(htable**)malloc(sizeof(htable*)*EPC);
 		epc_check=(round+1==target_round? (headerSize)%EPC:EPC);
 		if(!epc_check) epc_check=EPC;
@@ -612,21 +631,8 @@ void compaction_seq_MONKEY(level *t,int num,level *des){
 			if(target_s[idx]==NULL) break;
 
 		}
-
-#ifdef CACHE
-		comp_target_get_cnt+=memcpy_cnt;
-#ifdef MUTEXLOCK
-		if(epc_check==comp_target_get_cnt)
-			pthread_mutex_unlock(&compaction_wait);
-#elif defined(SPINLOCK)
-#endif
-#endif
-
-#ifdef MUTEXLOCK //for waitreading
-		pthread_mutex_lock(&compaction_wait);
-#elif defined (SPINLOCK)
-		while(comp_taget_get_cnt!=epc_check){}
-#endif
+	
+		compaction_sub_wait();
 
 		for(int k=0; k<epc_check; k++){
 			htable *ttable=table[k];
@@ -649,15 +655,14 @@ void compaction_seq_MONKEY(level *t,int num,level *des){
 		}
 		//per round
 		free(table);
-		comp_target_get_cnt=0;
-#ifdef CACHE
-		memcpy_cnt=0;
-#endif
+		compaction_sub_post();
 	}
 	free(target_s);
 }
 #endif
+//static int pt_cnt;
 uint64_t partial_tiering(level *des,level *src, int size){
+	//	printf("pt_cnt:%d\n",pt_cnt++);
 	skiplist *body;
 	if(!src->remain)
 		body=skiplist_init();
@@ -665,13 +670,20 @@ uint64_t partial_tiering(level *des,level *src, int size){
 		body=src->remain;
 	htable **table=(htable**)malloc(sizeof(htable*)*size*src->entry_p_run);
 	int table_cnt=0;
+
+	KEYT *table_ppn=NULL;
+	int table_ppn_idx=0;
+	table_ppn=(KEYT*)malloc(sizeof(KEYT)*des->m_num);
+
+	epc_check=0;
+	compaction_sub_pre();
 	for(int i=0; i<size; i++){
-		epc_check=size*src->entry_p_run;
 		Node *temp_run=ns_run(src,i);
+		epc_check+=temp_run->n_num;
 		for(int j=0; j<temp_run->n_num; j++){
 			Entry *temp_ent=ns_entry(temp_run,j);
 			temp_ent->iscompactioning=true;
-
+			table_ppn[table_ppn_idx++]=temp_ent->pbn;
 #ifdef CACHE
 			if(temp_ent->c_entry){
 				memcpy_cnt++;
@@ -680,7 +692,7 @@ uint64_t partial_tiering(level *des,level *src, int size){
 			else{
 #endif
 				table[table_cnt]=htable_assign();
-				compaction_htable_read(temp_ent,(PTR*)table[table_cnt]);
+				compaction_htable_read(temp_ent,(PTR*)&table[table_cnt]);
 #ifdef CACHE
 			}
 #endif
@@ -688,8 +700,9 @@ uint64_t partial_tiering(level *des,level *src, int size){
 			table_cnt++;
 		}
 	}
+	table_ppn[table_ppn_idx]=UINT_MAX;
 
-	if(size==src->r_n_num){
+	if(size==src->r_n_idx){
 		compaction_subprocessing(body,des,table,1,true);
 		skiplist_free(body);
 		src->remain=NULL;
@@ -698,8 +711,14 @@ uint64_t partial_tiering(level *des,level *src, int size){
 		compaction_subprocessing(body,des,table,0,true);
 		src->remain=body;
 	}
-	level_tier_insert_done(des);
+
+	for(int i=0; table_ppn[i]!=UINT_MAX; i++){
+		invalidate_PPA(table_ppn[i]);
+	}
+	//level_all_print();
+	free(table_ppn);
 	free(table);
+	compaction_sub_post();
 	return 1;
 }
 uint32_t partial_leveling(level* t,level *origin,skiplist *skip, Entry **data){
@@ -717,13 +736,13 @@ uint32_t partial_leveling(level* t,level *origin,skiplist *skip, Entry **data){
 		level_insert(t,target_s[i]);
 	}
 	free(target_s);
-
 	if(!data){
 		end=origin->end;
 		headerSize=level_range_find(origin,start,end,&target_s,true);
 		int target_round=headerSize/EPC+(headerSize%EPC?1:0);
 		int idx=0;
 		for(int round=0; round<target_round; round++){
+			compaction_sub_pre();
 			table=(htable**)malloc(sizeof(htable*)*EPC);
 			memset(table,0,sizeof(htable*)*EPC);
 
@@ -762,6 +781,7 @@ uint32_t partial_leveling(level* t,level *origin,skiplist *skip, Entry **data){
 					break;
 			}
 			free(table);
+			compaction_sub_post();
 		}
 		free(target_s);
 	}
@@ -782,6 +802,7 @@ uint32_t partial_leveling(level* t,level *origin,skiplist *skip, Entry **data){
 			int target_round=(headerSize+1)/EPC+((headerSize+1)%EPC?1:0);
 			int idx=0;
 			for(int round=0; round<target_round; round++){
+				compaction_sub_pre();
 				int j=0;
 				table=(htable**)malloc(sizeof(htable*)*EPC); //end req do
 				memset(table,0,sizeof(htable*)*EPC);
@@ -842,12 +863,14 @@ uint32_t partial_leveling(level* t,level *origin,skiplist *skip, Entry **data){
 						break;
 				}
 				free(table);
+				compaction_sub_post();
 			}
 			free(target_s);
 		}
 	}
 	return 1;
 }
+int tiering_compaction=0;
 uint32_t tiering(int from, int to, Entry *entry){
 	level *src_level=NULL;
 	level *src_origin_level=NULL;
@@ -857,12 +880,16 @@ uint32_t tiering(int from, int to, Entry *entry){
 							 des_level=level_copy(des_origin_level);
 							 else{*/
 	des_level=(level*)malloc(sizeof(level));
-	level_init(des_level,des_origin_level->m_num,des_origin_level->fpr,true);
+	level_init(des_level,des_origin_level->m_num,des_origin_level->level_idx,des_origin_level->fpr,true);
 	//}
 	LSM.c_level=des_level;
+	
+	//printf("comp:%d\n",tiering_compaction++);
+
+	compaction_heap_setting(des_level,des_origin_level);
 
 	if(from==-1){
-		//printf("-1 to 0 tiering\n");
+		printf("-1 to 0 tiering\n");
 		skiplist *body=LSM.temptable;
 		LSM.temptable=NULL;
 		skiplist_free(body);
@@ -882,51 +909,47 @@ uint32_t tiering(int from, int to, Entry *entry){
 		entry->t_table=NULL;
 #endif	
 		level_insert(des_level,entry);
-		level_tier_insert_done(des_level);
 		pthread_mutex_lock(&LSM.entrylock);
 		LSM.tempent=NULL;
 		pthread_mutex_unlock(&LSM.entrylock);
-
 		level_free_entry(entry);
 	}
 	else{
 		src_origin_level=LSM.disk[from];
 		src_level=(level*)malloc(sizeof(level));
-		level_init(src_level,src_origin_level->m_num,src_origin_level->fpr,true);
-
+		level_init(src_level,src_origin_level->m_num,src_origin_level->level_idx,src_origin_level->fpr,true);
 		//copy all level from origin to des;
-		compaction_lev_seq_processing(des_origin_level,des_level,des_origin_level->n_num);
 		if(level_check_seq(src_origin_level)){//sequen tial
 			printf("1--%d to %d tiering\n",from,to);
-			compaction_lev_seq_processing(src_origin_level,des_level,src_origin_level->r_n_num);
+			compaction_lev_seq_processing(src_origin_level,des_origin_level,src_origin_level->r_n_idx);
 		}
 		else{
 			printf("2--%d to %d tiering\n",from,to);
-			partial_tiering(des_level,src_origin_level,src_origin_level->r_n_num);
+			partial_tiering(des_origin_level,src_origin_level,src_origin_level->r_n_idx);
 		}
+		compaction_lev_seq_processing(des_origin_level,des_level,des_origin_level->n_num);
 		if(src_origin_level->remain){
 			src_level->remain=src_origin_level->remain;
 			src_origin_level->remain=NULL;
 		}
+	
+		level_tier_align(des_level);
+		//heap_print(src_origin_level->h);
+#ifdef DVALUE
+		level_save_blocks(src_origin_level);
+#endif
+		//heap_print(src_origin_level->h);
+		level_move_heap(des_level,src_origin_level);
 	}
 
+	//level_all_print();
 	level **des_ptr=NULL;
-	for(int i=0; i<LEVELN; i++){
-		if(des_origin_level==LSM.disk[i]){
-			des_ptr=&LSM.disk[i];
-			break;
-		}
-	}
+	des_ptr=&LSM.disk[des_origin_level->level_idx];
 
 	level *temp;
 	level **src_ptr=NULL;
-	if(from!=-1){ 	
-		for(int i=0; i<LEVELN; i++){
-			if(src_origin_level==LSM.disk[i]){
-				src_ptr=&LSM.disk[i];
-				break;
-			}
-		}
+	if(from!=-1){
+		src_ptr=&LSM.disk[src_origin_level->level_idx];
 		temp=src_level;
 		pthread_mutex_lock(&((temp)->level_lock));
 		(*src_ptr)=src_level;
@@ -941,6 +964,7 @@ uint32_t tiering(int from, int to, Entry *entry){
 	pthread_mutex_unlock(&((temp)->level_lock));
 	LSM.c_level=NULL;
 	level_free(temp);
-	level_all_check();
+	//block_print();
+	//level_all_print();
 	return 1;
 }

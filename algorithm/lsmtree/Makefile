@@ -24,8 +24,11 @@ SRCS +=\
 	   compaction.c\
 	   page.c\
 	   pageQ.c\
+	   heap.c\
 	   footer.c\
-cache.c\
+	   log_list.c\
+	   factory.c\
+#cache.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -60,17 +63,17 @@ liblsm.a : $(TARGETOBJ)
 set_check:../../include/lsm_settings.h
 	make test_clean
 
-.c.o :
+.c.o :  ../../include/lsm_settings.h ../../include/settings.h
 	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
-../../object/%_d.o: %.c
+../../object/%_d.o: %.c ../../include/lsm_settigs.h ../../include/settings.h
 	$(CC) $(CFLAGS_ALGO) -DDEBUG -c $< -o $@
 
-../../object/%_m.o: %.c
+../../object/%_m.o: %.c ../../include/lsm_settings.h ../../include/settings.h
 	$(CC) $(CFLAGS_ALGO) -DLEAKCHECK -c $< -o $@
 
-../../object/%.o: %.c
-	$(CC) $(CFLAGS_ALGO) -c $< -o $@
+../../object/%.o: %.c  ../../include/lsm_settings.h ../../include/settings.h
+	$(CC) $(CFLAGS) $(CFLAGS_ALGO) -c $< -o $@
 
 run_test:run_array.c
 	$(CC) $(CFLAGS_ALGO) -o $@ $^
