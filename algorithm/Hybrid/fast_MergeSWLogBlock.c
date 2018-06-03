@@ -7,8 +7,8 @@
  * @param       req     Request from FAST_Set function
  * @return      Error code for function call
  */
-
-char fast_MergeSWLogBlock(request *const req)
+// 만약 SW 조건 만족안하는게 있음 그거 넣어야 함.
+char fast_MergeSWLogBlock(KEYT key, request *const req)
 {
     SW_MappingInfo*     sw_MappingInfo;
     value_set*          value;
@@ -30,7 +30,10 @@ char fast_MergeSWLogBlock(request *const req)
 
 	for(i = sw_MappingInfo->number_of_stored_sector; i < PAGE_PER_BLOCK; i++){
         src_address = ADDRESS(BLOCK_TABLE(logical_block), i);
-        if(GET_PAGE_STATE(src_address) == VALID){
+        if (key == src_address) {
+            continue;
+        }
+        else if (GET_PAGE_STATE(src_address) == VALID) {
             value = fast_ReadPage(src_address, req, NULL, 1);
             dst_address = ADDRESS(sw_log_block, i);
             fast_WritePage(dst_address, req, value, 1);
