@@ -52,16 +52,20 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
 	else if (block == logical_block) {
 		if (offset != sw_MappingInfo->number_of_stored_sector) {
 		    fast_MergeSWLogBlock(key, req);
+			sw_MappingInfo->logical_block = -1;
 			// sw_MappingInfo->logical_block = block;
-			return (eNOTSEQUENTIAL);
+			// return (eNOTSEQUENTIAL);
+		}
+		else {
+			sw_MappingInfo->number_of_stored_sector++;
 		}
 	}
 	else {
 		return (eNOTSEQUENTIAL);
 	}
     
-	*physical_address = ADDRESS(sw_MappingInfo->sw_log_block, offset);
-	sw_MappingInfo->number_of_stored_sector++;
+	SET_PAGE_STATE(ADDRESS(BLOCK_TABLE(block), offset), INVALID);
+	*physical_address = ADDRESS(sw_log_block, offset);
 
 	printf("SW Log Block ");
 	return (eNOERROR);

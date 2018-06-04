@@ -53,6 +53,7 @@ char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
         rw_MappingTable->number_of_full_log_block++;
     }
 
+    SET_PAGE_STATE(ADDRESS(BLOCK_TABLE(BLOCK(key)), OFFSET(key)), INVALID);
     *physical_address = ADDRESS(data[number_of_written_page].physical_block, data[number_of_written_page].physical_offset);
     state = GET_PAGE_STATE(*physical_address);
     // @TODO : Should think of memory operation (간략하게나마 구현할 수는 있지만, 최적화되지 않음)

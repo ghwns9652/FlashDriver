@@ -38,6 +38,10 @@ char fast_MergeSWLogBlock(KEYT key, request *const req)
             dst_address = ADDRESS(sw_log_block, i);
             fast_WritePage(dst_address, req, value, 1);
         }
+        else if (GET_PAGE_STATE(src_address) == INVALID) {
+            dst_address = ADDRESS(sw_log_block, i);
+            SET_PAGE_STATE(dst_address, INVALID);
+        }
 	}
 
 	FAST_Algorithm.li->trim_block(ADDRESS(data_block, 0), false);

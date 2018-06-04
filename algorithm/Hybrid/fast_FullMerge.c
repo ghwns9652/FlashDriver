@@ -48,6 +48,10 @@ char fast_FullMerge(int logical_block, request* const req)
             dst_address = ADDRESS(new_data_block, i); //TODO
             fast_WritePage(dst_address, req, value, 1);
         }
+        else {
+            char state = GET_PAGE_STATE(ADDRESS(data_block, i));
+            SET_PAGE_STATE(ADDRESS(new_data_block, i), state);
+        }
     }
 
     FAST_Algorithm.li->trim_block(ADDRESS(logical_block, 0), false);
