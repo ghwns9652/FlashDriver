@@ -24,6 +24,7 @@ D_OOB *demand_OOB; // Page level OOB
 D_SRAM *d_sram; // SRAM for contain block data temporarily
 
 pthread_mutex_t cache_mutex;
+//extern pthread_mutex_t test_lock;
 
 /*
 k:
@@ -98,12 +99,15 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
  * Free data structures that are used in DFTL
  */
 void demand_destroy(lower_info *li, algorithm *algo){
+	while(head){
+		free(((C_TABLE*)(head->DATA))->p_table);
+		queue_delete(head);
+	}
+	q_free(dftl_q);
 	free(CMT);
 	free(GTD);
 	free(demand_OOB);
 	free(d_sram);
-	while(head)
-		queue_delete(head);
 }
 
 /* demand_end_req
@@ -130,23 +134,36 @@ void *demand_end_req(algo_req* input){
 				res->end_req(res);
 			break;
 		case MAPPING_R:
-			if(CMT[D_IDX].t_ppa != -1){
+			if(CMT[D_IDX].t_ppa != -1 && CMT[D_IDX].p_table){
 				dest = CMT[D_IDX].p_table;
 				src = (D_TABLE*)(temp_v->value);
+				printf("src\n");
+				cache_show((char*)src);
+				memcpy(dest, src, PAGESIZE);
+				/*
 				for(int i = 0; i < EPP; i++){
 					if(dest[i].ppa == -1){
 						dest[i].ppa = src[i].ppa;
 					}
+					else if(src[i].ppa != -1){
+						demand_OOB[src[i].ppa].valid_checker = 0;
+					}
 				}
+				*/
 				CMT[D_IDX].t_ppa = -1;
 			}
-			inf_free_valueset(temp_v, FS_MALLOC_R);
-			if(res){
+#if ASYNC
+			if(res && (res->type == FS_GET_T)){ // queueing only get requests
 				q_enqueue(res, dftl_q);
 			}
+#endif
+			printf("dest\n");
+			cache_show((char*)dest);
+			inf_free_valueset(temp_v, FS_MALLOC_R);
 			break;
 		case MAPPING_W:
 			tpage_onram_num--;
+		//	cache_show(temp_v->value);
 			inf_free_valueset(temp_v, FS_MALLOC_W);
 			break;
 		case GC_R:
@@ -156,6 +173,7 @@ void *demand_end_req(algo_req* input){
 	}
 	free(params);
 	free(input);
+	//pthread_mutex_unlock(&test_lock);
 	return NULL;
 }
 
@@ -163,10 +181,13 @@ void *demand_end_req(algo_req* input){
  * Make pseudo_my_req
  * psudo_my_req is req from algorithm, not from the interface
  */
+
 algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
+	static int seq=0;
 	algo_req *pseudo_my_req = (algo_req*)malloc(sizeof(algo_req));
 	pseudo_my_req->parents = req;
 	demand_params *params = (demand_params*)malloc(sizeof(demand_params));//allocation;
+	params->test=seq++;
 	params->type = type;
 	params->value = temp_v;
 	switch(type){
@@ -233,3 +254,4 @@ void tp_alloc(int32_t *t_ppa){ // Translation page allocation
 	}
 	*t_ppa = TPA_status;
 	TPA_status++;
+}

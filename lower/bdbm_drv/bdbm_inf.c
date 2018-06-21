@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
+
+pthread_mutex_t test_lock;
+
 memio_t *mio;
 lower_info memio_info={
 	.create=memio_info_create,
@@ -33,6 +36,8 @@ uint32_t memio_info_create(lower_info *li){
 	pthread_mutex_init(&memio_info.lower_lock,NULL);
 	measure_init(&li->writeTime);
 	measure_init(&li->readTime);
+	pthread_mutex_init(&test_lock, 0);
+	pthread_mutex_lock(&test_lock);
 
 	mio=memio_open();
 	return 1;
@@ -54,6 +59,7 @@ void *memio_info_push_data(KEYT ppa, uint32_t size, value_set *value, bool async
 	bench_lower_w_start(&memio_info);
 	memio_write(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	bench_lower_w_end(&memio_info);
+	//pthread_mutex_lock(&test_lock);
 	return NULL;
 }
 
@@ -65,6 +71,7 @@ void *memio_info_pull_data(KEYT ppa, uint32_t size, value_set *value, bool async
 	bench_lower_r_start(&memio_info);
 	memio_read(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	bench_lower_r_end(&memio_info);
+	//pthread_mutex_lock(&test_lock);
 	return NULL;
 }
 

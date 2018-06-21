@@ -152,4 +152,5 @@ int ppa_compare(const void *a, const void *b);
 bool demand_GC(char btype);
 void dp_alloc(int32_t *ppa);
 void tp_alloc(int32_t *t_ppa);
+void cache_show(char* dest);
 #endif

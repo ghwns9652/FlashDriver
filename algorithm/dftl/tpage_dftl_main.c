@@ -59,7 +59,7 @@ uint32_t __demand_get(request *const req){
 	if(p_table){
 		t_ppa = CMT[D_IDX].t_ppa;
 		if(t_ppa != -1){
-			temp_value_set = inf_get_valueset(NULL, PAGESIZE, DMAREAD);
+			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_R, temp_value_set, req));
 		}
 		else{
@@ -72,17 +72,19 @@ uint32_t __demand_get(request *const req){
 				my_req->params = params;
 				my_req->end_req = demand_end_req;
 				bench_algo_end(req); 
+				//printf("(lpa, D_IDX, ppa) : (%d, %d, %d)\n", lpa, D_IDX, ppa);
 				__demand.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, my_req); // Get data in ppa
 			}
 			else{ // No mapping in t_page on cache
 				printf("invalid ppa read\n");
 				bench_algo_end(req);
-				my_req->end_req(my_req);
+				req->end_req(req);
 			}
 		}
 	}
 	/* Cache miss */
 	else{
+		//printf("(lpa) : (%d)\n", lpa);
 		t_ppa = CMT[D_IDX].t_ppa; // Get t_ppa
 		if(t_ppa != -1){
 			if(tpage_onram_num >= MAXTPAGENUM){
@@ -92,14 +94,36 @@ uint32_t __demand_get(request *const req){
 			CMT[D_IDX].p_table = p_table;
 			CMT[D_IDX].queue_ptr = queue_insert((void*)(CMT + D_IDX)); // Update CMT queue
 			CMT[D_IDX].flag = 0; // Set flag in CMT (mapping unchanged)
+			for(int i = 0; i < EPP; i++){
+				p_table[i].ppa = -1;
+			}
 			/* Load tpage to cache */
 			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_R, temp_value_set, req)); // Get page table
+			ppa = CMT[D_IDX].p_table[P_IDX].ppa;
+#if !ASYNC
+			if(ppa != 1){
+				//printf("Sync mode!!\n");
+				params = (demand_params*)malloc(sizeof(demand_params));
+				params->type = DATA_R;
+				algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+				my_req->parents = req;
+				my_req->params = params;
+				my_req->end_req = demand_end_req;
+				bench_algo_end(req);
+				__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
+			}
+			else{
+				printf("Invalid ppa read\n");
+				bench_algo_end(req);
+				req->end_req(req);
+			}
+#endif
 		}
 		else{ // lseek error avoid
 			printf("Invalid ppa read\n");
 			bench_algo_end(req);
-			my_req->end_req(my_req);
+			req->end_req(req);
 		}
 	}
 	return 1;
@@ -148,10 +172,14 @@ uint32_t __demand_set(request *const req){
 
 	lpa = req->key;
 	p_table = CMT_check(lpa, &ppa);
+	printf("(lpa, D_IDX) : (%d, %d)\n", lpa, D_IDX);
 
 	/* Cache hit */
 	if(p_table){
-		demand_OOB[ppa].valid_checker = 0; // Invalidate previous page
+		ppa = p_table[P_IDX].ppa;
+		if(ppa != -1){
+			demand_OOB[ppa].valid_checker = 0; // Invalidate previous page
+		}
 		dp_alloc(&ppa); // Allocate data page
 		p_table[P_IDX].ppa = ppa; // Page table update
 		if(!CMT[D_IDX].flag){ // When flag is set 0
@@ -173,15 +201,18 @@ uint32_t __demand_set(request *const req){
 		CMT[D_IDX].queue_ptr = queue_insert((void*)(CMT + D_IDX)); // Insert current CMT entry to CMT queue
 		CMT[D_IDX].flag = 1; // mapping table changed
 		tpage_onram_num++;
+		for(int i = 0; i < EPP; i++){
+			p_table[i].ppa = -1;
+		}
 		if((t_ppa = CMT[D_IDX].t_ppa) != -1){
 			demand_OOB[t_ppa].valid_checker = 0;
 			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_R, temp_value_set, req));
 		}
-		for(int i = 0; i < EPP; i++){
-			p_table[i].ppa = -1;
-		}
 		dp_alloc(&ppa);
+		if(p_table[P_IDX].ppa != -1){
+			demand_OOB[p_table[P_IDX].ppa].valid_checker = 0;
+		}
 		p_table[P_IDX].ppa = ppa;
 		demand_OOB[ppa] = (D_OOB){lpa, 1};
 		bench_algo_end(req);
@@ -298,6 +329,7 @@ uint32_t demand_eviction(){
 	D_TABLE *p_table;
 	value_set *temp_value_set;
 	LINKED_LIST *elem;
+	int lpa;
 
 	/* victim selection */
 	elem = tail;
@@ -305,14 +337,21 @@ uint32_t demand_eviction(){
 		cache_ptr = (C_TABLE*)(elem->DATA); // Save cache_ptr of tail
 		t_ppa = cache_ptr->t_ppa;
 		elem = elem->prev;
+		if(!elem){
+			elem = tail;
+		}
 	} while(t_ppa != -1);
 	elem = elem->next;
+	if(!elem){
+		elem = head;
+	}
 
 	/* Eviction */
 	p_table = cache_ptr->p_table; // Get page table
 	if(cache_ptr->flag != 0){ // When t_page on cache has changed
 		/* Write translation page */
 		tp_alloc(&t_ppa);
+		lpa = (int)(cache_ptr - CMT);
 		temp_value_set = inf_get_valueset((PTR)(p_table), FS_MALLOC_W, PAGESIZE);
 		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_W, temp_value_set, NULL));
 		demand_OOB[t_ppa] = (D_OOB){(int)(cache_ptr - CMT), 1}; // Update OOB
@@ -325,4 +364,18 @@ uint32_t demand_eviction(){
 	cache_ptr->p_table = NULL;
 	return 1;
 }
+
+/* Print page_table that exist in d_idx */
+void cache_show(char* dest){
+	int parse;
+	parse = 16;
+	
+	for(int i = 0; i < EPP; i++){
+		printf("%d ", ((D_TABLE*)dest)[i].ppa);
+		if((i % parse) == parse - 1){
+			printf("\n");
+		}
+	}
+}
+
 #endif
