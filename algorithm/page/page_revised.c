@@ -13,19 +13,14 @@ struct algorithm algo_pbase=
 	.remove = pbase_remove
 };
 
-uint32_t PPA_status = 0 + _PPB;//starts at block 1, not 0.
-uint32_t RSV_status = 0;//overprovision area.
-
+uint32_t PPA_status = 0;
 int init_done = 0;//check if initial write is done.
+extern master *_master;
 TABLE *page_TABLE;
 OOB *page_OOB;
 SRAM *page_SRAM;
 uint16_t *invalid_per_block;
 
-pthread_mutex_t mutex;//mutex for atomicity in GC logic.
-char mutex_flag = 0;//end_req mutex flag.
-char unload_flag = 0;
-value_set* _g_unload_value;
 
 uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize mapping table.
 {
@@ -54,8 +49,6 @@ uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize map
 	{
 		invalid_per_block[i] = 0;
 	}
-
-	pthread_mutex_init(&mutex, NULL);
 	printf("pbase_create done!\n");
 	return 0;
 	//init mapping table.
@@ -81,23 +74,10 @@ void *pbase_end_req(algo_req* input)
 
 void *pbase_algo_end_req(algo_req* input)
 {
-	if(mutex_flag == 0){
-		free(input);
-		return 0;
-	}
-	else if(mutex_flag == 1){//ASYNC GC,
-		free(input);
-		if(unload_flag == 1){//unload phase.
-			inf_free_valueset(_g_unload_value,FS_MALLOC_W);
-		}
-		pthread_mutex_unlock(&mutex);
-		return 0;
-	}
-	else{
-		printf("algo_end_req_error.\n");
-		return 0;
-	}
-}
+	printf("end_req\n");
+	free(input);
+	return 0;
+}//there may be warning.
 
 uint32_t pbase_get(request* const req)
 {
@@ -110,17 +90,18 @@ uint32_t pbase_get(request* const req)
 	my_req->end_req=pbase_end_req;//allocate end_req for request.
 	int target = page_TABLE[req->key].lpa_to_ppa;
 	bench_algo_end(req);	
-	if (target == -1){
+	if (target == -1)
+	{
 		pbase_end_req(my_req);
 		return 0;
 	}
-	else{
+	else
+	{
 		algo_pbase.li->pull_data(target,PAGESIZE,req->value,ASYNC,my_req);
 /*		printf("\n==== get data ===\n");
 		printf("target is : %d\n",req->key);
 		printf("assigned ppa is %d\n",target);
-		printf("==== get done ===\n");
-*/
+		printf("==== get done ===\n"); */
 	}
 	//key-value operation.
 	return 0;
@@ -181,8 +162,7 @@ uint32_t pbase_set(request* const req)
 		}
 	}
 */
-/*
-	if (PPA_status % _PPB == 0){
+/*	if (PPA_status % _PPB == 0){
 		printf("start trim test. remove written data.\n");
 		int targ = (PPA_status-1)/_PPB;
 		printf("targ %d\n",targ);
@@ -201,8 +181,7 @@ uint32_t pbase_set(request* const req)
 			printf("loaded item : %d\n",value_PTR->value[0]);
 			printf("===TRIMCHECK_END===\n");
 		}
-	}
-*/
+	}*/
 	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,ASYNC,my_req);
 	return 0;
 }
@@ -221,12 +200,14 @@ uint32_t SRAM_load(int ppa, int a)
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
-	pthread_mutex_lock(&mutex);
 	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,ASYNC,my_req);
+	printf("\n===RAMLOAD===\n");
+	printf("target ppa : %d\n",ppa);
+	printf("loaded item : %d\n",value_PTR->value[0]);
+	printf("===RAM_END===\n");
+
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
-	page_SRAM[a].VPTR_RAM = (value_set*)malloc(sizeof(value_set));
-	memcpy(page_SRAM[a].VPTR_RAM,value_PTR,sizeof(value_set));//copy data from value_PTR 
-	inf_free_valueset(value_PTR,FS_MALLOC_R);//free value_PTR.
+	page_SRAM[a].VPTR_RAM = value_PTR;
 	return 0;
 }
 
@@ -234,17 +215,21 @@ uint32_t SRAM_unload(int ppa, int a)
 {
 	value_set *value_PTR;
 	value_PTR = inf_get_valueset(page_SRAM[a].VPTR_RAM->value,FS_MALLOC_W,PAGESIZE);//set valueset as write mode.
-	_g_unload_value = value_PTR;//allocate to global value_set pointer. than, end_req function can free it.
+
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->end_req = pbase_algo_end_req;
 	my_req->parents = NULL;
-	pthread_mutex_lock(&mutex);
-	algo_pbase.li->push_data(ppa,PAGESIZE,value_PTR,ASYNC,my_req);
+	printf("pagesize : %d\n",PAGESIZE);
+	algo_pbase.li->push_data(ppa,PAGESIZE,page_SRAM[a].VPTR_RAM,ASYNC,my_req);
+   printf("\npushed data is %c\n",page_SRAM[a].VPTR_RAM->value[0]);	
 	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa;
 	page_TABLE[ppa].valid_checker = 1;
 	page_OOB[ppa].reverse_table = page_SRAM[a].lpa_RAM;
+   inf_free_valueset(page_SRAM[a].VPTR_RAM,1);	
+	inf_free_valueset(value_PTR,2);
 	page_SRAM[a].lpa_RAM = -1;
-	free(page_SRAM[a].VPTR_RAM);
+	page_SRAM[a].VPTR_RAM = NULL;
+	sleep(1);
 	return 0;
 }
 
@@ -255,45 +240,33 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 	int invalid_num = 0;
 	for (int i = 0; i < _NOB; i++)
 	{
-		printf("entered for.\n");
 		if(invalid_per_block[i] >= invalid_num)
 		{
 			target_block = i;
 			invalid_num = invalid_per_block[i];
 		}
 	}//find block with the most invalid block.
-	printf("target block is <%d>, and valid_num is <%d>\n",target_block, _PPB - invalid_num);
+	printf("target block is <%d>, and invalid_num is <%d>",target_block, invalid_num); 
 	PPA_status = target_block* _PPB;
-	int trim_PPA = PPA_status;
 	int valid_component = _PPB - invalid_num;
 	int a = 0;
-	
-	mutex_flag = 1;//need to operate atomically.
 	for (int i = 0; i < _PPB; i++)
 	{
-		if (page_TABLE[trim_PPA + i].valid_checker == 1)
+		if (page_TABLE[PPA_status + i].valid_checker == 1)
 		{
-			SRAM_load(trim_PPA + i, a);
+			SRAM_load(PPA_status + i, a);
 			a++;
-			page_TABLE[trim_PPA + i].valid_checker = 0;
-			printf("%d\n",a);
+			page_TABLE[PPA_status + i].valid_checker = 0;
 		}
 	}
-	algo_pbase.li->trim_block(trim_PPA, false);//ASYNC mode.
-	
-	unload_flag = 1;
+	algo_pbase.li->trim_block(PPA_status, false);
+
 	for (int i = 0; i<valid_component; i++)
 	{
-		SRAM_unload(RSV_status,i);
-		RSV_status++;
-	}//trimming should be done before GC code finishes & new set begins.
-	unload_flag = 0;
-	mutex_flag = 0;//reset mutex flag.
+		SRAM_unload(PPA_status,i);
+		PPA_status++;
+	}
 
-	int temp = PPA_status;
-	PPA_status = RSV_status;
-	RSV_status = temp;//swap Reserved area.
-	
 	invalid_per_block[target_block] = 0;
 	return 0;
 }
