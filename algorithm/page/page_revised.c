@@ -13,9 +13,7 @@ struct algorithm algo_pbase=
 	.remove = pbase_remove
 };
 
-uint32_t PPA_status = 0 + _PPB;//starts at block 1, not 0.
-uint32_t RSV_status = 0;//overprovision area.
-
+uint32_t PPA_status = 0;
 int init_done = 0;//check if initial write is done.
 extern master *_master;
 TABLE *page_TABLE;
@@ -103,8 +101,7 @@ uint32_t pbase_get(request* const req)
 /*		printf("\n==== get data ===\n");
 		printf("target is : %d\n",req->key);
 		printf("assigned ppa is %d\n",target);
-		printf("==== get done ===\n");
-*/
+		printf("==== get done ===\n"); */
 	}
 	//key-value operation.
 	return 0;
@@ -165,7 +162,7 @@ uint32_t pbase_set(request* const req)
 		}
 	}
 */
-	if (PPA_status % _PPB == 0){
+/*	if (PPA_status % _PPB == 0){
 		printf("start trim test. remove written data.\n");
 		int targ = (PPA_status-1)/_PPB;
 		printf("targ %d\n",targ);
@@ -184,7 +181,7 @@ uint32_t pbase_set(request* const req)
 			printf("loaded item : %d\n",value_PTR->value[0]);
 			printf("===TRIMCHECK_END===\n");
 		}
-	}
+	}*/
 	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,ASYNC,my_req);
 	return 0;
 }
@@ -251,29 +248,25 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 	}//find block with the most invalid block.
 	printf("target block is <%d>, and invalid_num is <%d>",target_block, invalid_num); 
 	PPA_status = target_block* _PPB;
-	int trim_PPA = PPA_status;
 	int valid_component = _PPB - invalid_num;
 	int a = 0;
 	for (int i = 0; i < _PPB; i++)
 	{
-		if (page_TABLE[trim_PPA + i].valid_checker == 1)
+		if (page_TABLE[PPA_status + i].valid_checker == 1)
 		{
-			SRAM_load(trim_PPA + i, a);
+			SRAM_load(PPA_status + i, a);
 			a++;
-			page_TABLE[trim_PPA + i].valid_checker = 0;
+			page_TABLE[PPA_status + i].valid_checker = 0;
 		}
 	}
-	algo_pbase.li->trim_block(trim_PPA, false);//ASYNC mode.
+	algo_pbase.li->trim_block(PPA_status, false);
 
 	for (int i = 0; i<valid_component; i++)
 	{
-		SRAM_unload(RSV_status,i);
-		RSV_status++;
-	}//trimming should be done before GC code finishes & new set begins.
-	int temp = PPA_status;
-	PPA_status = RSV_status;
-	RSV_status = temp;//swap Reserved area.
-	
+		SRAM_unload(PPA_status,i);
+		PPA_status++;
+	}
+
 	invalid_per_block[target_block] = 0;
 	return 0;
 }

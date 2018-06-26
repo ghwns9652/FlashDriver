@@ -65,10 +65,12 @@ int main(){/*
 	memset(t_value,'x',PAGESIZE);
 	bench_add(SEQSET,0,1024*32,1024*32);
 	bench_add(SEQGET,0,1024*32,1024*32);
+//	bench_add(RANDSET,0,15*1024,15*1024);
+//	bench_add(RANDGET,0,15*1024,15*1024);
+	bench_value *value;
 
 //	bench_add(RANDSET,0,40,50);
 //	bench_add(RANDGET,0,40,50);
-	bench_value *value;
 	value_set temp;
 	printf("input data is : %c\n",t_value[0]);
 	temp.value=t_value;
