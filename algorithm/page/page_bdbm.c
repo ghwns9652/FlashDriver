@@ -223,6 +223,8 @@ uint32_t SRAM_load(int ppa, int a)
 	my_req->end_req = pbase_algo_end_req; //request termination.
 	pthread_mutex_lock(&mutex);
 	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,ASYNC,my_req);
+	pthread_mutex_lock(&mutex);
+	pthread_mutex_unlock(&mutex);
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
 	page_SRAM[a].VPTR_RAM = (value_set*)malloc(sizeof(value_set));
 	memcpy(page_SRAM[a].VPTR_RAM,value_PTR,sizeof(value_set));//copy data from value_PTR 
@@ -240,6 +242,9 @@ uint32_t SRAM_unload(int ppa, int a)
 	my_req->parents = NULL;
 	pthread_mutex_lock(&mutex);
 	algo_pbase.li->push_data(ppa,PAGESIZE,value_PTR,ASYNC,my_req);
+	sleep(1);
+	pthread_mutex_lock(&mutex);
+	pthread_mutex_unlock(&mutex);
 	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa;
 	page_TABLE[ppa].valid_checker = 1;
 	page_OOB[ppa].reverse_table = page_SRAM[a].lpa_RAM;
