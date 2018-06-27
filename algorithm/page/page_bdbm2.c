@@ -22,9 +22,11 @@ OOB *page_OOB;
 SRAM *page_SRAM;
 uint16_t *invalid_per_block;
 
-pthread_mutex_t mutex;//mutex for atomicity in GC logic.
-char mutex_flag = 0;//end_req mutex flag.
+//pthread_mutex_t mutex;//mutex for atomicity in GC logic.
+char sync_flag = 0;//end_req mutex flag.
 char unload_flag = 0;
+uint32_t _g_count = 0;
+uint32_t _g_valid = 0;
 value_set* _g_unload_value;
 
 uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize mapping table.
@@ -55,7 +57,6 @@ uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize map
 		invalid_per_block[i] = 0;
 	}
 
-	pthread_mutex_init(&mutex, NULL);
 	printf("pbase_create done!\n");
 	return 0;
 	//init mapping table.
@@ -81,16 +82,16 @@ void *pbase_end_req(algo_req* input)
 
 void *pbase_algo_end_req(algo_req* input)
 {
-	if(mutex_flag == 0){
+	if(sync_flag == 0){
 		free(input);
 		return 0;
 	}
-	else if(mutex_flag == 1){//ASYNC GC,
+	else if(sync_flag == 1){//ASYNC GC,
 		free(input);
 		if(unload_flag == 1){//unload phase.
 			inf_free_valueset(_g_unload_value,FS_MALLOC_W);
 		}
-		pthread_mutex_unlock(&mutex);
+		_g_count++;
 		return 0;
 	}
 	else{
@@ -221,10 +222,7 @@ uint32_t SRAM_load(int ppa, int a)
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = NULL;
 	my_req->end_req = pbase_algo_end_req; //request termination.
-	pthread_mutex_lock(&mutex);
 	algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,ASYNC,my_req);
-	pthread_mutex_lock(&mutex);
-	pthread_mutex_unlock(&mutex);
 	page_SRAM[a].lpa_RAM = page_OOB[ppa].reverse_table;//load reverse-mapped lpa.
 	page_SRAM[a].VPTR_RAM = (value_set*)malloc(sizeof(value_set));
 	memcpy(page_SRAM[a].VPTR_RAM,value_PTR,sizeof(value_set));//copy data from value_PTR 
@@ -240,15 +238,12 @@ uint32_t SRAM_unload(int ppa, int a)
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->end_req = pbase_algo_end_req;
 	my_req->parents = NULL;
-	pthread_mutex_lock(&mutex);
 	algo_pbase.li->push_data(ppa,PAGESIZE,value_PTR,ASYNC,my_req);
-	pthread_mutex_lock(&mutex);
-	pthread_mutex_unlock(&mutex);
 	page_TABLE[page_SRAM[a].lpa_RAM].lpa_to_ppa = ppa;
 	page_TABLE[ppa].valid_checker = 1;
 	page_OOB[ppa].reverse_table = page_SRAM[a].lpa_RAM;
 	page_SRAM[a].lpa_RAM = -1;
-	free(page_SRAM[a].VPTR_RAM);
+	//free(page_SRAM[a].VPTR_RAM);
 	return 0;
 }
 
@@ -269,9 +264,11 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 	PPA_status = target_block* _PPB;
 	int trim_PPA = PPA_status;
 	int valid_component = _PPB - invalid_num;
+	_g_valid = valid_component;
 	int a = 0;
 	
-	mutex_flag = 1;//need to operate atomically.
+	//mutex_flag = 1;//need to operate atomically.
+	sync_flag = 1;
 	for (int i = 0; i < _PPB; i++)
 	{
 		if (page_TABLE[trim_PPA + i].valid_checker == 1)
@@ -282,15 +279,20 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 		}
 	}
 	algo_pbase.li->trim_block(trim_PPA, false);//ASYNC mode.
-	
+	while(_g_count != _g_valid)//wait until count reaches valid.
+	{}
+
+	_g_count = 0;
 	unload_flag = 1;
 	for (int i = 0; i<valid_component; i++)
 	{
 		SRAM_unload(RSV_status,i);
 		RSV_status++;
 	}//trimming should be done before GC code finishes & new set begins.
+	while(_g_count != _g_valid)
+	{}
 	unload_flag = 0;
-	mutex_flag = 0;//reset mutex flag.
+	sync_flag = 0;//reset mutex flag.
 
 	int temp = PPA_status;
 	PPA_status = RSV_status;

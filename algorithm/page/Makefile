@@ -1,5 +1,5 @@
 SRCS +=\
-	   page_bdbm.c\
+	   page_bdbm2.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
