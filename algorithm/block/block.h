@@ -1,11 +1,20 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <pthread.h>
 #include "../../include/container.h"
 #include "../../interface/interface.h"
 #include "../../blockmanager/BM_Interface.h"
 #include "../../bench/bench.h"
+
+
 typedef struct block_params{
 	request *parents;
 	int test;
 }block_params;
+
+pthread_mutex_t lock;
+
 
 extern Block* blockArray;
 extern Block** numValid_map;

@@ -7,13 +7,18 @@ PWD=$(pwd)
 export CFLAGS_ALGO=\
 			 -g\
 			 -Wall\
+			 -D$(TARGET_LOWER)\
 #-DDVALUE\
+
 
 export CFLAGS_LOWER=\
 			-g\
 			 -lpthread\
 			 -Wall\
 			 -D_FILE_OFFSET_BITS=64\
+
+
+#CFLAGS_ALGO+=-DCOMPACTIONLOG\
 
 ifeq ($(CC), gcc)
  CFLAGS_ALGO+=-Wno-discarded-qualifiers -std=c99
@@ -28,7 +33,8 @@ CFLAGS +=\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
 		 -D_BSD_SOURCE\
-	-DBENCH\
+-DBENCH\
+
 
 SRCS +=\
 	./interface/queue.c\
@@ -78,8 +84,8 @@ duma_simulator: ./interface/main.c libsimulator.a
 
 libsimulator.a: $(TARGETOBJ)
 	mkdir -p object && mkdir -p data
-	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) && cd ../../
-	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../
+	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) clean && $(MAKE) && cd ../../
+	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
 	cd ./blockmanager && $(MAKE) && cd ../
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 	$(AR) r $(@) ./object/*

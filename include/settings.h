@@ -8,12 +8,16 @@
 #define T (1024L*G)
 #define P (1024L*T)
 
-#define TOTALSIZE (512L*G)
+#define TOTALSIZE (6L*G/8)
 #define PAGESIZE (8*K)
-#define _PPB (16384) // After master merge, _PPB becomes 512. superblock: 2^14=16384
+//#define _PPB (16384) // After master merge, _PPB becomes 512. superblock: 2^14=16384
+#define _PPB (256) // After master merge, _PPB becomes 512. superblock: 2^14=16384
 #define BLOCKSIZE (_PPB*PAGESIZE)
 #define _NOB (TOTALSIZE/BLOCKSIZE)
 #define _NOP (TOTALSIZE/PAGESIZE)
+
+#define SEGNUM (TOTALSIZE/((1<<14)*PAGESIZE))
+#define BPS ((1<<14)/_PPB)
 
 #define FSTYPE uint8_t
 #define KEYT uint32_t
@@ -21,7 +25,7 @@
 #define OOBT uint64_t
 #define V_PTR char * const
 #define PTR char*
-#define ASYNC 0
+#define ASYNC 1
 #define QSIZE (1024)
 #define THREADSIZE (1)
 

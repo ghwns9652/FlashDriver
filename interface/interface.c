@@ -20,6 +20,7 @@ extern struct lower_info memio_info;
 #endif
 MeasureTime mt;
 master_processor mp;
+//pthread_mutex_t inf_lock;
 void *p_main(void*);
 static void assign_req(request* req){
 	bool flag=false;
@@ -33,6 +34,7 @@ static void assign_req(request* req){
 			processor *t=&mp.processors[i];
 			if(q_enqueue((void*)req,t->req_q)){
 				flag=true;
+				//pthread_mutex_unlock(&inf_lock);
 				break;
 			}
 			else{
@@ -77,6 +79,9 @@ void inf_init(){
 		pthread_create(&t->t_id,NULL,&p_main,NULL);
 	}
 	pthread_mutex_init(&mp.flag,NULL);
+	/*
+	pthread_mutex_init(&inf_lock,NULL);
+	pthread_mutex_lock(&inf_lock);*/
 	measure_init(&mt);
 #ifdef posix
 	mp.li=&my_posix;
@@ -114,7 +119,6 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	
 	//printf("value->length in interface.c: %d\n", value->length);
 	req->value=inf_get_valueset(value->value,req->type,value->length);
-
 
 	req->end_req=inf_end_req;
 	req->isAsync=ASYNC;
@@ -197,6 +201,7 @@ void inf_free(){
 	printf("---\n");
 	for(int i=0; i<THREADSIZE; i++){
 		processor *t=&mp.processors[i];
+//		pthread_mutex_unlock(&inf_lock);
 		pthread_join(t->t_id,(void**)&temp);
 		//pthread_detach(t->t_id);
 		q_free(t->req_q);
@@ -229,6 +234,7 @@ void *p_main(void *__input){
 			break;
 		if(!(_inf_req=q_dequeue(_this->req_q))){
 			//sleep or nothing
+//			pthread_mutex_lock(&inf_lock);
 			continue;
 		}
 		inf_req=(request*)_inf_req;
