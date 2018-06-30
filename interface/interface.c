@@ -2,6 +2,7 @@
 #include "../include/container.h"
 #include "../include/FS.h"
 #include "../bench/bench.h"
+#include "../bench/measurement.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -20,6 +21,7 @@ extern struct lower_info memio_info;
 #endif
 MeasureTime mt;
 master_processor mp;
+//pthread_mutex_t inf_lock;
 void *p_main(void*);
 static void assign_req(request* req){
 	bool flag=false;
@@ -33,6 +35,7 @@ static void assign_req(request* req){
 			processor *t=&mp.processors[i];
 			if(q_enqueue((void*)req,t->req_q)){
 				flag=true;
+				//pthread_mutex_unlock(&inf_lock);
 				break;
 			}
 			else{
@@ -46,7 +49,7 @@ static void assign_req(request* req){
 	}
 
 	if(!req->isAsync){
-		pthread_mutex_lock(&req->async_mutex); //unlock 아닌가??
+		pthread_mutex_lock(&req->async_mutex);	
 		pthread_mutex_destroy(&req->async_mutex);
 		free(req);
 	}
@@ -77,6 +80,9 @@ void inf_init(){
 		pthread_create(&t->t_id,NULL,&p_main,NULL);
 	}
 	pthread_mutex_init(&mp.flag,NULL);
+	/*
+	pthread_mutex_init(&inf_lock,NULL);
+	pthread_mutex_lock(&inf_lock);*/
 	measure_init(&mt);
 #ifdef posix
 	mp.li=&my_posix;
@@ -96,6 +102,11 @@ void inf_init(){
 #elif defined(lsmtree)
 	mp.algo=&algo_lsm;
 #endif
+
+#ifdef badblock
+	mp.algo=&__badblock;
+#endif
+
 #ifdef page
 	mp.algo=&algo_pbase;
 #endif
@@ -112,8 +123,12 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->upper_req=NULL;
 	req->type=type;
 	req->key=key;
-	
-	req->value=inf_get_valueset(value->value,req->type,value->length);
+	if(type==FS_DELETE_T){
+		req->value=NULL;
+	}
+	else{
+		req->value=inf_get_valueset(value->value,req->type,value->length);
+	}
 
 	req->end_req=inf_end_req;
 	req->isAsync=ASYNC;
@@ -122,6 +137,11 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->algo.isused=false;
 	req->lower.isused=false;
 	req->mark=mark;
+#endif
+
+#ifdef CDF
+	measure_init(&req->latency_checker);
+	measure_start(&req->latency_checker);
 #endif
 	switch(type){
 		case FS_GET_T:
@@ -161,7 +181,9 @@ bool inf_end_req( request * const req){
 #ifdef SNU_TEST
 #else
 	bench_reap_data(req,mp.li);
+
 #endif
+
 #ifdef DEBUG
 	printf("inf_end_req!\n");
 #endif
@@ -181,7 +203,8 @@ bool inf_end_req( request * const req){
 		}
 	}
 	if(!req->isAsync){
-		pthread_mutex_unlock(&req->async_mutex);
+
+		pthread_mutex_unlock(&req->async_mutex);	
 	}
 	else{
 		free(req);
@@ -196,6 +219,7 @@ void inf_free(){
 	printf("---\n");
 	for(int i=0; i<THREADSIZE; i++){
 		processor *t=&mp.processors[i];
+//		pthread_mutex_unlock(&inf_lock);
 		pthread_join(t->t_id,(void**)&temp);
 		//pthread_detach(t->t_id);
 		q_free(t->req_q);
@@ -228,9 +252,11 @@ void *p_main(void *__input){
 			break;
 		if(!(_inf_req=q_dequeue(_this->req_q))){
 			//sleep or nothing
+//			pthread_mutex_lock(&inf_lock);
 			continue;
 		}
 		inf_req=(request*)_inf_req;
+
 		switch(inf_req->type){
 			case FS_GET_T:
 				mp.algo->get(inf_req);

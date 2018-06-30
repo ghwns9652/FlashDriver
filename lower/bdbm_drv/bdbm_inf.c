@@ -4,6 +4,7 @@
 #include "../../include/container.h"
 #include "frontend/libmemio/libmemio.h"
 #include "bdbm_inf.h"
+#include "bb_checker.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -40,6 +41,8 @@ uint32_t memio_info_create(lower_info *li){
 	pthread_mutex_lock(&test_lock);
 
 	mio=memio_open();
+
+	bb_checker_start();
 	return 1;
 }
 
@@ -57,7 +60,9 @@ void *memio_info_push_data(KEYT ppa, uint32_t size, value_set *value, bool async
 		exit(1);
 	}
 	bench_lower_w_start(&memio_info);
-	memio_write(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
+	//req->parents->ppa=bb_checker_fix_ppa(ppa);
+	memio_write(mio,bb_checker_fix_ppa(ppa),(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
+	//memio_write(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	bench_lower_w_end(&memio_info);
 	//pthread_mutex_lock(&test_lock);
 	return NULL;
@@ -69,14 +74,18 @@ void *memio_info_pull_data(KEYT ppa, uint32_t size, value_set *value, bool async
 		exit(1);
 	}
 	bench_lower_r_start(&memio_info);
-	memio_read(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
+	//req->parents->ppa=bb_checker_fix_ppa(ppa);
+	memio_read(mio,bb_checker_fix_ppa(ppa),(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
+	//memio_read(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	bench_lower_r_end(&memio_info);
 	//pthread_mutex_lock(&test_lock);
 	return NULL;
 }
 
 void *memio_info_trim_block(KEYT ppa, bool async){
-	int value=memio_trim(mio,ppa,(1<<14)*PAGESIZE);
+	//int value=memio_trim(mio,bb_checker_fix_ppa(ppa),(1<<14)*PAGESIZE,NULL);
+	int value=memio_trim(mio,bb_checker_fixed_segment(ppa),(1<<14)*PAGESIZE,NULL);
+	value=memio_trim(mio,bb_checker_paired_segment(ppa),(1<<14)*PAGESIZE,NULL);
 	if(value==0){
 		return (void*)-1;
 	}

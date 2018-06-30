@@ -9,9 +9,12 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
-
-int main(){
-	/*
+int main(){/*
+	int Input_cycle;
+	int Input_type;
+	int start;
+	int end;
+	int Input_size;
 	printf("How many times would you run a benchmark?");
 	scanf("%d", &Input_cycle);
 	bench_init(Input_cycle);
@@ -58,10 +61,13 @@ int main(){
 	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-//	bench_add(RANDRW,0,1024*30,1024*30);
-	bench_add(RANDSET,0,15*1024,15*1024);
-	bench_add(RANDGET,0,15*1024,15*1024);
-	//bench_add(RANDRW,0, 1024*1024,100*1024);
+	/*
+	for(int i=0; i<PAGESIZE;i++){
+		t_value2[i]=rand()%256;
+	}*/
+	bench_add(SEQRW,0,RANGE,2*RANGE);
+//	bench_add(RANDSET,0,15*1024,15*1024);
+//	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
 
 	value_set temp;
@@ -69,9 +75,21 @@ int main(){
 	//temp.value=NULL;
 	temp.dmatag=-1;
 	temp.length=0;
+	int cnt=0;
 	while((value=get_bench())){
 		temp.length=value->length;
+		/*
+		if(cnt==RANGE){ //for trim test
+			KEYT t_ppa=(rand()%RANGE)/(1<<14);
+			KEYT t_ppa2=(rand()%RANGE)/(1<<14);
+			while(t_ppa==t_ppa2){
+				t_ppa2=(rand()%RANGE)/(1<<14);
+			}
+			inf_make_req(FS_DELETE_T,t_ppa*(1<<14),NULL,0);
+			inf_make_req(FS_DELETE_T,t_ppa2*(1<<14),NULL,0);
+		}*/
 		inf_make_req(value->type,value->key,&temp,value->mark);
+		cnt++;
 	}
 	
 	while(!bench_is_finish()){
@@ -80,7 +98,7 @@ int main(){
 #endif
 	}
 	bench_print();
-	bench_free();
+//	bench_free();
 	inf_free();
 	return 0;
 }
