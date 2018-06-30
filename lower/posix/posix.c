@@ -13,19 +13,88 @@
 #include <pthread.h>
 #include <limits.h>
 
+struct posix_request {
+	FSTYPE type;
+	KEYT key;
+	value_set *value;
+	void *upper_req;
+};
+
+
 static int _fd;
 pthread_mutex_t fd_lock;
+queue p_q;
 lower_info my_posix={
 	.create=posix_create,
 	.destroy=posix_destroy,
+#if ASYNC 1
+	.push_data=posix_make_req,
+	.pull_data=posix_make_req,
+#else
 	.push_data=posix_push_data,
 	.pull_data=posix_pull_data,
+#endif
 	.trim_block=posix_trim_block,
 	.refresh=posix_refresh,
 	.stop=posix_stop,
 	.lower_alloc=NULL,
 	.lower_free=NULL
 };
+
+void *l_main(void *__input){
+	void *_inf_req;
+	request *inf_req;
+
+	while(1){
+		if(stopflag){
+			pthread_exit();
+			break;
+		}
+		if(!(_inf_req=q_dequeue(p_q))){
+			continue;
+		}
+		inf_req=(request*)_inf_req;
+		switch(inf_req->type){
+			case FS_GET_T:
+				posix_pull_data();
+				break;
+			case FS_SET_T:
+				posix_push_data();
+				break;
+			case FS_DELETE_T:
+				posix_trim_block();
+				break;
+		}
+	}
+	printf("posix bye bye!\n");
+	return NULL;
+}
+
+bool posix_make_push(KEYT PPA, uint32_t size, value_set* value, bool async,algo_req *const req){
+	posix_request *p_req=(posix_request*)malloc(sizeof(posix_request));
+	p_req->type=POSIX_PUSH;
+	p_req->key=PPA;
+	p_req->value=value;
+	p_req->upper_req=req;
+	
+	while(!flag){
+		if(q_enqueue((void*)req,p_q)){
+			flag=true;
+			break;
+		}
+		else{
+			flag=false;
+			continue;
+		}
+	}
+}
+
+bool posix_make_pull(KEYT PPA, uint32_t size, value_set* value, bool async,algo_req *const req){
+	posix_request *p_req=(posix_request*)malloc(sizeof(posix_request));
+	p_req->upper_req=req;
+	p_req->type=req->type;
+}
+
 
 uint32_t posix_create(lower_info *li){
 	li->NOB=_NOB;
@@ -46,6 +115,32 @@ uint32_t posix_create(lower_info *li){
 	pthread_mutex_init(&my_posix.lower_lock,NULL);
 	measure_init(&li->writeTime);
 	measure_init(&li->readTime);
+#if ASYNC 1
+	pthread_create(&p_t->t_id,NULL,&l_main,NULL);
+#endif
+	return 1;
+}
+
+uint32_t posix_async_create(lower_info *li){
+	li->NOB=_NOB;
+	li->NOP=_NOP;
+	li->SOB=BLOCKSIZE;
+	li->SOP=PAGESIZE;
+	li->SOK=sizeof(KEYT);
+	li->PPB=_PPB;
+	li->TS=TOTALSIZE;
+
+	li->write_op=li->read_op=li->trim_op=0;
+	_fd=open("data/simulator.data",O_RDWR|O_CREAT|O_TRUNC,0666);
+	if(_fd==-1){
+		printf("file open error!\n");
+		exit(-1);
+	}
+	pthread_mutex_init(&fd_lock,NULL);
+	pthread_mutex_init(&my_posix.lower_lock,NULL);
+	measure_init(&li->writeTime);
+	measure_init(&li->readTime);
+	
 	return 1;
 }
 
