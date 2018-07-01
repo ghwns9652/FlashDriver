@@ -90,6 +90,9 @@ void inf_init(){
 #ifdef bdbm_drv
 	mp.li=&memio_info;
 #endif
+#ifdef posix_async
+	mp.li=&my_posix;
+#endif
 
 
 #ifdef lsmtree
