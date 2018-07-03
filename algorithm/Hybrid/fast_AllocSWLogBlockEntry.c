@@ -10,13 +10,16 @@
  * 				 false: Return eNOTSEQUENTIAL \n
  * 				Branch 3: If offset is sequential \n
  * 				 true : Allocate SW log block entry \n
- * 				 false: Return eNOTSEQUENTIAL \n
- * @param		key					TODO
- * @param		physical_address	TODO
- * @param		req					TODO
+ * 				 false: Merge SW log block with given key and req and return eMERGEWITH \n
+ * @param		key					(IN) Logical address of I/O request
+ * @param		req					(IN) Request from FAST_Set function
+ * @param		physical_address	(OUT) Translated physical address
  * @return		Error code
+ * 
+ * @todo		Modify merge operation
+ * @todo		Variable name can make confusion
  */
-char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *const req)
+char fast_AllocSWLogBlockEntry(KEYT key, request *const req, uint32_t* physical_address)
 {
     SW_MappingInfo*     sw_MappingInfo;
     uint32_t            offset;
@@ -26,47 +29,51 @@ char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *co
 
     sw_MappingInfo = tableInfo->sw_MappingTable->data; 
 
+	// If SW log block is full, switch log block into data block
 	if (sw_MappingInfo->number_of_stored_sector == PAGE_PER_BLOCK) {
     	block = BLOCK(key);
-		// printf("Before Merge %d %d %d \n", block, sw_MappingInfo->sw_log_block, BLOCK_TABLE(sw_MappingInfo->logical_block));
 		fast_SwitchSWLogBlock();
-    	// printf("After Merge %d %d %d \n", block, sw_MappingInfo->sw_log_block, BLOCK_TABLE(sw_MappingInfo->logical_block));
 		sw_MappingInfo->logical_block = BLOCK(key);
 	}
 	
+	// Get basic information from given key and mapping table
 	block = BLOCK(key);
 	offset = OFFSET(key);
 	logical_block = sw_MappingInfo->logical_block;
     sw_log_block = sw_MappingInfo->sw_log_block;
 
+	// If offset is 0, request shouold be stored in first page in SW log block
 	if (offset == 0) {
-    	// printf("Before Merge %d %d \n", block, sw_MappingInfo->sw_log_block);
+		// If SW log block is not empty, we should merge first.
 		if (sw_MappingInfo->number_of_stored_sector != 0) {
-		// if (GET_PAGE_STATE(ADDRESS(sw_log_block, 0)) != ERASED) {
         	fast_MergeSWLogBlock(key, req);
 		}
-        // sw_log_block = sw_MappingInfo->sw_log_block;
 		sw_MappingInfo->logical_block = block;
-    	// printf("After Merge %d %d \n", block, sw_MappingInfo->sw_log_block);
 	}
+	// If block is equal to logical block for SW log block, we should store request in SW log block
 	else if (block == logical_block) {
+		// If page is not sequential, merge SW log block with request.
 		if (offset != sw_MappingInfo->number_of_stored_sector) {
 		    fast_MergeSWLogBlock(key, req);
 			sw_MappingInfo->logical_block = -1;
-			// sw_MappingInfo->logical_block = block;
-			// return (eNOTSEQUENTIAL);
+			return eMERGEWITH;
 		}
+		// If page is sequential, update Mapping information for SW log block
 		else {
 			sw_MappingInfo->number_of_stored_sector++;
 		}
 	}
+	// If block is not equal to logical block for SW log block, just return eNOTSEQUENTIAL
 	else {
 		return (eNOTSEQUENTIAL);
 	}
     
+	// Update state for data block and set physical_address with sw_log_block and offset
 	SET_PAGE_STATE(ADDRESS(BLOCK_TABLE(block), offset), INVALID);
 	*physical_address = ADDRESS(sw_log_block, offset);
 
+#ifdef DEBUG
 	printf("SW Log Block ");
+#endif
 	return (eNOERROR);
 }

@@ -78,8 +78,8 @@ int fast_ReadFromRWLogBlock(uint32_t physical_address);
 char fast_Write();
 char fast_WriteToLogBlock();
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address);
-char fast_AllocSWLogBlockEntry(KEYT key, uint32_t* physical_address, request *const req);
-char fast_AllocRWLogBlockEntry(KEYT key, uint32_t* physical_address, request *const req);
+char fast_AllocSWLogBlockEntry(KEYT key, request *const req, uint32_t* physical_address);
+char fast_AllocRWLogBlockEntry(KEYT key, request *const req, uint32_t* physical_address);
 
 /* FAST_Remove */
 char fast_SwitchSWLogBlock();

@@ -14,18 +14,23 @@
  */
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
 {
+    uint32_t    logical_block;
+    uint32_t    offset;
+    int         data_block;
+    char        state;
+    
     // Seperate key into block and offset
-    uint32_t logical_block = BLOCK(key);
-    uint32_t offset = OFFSET(key);
+    logical_block = BLOCK(key);
+    offset = OFFSET(key);
 
     // Translate logical block to physical block
-    int data_block = BLOCK_TABLE(logical_block);
+    data_block = BLOCK_TABLE(logical_block);
 
-    // Check state of ssd using tasnlated address
+    // Set physical_address and state of physical_address using data_block and offset
     *physical_address = ADDRESS(data_block, offset);
-    char state = GET_PAGE_STATE(*physical_address);
+    state = GET_PAGE_STATE(*physical_address);
     
-    // Should Use Block Mapping Table
+    // Set state of physical_address dependent to previous state of physical_address
 	if (state == VALID) {
 		SET_PAGE_STATE(*physical_address, INVALID);
 	}
@@ -33,6 +38,5 @@ char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
 		SET_PAGE_STATE(*physical_address, VALID);
 	}
 
-    // printf("%d ", state);
     return state;
 }

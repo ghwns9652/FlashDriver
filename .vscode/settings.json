@@ -8,6 +8,7 @@
         "vector": "c",
         "xstring": "c",
         "xutility": "c",
-        "fast.h": "c"
+        "fast.h": "c",
+        "iosfwd": "c"
     }
 }
