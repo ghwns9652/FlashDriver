@@ -77,6 +77,9 @@ int main(){/*
 	temp.length=0;
 	while((value=get_bench())){
 		temp.length=value->length;
+		if(value->mark!=0){
+			printf("??\n");
+		}
 		inf_make_req(value->type,value->key,&temp,value->mark);
 	}
 	
@@ -85,8 +88,8 @@ int main(){/*
 		sleep(1);
 #endif
 	}
-	bench_print();
-	bench_free();
+//	bench_print();
+//	bench_free();
 	inf_free();
 	return 0;
 }

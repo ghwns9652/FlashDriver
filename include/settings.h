@@ -8,12 +8,16 @@
 #define T (1024L*G)
 #define P (1024L*T)
 
-#define TOTALSIZE (1L*G)
+#define TOTALSIZE (16L*G)
+#define REALSIZE (512L*G)
 #define PAGESIZE (8*K)
-#define _PPB (256*64)
-#define BLOCKSIZE (PAGESIZE*_PPB)
+#define _PPB (256)
+#define _PPS (1<<14)
+#define BLOCKSIZE (_PPB*PAGESIZE)
 #define _NOB (TOTALSIZE/BLOCKSIZE)
 #define _NOP (TOTALSIZE/PAGESIZE)
+#define _NOS (TOTALSIZE/(_PPS*PAGESIZE))
+#define _RNOS (REALSIZE/(_PPS*PAGESIZE))//real number of segment
 
 //#define PAGESIZE (8*K)
 //#define _PPB (256)
@@ -21,6 +25,7 @@
 //#define _NOB (BLOCKSIZE*)
 //#define _NOP (_PPB*_NOB)
 //#define TOTALSIZE (PAGESIZE * _NOP)
+#define BPS ((_PPS)/_PPB)
 
 #define FSTYPE uint8_t
 #define KEYT uint32_t

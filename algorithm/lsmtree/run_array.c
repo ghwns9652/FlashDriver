@@ -47,7 +47,7 @@ bool level_full_check(level *input){
 			return true;
 	}
 	else{
-		if(input->n_num>=input->m_num)
+		if(input->n_num>=(input->m_num/(SIZEFACTOR)*(SIZEFACTOR-1)))
 			return true;
 	}
 	return false;
@@ -166,7 +166,7 @@ Entry **level_find(level *input,KEYT key){
 		return NULL;
 	Entry **res;
 	if(input->isTiering){
-		res=(Entry**)malloc(sizeof(Entry*)*(input->r_n_idx+1));
+		res=(Entry**)malloc(sizeof(Entry*)*(input->r_n_idx+2));
 	}
 	else{
 		res=(Entry**)malloc(sizeof(Entry*)*(input->n_run+1<2?2:input->n_run+1));
@@ -378,6 +378,7 @@ void level_print(level *input){
 	printf("level[%d]:%p\n",input->level_idx,input);
 	for(int i=0; i<=input->n_run; i++){
 		Node* temp_run=ns_run(input,i);
+		if(!temp_run) continue;
 		printf("start_run[%d]\n",i);
 		for(int j=0; j<temp_run->n_num; j++){
 			Entry *temp_ent=ns_entry(temp_run,j);
@@ -404,7 +405,15 @@ void level_print(level *input){
 	}
 }
 void level_free(level *input){
-	for(int i=0; i<input->r_n_idx; i++){
+	int target=0;
+	if(input->isTiering){
+		target=input->r_n_idx;
+	}
+	else{
+		target=1;
+	}
+
+	for(int i=0; i<target; i++){
 		Node *temp_run=ns_run(input,i);
 		for(int j=0; j<temp_run->n_num; j++){
 	//		printf("temp_run->n_num %d\n",temp_run->n_num);
@@ -454,6 +463,7 @@ void level_free_entry(Entry *entry){
 #ifdef CACHE
 	if(entry->c_entry){
 		cache_delete_entry_only(LSM.lsm_cache,entry);
+		entry->c_entry=NULL;
 	}
 #endif
 	if(entry->t_table){
@@ -475,6 +485,7 @@ void level_free_entry_inside(Entry * entry){
 #ifdef CACHE
 	if(entry->c_entry){
 		cache_delete_entry_only(LSM.lsm_cache,entry);
+		entry->c_entry=NULL;
 	}
 #endif
 	if(entry->t_table){
