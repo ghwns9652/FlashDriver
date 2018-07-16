@@ -9,6 +9,7 @@
 #include"../../interface/interface.h"
 #include "footer.h"
 
+extern OOBT *oob;
 skiplist *skiplist_init(){
 	skiplist *point=(skiplist*)malloc(sizeof(skiplist));
 	point->level=1;
@@ -16,7 +17,7 @@ skiplist *skiplist_init(){
 	point->header->list=(snode**)malloc(sizeof(snode)*(MAX_L+1));
 	for(int i=0; i<MAX_L; i++) point->header->list[i]=point->header;
 	point->header->key=INT_MAX;
-	
+
 	point->start=UINT_MAX;
 	point->end=0;
 	point->size=0;
@@ -47,6 +48,124 @@ static int getLevel(){
 }
 
 snode *skiplist_insert_wP(skiplist *list, KEYT key, KEYT ppa,bool deletef){
+	if(key>RANGE){
+		printf("bad page read\n");
+		return NULL;
+	}
+	snode *update[MAX_L+1];
+	snode *x=list->header;
+
+	for(int i=list->level; i>=1; i--){
+		while(x->list[i]->key<key)
+			x=x->list[i];
+		update[i]=x;
+	}
+	x=x->list[1];
+	if(key<list->start) list->start=key;
+	if(key>list->end) list->end=key;
+	
+	if(key==x->key){
+		//ignore new one;
+#ifndef DVALUE
+		invalidate_PPA(ppa);
+#else
+		invalidate_DPPA(ppa);
+#endif
+		/*
+		if(key==1556){
+			printf("[%d]new ppa:%d old ppa:%d\n",key,x->ppa,ppa);
+			#ifdef DVALUE
+			printf("ppb:%d\n",x->ppa/16/256);
+			#endif
+		}*/
+		//x->ppa=ppa;
+		//x->isvalid=deletef;
+		return x;
+	}
+	else{
+		int level=getLevel();
+		if(level>list->level){
+			for(int i=list->level+1; i<=level; i++){
+				update[i]=list->header;
+			}
+			list->level=level;
+		}
+
+		x=(snode*)malloc(sizeof(snode));
+		x->list=(snode**)malloc(sizeof(snode*)*(level+1));
+
+		x->key=key;
+		x->ppa=ppa;
+		x->isvalid=deletef;
+		x->value=NULL;
+		for(int i=1; i<=level; i++){
+			x->list[i]=update[i]->list[i];
+			update[i]->list[i]=x;
+		}
+		x->level=level;
+		list->size++;
+	}
+	return x;
+}
+
+snode *skiplist_insert_existIgnore(skiplist *list,KEYT key,KEYT ppa,bool deletef){	
+	if(key>RANGE){
+		printf("bad page read\n");
+		return NULL;
+	}
+	snode *update[MAX_L+1];
+	snode *x=list->header;
+
+	for(int i=list->level; i>=1; i--){
+		while(x->list[i]->key<key)
+			x=x->list[i];
+		update[i]=x;
+	}
+
+	x=x->list[1];
+	if(key<list->start) list->start=key;
+	if(key>list->end) list->end=key;
+
+	if(key==x->key){
+		//delete exists ppa; input ppa
+
+#ifndef DVALUE
+		invalidate_PPA(x->ppa);
+#else
+		invalidate_DPPA(x->ppa);
+#endif
+		x->ppa=ppa;
+		x->isvalid=deletef;
+		return x;
+	}
+	else{
+		
+		int level=getLevel();
+		if(level>list->level){
+			for(int i=list->level+1; i<=level; i++){
+				update[i]=list->header;
+			}
+			list->level=level;
+		}
+
+		x=(snode*)malloc(sizeof(snode));
+		x->list=(snode**)malloc(sizeof(snode*)*(level+1));
+
+		x->key=key;
+		x->ppa=ppa;
+		x->isvalid=deletef;
+		x->value=NULL;
+		for(int i=1; i<=level; i++){
+			x->list[i]=update[i]->list[i];
+			update[i]->list[i]=x;
+		}
+		x->level=level;
+		list->size++;
+	}
+	return x;
+}
+
+snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	snode *update[MAX_L+1];
 	snode *x=list->header;
 	for(int i=list->level; i>=1; i--){
@@ -59,97 +178,6 @@ snode *skiplist_insert_wP(skiplist *list, KEYT key, KEYT ppa,bool deletef){
 	if(key<list->start) list->start=key;
 	if(key>list->end) list->end=key;
 
-	if(key==x->key){
-		x->key=key;
-		invalidate_PPA(x->ppa);
-		x->ppa=ppa;
-		x->isvalid=deletef;
-		return x;
-	}
-	else{
-		int level=getLevel();
-		if(level>list->level){
-			for(int i=list->level+1; i<=level; i++){
-				update[i]=list->header;
-			}
-			list->level=level;
-		}
-
-		x=(snode*)malloc(sizeof(snode));
-		x->list=(snode**)malloc(sizeof(snode*)*(level+1));
-
-		x->key=key;
-		x->ppa=ppa;
-		x->isvalid=deletef;
-		x->value=NULL;
-		x->req=NULL;
-		for(int i=1; i<=level; i++){
-			x->list[i]=update[i]->list[i];
-			update[i]->list[i]=x;
-		}
-		x->level=level;
-		list->size++;
-	}
-	return x;
-}
-
-snode *skiplist_insert_existIgnore(skiplist *list,KEYT key,KEYT ppa,bool deletef){
-	snode *update[MAX_L+1];
-	snode *x=list->header;
-	for(int i=list->level; i>=1; i--){
-		while(x->list[i]->key<key)
-			x=x->list[i];
-		update[i]=x;
-	}
-	x=x->list[1];
-	if(key<list->start) list->start=key;
-	if(key>list->end) list->end=key;
-
-	if(key==x->key){
-		//delete exists ppa; input ppa
-		invalidate_PPA(ppa);
-		return x;
-	}
-	else{
-		int level=getLevel();
-		if(level>list->level){
-			for(int i=list->level+1; i<=level; i++){
-				update[i]=list->header;
-			}
-			list->level=level;
-		}
-
-		x=(snode*)malloc(sizeof(snode));
-		x->list=(snode**)malloc(sizeof(snode*)*(level+1));
-
-		x->key=key;
-		x->ppa=ppa;
-		x->isvalid=deletef;
-		x->value=NULL;
-		x->req=NULL;
-		for(int i=1; i<=level; i++){
-			x->list[i]=update[i]->list[i];
-			update[i]->list[i]=x;
-		}
-		x->level=level;
-		list->size++;
-	}
-	return x;
-}
-
-snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, algo_req *req,bool deletef){
-	snode *update[MAX_L+1];
-	snode *x=list->header;
-	for(int i=list->level; i>=1; i--){
-		while(x->list[i]->key<key)
-			x=x->list[i];
-		update[i]=x;
-	}
-	x=x->list[1];
-
-	if(key<list->start) list->start=key;
-	if(key>list->end) list->end=key;
-
 	if(value!=NULL){
 		value->length=(value->length/PIECE)+(value->length%PIECE?1:0);
 	}
@@ -158,14 +186,14 @@ snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, algo_req *req,b
 #ifdef DEBUG
 
 #endif
-		algo_req * old_req=x->req;
-		lsm_params *old_params=(lsm_params*)old_req->params;
-		old_params->lsm_type=OLDDATA;
-		free(x->value);
-		old_req->end_req(old_req);
+	//	algo_req * old_req=x->req;
+	//	lsm_params *old_params=(lsm_params*)old_req->params;
+	//	old_params->lsm_type=OLDDATA;
+
+		inf_free_valueset(x->value,FS_MALLOC_W);
+	//	old_req->end_req(old_req);
 
 		x->value=value;
-		x->req=req;
 		x->isvalid=deletef;
 		return x;
 	}
@@ -182,7 +210,6 @@ snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, algo_req *req,b
 		x->list=(snode**)malloc(sizeof(snode*)*(level+1));
 
 		x->key=key;
-		x->req=req;
 		x->isvalid=deletef;
 
 		x->ppa=UINT_MAX;
@@ -201,9 +228,10 @@ snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, algo_req *req,b
 	return x;
 }
 
-value_set **skiplist_make_valueset(skiplist *input){
-	value_set **res=(value_set**)malloc(sizeof(value_set*)*KEYNUM);
-	memset(res,0,sizeof(value_set*)*KEYNUM);
+value_set **skiplist_make_valueset(skiplist *input, level *from){
+	gc_check(DATA,false);
+	value_set **res=(value_set**)malloc(sizeof(value_set*)*(KEYNUM+1));
+	memset(res,0,sizeof(value_set*)*(KEYNUM+1));
 	l_bucket b;
 	memset(&b,0,sizeof(b));
 
@@ -215,57 +243,91 @@ value_set **skiplist_make_valueset(skiplist *input){
 		total_size+=target->value->length;
 	}
 	free(iter);
-	
+
 	int res_idx=0;
-	for(int i=0; i<b.idx[PAGESIZE/PIECE]; i++){
-		snode *target=b.bucket[PAGESIZE/PIECE][i];
-		res[res_idx]=target->value; //if target->value==PAGESIZE
+	for(int i=0; i<b.idx[PAGESIZE/PIECE]; i++){//full page 
+		target=b.bucket[PAGESIZE/PIECE][i];
+		res[res_idx]=target->value;
+		level_moveTo_front_page(from);
+		res[res_idx]->ppa=level_get_page(from,(PAGESIZE/PIECE));
+		/*checking new ppa in skiplist_valuset*/
+		/*
+		if(res[res_idx]->ppa==1068256){
+			printf("-----lpa:%d\n",target->key);
+		}*/
+#ifdef DVALUE
+		oob[res[res_idx]->ppa/(PAGESIZE/PIECE)]=PBITSET(target->key,true);//OOB setting
+#else
+		oob[res[res_idx]->ppa]=PBITSET(target->key,true);
+#endif
+		target->ppa=res[res_idx]->ppa;
+
 		target->value=NULL;
-		res[res_idx]->ppa=getDPPA(target->key,true);
 		res_idx++;
 	}
-
 	b.idx[PAGESIZE/PIECE]=0;
+
+	for(int i=0; i<PAGESIZE/PIECE+1; i++){
+		if(b.idx[i]!=0)
+			break;
+		if(i==PAGESIZE/PIECE){
+			return res;
+		}
+	}
+
+#ifdef DVALUE
 	while(1){
 		PTR page=NULL;
 		int ptr=0;
 		int remain=PAGESIZE-PIECE;
 		footer *foot=f_init();
 
-		res[res_idx]=inf_get_valueset(page,FS_MALLOC_W,PAGESIZE); //assign new dma in page
-		res[res_idx]->ppa=getDPPA(0,false);
-		page=res[res_idx]->value;
+		res[res_idx]=inf_get_valueset(page,FS_MALLOC_W,PAGESIZE); 
+		level_moveTo_front_page(from);
 
+		res[res_idx]->ppa=from->now_block->ppage_array[from->now_block->ppage_idx];
+
+		oob[res[res_idx]->ppa/(PAGESIZE/PIECE)]=PBITSET(res[res_idx]->ppa,false);
+		page=res[res_idx]->value;//assign new dma in page
+
+		uint8_t used_piece=0;
 		while(remain>0){
 			int target_length=remain/PIECE;
 			while(b.idx[target_length]==0 && target_length!=0) --target_length;
 			if(target_length==0){
 				break;
 			}
-			target=b.bucket[target_length][b.idx[target_length]];
-			target->ppa=res[res_idx]->ppa;
-			f_insert(foot,target->key,target_length);
+			target=b.bucket[target_length][b.idx[target_length]-1];
+			target->ppa=level_get_page(from,target->value->length);
 
-			memcpy(&page[ptr],target->value,target_length*PIECE);
+
+			/*checking new ppa in skiplist_valuset*//*
+			if(target->ppa==1068256)
+				printf("-----lpa:%d length:%d\n",target->key,target->value->length);*/
+
+			used_piece+=target_length;
+			f_insert(foot,target->key,target->ppa,target_length);
+
+			memcpy(&page[ptr],target->value->value,target_length*PIECE);
 			b.idx[target_length]--;
 
 			ptr+=target_length*PIECE;
 			remain-=target_length*PIECE;
 		}
 		memcpy(&page[(PAGESIZE/PIECE-1)*PIECE],foot,sizeof(footer));
-		
+
 		res_idx++;
 
 		free(foot);
 		bool stop=0;
-		for(int i=0; i<PAGESIZE/PIECE; i++){
+		for(int i=0; i<PAGESIZE/PIECE+1; i++){
 			if(b.idx[i]!=0)
 				break;
 			if(i==PAGESIZE/PIECE) stop=true;
 		}
 		if(stop) break;
 	}
-
+#endif
 	return res;
 }
 
@@ -326,7 +388,7 @@ void skiplist_dump(skiplist * list){
 	sk_iter *iter=skiplist_get_iterator(list);
 	snode *now;
 	while((now=skiplist_get_next(iter))!=NULL){
-		for(int i=1; i<=now->level; i++){
+		for(KEYT i=1; i<=now->level; i++){
 			printf("%u ",now->key);
 		}
 		printf("\n");
@@ -341,12 +403,13 @@ void skiplist_clear(skiplist *list){
 		if(now->value){
 			inf_free_valueset(now->value,FS_MALLOC_W);//not only length<PAGESIZE also length==PAGESIZE, just free req from inf
 		}
-		
+
 		free(now->list);
+		/*
 		if(now->req){
 			free(now->req->params);
 			free(now->req);
-		}
+		}*/
 		free(now);
 		now=next;
 		next=now->list[1];
@@ -355,7 +418,7 @@ void skiplist_clear(skiplist *list){
 	list->level=0;
 	for(int i=0; i<MAX_L; i++) list->header->list[i]=list->header;
 	list->header->key=INT_MAX;
-	
+
 }
 void skiplist_free(skiplist *list){
 	skiplist_clear(list);
@@ -412,8 +475,10 @@ skiplist *skiplist_cut(skiplist *list, KEYT num,KEYT limit){
 			temp_s=skiplist_insert_wP(list,temp->key,temp->ppa,temp->isvalid);
 			temp_s->ppa=temp->ppa;
 			free(temp->list);
+			/*
 			if(temp->req)
 				free(temp->req);
+				*/
 			free(temp);
 			skiplist_free(res);
 			return NULL;
@@ -428,13 +493,13 @@ skiplist *skiplist_cut(skiplist *list, KEYT num,KEYT limit){
 	res->size=num;
 	//error check
 	/*
-	sk_iter* iter=skiplist_get_iterator(res);
-	snode *node;
-	while((node=skiplist_get_next(iter))){
-		if(node->ppa<512){
-			printf("here!\n");
-		}
-	}*/
+	   sk_iter* iter=skiplist_get_iterator(res);
+	   snode *node;
+	   while((node=skiplist_get_next(iter))){
+	   if(node->ppa<512){
+	   printf("here!\n");
+	   }
+	   }*/
 	return res;
 }
 void skiplist_save(skiplist *input){
@@ -445,40 +510,40 @@ skiplist *skiplist_load(){
 	return res;
 }
 /*
-int main(){
-	skiplist * temp=skiplist_init(); //make new skiplist
-	char cont[VALUESIZE]={0,}; //value;
-	for(int i=0; i<INPUTSIZE; i++){
-		memcpy(cont,&i,sizeof(i));
-		skiplist_insert(temp,i,cont); //the value is copied
-	}
+   int main(){
+   skiplist * temp=skiplist_init(); //make new skiplist
+   char cont[VALUESIZE]={0,}; //value;
+   for(int i=0; i<INPUTSIZE; i++){
+   memcpy(cont,&i,sizeof(i));
+   skiplist_insert(temp,i,cont); //the value is copied
+   }
 
-	snode *node;
-	int cnt=0;
-	while(temp->size != 0){
-		sk_iter *iter=skiplist_get_iterator(temp); //read only iterator
-		while((node=skiplist_get_next(iter))!=NULL){ 
-			if(node->level==temp->level){
-				skiplist_delete(temp,node->key); //if iterator's now node is deleted, can't use the iterator! 
-												 //should make new iterator
-				cnt++;
-				break;
-			}
-		}
-		free(iter); //must free iterator 
-		if(cnt==10)
-			break;
-	}
+   snode *node;
+   int cnt=0;
+   while(temp->size != 0){
+   sk_iter *iter=skiplist_get_iterator(temp); //read only iterator
+   while((node=skiplist_get_next(iter))!=NULL){ 
+   if(node->level==temp->level){
+   skiplist_delete(temp,node->key); //if iterator's now node is deleted, can't use the iterator! 
+//should make new iterator
+cnt++;
+break;
+}
+}
+free(iter); //must free iterator 
+if(cnt==10)
+break;
+}
 
-	for(int i=INPUTSIZE; i<2*INPUTSIZE; i++){
-		memcpy(cont,&i,sizeof(i));
-		skiplist_insert(temp,i,cont);
-	}
+for(int i=INPUTSIZE; i<2*INPUTSIZE; i++){
+memcpy(cont,&i,sizeof(i));
+skiplist_insert(temp,i,cont);
+}
 
 
-	skiplist_dump(temp); //dump key and node's level
-	snode *finded=skiplist_find(temp,100);
-	printf("find : [%d]\n",finded->key);
-	skiplist_free(temp);
-	return 0;
+skiplist_dump(temp); //dump key and node's level
+snode *finded=skiplist_find(temp,100);
+printf("find : [%d]\n",finded->key);
+skiplist_free(temp);
+return 0;
 }*/

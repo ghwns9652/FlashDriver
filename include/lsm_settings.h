@@ -1,30 +1,42 @@
 #ifndef __H_SETLSM__
 #define __H_SETLSM__
 
+
+/*lsmtree structure*/
 #define SIZEFACTOR 10
 #define RAF 1
-#define LEVELN 5
+#define LEVELN 7
+#define BLOOM
+#define MONKEY
+#define PIECE 512
+//#define LEVELUSINGHEAP
+//#define TIERING
+//#define CACHE
+//#define CACHESIZE (128*8*100)//1*128==1M
 
+/*lsmtree flash thread*/
 #define KEYNUM 1024
 #define KEYSIZE ()
 #define CTHREAD 1
 #define CQSIZE 2
-#define EPC 20 //size factor have to be multiple of SIZEFACTOR
-#define TIERING
-#define TIERFACTOR 10
-
-#define HEADERB (512)
+#define FTHREAD 1
+#define FQSIZE 2
+#define RQSIZE 1024
 #define ONETHREAD
 //#define NOGC
-#define BLOOM
-#define MONKEY
-#define ENTRYBIT 31//for tiering
-#define CACHE
-#define CACHESIZE (128*8*100)//1*128==1M
 
-#define PIECE 512
+/*compaction*/
+#define EPC 20 //size factor have to be multiple of SIZEFACTOR
+
+/*block,header,data area variable*/
+#define HEADERSEG 40
+#define BLOCKSEG (1)
+#define DATASEG ((_NOS-HEADERSEG-BLOCKSEG-1-(BLOCKSEG?1:0))-1)
+
+
+//#define FLASHCHECK
 
 //#define SNU_TEST
-//#define SPINLOCK
-#define MUTEXLOCK
+#define SPINLOCK
+//#define MUTEXLOCK
 #endif

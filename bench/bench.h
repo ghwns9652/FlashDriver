@@ -39,7 +39,10 @@ typedef struct{
 	uint64_t notfound;
 	uint64_t write_cnt;
 	uint64_t read_cnt;
+	bench_type type;
 	MeasureTime benchTime;
+	MeasureTime benchTime2;
+	uint64_t cache_hit;
 }monitor;
 
 typedef struct{
@@ -62,6 +65,7 @@ void bench_li_print(lower_info *,monitor *);
 bool bench_is_finish_n(int n);
 bool bench_is_finish();
 
+void bench_cache_hit(int mark);
 void bench_algo_start(request *const);
 void bench_algo_end(request *const);
 void bench_lower_start(request *const);
@@ -72,7 +76,9 @@ void bench_lower_r_start(lower_info *);
 void bench_lower_r_end(lower_info *);
 void bench_lower_t(lower_info*);
 void bench_reap_data(request *const,lower_info *);
-
+#ifdef CDF
+void bench_cdf_print(uint64_t, uint8_t istype);
+#endif
 void free_bnech_all();
 void free_bench_one(bench_value *);
 #endif

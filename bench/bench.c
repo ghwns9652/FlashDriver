@@ -16,6 +16,12 @@ void randset(KEYT,KEYT,monitor*);
 void randrw(KEYT,KEYT,monitor*);
 void mixed(KEYT,KEYT,int percentage,monitor*);
 
+#ifdef CDF
+#define TIMESLOT 100  //micro sec
+uint64_t write_cdf[1000000/TIMESLOT+1];
+uint64_t read_cdf[1000000/TIMESLOT+1];
+#endif
+
 pthread_mutex_t bench_lock;
 void bench_init(int benchnum){
 	_master=(master*)malloc(sizeof(master));
@@ -43,6 +49,7 @@ void bench_make_data(){
 	_m->n_num=0;
 	_m->r_num=0;
 	_m->m_num=_meta->number;
+	_m->type=_meta->type;
 	KEYT start=_meta->start;
 	KEYT end=_meta->end;
 
@@ -72,6 +79,7 @@ void bench_make_data(){
 	measure_init(&_m->benchTime);
 	MS(&_m->benchTime);
 }
+
 void bench_add(bench_type type, KEYT start, KEYT end, uint64_t number){
 	static int idx=0;
 	_master->meta[idx].start=start;
@@ -99,10 +107,14 @@ bench_value* get_bench(){
 		while(!bench_is_finish_n(_master->n_num)){}
 		printf("\rtesting...... [100%%] done!\n");
 		printf("\n");
+#ifdef CDF
+		bench_cdf_print(_m->m_num,_m->type);
+#endif
 		free(_m->body);
 		_master->n_num++;
 		if(_master->n_num==_master->m_num)
 			return NULL;
+
 		bench_make_data();
 		_m=&_master->m[_master->n_num];
 	}
@@ -113,8 +125,10 @@ bench_value* get_bench(){
 		printf("\r testing.....[%f%%]",head/body*100);
 	}
 	else if(_m->n_num%(PRINTPER*(_m->m_num/100))==0){
+#ifdef BENCH
 		printf("\r testing...... [%ld%%]",(_m->n_num)/(_m->m_num/100));
 		fflush(stdout);
+#endif
 	}
 	return &_m->body[_m->n_num++];
 }
@@ -171,20 +185,44 @@ void bench_print(){
 		bench_li_print(&_master->li[i],_m);
 #endif
 		printf("\n----summary----\n");
-		_m->benchTime.adding.tv_sec+=_m->benchTime.adding.tv_usec/1000000;
-		_m->benchTime.adding.tv_usec%=1000000;
-		printf("[all_time]: %ld.%ld\n",_m->benchTime.adding.tv_sec,_m->benchTime.adding.tv_usec);
-		uint64_t total_data=(PAGESIZE * _m->m_num)/1024;
-		printf("[size]: %lf(mb)\n",(double)total_data/1024);
-		double total_time=_m->benchTime.adding.tv_sec+(double)_m->benchTime.adding.tv_usec/1000000;
-		double throughput=(double)total_data/total_time;
-		double sr=1-((double)_m->notfound/_m->m_num);
-		throughput*=sr;
-		printf("[FAIL NUM] %ld\n",_m->notfound);
-		printf("[SUCCESS RATIO] %lf\n",sr);
-		printf("[throughput] %lf(kb/s)\n",throughput);
-		printf("             %lf(mb/s)\n",throughput/1024);
-		printf("[READ WRITE CNT] %ld %ld\n",_m->read_cnt,_m->write_cnt);
+		if(_m->type==RANDRW || _m->type==SEQRW){
+			uint64_t total_data=(PAGESIZE * _m->m_num/2)/1024;
+			double total_time2=_m->benchTime.adding.tv_sec+(double)_m->benchTime.adding.tv_usec/1000000;
+			double total_time1=_m->benchTime2.adding.tv_sec+(double)_m->benchTime2.adding.tv_usec/1000000;
+			double throughput1=(double)total_data/total_time1;
+			double throughput2=(double)total_data/total_time2;
+			double sr=1-((double)_m->notfound/_m->m_num);
+			throughput2*=sr;
+
+			printf("[all_time1]: %ld.%ld\n",_m->benchTime.adding.tv_sec,_m->benchTime.adding.tv_usec);
+			printf("[all_time2]: %ld.%ld\n",_m->benchTime2.adding.tv_sec,_m->benchTime2.adding.tv_usec);
+			printf("[size]: %lf(mb)\n",(double)total_data/1024);
+
+			printf("[FAIL NUM] %ld\n",_m->notfound);
+			printf("[SUCCESS RATIO] %lf\n",sr);
+			printf("[throughput1] %lf(kb/s)\n",throughput1);
+			printf("             %lf(mb/s)\n",throughput1/1024);
+			printf("[throughput2] %lf(kb/s)\n",throughput2);
+			printf("             %lf(mb/s)\n",throughput2/1024);
+			printf("[cache hit cnt,ratio] %ld, %lf\n",_m->cache_hit,(double)_m->cache_hit/(_m->m_num/2));
+			printf("[READ WRITE CNT] %ld %ld\n",_m->read_cnt,_m->write_cnt);
+		}
+		else{
+			_m->benchTime.adding.tv_sec+=_m->benchTime.adding.tv_usec/1000000;
+			_m->benchTime.adding.tv_usec%=1000000;
+			printf("[all_time]: %ld.%ld\n",_m->benchTime.adding.tv_sec,_m->benchTime.adding.tv_usec);
+			uint64_t total_data=(PAGESIZE * _m->m_num)/1024;
+			printf("[size]: %lf(mb)\n",(double)total_data/1024);
+			double total_time=_m->benchTime.adding.tv_sec+(double)_m->benchTime.adding.tv_usec/1000000;
+			double throughput=(double)total_data/total_time;
+			double sr=1-((double)_m->notfound/_m->m_num);
+			throughput*=sr;
+			printf("[FAIL NUM] %ld\n",_m->notfound);
+			printf("[SUCCESS RATIO] %lf\n",sr);
+			printf("[throughput] %lf(kb/s)\n",throughput);
+			printf("             %lf(mb/s)\n",throughput/1024);
+			printf("[READ WRITE CNT] %ld %ld\n",_m->read_cnt,_m->write_cnt);
+		}
 	}
 }
 void bench_algo_start(request *const req){
@@ -240,8 +278,58 @@ void __bench_time_maker(MeasureTime mt, bench_data *datas,bool isalgo){
 	}
 	return;
 }
+
+#ifdef CDF
+void bench_cdf_print(uint64_t nor, uint8_t type){//number of reqeusts
+	uint64_t cumulate_number=0;
+	if(type>RANDSET)
+		nor/=2;
+	if(type>RANDSET || type%2==1){
+		printf("\n[cdf]write---\n");
+		for(int i=0; i<1000000/TIMESLOT+1; i++){
+			cumulate_number+=write_cdf[i];
+			if(write_cdf[i]==0) continue;
+			printf("%d\t\t%ld\t\t%f\n",i,write_cdf[i],(float)cumulate_number/nor);
+			if(nor==cumulate_number)
+				break;
+		}	
+	}
+	cumulate_number=0;
+	if(type>RANDSET || type%2==0){
+		printf("\n[cdf]read---\n");
+		for(int i=0; i<1000000/TIMESLOT+1; i++){
+			cumulate_number+=read_cdf[i];
+			if(read_cdf[i]==0) continue;
+			printf("%d\t\t%ld\t\t%f\n",i,read_cdf[i],(float)cumulate_number/nor);	
+			if(nor==cumulate_number)
+				break;
+		}
+	}
+}
+#endif
+
 void bench_reap_data(request *const req,lower_info *li){
 	pthread_mutex_lock(&bench_lock);
+#ifdef CDF
+	measure_calc(&req->latency_checker);
+	int slot_num=req->latency_checker.micro_time/TIMESLOT;
+	if(req->type==FS_GET_T){
+		if(slot_num>=1000000/TIMESLOT){
+			read_cdf[1000000/TIMESLOT]++;
+		}
+		else{
+			read_cdf[slot_num]++;
+		}
+	}
+	else if(req->type==FS_SET_T){
+		if(slot_num>=1000000/TIMESLOT){
+			write_cdf[1000000/TIMESLOT]++;
+		}
+		else{
+			write_cdf[slot_num]++;
+		}
+	}
+#endif
 	if(!req){ 
 		pthread_mutex_unlock(&bench_lock);
 		return;
@@ -251,6 +339,12 @@ void bench_reap_data(request *const req,lower_info *li){
 	bench_data *_data=&_master->datas[idx];
 	if(_m->m_num==++_m->r_num){
 		_data->bench=_m->benchTime;
+	}
+	if(_m->r_num==_m->m_num/2 && (_m->type==SEQRW || _m->type==RANDRW)){
+		MA(&_m->benchTime);
+		_m->benchTime2=_m->benchTime;
+		measure_init(&_m->benchTime);
+		MS(&_m->benchTime);
 	}
 #ifdef BENCH
 	if(req->algo.isused)
@@ -300,11 +394,7 @@ void seqget(KEYT start, KEYT end,monitor *m){
 	printf("making seq Get bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
 		m->body[i].key=start+(i%(end-start));
-#ifdef DVALUE
-		m->body[i].length=0;
-#else	
 		m->body[i].length=PAGESIZE;
-#endif
 		m->body[i].type=FS_GET_T;
 		m->body[i].mark=m->mark;
 		m->read_cnt++;
@@ -317,6 +407,8 @@ void seqset(KEYT start, KEYT end,monitor *m){
 		m->body[i].key=start+(i%(end-start));
 #ifdef DVALUE
 		m->body[i].length=(rand()%16+1)*512;
+#else
+		m->body[i].length=PAGESIZE;
 #endif
 		m->body[i].type=FS_SET_T;
 		m->body[i].mark=m->mark;
@@ -338,11 +430,7 @@ void seqrw(KEYT start, KEYT end, monitor *m){
 		m->write_cnt++;
 		m->body[i+m->m_num/2].key=start+(i%(end-start));
 		m->body[i+m->m_num/2].type=FS_GET_T;
-#ifdef DVALUE
-		m->body[i+m->m_num/2].length=0;
-#else	
 		m->body[i+m->m_num/2].length=PAGESIZE;
-#endif
 		m->body[i+m->m_num/2].mark=m->mark;
 		m->read_cnt++;
 	}
@@ -351,13 +439,9 @@ void seqrw(KEYT start, KEYT end, monitor *m){
 void randget(KEYT start, KEYT end,monitor *m){
 	printf("making rand Get bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
-		m->body[i].key=start+rand()%(end-start)+1;
+		m->body[i].key=start+rand()%(end-start);
 		m->body[i].type=FS_GET_T;
-#ifdef DVALUE
-		m->body[i].length=0;
-#else	
 		m->body[i].length=PAGESIZE;
-#endif
 		m->body[i].mark=m->mark;
 		m->read_cnt++;
 	}
@@ -366,7 +450,7 @@ void randget(KEYT start, KEYT end,monitor *m){
 void randset(KEYT start, KEYT end, monitor *m){
 	printf("making rand Set bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
-		m->body[i].key=start+rand()%(end-start)+1;
+		m->body[i].key=start+rand()%(end-start);
 #ifdef DVALUE
 		m->body[i].length=(rand()%16+1)*512;
 #else	
@@ -381,7 +465,7 @@ void randset(KEYT start, KEYT end, monitor *m){
 void randrw(KEYT start, KEYT end, monitor *m){
 	printf("making rand Set and Get bench!\n");
 	for(KEYT i=0; i<m->m_num/2; i++){
-		m->body[i].key=start+rand()%(end-start)+1;
+		m->body[i].key=start+rand()%(end-start);
 		m->body[i].type=FS_SET_T;
 #ifdef DVALUE
 		m->body[i].length=(rand()%16+1)*512;
@@ -392,11 +476,7 @@ void randrw(KEYT start, KEYT end, monitor *m){
 		m->write_cnt++;
 		m->body[m->m_num/2+i].key=m->body[i].key;
 		m->body[m->m_num/2+i].type=FS_GET_T;
-#ifdef DVALUE
-		m->body[m->m_num/2+i].length=0;
-#else	
 		m->body[m->m_num/2+i].length=PAGESIZE;
-#endif
 		m->body[m->m_num/2+i].mark=m->mark;
 		m->read_cnt++;
 	}
@@ -408,10 +488,16 @@ void mixed(KEYT start, KEYT end,int percentage, monitor *m){
 		m->body[i].key=rand()%m->m_num;
 		if(rand()%100<percentage){
 			m->body[i].type=FS_SET_T;
+#ifdef DVALUE
+			m->body[i].length=(rand()%16+1)*512;
+#else
+			m->body[i].length=PAGESIZE;
+#endif
 			m->write_cnt++;
 		}
 		else{
 			m->body[i].type=FS_GET_T;
+			m->body[i].length=PAGESIZE;
 			m->read_cnt++;
 		}
 		m->body[i].mark=m->mark;
@@ -448,4 +534,10 @@ void bench_lower_t(lower_info *li){
 #ifdef BENCH
 	li->trim_op++;
 #endif
+}
+
+void bench_cache_hit(int mark){
+	/*
+	monitor *_m=&_master->m[mark];
+	_m->cache_hit++;*/
 }

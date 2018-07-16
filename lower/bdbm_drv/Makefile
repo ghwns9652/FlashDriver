@@ -1,5 +1,6 @@
 SRCS +=\
 		bdbm_inf.c\
+		bb_checker.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -56,6 +57,8 @@ libmemio.a:
 libbdbm_drv.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)
 	
+ttttt: test_main.c bb_checker.c
+	gcc -g -DSLC -o test test_main.c bb_checker.c
 
 .c.o :
 	$(CC) $(INCLUDES) $(CFLAGS_LOWER) -c $< -o $@

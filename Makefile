@@ -1,18 +1,32 @@
 export CC=g++
 
-TARGET_LOWER=posix
+TARGET_LOWER=bdbm_drv
 TARGET_ALGO=normal
 PWD=$(pwd)
+
+COMMONFLAGS=\
+			-DSLC\
+
 
 export CFLAGS_ALGO=\
 			 -g\
 			 -Wall\
+			 -D$(TARGET_LOWER)\
+#-DDVALUE\
+
 
 export CFLAGS_LOWER=\
 			-g\
 			 -lpthread\
 			 -Wall\
 			 -D_FILE_OFFSET_BITS=64\
+
+
+#CFLAGS_ALGO+=-DCOMPACTIONLOG\
+	
+CFLAGS_ALGO+=$(COMMONFLAGS)\
+
+CFLAGS_LOWER+=$(COMMONFLAGS)\
 
 ifeq ($(CC), gcc)
  CFLAGS_ALGO+=-Wno-discarded-qualifiers -std=c99
@@ -27,7 +41,9 @@ CFLAGS +=\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
 		 -D_BSD_SOURCE\
-	-DBENCH\
+-DCDF\
+-DBENCH\
+
 
 SRCS +=\
 	./interface/queue.c\
@@ -63,7 +79,7 @@ memory_leak: simulator_memory_check
 duma_sim: duma_simulator
 	
 simulator_memory_check: ./interface/main.c mem_libsimulator.a
-	$(CC) $(CFLAGS) -DLEAKCHECK -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -DLEAKCHECK -o $@ $^ $(ARCH) $(LIBS)
 
 debug_simulator: ./interface/main.c libsimulator_d.a
 	$(CC) $(CFLAGS) -DDEBUG -o $@ $^ $(LIBS)
@@ -72,12 +88,12 @@ simulator: ./interface/main.c libsimulator.a
 	$(CC) $(CFLAGS) -o $@ $^ $(ARCH) $(LIBS)
 
 duma_simulator: ./interface/main.c libsimulator.a
-	$(CC) $(CFLAGS) -DDUMA_SO_NO_LEAKDETECTION -o $@ $^ -lduma $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ -lduma $(ARCH) $(LIBS)
 	
 
 libsimulator.a: $(TARGETOBJ)
 	mkdir -p object && mkdir -p data
-	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) && cd ../../
+	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) clean && $(MAKE) && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 	$(AR) r $(@) ./object/*
