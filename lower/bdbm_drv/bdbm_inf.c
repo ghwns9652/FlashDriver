@@ -59,7 +59,6 @@ void *memio_info_push_data(KEYT ppa, uint32_t size, value_set *value, bool async
 //	printf("in push:%c\n",value->value[0]);
 	memio_write(mio,bb_checker_fix_ppa(ppa),(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//memio_write(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
-	printf("in push:%c\n",value->value[0]);
 	bench_lower_w_end(&memio_info);
 	return NULL;
 }
@@ -73,7 +72,6 @@ void *memio_info_pull_data(KEYT ppa, uint32_t size, value_set *value, bool async
 //	printf("in pull:%c\n",value->value[0]);
 	memio_read(mio,bb_checker_fix_ppa(ppa),(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//memio_read(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
-	printf("in pull%c\n",value->value[0]);
 	bench_lower_r_end(&memio_info);
 	return NULL;
 }

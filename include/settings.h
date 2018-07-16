@@ -8,7 +8,11 @@
 #define T (1024L*G)
 #define P (1024L*T)
 
+<<<<<<< HEAD
 #define TOTALSIZE (1L*G)
+=======
+#define TOTALSIZE (16L*G)
+>>>>>>> 57005bd88a70613230a91efedc8098b375ad7437
 #define REALSIZE (512L*G)
 #define PAGESIZE (8*K)
 #define _PPB (1<<14)

@@ -1,6 +1,10 @@
 export CC=g++
 
+<<<<<<< HEAD
 TARGET_LOWER=posix
+=======
+TARGET_LOWER=bdbm_drv
+>>>>>>> 57005bd88a70613230a91efedc8098b375ad7437
 TARGET_ALGO=page
 PWD=$(pwd)
 

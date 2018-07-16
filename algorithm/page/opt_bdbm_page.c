@@ -27,7 +27,6 @@ char sync_flag = 0;//end_req mutex flag.
 char unload_flag = 0;
 uint32_t _g_count = 0;
 uint32_t _g_valid = 0;
-value_set* _g_unload_value;
 
 uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize mapping table.
 {
@@ -94,16 +93,18 @@ uint32_t pbase_get(request* const req)
 {
 	//put request in normal_param first.
 	//request has a type, key and value.
-	
+	int target;
+	algo_req *my_req
+
 	bench_algo_start(req);
-	int target = page_TABLE[req->key].lpa_to_ppa;
+	target = page_TABLE[req->key].lpa_to_ppa;
 	if (target == -1){
 		req->type = FS_NOTFOUND_T;
 		bench_algo_end(req);	
 		req->end_req(req);
 		return 0;
 	}
-	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req)); //init reqeust
+	my_req = (algo_req*)malloc(sizeof(algo_req)); //init reqeust
 	my_req->parents = req;
 	my_req->end_req = pbase_end_req; //allocate end_req for request.
 	bench_algo_end(req);
@@ -114,6 +115,8 @@ uint32_t pbase_get(request* const req)
 
 uint32_t pbase_set(request* const req)
 {
+	int temp
+	algo_req * my_req;
 
 	bench_algo_start(req);
 	algo_req * my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -134,7 +137,7 @@ uint32_t pbase_set(request* const req)
 	//!garbage_collection.
 	if (page_TABLE[req->key].lpa_to_ppa != -1)
 	{
-		int temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
+		temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
 		page_TABLE[temp].valid_checker = 0; //set that ppa validity to 0.
 		invalid_per_block[temp/_PPB] += 1;
 	}
