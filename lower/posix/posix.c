@@ -108,8 +108,8 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 	if(!(res=read(_fd,value->value,size))){
 		printf("%d:read none!\n",res);
 	}
-	printf("in pull: %d\n",value->value[0]);
 	pthread_mutex_unlock(&fd_lock);
+	printf("in pull: %c\n",value->value[0]);
 
 	if(req->parents)
 		bench_lower_end(req->parents);

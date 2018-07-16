@@ -39,8 +39,8 @@ uint32_t pbase_get(request* const);
 uint32_t pbase_set(request* const);
 uint32_t pbase_remove(request* const);
 void *pbase_end_req(algo_req*);
-uint32_t SRAM_load(int ppa, int a); // loads info on SRAM.
-uint32_t SRAM_unload(int ppa, int a); // unloads info from SRAM.
+value_set* SRAM_load(int ppa, int a); // loads info on SRAM.
+value_set* SRAM_unload(int ppa, int a); // unloads info from SRAM.
 uint32_t pbase_garbage_collection(); // page- GC function.
  
 #endif //!_PAGE_H_

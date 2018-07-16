@@ -1,6 +1,6 @@
 export CC=g++
 
-TARGET_LOWER=bdbm_drv
+TARGET_LOWER=posix
 TARGET_ALGO=page
 PWD=$(pwd)
 
@@ -18,7 +18,7 @@ export CFLAGS_LOWER=\
 			 -D_FILE_OFFSET_BITS=64\
 
 
-#CFLAGS_ALGO+=-DCOMPACTIONLOG\
+CFLAGS_ALGO+=-DCOMPACTIONLOG\
 
 ifeq ($(CC), gcc)
  CFLAGS_ALGO+=-Wno-discarded-qualifiers -std=c99
