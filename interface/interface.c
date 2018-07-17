@@ -10,10 +10,7 @@
 #include <string.h>
 extern struct lower_info my_posix;
 extern struct algorithm __normal;
-<<<<<<< HEAD
 extern struct algorithm __block;
-=======
->>>>>>> 55127f0306b75cd29328f82e06393fec173a8f9d
 extern struct algorithm __badblock;
 extern struct algorithm algo_pbase;
 #ifdef lsmtree
@@ -126,18 +123,14 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->upper_req=NULL;
 	req->type=type;
 	req->key=key;
-<<<<<<< HEAD
 	
 	//printf("value->length in interface.c: %d\n", value->length);
-	req->value=inf_get_valueset(value->value,req->type,value->length);
-=======
 	if(type==FS_DELETE_T){
 		req->value=NULL;
 	}
 	else{
 		req->value=inf_get_valueset(value->value,req->type,value->length);
 	}
->>>>>>> 55127f0306b75cd29328f82e06393fec173a8f9d
 
 	req->end_req=inf_end_req;
 	req->isAsync=ASYNC;
