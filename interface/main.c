@@ -62,14 +62,31 @@ int main(){/*
 */
 
 	inf_init();
+#define SEQ
+#ifdef SEQ
 	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	bench_add(SEQSET,0,3*1024,5*1024);
-	bench_add(SEQGET,0,3*1024,5*1024);
+	//bench_add(SEQSET,0,1*10,1*10);
+	//bench_add(SEQGET,0,1*10,1*10);
+	bench_add(SEQSET,0,16*1024,32*1024);
+	bench_add(SEQGET,0,16*1024,32*1024);
 	//bench_add(RANDSET,0,1*1024,1*1024);
 	//bench_add(RANDGET,0,1*1024,1*1024);
-	//bench_add(RANDRW,0,32*1024,64*1024);
+	//bench_add(RANDRW,0,16*1024,64*1024);
+#endif
+#ifdef RAND
+	bench_init(1);
+	char t_value[PAGESIZE];
+	memset(t_value,'x',PAGESIZE);
+	//bench_add(SEQSET,0,1*10,1*10);
+	//bench_add(SEQGET,0,1*10,1*10);
+	//bench_add(SEQSET,0,16*1024,32*1024);
+	//bench_add(SEQGET,0,16*1024,32*1024);
+	//bench_add(RANDSET,0,1*1024,1*1024);
+	//bench_add(RANDGET,0,1*1024,1*1024);
+	bench_add(RANDRW,0,16*1024,32*1024);
+#endif
 
 	bench_value *value;
 
@@ -79,6 +96,11 @@ int main(){/*
 	temp.length=0;
 	while((value=get_bench())){
 		temp.length=value->length;
+#if 0
+		if(value->mark!=0){
+			printf("??\n");
+		}
+#endif
 		inf_make_req(value->type,value->key,&temp,value->mark);
 	}
 	

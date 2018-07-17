@@ -1,9 +1,5 @@
-CC = g++
-
 SRCS +=\
-		block2.c\
-		block_queue.c\
-#block_linearsearch.c\
+	   badblock.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\

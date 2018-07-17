@@ -5,18 +5,12 @@
 
 
 
-typedef struct { // 67 bytes
+typedef struct { // 13 + PPB/8 bytes
 	uint32_t	PBA;			/* PBA of this block */
-	uint8_t*	ValidP;			/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
 	int16_t		numValid;		/* Number of Valid pages in this block*/
-	uint32_t	PE_cycle;		/* P/E cycles of this block */
-	//int16_t**	ptrNV_data;		/* Pointer of numValid map */
 	void**		ptrNV_data;		/* Pointer of numValid map */
-	//uint32_t**ptrPE_data;		/* Pointer of PE map */
-	void**		ptrPE_data;		/* Pointer of PE map */
-	int8_t		BAD;			/* Whether this block is bad or not */
-	uint32_t	v_PBA;			/* virtual PBA of this block. It is virtual block after Bad-Block check and wear-leveling by PE_cycle */
-	uint32_t	o_PBA;			/* original PBA of this block. We can find the PBA(index) of blockArray with v_PBA using o_PBA */
+	uint8_t*	ValidP;			/* index means Validity of offset pages. 1 means VALID, 0 means INVALID */
+	uint32_t	LastOffset;		/* Page offset of Last page (For Block_FTL) */
 } Block;
 
 
@@ -29,6 +23,7 @@ typedef int8_t		BAD_T;
 
 typedef uint32_t	PPA_T;
 
+typedef uint32_t	LO_T_;
 
 /* BAD Status of blocks */
 #define _BADSTATE	1
@@ -59,6 +54,12 @@ typedef uint32_t	PPA_T;
 #define BM_GETOPBA(ptr_block)		((Block*)ptr_block)->o_PBA
 
 
+/* Inline functions(Macros) for get numItem(number of ValidP elements) */
+#define numBits_ValidP	8
+static inline int32_t BM_GetnumItem()
+{
+	return (_PPB % numBits_ValidP > 0) + (_PPB/numBits_ValidP);
+}
 
 #if 0
 #define __GETVALIDP	sizeof(PBA_T)

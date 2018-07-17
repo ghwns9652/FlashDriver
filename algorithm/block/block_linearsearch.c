@@ -1,10 +1,7 @@
 #include "block.h"
-#include <unistd.h>
 
 /* ASYNC ver */
 int8_t target_lockflag;
-
-Queue_t* FreeQ; // Queue of FREE(ERASE) state blocks
 
 struct algorithm __block={
 	.create=block_create,
@@ -40,7 +37,6 @@ int32_t block_findsp(int32_t checker){
 }
 
 uint32_t block_create (lower_info* li,algorithm *algo){
-	printf("block_create start!\n");
 	algo->li=li;
 	BM_Init();
 
@@ -63,21 +59,6 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 
 	pthread_mutex_init(&lock, NULL);
 
-	/* Queue */
-	FreeQ = (Queue_t*)malloc(sizeof(Queue_t));
-	InitQueue(FreeQ);
-#if 1
-	for (int i=0; i<_NOB; ++i) {
-		Enqueue(FreeQ, i);
-	}
-#endif
-#if 0
-	for (int i=_NOB-1; i>=0; --i) {
-		Enqueue(FreeQ, i);
-	}
-#endif
-	printf("block_create end!\n");
-
 	return 0;
 
 }
@@ -86,8 +67,6 @@ void block_destroy (lower_info* li, algorithm *algo){
 	free(block_maptable);
 	free(block_valid_array);
 	free(temp_valueset);
-
-	free(FreeQ);
 
 	BM_Shutdown();
 }
@@ -116,9 +95,7 @@ uint32_t block_get(request *const req){
 
 	return 0;
 }
-
-//static int set_seq=0;
-
+static int set_seq=0;
 uint32_t block_set(request *const req){
 	bench_algo_start(req);
 
@@ -153,16 +130,10 @@ uint32_t block_set(request *const req){
 #ifdef BFTL_DEBUG1	
 		printf("\tcase 1\n");
 #endif
-		//checker = block_findsp(checker);
-		set_pointer = Dequeue(FreeQ);
-		//printf("(1)Dequeue target: %d\n", set_pointer);
-		//sleep(1);
-		if (set_pointer == -1) while(1) printf("WHAT!");
+		checker = block_findsp(checker);
 
 		// Switch E to V of block_valid_array
 		block_valid_array[set_pointer] = VALID;
-		/////nononoEnqueue(FreeQ, set_pointer);
-
 
 		// Write PBA of mapping result in maptable
 		block_maptable[LBA] = set_pointer;
@@ -190,14 +161,12 @@ uint32_t block_set(request *const req){
 		PPA = PBA  * __block.li->PPB + offset;
 
 
-		// data가 차있는 page를 valid라고 할 지 invalid라고 할 지 제대로 골라야 할 것 같다. 지금은 차있는 page를 invalid라고 설정하여 그 page에 write하려고 할 시에 GC를 하도록 하였다. valid로 바꾸는 게 맞는 것 같긴 한데, 그렇게 하면 write할 수 있는(비어있는) page들은 모두 invalid 상태라고 여기는 것이 된다. 그건 또 이상하다.. 그냥 block ftl에서는 write할 수 있는(비어있는) page를 valid page로, write할 수 없는(쓰여있는) page를 invalid page로 여기고 BM을 사용한다고 여기면 될 것 같다.
-		// 그리고 block level에서의 valid/invalid 여부는 BM valid/invalid와 상관없다. 각 page마다 0/1을 구분하기 위해 BM의 page 단위 validity를 쓴 것일 뿐이다.
 		if (BM_is_valid_ppa(blockArray, PPA))
 		{
 #ifdef BFTL_DEBUG1	
-			printf("\tcase 2\n"); // 비어있는 page인 경우. 그대로 write 가능하다.
+			printf("\tcase 2\n");
 #endif
-			BM_invalidate_ppa(blockArray, PPA); // write되어 차있는 page라고 적어놓는다.
+			BM_invalidate_ppa(blockArray, PPA);
 			block_valid_array[PBA] = VALID;
 			bench_algo_end(req);
 			__block.li->push_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
@@ -217,15 +186,10 @@ uint32_t block_set(request *const req){
 			//exit(1);
 #endif
 
-			//checker = block_findsp(checker);
-			set_pointer = Dequeue(FreeQ);
-			//printf("(3)Dequeue target: %d, old PBA: %d\n", set_pointer, PBA);
-			//sleep(1);
-
+			checker = block_findsp(checker);
 			block_maptable[LBA] = set_pointer;
 			block_valid_array[set_pointer] = VALID;
 			block_valid_array[PBA] = ERASE; // PBA means old_PBA
-			Enqueue(FreeQ, PBA); // trim 직후에 하는 게 더 시기상 정확하긴 하다.
 
 			uint32_t old_PPA_zero = PBA * __block.li->PPB;
 			uint32_t new_PBA = block_maptable[LBA];

@@ -16,16 +16,6 @@ int32_t BM_Maxheap_numValid(Block* blockArray, Block** numValid_map);
 int32_t BM__buildmaxheapNV(nV_T* temp_NV, Block** numValid_map);
 int32_t BM__maxheapifyNV(nV_T* temp_NV, int32_t i, Block** numValid_map);
 
-int32_t BM_Minheap_PEcycle(Block* blockArray, Block** PE_map);
-int32_t BM__buildminheapPE(PE_T* temp_PE, Block** PE_map);
-int32_t BM__minheapifyPE(PE_T* temp_PE, int32_t i, Block** PE_map);
-
-
-
-/* Sorting algorithms foor blockArray and PE_map */
-int32_t BM_SortPE(Block* blockArray, Block** PE_map);
-void BM__quicksort(PE_T* temp_PE, int p, int r, Block** PE_map); // If this function works, it would be maybe better to fix with 'quicksort_Optimized'
-
 
 
 /* --------------------------------- */

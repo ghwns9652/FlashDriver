@@ -67,12 +67,13 @@ snode *skiplist_insert_wP(skiplist *list, KEYT key, KEYT ppa,bool deletef){
 #else
 		invalidate_DPPA(ppa);
 #endif
+		/*
 		if(key==1556){
 			printf("[%d]new ppa:%d old ppa:%d\n",key,x->ppa,ppa);
 			#ifdef DVALUE
 			printf("ppb:%d\n",x->ppa/16/256);
 			#endif
-		}
+		}*/
 		//x->ppa=ppa;
 		//x->isvalid=deletef;
 		return x;
@@ -240,9 +241,10 @@ value_set **skiplist_make_valueset(skiplist *input, level *from){
 		level_moveTo_front_page(from);
 		res[res_idx]->ppa=level_get_page(from,(PAGESIZE/PIECE));
 		/*checking new ppa in skiplist_valuset*/
+		/*
 		if(res[res_idx]->ppa==1068256){
 			printf("-----lpa:%d\n",target->key);
-		}
+		}*/
 #ifdef DVALUE
 		oob[res[res_idx]->ppa/(PAGESIZE/PIECE)]=PBITSET(target->key,true);//OOB setting
 #else
@@ -289,9 +291,9 @@ value_set **skiplist_make_valueset(skiplist *input, level *from){
 			target->ppa=level_get_page(from,target->value->length);
 
 
-			/*checking new ppa in skiplist_valuset*/
+			/*checking new ppa in skiplist_valuset*//*
 			if(target->ppa==1068256)
-				printf("-----lpa:%d length:%d\n",target->key,target->value->length);
+				printf("-----lpa:%d length:%d\n",target->key,target->value->length);*/
 
 			used_piece+=target_length;
 			f_insert(foot,target->key,target->ppa,target_length);

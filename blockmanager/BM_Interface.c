@@ -1,9 +1,80 @@
-/* Badblock Manager */
+/* Block Manager Interface */
 #include "BM_Interface.h"
 
 #define METHOD 2	// Which method has better performance?
 
 /* Interface Functions for editing blockArray */
+
+/* Check Last offset */
+int8_t		BM_CheckLastOffset(Block* blockArray, PBA_T PBA, uint32_t offset)
+{
+	if (blockArray[PBA].LastOffset < offset) {
+		blockArray[PBA].LastOffset = offset;
+		return 1;
+	}
+	else
+		// Moving Block with target offset update
+		return 0;
+	/*
+	else if (blockArray[PBA].LastOffset > offset) {
+		// Moving Block with target offset update
+		return 0;
+	}
+	*/
+}
+
+
+int8_t		BM_ValidateBlock_PPA(Block* blockArray, PPA_T PPA)
+{
+	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
+	if (_PPB%8 > 0)	numItem++;
+
+	for (int j=0; j<numItem; ++j)
+		blockArray[PBA].ValidP[j] = BM_VALIDPAGE;
+	blockArray[PBA].numValid = _PPB;
+
+	return (eNOERROR);
+}
+
+int8_t		BM_ValidateBlock_PBA(Block* blockArray, PBA_T PBA)
+{
+	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
+	if (_PPB%8 > 0)	numItem++;
+
+	for (int j=0; j<numItem; ++j)
+		blockArray[PBA].ValidP[j] = BM_VALIDPAGE;
+	blockArray[PBA].numValid = _PPB;
+
+	return (eNOERROR);
+}
+
+int8_t		BM_InvalidateBlock_PPA(Block* blockArray, PPA_T PPA)
+{
+	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
+	if (_PPB%8 > 0)	numItem++;
+
+	//for (int j=0; j<numItem; ++j)
+		//blockArray[PBA].ValidP[j] = BM_VALIDPAGE;
+	memset(blockArray[PBA].ValidP, BM_INVALIDPAGE, numItem);
+	blockArray[PBA].numValid = 0;
+
+	return (eNOERROR);
+}
+
+int8_t		BM_InvalidateBlock_PBA(Block* blockArray, PBA_T PBA)
+{
+	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
+	if (_PPB%8 > 0)	numItem++;
+
+	//for (int j=0; j<numItem; ++j)
+		//blockArray[PBA].ValidP[j] = BM_VALIDPAGE;
+	memset(blockArray[PBA].ValidP, BM_INVALIDPAGE, numItem);
+	blockArray[PBA].numValid = 0;
+
+	return (eNOERROR);
+}
 
 int32_t		BM_is_valid_ppa(Block* blockArray, PPA_T PPA) 
 {
@@ -86,7 +157,7 @@ int32_t		BM_invalidate_all(Block* blockArray)
 {
 	/* Invalidate All pages */
 	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
-	if (_PPB/8 > 0)	numItem++;
+	if (_PPB%8 > 0)	numItem++;
 
 	for (int i=0; i<_NOB; i++) {
 		memset(blockArray[i].ValidP, BM_INVALIDPAGE, numItem);
@@ -99,7 +170,7 @@ int32_t		BM_validate_all(Block* blockArray)
 {
 	/* Validate All pages */
 	int numItem = sizeof(ValidP_T) * (_PPB/8); // number of ValidP elements
-	if (_PPB/8 > 0)	numItem++;
+	if (_PPB%8 > 0)	numItem++;
 
 	for (int i=0; i<_NOB; ++i) {
 		for (int j=0; j<numItem; ++j)
@@ -159,59 +230,3 @@ uint32_t	BM_get_gc_victim(Block* blockArray, Block** numValid_map)
 	//return *((PBA_T*)ptr_min_nV_block->PBA); // This means value of PBA of maxnV block
 	return BM_GETPBA(ptr_min_nV_block);
 }
-
-uint32_t	BM_get_minPE_block(Block* blockArray, Block** PE_map)
-{
-	/* Return PBA of minPE block whose PE_cycle is minimum */
-	/*
-	 * Parameter: Array(Heap) of PE_map pointer(PE_map)
-	 * PE_map is a Min-heap array, so find the root of the min-heap in PE_cycle using Heap opeartion
-	 */
-
-
-	/* After this function, PE_map Min-heap by PE_cycle */
-	BM_Minheap_PEcycle(blockArray, PE_map);
-
-	/* Make Block_pointer from PE_cycle pointer */
-	//void* ptr_min_PE_block = (void*)PE_map[0] - sizeof(nV_T) - sizeof(ValidP_T)*4 - sizeof(PBA_T);
-	Block* ptr_min_PE_block = PE_map[0];
-
-	//return *((PBA_T*)ptr_min_PE_block); // This means value of PBA of minPE block
-	return BM_GETPBA(ptr_min_PE_block);
-
-}
-
-
-uint32_t	BM_get_worn_block(Block *blockArray, Block** PE_map)
-{
-	/* Function which sorts PE_map by PE_cycle with ascending order */
-	/*@
-	 * Parameter: Array of PE_cycle pointer(PE_map)
-	 * (Warning) We need 'SWAP REAL DATA IN FLASH'. Current codes have no this step.
-	 */
-
-	/* Sort PE_map by PE_cycle */
-	BM_SortPE(blockArray, PE_map);
-	
-	return (eNOERROR);
-}
-
-#if 0
-int32_t BM_update_block_with_gc(Block* blockArray, PPA_T PPA)
-{
-	/* This function should be called when GC */
-	/*
-	 * Parameter: PPA(or PBA?)
-	 * Update status of corresponding block
-	 * numValid = 0, ValidP[] = 0
-	 * This function is trash! no NEED!
-	 */
-
-	PBA_T PBA = BM_PPA_TO_PBA(PPA);
-
-	blockArray[PBA].numValid = 0;
-	memset(blockArray[PBA].ValidP, BM_VALIDPAGE, _NOP);
-
-	return (eNOERROR);
-}
-#endif

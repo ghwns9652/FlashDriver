@@ -18,12 +18,17 @@ blockmanager/**
 
 
 blockmanager_6.2/
+blockmanager_7.1/
 blockmanager_dirt_trash/
 macro.sh
 algorithm/practice
 
 algorithm/block/**
 !algorithm/block/block.c
+!algorithm/block/block2.c
+!algorithm/block/block_linearsearch.c
+!algorithm/block/block_queue.c
+!algorithm/block/block_queue.h
 !algorithm/block/block_withBM.c
 !algorithm/block/block.h
 !algorithm/block/Makefile
