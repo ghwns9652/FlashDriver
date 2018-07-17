@@ -3,12 +3,15 @@
 #include "../include/FS.h"
 #include "../bench/bench.h"
 #include "../bench/measurement.h"
+#include "bb_checker.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
+
 extern struct lower_info my_posix;
+
 extern struct algorithm __normal;
 extern struct algorithm __badblock;
 extern struct algorithm __demand;
@@ -85,9 +88,10 @@ void inf_init(){
 	pthread_mutex_init(&inf_lock,NULL);
 	pthread_mutex_lock(&inf_lock);*/
 	measure_init(&mt);
-#if defined(posix) || defined(posix_async)
+#if defined(posix) || defined(posix_async) 
 	mp.li=&my_posix;
 #endif
+
 #ifdef bdbm_drv
 	mp.li=&memio_info;
 #endif
@@ -114,6 +118,8 @@ void inf_init(){
 
 	mp.li->create(mp.li);
 	mp.algo->create(mp.li,mp.algo);
+	
+	bb_checker_start(mp.li);
 }
 #ifndef USINGAPP
 bool inf_make_req(const FSTYPE type, const KEYT key, value_set *value,int mark){
@@ -139,7 +145,7 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->lower.isused=false;
 	req->mark=mark;
 #endif
-
+	
 #ifdef CDF
 	measure_init(&req->latency_checker);
 	measure_start(&req->latency_checker);
@@ -251,6 +257,7 @@ void *p_main(void *__input){
 #endif
 		if(mp.stopflag)
 			break;
+		//printf("q in p_main:%p\n",_this->req_q);
 		if(!(_inf_req=q_dequeue(_this->req_q))){
 			//sleep or nothing
 //			pthread_mutex_lock(&inf_lock);
