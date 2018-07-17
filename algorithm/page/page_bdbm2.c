@@ -13,8 +13,8 @@ struct algorithm algo_pbase=
 	.remove = pbase_remove
 };
 
-uint32_t PPA_status = 0 + _PPB;//starts at block 1, not 0.
-uint32_t RSV_status = 0;//overprovision area.
+uint64_t PPA_status = 0 + _PPB;//starts at block 1, not 0.
+uint64_t RSV_status = 0;//overprovision area.
 
 int init_done = 0;//check if initial write is done.
 TABLE *page_TABLE;
@@ -139,6 +139,7 @@ uint32_t pbase_set(request* const req)
 	//!garbage_collection.
 	if (page_TABLE[req->key].lpa_to_ppa != -1)
 	{
+		printf("update [%d]lpa. mapped ppa was [%d]\n",req->key,page_TABLE[req->key].lpa_to_ppa); 
 		int64_t temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
 		page_TABLE[temp].valid_checker = 0; //set that ppa validity to 0.
 		int64_t b_temp = temp / _PPB;
@@ -148,6 +149,7 @@ uint32_t pbase_set(request* const req)
 	}
 	
 	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
+	printf("req-> key:%d, mapped ppa: %d\n",req->key, PPA_status);
 	page_TABLE[PPA_status].valid_checker = 1; 
 	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
 	KEYT set_target = PPA_status;
