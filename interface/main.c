@@ -9,8 +9,7 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
-
-
+//char t_value2[PAGESIZE];
 int main(){/*
 >>>>>>> 5c776eb8c03af5769e5d04f2343aebeb491e8220
 	int Input_cycle;
@@ -88,20 +87,24 @@ int main(){/*
 	bench_add(RANDRW,0,16*1024,32*1024);
 #endif
 
+	/*
+	for(int i=0; i<PAGESIZE;i++){
+		t_value2[i]=rand()%256;
+	}*/
+	//bench_add(SEQRW,0,RANGE,2*RANGE);
+//	bench_add(RANDSET,0,15*1024,15*1024);
+//	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
 
 	value_set temp;
 	temp.value=t_value;
 	temp.dmatag=-1;
 	temp.length=0;
+	int cnt=0;
 	while((value=get_bench())){
 		temp.length=value->length;
-#if 0
-		if(value->mark!=0){
-			printf("??\n");
-		}
-#endif
 		inf_make_req(value->type,value->key,&temp,value->mark);
+		cnt++;
 	}
 	
 	while(!bench_is_finish()){
@@ -110,7 +113,7 @@ int main(){/*
 #endif
 	}
 	bench_print();
-	bench_free();
+//	bench_free();
 	inf_free();
 	return 0;
 }

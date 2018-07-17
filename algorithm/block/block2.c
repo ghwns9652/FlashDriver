@@ -406,7 +406,7 @@ void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offs
 	}
 	//printf("numLoaded: %d\n", numLoaded);
 
-	while (numLoaded != _PPB) {printf("polling");} // polling for reading all pages in a block
+	while (numLoaded != _PPB) {} // polling for reading all pages in a block
 
 	for (i=0; i<_PPB; ++i) {
 		// copy data 

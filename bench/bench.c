@@ -16,6 +16,12 @@ void randset(KEYT,KEYT,monitor*);
 void randrw(KEYT,KEYT,monitor*);
 void mixed(KEYT,KEYT,int percentage,monitor*);
 
+#ifdef CDF
+#define TIMESLOT 100  //micro sec
+uint64_t write_cdf[1000000/TIMESLOT+1];
+uint64_t read_cdf[1000000/TIMESLOT+1];
+#endif
+
 pthread_mutex_t bench_lock;
 void bench_init(int benchnum){
 	_master=(master*)malloc(sizeof(master));
@@ -72,6 +78,7 @@ void bench_make_data(){
 	measure_init(&_m->benchTime);
 	MS(&_m->benchTime);
 }
+
 void bench_add(bench_type type, KEYT start, KEYT end, uint64_t number){
 	static int idx=0;
 	_master->meta[idx].start=start;
@@ -99,10 +106,14 @@ bench_value* get_bench(){
 		while(!bench_is_finish_n(_master->n_num)){}
 		printf("\rtesting...... [100%%] done!\n");
 		printf("\n");
+#ifdef CDF
+		bench_cdf_print(_m->m_num,_m->type);
+#endif
 		free(_m->body);
 		_master->n_num++;
 		if(_master->n_num==_master->m_num)
 			return NULL;
+
 		bench_make_data();
 		_m=&_master->m[_master->n_num];
 	}
@@ -242,8 +253,58 @@ void __bench_time_maker(MeasureTime mt, bench_data *datas,bool isalgo){
 	}
 	return;
 }
+
+#ifdef CDF
+void bench_cdf_print(uint64_t nor, uint8_t type){//number of reqeusts
+	uint64_t cumulate_number=0;
+	if(type>RANDSET)
+		nor/=2;
+	if(type>RANDSET || type%2==1){
+		printf("\n[cdf]write---\n");
+		for(int i=0; i<1000000/TIMESLOT+1; i++){
+			cumulate_number+=write_cdf[i];
+			if(write_cdf[i]==0) continue;
+			printf("%d\t\t%ld\t\t%f\n",i,write_cdf[i],(float)cumulate_number/nor);
+			if(nor==cumulate_number)
+				break;
+		}	
+	}
+	cumulate_number=0;
+	if(type>RANDSET || type%2==0){
+		printf("\n[cdf]read---\n");
+		for(int i=0; i<1000000/TIMESLOT+1; i++){
+			cumulate_number+=read_cdf[i];
+			if(read_cdf[i]==0) continue;
+			printf("%d\t\t%ld\t\t%f\n",i,read_cdf[i],(float)cumulate_number/nor);	
+			if(nor==cumulate_number)
+				break;
+		}
+	}
+}
+#endif
+
 void bench_reap_data(request *const req,lower_info *li){
 	pthread_mutex_lock(&bench_lock);
+#ifdef CDF
+	measure_calc(&req->latency_checker);
+	int slot_num=req->latency_checker.micro_time/TIMESLOT;
+	if(req->type==FS_GET_T){
+		if(slot_num>=1000000/TIMESLOT){
+			read_cdf[1000000/TIMESLOT]++;
+		}
+		else{
+			read_cdf[slot_num]++;
+		}
+	}
+	else if(req->type==FS_SET_T){
+		if(slot_num>=1000000/TIMESLOT){
+			write_cdf[1000000/TIMESLOT]++;
+		}
+		else{
+			write_cdf[slot_num]++;
+		}
+	}
+#endif
 	if(!req){ 
 		pthread_mutex_unlock(&bench_lock);
 		return;
@@ -347,7 +408,7 @@ void seqrw(KEYT start, KEYT end, monitor *m){
 void randget(KEYT start, KEYT end,monitor *m){
 	printf("making rand Get bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
-		m->body[i].key=start+rand()%(end-start)+1;
+		m->body[i].key=start+rand()%(end-start);
 		m->body[i].type=FS_GET_T;
 #ifdef DVALUE
 		m->body[i].length=0;
@@ -362,7 +423,7 @@ void randget(KEYT start, KEYT end,monitor *m){
 void randset(KEYT start, KEYT end, monitor *m){
 	printf("making rand Set bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
-		m->body[i].key=start+rand()%(end-start)+1;
+		m->body[i].key=start+rand()%(end-start);
 #ifdef DVALUE
 		m->body[i].length=(rand()%16+1)*512;
 #else	
@@ -377,7 +438,7 @@ void randset(KEYT start, KEYT end, monitor *m){
 void randrw(KEYT start, KEYT end, monitor *m){
 	printf("making rand Set and Get bench!\n");
 	for(KEYT i=0; i<m->m_num/2; i++){
-		m->body[i].key=start+rand()%(end-start)+1;
+		m->body[i].key=start+rand()%(end-start);
 		m->body[i].type=FS_SET_T;
 #ifdef DVALUE
 		m->body[i].length=(rand()%16+1)*512;
@@ -444,4 +505,10 @@ void bench_lower_t(lower_info *li){
 #ifdef BENCH
 	li->trim_op++;
 #endif
+}
+
+void bench_cache_hit(int mark){
+	/*
+	monitor *_m=&_master->m[mark];
+	_m->cache_hit++;*/
 }

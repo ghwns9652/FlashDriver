@@ -2,6 +2,7 @@
 #include "../include/container.h"
 #include "../include/FS.h"
 #include "../bench/bench.h"
+#include "../bench/measurement.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -9,7 +10,10 @@
 #include <string.h>
 extern struct lower_info my_posix;
 extern struct algorithm __normal;
+<<<<<<< HEAD
 extern struct algorithm __block;
+=======
+>>>>>>> 55127f0306b75cd29328f82e06393fec173a8f9d
 extern struct algorithm __badblock;
 extern struct algorithm algo_pbase;
 #ifdef lsmtree
@@ -49,7 +53,7 @@ static void assign_req(request* req){
 	}
 
 	if(!req->isAsync){
-		pthread_mutex_lock(&req->async_mutex);
+		pthread_mutex_lock(&req->async_mutex);	
 		pthread_mutex_destroy(&req->async_mutex);
 		free(req);
 	}
@@ -122,9 +126,18 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->upper_req=NULL;
 	req->type=type;
 	req->key=key;
+<<<<<<< HEAD
 	
 	//printf("value->length in interface.c: %d\n", value->length);
 	req->value=inf_get_valueset(value->value,req->type,value->length);
+=======
+	if(type==FS_DELETE_T){
+		req->value=NULL;
+	}
+	else{
+		req->value=inf_get_valueset(value->value,req->type,value->length);
+	}
+>>>>>>> 55127f0306b75cd29328f82e06393fec173a8f9d
 
 	req->end_req=inf_end_req;
 	req->isAsync=ASYNC;
@@ -133,6 +146,11 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value){
 	req->algo.isused=false;
 	req->lower.isused=false;
 	req->mark=mark;
+#endif
+
+#ifdef CDF
+	measure_init(&req->latency_checker);
+	measure_start(&req->latency_checker);
 #endif
 	switch(type){
 		case FS_GET_T:
@@ -172,7 +190,9 @@ bool inf_end_req( request * const req){
 #ifdef SNU_TEST
 #else
 	bench_reap_data(req,mp.li);
+
 #endif
+
 #ifdef DEBUG
 	printf("inf_end_req!\n");
 #endif
@@ -192,7 +212,8 @@ bool inf_end_req( request * const req){
 		}
 	}
 	if(!req->isAsync){
-		pthread_mutex_unlock(&req->async_mutex);
+
+		pthread_mutex_unlock(&req->async_mutex);	
 	}
 	else{
 		free(req);
@@ -244,6 +265,7 @@ void *p_main(void *__input){
 			continue;
 		}
 		inf_req=(request*)_inf_req;
+
 		switch(inf_req->type){
 			case FS_GET_T:
 				mp.algo->get(inf_req);
