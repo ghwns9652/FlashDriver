@@ -9,7 +9,7 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
-extern master *_master;
+//char t_value2[PAGESIZE];
 int main(){/*
 	int Input_cycle;
 	int Input_type;
@@ -63,7 +63,11 @@ int main(){/*
 	bench_init(1);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	bench_add(RANDRW,0,1024*64,1024*64*5);
+	/*
+	for(int i=0; i<PAGESIZE;i++){
+		t_value2[i]=rand()%256;
+	}*/
+	bench_add(RANDRW,0,RANGE,2*RANGE);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
@@ -75,12 +79,24 @@ int main(){/*
 	temp.value=t_value;
 	temp.dmatag=-1;
 	temp.length=0;
+	int cnt=0;
 	while((value=get_bench())){
 		temp.length=value->length;
 	//	if(value->mark!=0){
 	//		printf("??\n");
 	//	}
+		/*
+		if(cnt==RANGE){ //for trim test
+			KEYT t_ppa=(rand()%RANGE)/(1<<14);
+			KEYT t_ppa2=(rand()%RANGE)/(1<<14);
+			while(t_ppa==t_ppa2){
+				t_ppa2=(rand()%RANGE)/(1<<14);
+			}
+			inf_make_req(FS_DELETE_T,t_ppa*(1<<14),NULL,0);
+			inf_make_req(FS_DELETE_T,t_ppa2*(1<<14),NULL,0);
+		}*/
 		inf_make_req(value->type,value->key,&temp,value->mark);
+		cnt++;
 	}
 	
 	while(!bench_is_finish()){

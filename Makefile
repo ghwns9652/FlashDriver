@@ -1,12 +1,12 @@
 export CC=g++
 
-<<<<<<< HEAD
 TARGET_LOWER=posix
-=======
-TARGET_LOWER=bdbm_drv
->>>>>>> 57005bd88a70613230a91efedc8098b375ad7437
 TARGET_ALGO=page
 PWD=$(pwd)
+
+COMMONFLAGS=\
+			-DSLC\
+
 
 export CFLAGS_ALGO=\
 			 -g\
@@ -22,7 +22,11 @@ export CFLAGS_LOWER=\
 			 -D_FILE_OFFSET_BITS=64\
 
 
-CFLAGS_ALGO+=-DCOMPACTIONLOG\
+#CFLAGS_ALGO+=-DCOMPACTIONLOG\
+	
+CFLAGS_ALGO+=$(COMMONFLAGS)\
+
+CFLAGS_LOWER+=$(COMMONFLAGS)\
 
 ifeq ($(CC), gcc)
  CFLAGS_ALGO+=-Wno-discarded-qualifiers -std=c99
@@ -37,6 +41,7 @@ CFLAGS +=\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
 		 -D_BSD_SOURCE\
+-DCDF\
 -DBENCH\
 
 

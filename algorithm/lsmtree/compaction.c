@@ -33,18 +33,21 @@ void compaction_sub_pre(){
 
 void compaction_sub_wait(){
 #ifdef CACHE
-#ifdef MUTEXLOCK
-	if(epc_check==comp_target_get_cnt+memcpy_cnt)
-		pthread_mutex_unlock(&compaction_wait);
-#elif defined (SPINLOCK)
-#endif
+	#ifdef MUTEXLOCK
+		if(epc_check==comp_target_get_cnt+memcpy_cnt)
+			pthread_mutex_unlock(&compaction_wait);
+	#elif defined (SPINLOCK)
+		while(comp_target_get_cnt+memcpy_cnt!=epc_check){}
+	#endif
+#else
+
+	#ifdef MUTEXLOCK
+		pthread_mutex_lock(&compaction_wait);
+	#elif defined (SPINLOCK)
+		while(comp_target_get_cnt!=epc_check){}
+	#endif
 #endif
 
-#ifdef MUTEXLOCK
-	pthread_mutex_lock(&compaction_wait);
-#elif defined (SPINLOCK)
-	while(comp_target_get_cnt!=epc_check){}
-#endif
 #ifdef CACHE
 	memcpy_cnt=0;
 #endif
@@ -156,6 +159,7 @@ htable *compaction_data_write(skiplist *mem){
 		LSM.li->push_data(data_sets[i]->ppa/(PAGESIZE/PIECE),PAGESIZE,params->value,ASYNC,lsm_req);
 #else
 		LSM.li->push_data(data_sets[i]->ppa,PAGESIZE,params->value,ASYNC,lsm_req);
+
 #endif
 	}
 	free(data_sets);
@@ -205,6 +209,7 @@ KEYT compaction_htable_write(htable *input){
 	//htable_print(input);
 	areq->end_req=lsm_end_req;
 	areq->params=(void*)params;
+	params->ppa=ppa;
 	LSM.li->push_data(ppa,PAGESIZE,params->value,ASYNC,areq);
 	return ppa;
 }
@@ -372,7 +377,7 @@ void compaction_htable_read(Entry *ent,PTR* value){
 	//valueset_assign
 	params->value=inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
 	params->target=value;
-
+	params->ppa=ent->pbn;
 	areq->parents=NULL;
 	areq->end_req=lsm_end_req;
 	areq->params=(void*)params;
@@ -416,6 +421,7 @@ void compaction_subprocessing_CMI(skiplist * target,level * t,bool final,KEYT li
 void compaction_subprocessing(skiplist *target,level *t, htable** datas,bool final,bool existIgnore){
 	//wait all header read
 	compaction_sub_wait();
+	snode *check_node;
 	KEYT limit=0;
 	for(int i=0; i<epc_check; i++){//insert htable into target
 		htable *table=datas[i];
@@ -423,10 +429,16 @@ void compaction_subprocessing(skiplist *target,level *t, htable** datas,bool fin
 		for(int j=0; j<KEYNUM; j++){
 			if(table->sets[j].lpa==UINT_MAX) break;
 			if(existIgnore){
-				skiplist_insert_existIgnore(target,table->sets[j].lpa,table->sets[j].ppa,lsm_kv_validcheck(table->bitset,j));
+				check_node=skiplist_insert_existIgnore(target,table->sets[j].lpa,table->sets[j].ppa,lsm_kv_validcheck(table->bitset,j));
 			}
-			else
-				skiplist_insert_wP(target,table->sets[j].lpa,table->sets[j].ppa,lsm_kv_validcheck(table->bitset,j));
+			else{
+				check_node=skiplist_insert_wP(target,table->sets[j].lpa,table->sets[j].ppa,lsm_kv_validcheck(table->bitset,j));
+			}
+			if(check_node==NULL){
+				level_all_print();
+				htable_print(table,0);
+				exit(1);
+			}
 		}
 	}
 	if(final)
@@ -443,7 +455,13 @@ void compaction_lev_seq_processing(level *src, level *des, int headerSize){
 		return;
 	}
 #endif
-	for(int i=0; i<=src->n_run; i++){
+	int target=0;
+	if(src->isTiering){
+		target=src->r_n_idx;
+	}else{
+		target=1;
+	}
+	for(int i=0; i<target; i++){
 		Node* temp_run=ns_run(src,i);
 		for(int j=0; j<temp_run->n_num; j++){			
 			Entry *temp_ent=ns_entry(temp_run,j);

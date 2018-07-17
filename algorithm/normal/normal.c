@@ -12,9 +12,10 @@ struct algorithm __normal={
 	.set=normal_set,
 	.remove=normal_remove
 };
-
+char temp[PAGESIZE];
 uint32_t normal_create (lower_info* li,algorithm *algo){
 	algo->li=li;
+	memset(temp,'x',PAGESIZE);
 	return 1;
 }
 void normal_destroy (lower_info* li, algorithm *algo){
@@ -47,22 +48,23 @@ uint32_t normal_set(request *const req){
 	return 1;
 }
 uint32_t normal_remove(request *const req){
-//	normal->li->trim_block()
+	__normal.li->trim_block(req->key,NULL);
 	return 1;
 }
-
+static int ccc;
 void *normal_end_req(algo_req* input){
 	normal_params* params=(normal_params*)input->params;
-	static int cnt=0;
+	bool check=false;
+	//int cnt=0;
 	request *res=input->parents;
 	if(res->type==FS_GET_T){
-		for(int i=0; i<PAGESIZE; i++){
-			if(res->value->value[i]!='x'){
-				printf("cnt:%d\n",cnt++);
-				break;
-			}
+		if(memcmp(res->value->value,temp,PAGESIZE)!=0){
+			ccc++;
+			check=true;
 		}
 	}
+	if(check)
+		printf("%d\n",ccc);
 	res->end_req(res);
 
 	free(params);
