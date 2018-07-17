@@ -65,7 +65,11 @@ int main(){/*
 	for(int i=0; i<PAGESIZE;i++){
 		t_value2[i]=rand()%256;
 	}*/
-	bench_add(SEQRW,0,RANGE,2*RANGE);
+	//bench_add(RANDRW,0,128*1024,2*128*1024);
+	//bench_add(SEQSET,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
+	//bench_add(MIXED,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
+	bench_add(SEQSET,0,0.8*RANGE,0.8*RANGE);
+	bench_add(MIXED,0,0.8*RANGE,0.8*RANGE);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
@@ -98,7 +102,8 @@ int main(){/*
 #endif
 	}
 	bench_print();
-//	bench_free();
+
+	bench_free();
 	inf_free();
 	return 0;
 }

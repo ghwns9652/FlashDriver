@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "demand_queue.h"
+#include "dftl_queue.h"
 
 LINKED_LIST* head;
 LINKED_LIST* tail;

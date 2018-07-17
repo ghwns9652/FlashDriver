@@ -1,94 +1,40 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "dftl_queue.h"
 
-LINKED_LIST* head;
-LINKED_LIST* tail;
-
-LINKED_LIST* queue_insert(void* table_ptr) {
-	/* Queue allocation */
-	LINKED_LIST *elem = (LINKED_LIST*)malloc(sizeof(LINKED_LIST));
-	elem->DATA = table_ptr;
-	elem->next = NULL;
-	elem->prev = NULL;
-
-	/* Insert queue to head */
-	if (head != NULL) {
-		head->prev = elem;
-		elem->next = head;
-		head = elem;
-	}
-	else {
-		head = elem;
-		tail = elem;
-	}
-	return elem;
+void initqueue(f_queue **q){
+	*q=(f_queue*)malloc(sizeof(f_queue));
+	(*q)->size=0;
+	(*q)->head=(*q)->tail=NULL;
 }
 
-void queue_delete(LINKED_LIST* elem) {
-	LINKED_LIST *prev = elem->prev;
-	LINKED_LIST *next = elem->next;
-
-	/* Update linked list */
-	if (elem != NULL) {
-		if (next != NULL)
-			next->prev = prev;
-		else 
-			tail = prev;
-		if (prev != NULL)
-			prev->next = next;
-		else 
-			head = next;
-		free(elem); // Delete elem
+void fb_enqueue(f_queue* q, void* data){
+	fb_node *new_node=(fb_node*)malloc(sizeof(fb_node));
+	new_node->data = data;
+	new_node->next=NULL;
+	if(q->size==0){
+		q->head=q->tail=new_node;
 	}
-	else
-		printf("No such an element!\n");
+	else{
+		q->tail->next=new_node;
+		q->tail=new_node;
+	}
+	q->size++;
 }
 
-void queue_update(LINKED_LIST* elem){
-	LINKED_LIST *prev = elem->prev;
-	LINKED_LIST *next = elem->next;
-	if (elem != NULL) { 
-		if(elem != head) {
-			if(next != NULL)
-				next->prev = prev;
-			else
-				tail = prev;
-			prev->next = next;
-			elem->prev = NULL;
-			elem->next = head;
-			head->prev = elem;
-			head = elem;
-		}
+void* fb_dequeue(f_queue *q){
+	if(!q->head || q->size==0){
+		return NULL;
 	}
-	else
-		printf("No such an element!\n");
+	fb_node *target_node;
+	target_node=q->head;
+	q->head=q->head->next;
+
+	void *res=target_node->data;
+	q->size--;
+	free(target_node);
+	return res;
 }
 
-void queue_print() {
-	if (head != NULL) {
-		LINKED_LIST *elem = head;
-
-		/* Print from head to tail */
-		while (elem != NULL) {
-			printf("%p\n", elem->DATA);
-			elem = elem->next;
-		}
-	}
-	else
-		printf("Empty queue!\n");
-}
-
-void queue_print_back() {
-	if (tail != NULL) {
-		LINKED_LIST *elem = tail;
-
-		/* Print from tail to head */
-		while (elem != NULL) {
-			printf("%p\n", elem->DATA);
-			elem = elem->prev;
-		}
-	}
-	else
-		printf("Empty queue!\n");
+void freequeue(f_queue* q){
+	while(fb_dequeue(q)){}
+	free(q);
 }

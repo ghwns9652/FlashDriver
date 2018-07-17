@@ -1,6 +1,6 @@
 export CC=g++
 
-TARGET_LOWER=posix_async
+TARGET_LOWER=posix_async #bdbm_drv
 TARGET_ALGO=dftl
 PWD=$(pwd)
 
@@ -47,6 +47,7 @@ CFLAGS +=\
 SRCS +=\
 	./interface/queue.c\
 	./interface/interface.c\
+	./interface/bb_checker.c\
 	./include/FS.c\
 	./bench/measurement.c\
 	./bench/bench.c\

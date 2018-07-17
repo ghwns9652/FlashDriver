@@ -1,14 +1,17 @@
-CC=gcc
+CC=g++
 
-CFLAGS +=\
-		 -g\
-		 -std=c99\
-		 -Wno-discarded-qualifiers\
+TARGET_CACHE_UNIT=UNIT_T
 
+CFLAGS_ALGO +=\
+		 -D$(TARGET_CACHE_UNIT)\
 
 SRCS +=\
-	   demand.c\
-	   demand_queue.c\
+	   dftl_init.c\
+	   dftl_main.c\
+	   tpage_dftl_main.c\
+	   dftl_gc.c\
+	   tpage_dftl_gc.c\
+	   dftl_queue.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -16,17 +19,17 @@ OBJS :=\
 TARGETOBJ:=\
 	$(addprefix ../../object/,$(OBJS))\
 
-
+LEAK: all
 all: $(TARGETOBJ) 
 
 libnom.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)
 
 .c.o :
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 ../../object/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 clean : 
 	@$(RM) libnom.a

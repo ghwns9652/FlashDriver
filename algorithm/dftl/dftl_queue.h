@@ -1,11 +1,24 @@
-typedef struct linked_list{
-	void *DATA;
-	struct linked_list *next;
-	struct linked_list *prev;
-}LINKED_LIST;
+#ifndef __DFTL_Q_H__
+#define __DFTL_Q_H__
 
-LINKED_LIST* queue_insert(void* table_ptr);
-void queue_delete(LINKED_LIST* elem);
-void queue_update(LINKED_LIST* elem);
-void queue_print();
-void queue_print_back();
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct fb_node{
+	void *data;
+	struct fb_node *next;
+}fb_node;
+
+typedef struct f_queue{
+	int size;
+	fb_node *head;
+	fb_node *tail;
+}f_queue;
+
+void initqueue(f_queue **q);
+void freequeue(f_queue *q);
+void fb_enqueue(f_queue *q, void* node);
+void* fb_dequeue(f_queue *q);
+
+#endif

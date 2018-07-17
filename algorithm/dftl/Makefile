@@ -1,16 +1,13 @@
-CC=g++
-
-TARGET_CACHE_UNIT=UNIT_T
+CC = g++
 
 CFLAGS_ALGO +=\
-		 -D$(TARGET_CACHE_UNIT)\
 
 SRCS +=\
-	   dftl_init.c\
-	   dftl_main.c\
-	   tpage_dftl_main.c\
-	   dftl_gc.c\
-	   tpage_dftl_gc.c\
+	   dftl.c\
+	   garbage_collection.c\
+	   dftl_utils.c\
+	   lru_list.c\
+	   block_heap.c\
 	   dftl_queue.c\
 
 OBJS :=\
