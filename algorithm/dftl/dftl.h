@@ -9,8 +9,8 @@
 #include "../../interface/interface.h"
 #include "../../interface/queue.h"
 #include "../../include/container.h"
+#include "../blockmanager/BM.h"
 #include "lru_list.h"
-#include "block_heap.h"
 #include "dftl_queue.h"
 
 #define TYPE uint8_t
@@ -72,17 +72,17 @@ typedef struct mem_table{
 extern algorithm __demand;
 
 extern f_queue *free_b;
-extern heap *data_b;
-extern heap *trans_b;
+extern Heap *data_b;
+extern Heap *trans_b;
 
 extern C_TABLE *CMT; // Cached Mapping Table
 extern uint8_t *VBM;
 extern mem_table *mem_all;
 extern D_OOB *demand_OOB; // Page level OOB
 
-extern b_node **block_array;
-extern b_node *t_reserved;
-extern b_node *d_reserved;
+extern Block *block_array;
+extern Block *t_reserved;
+extern Block *d_reserved;
 
 extern int32_t gc_load;
 
@@ -117,7 +117,6 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req);
 D_TABLE* mem_alloc();
 void mem_free(D_TABLE *input);
 void merge_w_origin(D_TABLE *src, D_TABLE *dst);
-void update_b_heap(uint32_t b_idx, char type);
 int lpa_compare(const void *a, const void *b);
 int32_t tp_alloc(char req_t);
 int32_t dp_alloc();

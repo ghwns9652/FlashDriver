@@ -1,13 +1,8 @@
 CC = g++
 
-CFLAGS_ALGO +=\
-
 SRCS +=\
-	   dftl.c\
-	   garbage_collection.c\
-	   dftl_utils.c\
-	   lru_list.c\
-	   dftl_queue.c\
+		BM_Block.c\
+		BM_Heap.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -18,7 +13,7 @@ TARGETOBJ:=\
 LEAK: all
 all: $(TARGETOBJ) 
 
-libnom.a : $(TARGETOBJ)
+libbm.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)
 
 .c.o :
@@ -28,5 +23,5 @@ libnom.a : $(TARGETOBJ)
 	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 clean : 
-	@$(RM) libnom.a
+	@$(RM) libbm.a
 	@$(RM) *.o

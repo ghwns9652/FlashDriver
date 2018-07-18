@@ -41,26 +41,8 @@ void merge_w_origin(D_TABLE *src, D_TABLE *dst){ // merge trans table.
 		}
 		else if(src[i].ppa != -1){
 			VBM[src[i].ppa] = 0;
-			update_b_heap(src[i].ppa/p_p_b, 'D'); // if VBM change, than update data heap
+			block_array[src[i].ppa/p_p_b].Invalid++;
 		}
-	}
-}
-
-void update_b_heap(uint32_t b_idx, char type){
-	block_array[b_idx]->invalid++; // increase block's invalid count
-	if(type == 'T'){ // update trans block heap
-		/*if(block_array[b_idx]->type != 1){
-			printf("die: %d\n", b_idx);
-			abort();
-		}*/
-		heap_update_from(trans_b, block_array[b_idx]->hn_ptr);
-	}
-	else if(type == 'D'){ // update data block heap
-		/*if(block_array[b_idx]->type != 2){
-			printf("die: %d\n", b_idx);
-			abort();
-		}*/
-		heap_update_from(data_b, block_array[b_idx]->hn_ptr);
 	}
 }
 
@@ -80,7 +62,7 @@ int lpa_compare(const void *a, const void *b){
 
 int32_t tp_alloc(char req_t){
 	static int32_t ppa = -1; // static for ppa
-	b_node *block;
+	Block *block;
 	if(ppa != -1 && ppa % p_p_b == 0){
 		ppa = -1; // initialize that this need new block
 	}
@@ -92,11 +74,11 @@ int32_t tp_alloc(char req_t){
 			}
 			return ppa++;
 		}
-		block = (b_node*)fb_dequeue(free_b); // dequeue block from free block queue
+		block = (Block*)fb_dequeue(free_b); // dequeue block from free block queue
 		if(block){
-			block->hn_ptr = heap_insert(trans_b, (void*)block);
+			block->hn_ptr = BM_Heap_Insert(trans_b, block);
 			block->type = 1; // 1 is translation block
-			ppa = block->block_idx * p_p_b;
+			ppa = block->PBA * p_p_b;
 		}
 		else{
 			ppa = tpage_GC();
@@ -110,7 +92,7 @@ int32_t tp_alloc(char req_t){
 
 int32_t dp_alloc(){ // Data page allocation
 	static int32_t ppa = -1; // static for ppa
-	b_node *block;
+	Block *block;
 	if(ppa != -1 && ppa % p_p_b == 0){
 		ppa = -1; // initialize that this need new block
 	}
@@ -119,11 +101,11 @@ int32_t dp_alloc(){ // Data page allocation
 			ppa = dpage_GC();
 			return ppa++;
 		}
-		block = (b_node*)fb_dequeue(free_b); // dequeue block from free block queue
+		block = (Block*)fb_dequeue(free_b); // dequeue block from free block queue
 		if(block){
-			block->hn_ptr = heap_insert(data_b, (void*)block);
+			block->hn_ptr = BM_Heap_Insert(data_b, block);
 			block->type = 2; // 2 is data block
-			ppa = block->block_idx * p_p_b;
+			ppa = block->PBA * p_p_b;
 		}
 		else{
 			ppa = dpage_GC();
