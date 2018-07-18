@@ -30,6 +30,7 @@ typedef struct value_set{
 struct request {
 	FSTYPE type;
 	KEYT key;
+	//KEYT ppa;
 	value_set *value;
 	void *upper_req;
 	void *(*upper_end)(void *);
@@ -38,9 +39,13 @@ struct request {
 	void *params;
 	pthread_mutex_t async_mutex;
 
+	int mark;
+
 	MeasureTime algo;
 	MeasureTime lower;
-	int mark;
+#ifdef CDF
+	MeasureTime latency_checker;
+#endif
 };
 
 struct algo_req{

@@ -8,10 +8,10 @@
 #define T (1024L*G)
 #define P (1024L*T)
 
-#define TOTALSIZE (16L*G)
+#define TOTALSIZE (200L*G)
 #define REALSIZE (512L*G)
 #define PAGESIZE (8*K)
-#define _PPB (256)
+#define _PPB (1<<14)
 #define _PPS (1<<14)
 #define BLOCKSIZE (_PPB*PAGESIZE)
 #define _NOB (TOTALSIZE/BLOCKSIZE)
