@@ -5,13 +5,14 @@
 #include "../../include/container.h"
 #include "../../bench/bench.h"
 #include "../../include/settings.h"
+#include "../../blockmanager/BM_Interface.h"
+#include "PM_blockqueue.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-typedef struct pbase_params
-{
+typedef struct pbase_params{
 	request *parents;
 	int test;
 }pbase_params;
@@ -29,6 +30,11 @@ typedef struct SRAM{
 	int32_t lpa_RAM;
 	value_set* VPTR_RAM;
 }SRAM; // use this RAM for Garbage collection.
+
+//extern from blockmanager
+extern Block* blockArray;
+extern Block** numValid_map;
+extern Block** PE_map;
 
 //opt_bdbm_page.c
 uint32_t pbase_create(lower_info*,algorithm *);
