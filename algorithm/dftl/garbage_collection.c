@@ -54,15 +54,6 @@ int32_t tpage_GC(){
 		inf_free_valueset(temp_set[i], FS_MALLOC_R); //미리 value_set을 free시켜서 불필요한 value_set 낭비 줄임
 	}
 
-	for(int i = 0; i < valid_page_num; i++){ // copy data to memory and free dma valueset
-		if(CMT[d_sram[i].OOB_RAM.lpa].t_ppa != d_sram[i].origin_ppa){
-			printf("index%d\n",d_sram[i].OOB_RAM.lpa);
-			printf("tppa%d\n",CMT[d_sram[i].OOB_RAM.lpa].t_ppa);
-			printf("wppa%d\n",d_sram[i].origin_ppa);
-			abort();
-		}
-	}
-
 	for(int i = 0; i < valid_page_num; i++){ // write page into new block
 		CMT[d_sram[i].OOB_RAM.lpa].t_ppa = new_block + i;
 		SRAM_unload(d_sram, new_block + i, i);
