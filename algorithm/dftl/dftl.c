@@ -226,6 +226,8 @@ uint32_t __demand_set(request *const req){
 	if(p_table){ /* Cache hit */
 		if(!c_table->flag){
 			c_table->flag = 2;
+			VBM[c_table->t_ppa] = 0;
+			block_array[c_table->t_ppa/p_p_b].Invalid++;
 		}
 		lru_update(lru, c_table->queue_ptr);
 	}
@@ -314,7 +316,6 @@ uint32_t __demand_get(request *const req){
 		return 1;
 	}
 	else{ 
-		//없어도 될 것 같음
 		if(((read_params*)req->params)->t_ppa != t_ppa){ 		// mapping has changed in data gc
 			((read_params*)req->params)->read = 0; 				// read value is invalid now
 			((read_params*)req->params)->t_ppa = t_ppa; 		// these could mapping to reserved area
@@ -393,7 +394,7 @@ uint32_t demand_eviction(char req_t){
 			block_array[t_ppa/p_p_b].Invalid++;
 		}
 		/* Write translation page */
-		t_ppa = tp_alloc(req_t);
+		t_ppa = tp_alloc(req_t);	
 		temp_value_set = inf_get_valueset((PTR)p_table, FS_MALLOC_W, PAGESIZE);
 		demand_OOB[t_ppa].lpa = cache_ptr->idx;
 		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_W, temp_value_set, NULL));
