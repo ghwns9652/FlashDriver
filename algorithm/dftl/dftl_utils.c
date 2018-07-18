@@ -74,7 +74,7 @@ int32_t tp_alloc(char req_t){
 			}
 			return ppa++;
 		}
-		block = (Block*)fb_dequeue(free_b); // dequeue block from free block queue
+		block = BM_Dequeue(free_b); // dequeue block from free block queue
 		if(block){
 			block->hn_ptr = BM_Heap_Insert(trans_b, block);
 			block->type = 1; // 1 is translation block
@@ -101,7 +101,7 @@ int32_t dp_alloc(){ // Data page allocation
 			ppa = dpage_GC();
 			return ppa++;
 		}
-		block = (Block*)fb_dequeue(free_b); // dequeue block from free block queue
+		block = BM_Dequeue(free_b); // dequeue block from free block queue
 		if(block){
 			block->hn_ptr = BM_Heap_Insert(data_b, block);
 			block->type = 2; // 2 is data block

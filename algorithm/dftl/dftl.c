@@ -17,7 +17,7 @@ algorithm __demand = {
  */
 LRU *lru; // for lru cache
 queue *dftl_q; // for async get
-f_queue *free_b; // block allocate
+b_queue *free_b; // block allocate
 Heap *data_b; // data block heap
 Heap *trans_b; // trans block heap
 
@@ -106,9 +106,9 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
 	lru_init(&lru);
 	q_init(&dftl_q, 1024);
-	initqueue(&free_b);
+	BM_Queue_Init(&free_b);
 	for(int i = 0; i < num_block - 2; i++){
-		fb_enqueue(free_b, (void*)&block_array[i]);
+		BM_Enqueue(free_b, &block_array[i]);
 	}
 	data_b = BM_Heap_Init(num_dblock);
 	trans_b = BM_Heap_Init(num_tblock);
@@ -122,7 +122,7 @@ void demand_destroy(lower_info *li, algorithm *algo)
 	printf("num of translation page gc w/ read op: %d\n", read_tgc_count);
 	q_free(dftl_q);
 	lru_free(lru);
-	freequeue(free_b);
+	BM_Queue_Free(free_b);
 	BM_Heap_Free(data_b);
 	BM_Heap_Free(trans_b);
 	BM_Free(block_array);

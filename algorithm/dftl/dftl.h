@@ -11,7 +11,6 @@
 #include "../../include/container.h"
 #include "../blockmanager/BM.h"
 #include "lru_list.h"
-#include "dftl_queue.h"
 
 #define TYPE uint8_t
 #define DATA_R 0
@@ -71,7 +70,7 @@ typedef struct mem_table{
 /* extern variables */
 extern algorithm __demand;
 
-extern f_queue *free_b;
+extern b_queue *free_b;
 extern Heap *data_b;
 extern Heap *trans_b;
 

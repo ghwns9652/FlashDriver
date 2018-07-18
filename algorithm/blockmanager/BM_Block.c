@@ -58,3 +58,19 @@ Block* BM_Heap_Get_Max(Heap *heap){
 	heap->idx--;
 	return res;
 }
+
+void BM_Queue_Init(b_queue **q){
+	initqueue(q);
+}
+
+void BM_Queue_Free(b_queue *q){
+	freequeue(q);
+}
+
+void BM_Enqueue(b_queue *q, Block* value){
+	enqueue(q, (void*)value);
+}
+
+Block* BM_Dequeue(b_queue *q){
+	return (Block*)dequeue(q);
+}
