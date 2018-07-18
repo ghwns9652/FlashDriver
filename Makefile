@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_LOWER=posix
-TARGET_ALGO=lsmtree
+TARGET_ALGO=normal
 PWD=$(pwd)
 
 export CFLAGS_ALGO=\
@@ -28,7 +28,7 @@ CFLAGS +=\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
 		 -D_BSD_SOURCE\
-#	-DBENCH\
+	-DBENCH\
 
 SRCS +=\
 	./interface/queue.c\
