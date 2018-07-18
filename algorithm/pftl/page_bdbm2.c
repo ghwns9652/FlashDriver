@@ -80,7 +80,6 @@ void *pbase_algo_end_req(algo_req* input)
 {
 	if(sync_flag == 1){//ASYNC GC,
 		_g_count++;
-		printf("global count : %d\n",_g_count);
 	}
 	free(input);
 	return 0;
@@ -135,17 +134,17 @@ uint32_t pbase_set(request* const req)
 	//!garbage_collection.
 	if (page_TABLE[req->key].lpa_to_ppa != -1)
 	{
-		printf("update [%d]lpa. mapped ppa was [%d]\n",req->key,page_TABLE[req->key].lpa_to_ppa); 
+//		printf("update [%d]lpa. mapped ppa was [%d]\n",req->key,page_TABLE[req->key].lpa_to_ppa); 
 		int64_t temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
 		page_TABLE[temp].valid_checker = 0; //set that ppa validity to 0.
 		int64_t b_temp = temp / _PPS;
 		invalid_per_block[b_temp] += 1;
-		printf("old ppa: %d\n",temp);
-		printf("invalidated [%d]th block :%d\n",b_temp,invalid_per_block[b_temp]);
+//		printf("old ppa: %d\n",temp);
+//		printf("invalidated [%d]th block :%d\n",b_temp,invalid_per_block[b_temp]);
 	}
 	
 	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
-	printf("req-> key:%d, mapped ppa: %d\n",req->key, PPA_status);
+//	printf("req-> key:%d, mapped ppa: %d\n",req->key, PPA_status);
 	page_TABLE[PPA_status].valid_checker = 1; 
 	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
 	KEYT set_target = PPA_status;
@@ -156,15 +155,15 @@ uint32_t pbase_set(request* const req)
 	printf("target is : %d\n",req->key);
 	printf("value is : %c\n",req->value->value[0]);
 	printf("==== set done ===\n"); */
-/*	if (PPA_status % _PPS == 0){
+/*	if (PPA_status % _PPB == 0){
 		printf("start loadcheck.\n");
-		for (int i=0;i<_PPS;i++){
+		for (int i=0;i<_PPB;i++){
 			value_set* value_PTR ; //make new value_set
 			value_PTR = inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
 			algo_req * inf_test = (algo_req*)malloc(sizeof(algo_req));
 			inf_test->parents = NULL;
 			inf_test->end_req = pbase_algo_end_req; //request termination.
-			int ppa = PPA_status - _PPS + i;
+			int ppa = PPA_status - _PPB + i;
 			algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,inf_test);
 			printf("\n=====LOADCHECK=====\n");
 			printf("target ppa : %d\n",ppa);
@@ -174,19 +173,19 @@ uint32_t pbase_set(request* const req)
 	}
 */
 /*
-	if (PPA_status % _PPS == 0){
+	if (PPA_status % _PPB == 0){
 		printf("start trim test. remove written data.\n");
-		int targ = (PPA_status-1)/_PPS;
+		int targ = (PPA_status-1)/_PPB;
 		printf("targ %d\n",targ);
 		algo_pbase.li->trim_block(targ,false);
-		for (int i = 0; i< _PPS;i++)
+		for (int i = 0; i< _PPB;i++)
 		{
 			value_set* value_PTR ; //make new value_set
 			value_PTR = inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
 			algo_req * inf_test = (algo_req*)malloc(sizeof(algo_req));
 			inf_test->parents = NULL;
 			inf_test->end_req = pbase_algo_end_req; //request termination.
-			int ppa = PPA_status - _PPS + i;
+			int ppa = PPA_status - _PPB + i;
 			algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,inf_test);
 			printf("\n=====TRIMCHECK=====\n");
 			printf("target ppa : %d\n",ppa);
@@ -251,7 +250,7 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 		}
 	}//find block with the most invalid block.
 	printf("target block is %d, valid num is %d.\n",target_block,_PPS - invalid_num);
-	printf("_PPS: %d, invalid_num = %d\n",_PPB, invalid_num);
+	printf("_PPS: %d, invalid_num = %d\n",_PPS, invalid_num);
 	PPA_status = target_block* _PPS;
 	trim_PPA = PPA_status; //set trim target.
 	_g_valid = _PPS - invalid_num; //set num of valid component. 

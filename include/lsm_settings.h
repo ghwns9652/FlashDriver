@@ -21,14 +21,15 @@
 #define CQSIZE 2
 #define FTHREAD 1
 #define FQSIZE 2
-#define ONETHREAD
+#define RQSIZE 1024
+//#define ONETHREAD
 //#define NOGC
 
 /*compaction*/
 #define EPC 20 //size factor have to be multiple of SIZEFACTOR
 
 /*block,header,data area variable*/
-#define HEADERSEG 1
+#define HEADERSEG 2
 #define BLOCKSEG (1)
 #define DATASEG ((_NOS-HEADERSEG-BLOCKSEG-1-(BLOCKSEG?1:0))-1)
 

@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "page.h"
 
 struct algorithm algo_pbase=
@@ -9,7 +13,7 @@ struct algorithm algo_pbase=
 	.remove = pbase_remove
 };
 
-uint64_t PPA_status = 0 + _PPS;//starts at block 1, not 0.
+uint64_t PPA_status = 0 + _PPB;//starts at block 1, not 0.
 uint64_t RSV_status = 0;//overprovision area.
 
 int init_done = 0;//check if initial write is done.
@@ -40,15 +44,15 @@ uint32_t pbase_create(lower_info* li, algorithm *algo) //define & initialize map
 	{
 		page_OOB[i].reverse_table = -1;
 	}	
-	page_SRAM = (SRAM*)malloc(sizeof(SRAM)*_PPS);
-	for (int i = 0; i<_PPS; i++)
+	page_SRAM = (SRAM*)malloc(sizeof(SRAM)*_PPB);
+	for (int i = 0; i<_PPB; i++)
 	{
 		page_SRAM[i].lpa_RAM = -1;
 		page_SRAM[i].VPTR_RAM = NULL;
 	}
 
-	invalid_per_block = (uint16_t*)malloc(sizeof(uint16_t)*_NOS);
-	for (int i = 0; i<_NOS; i++)
+	invalid_per_block = (uint16_t*)malloc(sizeof(uint16_t)*_NOB);
+	for (int i = 0; i<_NOB; i++)
 	{
 		invalid_per_block[i] = 0;
 	}
@@ -128,7 +132,7 @@ uint32_t pbase_set(request* const req)
 		init_done = 1;
 	}
 
-	else if ((init_done == 1) && (PPA_status % _PPS == 0))
+	else if ((init_done == 1) && (PPA_status % _PPB == 0))
 	{
 		pbase_garbage_collection();
 	}
@@ -138,7 +142,7 @@ uint32_t pbase_set(request* const req)
 		printf("update [%d]lpa. mapped ppa was [%d]\n",req->key,page_TABLE[req->key].lpa_to_ppa); 
 		int64_t temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
 		page_TABLE[temp].valid_checker = 0; //set that ppa validity to 0.
-		int64_t b_temp = temp / _PPS;
+		int64_t b_temp = temp / _PPB;
 		invalid_per_block[b_temp] += 1;
 		printf("old ppa: %d\n",temp);
 		printf("invalidated [%d]th block :%d\n",b_temp,invalid_per_block[b_temp]);
@@ -156,15 +160,15 @@ uint32_t pbase_set(request* const req)
 	printf("target is : %d\n",req->key);
 	printf("value is : %c\n",req->value->value[0]);
 	printf("==== set done ===\n"); */
-/*	if (PPA_status % _PPS == 0){
+/*	if (PPA_status % _PPB == 0){
 		printf("start loadcheck.\n");
-		for (int i=0;i<_PPS;i++){
+		for (int i=0;i<_PPB;i++){
 			value_set* value_PTR ; //make new value_set
 			value_PTR = inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
 			algo_req * inf_test = (algo_req*)malloc(sizeof(algo_req));
 			inf_test->parents = NULL;
 			inf_test->end_req = pbase_algo_end_req; //request termination.
-			int ppa = PPA_status - _PPS + i;
+			int ppa = PPA_status - _PPB + i;
 			algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,inf_test);
 			printf("\n=====LOADCHECK=====\n");
 			printf("target ppa : %d\n",ppa);
@@ -174,19 +178,19 @@ uint32_t pbase_set(request* const req)
 	}
 */
 /*
-	if (PPA_status % _PPS == 0){
+	if (PPA_status % _PPB == 0){
 		printf("start trim test. remove written data.\n");
-		int targ = (PPA_status-1)/_PPS;
+		int targ = (PPA_status-1)/_PPB;
 		printf("targ %d\n",targ);
 		algo_pbase.li->trim_block(targ,false);
-		for (int i = 0; i< _PPS;i++)
+		for (int i = 0; i< _PPB;i++)
 		{
 			value_set* value_PTR ; //make new value_set
 			value_PTR = inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
 			algo_req * inf_test = (algo_req*)malloc(sizeof(algo_req));
 			inf_test->parents = NULL;
 			inf_test->end_req = pbase_algo_end_req; //request termination.
-			int ppa = PPA_status - _PPS + i;
+			int ppa = PPA_status - _PPB + i;
 			algo_pbase.li->pull_data(ppa,PAGESIZE,value_PTR,0,inf_test);
 			printf("\n=====TRIMCHECK=====\n");
 			printf("target ppa : %d\n",ppa);
@@ -244,21 +248,21 @@ uint32_t pbase_garbage_collection()//do pbase_read and pbase_set
 	int RAM_PTR = 0;
 	value_set **temp_set;
 	
-	for (int i=0;i<_NOS;i++){
+	for (int i=0;i<_NOB;i++){
 		if(invalid_per_block[i] >= invalid_num){
 			target_block = i;
 			invalid_num = invalid_per_block[i];
 		}
 	}//find block with the most invalid block.
-	printf("target block is %d, valid num is %d.\n",target_block,_PPS - invalid_num);
-	printf("_PPS: %d, invalid_num = %d\n",_PPB, invalid_num);
-	PPA_status = target_block* _PPS;
+	printf("target block is %d, valid num is %d.\n",target_block,_PPB - invalid_num);
+	printf("_PPB: %d, invalid_num = %d\n",_PPB, invalid_num);
+	PPA_status = target_block* _PPB;
 	trim_PPA = PPA_status; //set trim target.
-	_g_valid = _PPS - invalid_num; //set num of valid component. 
+	_g_valid = _PPB - invalid_num; //set num of valid component. 
 	sync_flag = ASYNC;//async mode.
 
-	temp_set = (value_set**)malloc(sizeof(value_set*)*_PPS);
-	for (int i=0;i<_PPS;i++){
+	temp_set = (value_set**)malloc(sizeof(value_set*)*_PPB);
+	for (int i=0;i<_PPB;i++){
 		if (page_TABLE[trim_PPA + i].valid_checker == 1){
 			temp_set[RAM_PTR] = SRAM_load(trim_PPA + i, RAM_PTR);
 			RAM_PTR++;
