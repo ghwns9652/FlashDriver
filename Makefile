@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_LOWER=posix
-TARGET_ALGO=page
+TARGET_ALGO=pftl
 PWD=$(pwd)
 
 COMMONFLAGS=\
@@ -95,6 +95,7 @@ libsimulator.a: $(TARGETOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) clean && $(MAKE) && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
+	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 	$(AR) r $(@) ./object/*
 

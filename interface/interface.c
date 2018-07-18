@@ -103,7 +103,7 @@ void inf_init(){
 	mp.algo=&__badblock;
 #endif
 
-#ifdef page
+#ifdef pftl
 	mp.algo=&algo_pbase;
 #endif
 
