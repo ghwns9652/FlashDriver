@@ -17,18 +17,18 @@ algorithm __demand = {
  */
 LRU *lru; // for lru cache
 queue *dftl_q; // for async get
-f_queue *free_b; // block allocate
-heap *data_b; // data block heap
-heap *trans_b; // trans block heap
+b_queue *free_b; // block allocate
+Heap *data_b; // data block heap
+Heap *trans_b; // trans block heap
 
 C_TABLE *CMT; // Cached Mapping Table
 D_OOB *demand_OOB; // Page OOB
 uint8_t *VBM; // Valid BitMap
 mem_table *mem_all; // for p_table allocation. please change allocate and free function.
 
-b_node **block_array; // array that point all block
-b_node *t_reserved; // pointer of reserved block for translation gc
-b_node *d_reserved; // pointer of reserved block for data gc
+Block *block_array; // array that point all block
+Block *t_reserved; // pointer of reserved block for translation gc
+Block *d_reserved; // pointer of reserved block for data gc
 
 int32_t num_caching; // Number of translation page on cache
 int32_t gc_load; // gc data load count
@@ -80,7 +80,6 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT = (C_TABLE*)malloc(sizeof(C_TABLE) * max_cache_entry);
 	VBM = (uint8_t*)malloc(num_page);
 	mem_all = (mem_table*)malloc(sizeof(mem_table) * num_max_cache);
-	block_array = (b_node**)malloc(num_block * sizeof(b_node*));
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * num_page);
 	algo->li = li;
 
@@ -101,25 +100,18 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	}
 
  	num_caching = 0;
-	for(int i = 0; i < num_block; i++){
-		b_node *new_block = (b_node*)malloc(sizeof(b_node));
-		new_block->block_idx = i;
-		new_block->invalid = 0;
-		new_block->hn_ptr = NULL;
-		new_block->type = 0;
-		block_array[i] = new_block;
-	}
-	t_reserved = block_array[num_block - 2];
-	d_reserved = block_array[num_block - 1];
+	BM_Init(&block_array);
+	t_reserved = &block_array[num_block - 2];
+	d_reserved = &block_array[num_block - 1];
 
 	lru_init(&lru);
 	q_init(&dftl_q, 1024);
-	initqueue(&free_b);
+	BM_Queue_Init(&free_b);
 	for(int i = 0; i < num_block - 2; i++){
-		fb_enqueue(free_b, (void*)block_array[i]);
+		BM_Enqueue(free_b, &block_array[i]);
 	}
-	data_b = heap_init(num_dblock);
-	trans_b = heap_init(num_tblock);
+	data_b = BM_Heap_Init(num_dblock);
+	trans_b = BM_Heap_Init(num_tblock);
 	return 0;
 }
 
@@ -130,16 +122,13 @@ void demand_destroy(lower_info *li, algorithm *algo)
 	printf("num of translation page gc w/ read op: %d\n", read_tgc_count);
 	q_free(dftl_q);
 	lru_free(lru);
-	freequeue(free_b);
-	heap_free(data_b);
-	heap_free(trans_b);
+	BM_Queue_Free(free_b);
+	BM_Heap_Free(data_b);
+	BM_Heap_Free(trans_b);
+	BM_Free(block_array);
 	for(int i = 0; i < num_max_cache; i++){
 		free(mem_all[i].mem_p);
 	}
-	for(int i = 0; i < num_block; i++){
-		free(block_array[i]);
-	}
-	free(block_array);
 	free(mem_all);
 	free(VBM);
 	free(demand_OOB);
@@ -219,6 +208,7 @@ uint32_t __demand_set(request *const req){
 	data than number of data page !!! */
 	int32_t lpa; // Logical data page address
 	int32_t ppa; // Physical data page address
+	int32_t t_ppa; // Translation page address
 	C_TABLE *c_table; // Cache mapping entry pointer
 	D_TABLE *p_table; // pointer of p_table on cme
 	algo_req *my_req; // pseudo request pointer
@@ -233,10 +223,13 @@ uint32_t __demand_set(request *const req){
 	}
 	c_table = &CMT[D_IDX];
 	p_table = c_table->p_table;
+	t_ppa = c_table->t_ppa;
 
 	if(p_table){ /* Cache hit */
 		if(!c_table->flag){
 			c_table->flag = 2;
+			VBM[t_ppa] = 0;
+			block_array[t_ppa/p_p_b].Invalid++;
 		}
 		lru_update(lru, c_table->queue_ptr);
 	}
@@ -250,7 +243,7 @@ uint32_t __demand_set(request *const req){
 		c_table->queue_ptr = lru_push(lru, (void*)c_table);
 		c_table->flag = 1;
 	 	num_caching++;
-		if(c_table->t_ppa == -1){ // this case, there is no previous mapping table on device
+		if(t_ppa == -1){ // this case, there is no previous mapping table on device
 			c_table->flag = 2;
 		}
 	}
@@ -260,7 +253,7 @@ uint32_t __demand_set(request *const req){
 	__demand.li->push_data(ppa, PAGESIZE, req->value, ASYNC, my_req); // Write actual data in ppa
 	if(p_table[P_IDX].ppa != -1){ // if there is previous data with same lpa, then invalidate it
 		VBM[p_table[P_IDX].ppa] = 0;
-		update_b_heap(p_table[P_IDX].ppa/p_p_b, 'D'); //data block heap update
+		block_array[p_table[P_IDX].ppa/p_p_b].Invalid++;
 	}
 	p_table[P_IDX].ppa = ppa;
 	VBM[ppa] = 1;
@@ -325,7 +318,6 @@ uint32_t __demand_get(request *const req){
 		return 1;
 	}
 	else{ 
-		//없어도 될 것 같음
 		if(((read_params*)req->params)->t_ppa != t_ppa){ 		// mapping has changed in data gc
 			((read_params*)req->params)->read = 0; 				// read value is invalid now
 			((read_params*)req->params)->t_ppa = t_ppa; 		// these could mapping to reserved area
@@ -361,7 +353,7 @@ uint32_t __demand_get(request *const req){
 		merge_w_origin((D_TABLE*)req->value->value, p_table);
 		c_table->flag = 2;
 		VBM[t_ppa] = 0; // now we could invalidate translation page
-		update_b_heap(t_ppa/p_p_b, 'T');
+		block_array[t_ppa/p_p_b].Invalid++;
 	}
 	ppa = p_table[P_IDX].ppa;
 	lru_update(lru, c_table->queue_ptr);
@@ -401,10 +393,10 @@ uint32_t demand_eviction(char req_t){
 			free(temp_req);
 			inf_free_valueset(temp_value_set, FS_MALLOC_R);
 			VBM[t_ppa] = 0; // now invalidate t_ppa
-			update_b_heap(t_ppa/p_p_b, 'T');
+			block_array[t_ppa/p_p_b].Invalid++;
 		}
 		/* Write translation page */
-		t_ppa = tp_alloc(req_t);
+		t_ppa = tp_alloc(req_t);	
 		temp_value_set = inf_get_valueset((PTR)p_table, FS_MALLOC_W, PAGESIZE);
 		demand_OOB[t_ppa].lpa = cache_ptr->idx;
 		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_W, temp_value_set, NULL));

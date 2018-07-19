@@ -5,25 +5,24 @@ int32_t tpage_GC(){
 	int32_t new_block;
 	uint8_t all;
 	int valid_page_num;
-	b_node *victim;
+	Block *victim;
 	value_set **temp_set;
 	D_SRAM *d_sram; // SRAM for contain block data temporarily
 
 	/* Load valid pages to SRAM */
 	all = 0;
 	tgc_count++;
-	victim = (b_node*)heap_get_max(trans_b);
-	if(victim->invalid == p_p_b){ // if all invalid block
+	victim = BM_Heap_Get_Max(trans_b);
+	if(victim->Invalid == p_p_b){ // if all invalid block
 		all = 1;
 	}
 	//exchange block
-	victim->hn_ptr = NULL;
-	victim->invalid = 0;
+	victim->Invalid = 0;
 	victim->type = 0;
-	old_block = victim->block_idx * p_p_b;
-	new_block = t_reserved->block_idx * p_p_b;
+	old_block = victim->PBA * p_p_b;
+	new_block = t_reserved->PBA * p_p_b;
 	t_reserved->type = 1;
-	t_reserved->hn_ptr = heap_insert(trans_b, (void*)t_reserved);
+	t_reserved->hn_ptr = BM_Heap_Insert(trans_b, t_reserved);
 	t_reserved = victim;
 	if(all){ // if all page is invalid, then just trim and return
 		__demand.li->trim_block(old_block, false);
@@ -78,7 +77,7 @@ int32_t dpage_GC(){
 	int32_t new_block;
 	int valid_num;
 	int real_valid;
-	b_node *victim;
+	Block *victim;
 	C_TABLE *c_table;
 	D_TABLE* p_table;
 	D_TABLE* on_dma;
@@ -92,18 +91,17 @@ int32_t dpage_GC(){
 	/* Load valid pages to SRAM */
 	all = 0;
 	dgc_count++;
-	victim = (b_node*)heap_get_max(data_b);
-	if(victim->invalid == p_p_b){ // if all invalid block
+	victim = BM_Heap_Get_Max(data_b);
+	if(victim->Invalid == p_p_b){ // if all invalid block
 		all = 1;
 	}
 	//exchange block
-	victim->hn_ptr = NULL;
-	victim->invalid = 0;
+	victim->Invalid = 0;
 	victim->type = 0;
-	old_block = victim->block_idx * p_p_b;
-	new_block = d_reserved->block_idx * p_p_b;
+	old_block = victim->PBA * p_p_b;
+	new_block = d_reserved->PBA * p_p_b;
 	d_reserved->type = 2;
-	d_reserved->hn_ptr = heap_insert(data_b, (void*)d_reserved);
+	d_reserved->hn_ptr = BM_Heap_Insert(data_b, d_reserved);
 	d_reserved = victim;
 	if(all){ // if all page is invalid, then just trim and return
 		__demand.li->trim_block(old_block, false);
@@ -163,15 +161,15 @@ int32_t dpage_GC(){
 					}
 					else if(on_dma[i].ppa != -1){
 						/* !!! if prev ppa was in victim block, then do nothing !!! */
-						if(on_dma[i].ppa/p_p_b != d_reserved->block_idx){ 	// this mean that this ppa was on victim block
+						if(on_dma[i].ppa/p_p_b != d_reserved->PBA){ 	// this mean that this ppa was on victim block
 							VBM[on_dma[i].ppa] = 0;							// it doesn't need update
-							update_b_heap(on_dma[i].ppa/p_p_b, 'D');
+							block_array[on_dma[i].ppa/p_p_b].Invalid++;
 						}
 					}
 				}
 				c_table->flag = 2;
 				VBM[t_ppa] = 0;
-				update_b_heap(t_ppa/p_p_b, 'T');
+				block_array[t_ppa/p_p_b].Invalid++;
 				free(params);
 				free(temp_req);
 				inf_free_valueset(temp_value_set, FS_MALLOC_R);
@@ -193,6 +191,8 @@ int32_t dpage_GC(){
 					p_table[P_IDX].ppa = new_block + i;
 					if(c_table->flag == 0){
 						c_table->flag = 2;
+						VBM[t_ppa] = 0;
+						block_array[t_ppa/p_p_b].Invalid++;
 					}
 				}
 				continue;
@@ -222,7 +222,7 @@ int32_t dpage_GC(){
 		}
 		if(tce == INT32_MAX){ // flush temp table into device
 			VBM[t_ppa] = 0;
-			update_b_heap(t_ppa/p_p_b, 'T');
+			block_array[t_ppa/p_p_b].Invalid++;
 			t_ppa = tp_alloc('D');
 			temp_value_set = inf_get_valueset((PTR)temp_table, FS_MALLOC_W, PAGESIZE); // Make valueset to WRITEMODE
 			__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_W, temp_value_set, NULL));	// Unload page to ppa
@@ -248,8 +248,6 @@ int32_t dpage_GC(){
 
 	/* Trim data block */
 	__demand.li->trim_block(old_block, false);
-	if(new_block + real_valid > 524288)
-		abort();
 	return new_block + real_valid;
 }
 

@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_LOWER=posix
-TARGET_ALGO=new_pftl
+TARGET_ALGO=dftl
 PWD=$(pwd)
 
 COMMONFLAGS=\

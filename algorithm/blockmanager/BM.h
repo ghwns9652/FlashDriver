@@ -8,7 +8,7 @@
 #include "../../include/container.h"
 
 /* Type of member variable */
-typedef uint32_t	PBA_T;
+typedef int32_t	PBA_T;
 typedef int32_t 	IV_T;
 typedef int8_t		TYPE_T;
 typedef uint8_t		ValidP_T;  /* Caution: ValidP type is actually ARRAY of uint8_t */
