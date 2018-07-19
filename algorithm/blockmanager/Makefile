@@ -3,13 +3,14 @@ CC = g++
 SRCS +=\
 		BM_Block.c\
 		BM_Heap.c\
+		BM_Queue.c\
 		BM_Interface.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
 
 TARGETOBJ:=\
-	$(addprefix ../object/,$(OBJS))\
+	$(addprefix ../../object/,$(OBJS))\
 
 LEAK: all
 all: $(TARGETOBJ) 
@@ -20,7 +21,7 @@ libbm.a : $(TARGETOBJ)
 .c.o :
 	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
-../object/%.o: %.c
+../../object/%.o: %.c
 	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 clean : 

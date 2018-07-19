@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "block_queue.h"
 
-/* General Doubly Linked Queue with UpdateHit */
+/* General Singly Linked Queue */
 
 void InitQueue(Queue_t* queue)
 {
@@ -14,6 +14,7 @@ void InitQueue(Queue_t* queue)
 int IsEmptyQ(Queue_t* queue)
 {
 	return (queue->count == 0);
+	//return (queue->front == queue->rear);
 }
 
 void Enqueue(Queue_t* queue, int data)
@@ -24,11 +25,11 @@ void Enqueue(Queue_t* queue, int data)
 
 	if (IsEmptyQ(queue)) {
 		queue->front = now;
-		queue->rear = now;
+		//queue->rear = now;
 	}
 	else {
 		queue->rear->next = now;
-		now->prev = queue->rear;
+		//now->prev = queue->rear;
 	}
 	queue->rear = now;
 	queue->count++;
@@ -44,7 +45,7 @@ int Dequeue(Queue_t* queue)
 	now = queue->front;
 	ret = now->data;
 	queue->front = now->next;
-	queue->front->prev = NULL;
+	//queue->front->prev = NULL;
 	
 	free(now);
 	queue->count--;
@@ -52,48 +53,30 @@ int Dequeue(Queue_t* queue)
 	return ret;
 }
 
-void UpdateHit(Queue_t* queue, int data)
-{
-	Node_t* now = queue->rear;
-
-	// Search target hit data
-	while (now != NULL && now->data != data)
-		now = now->prev;
-	if (now == queue->rear)
-		return ;
-	else if (now == queue->front) {
-		queue->front = now->next;
-		queue->front->prev = NULL;
-	}
-	else {
-		now->prev->next = now->next;
-		now->next->prev = now->prev;
-	}
-	now->next = NULL;
-	queue->rear->next = now;
-	now->prev = queue->rear;
-	queue->rear = now;
-}
 
 void DeleteNode(Queue_t* queue, int data)
 {
 	Node_t* now = queue->front;
+	Node_t* old;
 
 	while (now != NULL && now->data != data) {
+		old = now;
 		now = now->next;
 	}
 
 	if (now == queue->front) {
 		queue->front = now->next;
-		queue->front->prev = NULL;
+		//queue->front->prev = NULL;
 	}
 	else if (now == queue->rear) {
-		queue->rear = now->prev;
+		//queue->rear = now->prev;
+		queue->rear = old;
 		queue->rear->next = NULL;
 	}
 	else {
-		now->prev->next = now->next;
-		now->next->prev = now->prev;
+		old->next = now->next;
+		//now->prev->next = now->next;
+		//now->next->prev = now->prev;
 	}
 	free(now);
 }

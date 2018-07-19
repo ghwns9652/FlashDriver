@@ -2,21 +2,18 @@
 *.a
 
 # blockmanager
-blockmanager/**
-!blockmanager/BM_Block.c
-!blockmanager/BM_Block.h
-!blockmanager/BM_common.h
-!blockmanager/BM_Heap.c
-!blockmanager/BM_Heap.h
-!blockmanager/BM_Interface.c
-!blockmanager/BM_Interface.h
-!blockmanager/BM_Main.c
-!blockmanager/Makefile
-!blockmanager/Makefile_test
-!blockmanager/YouHaveToDo.txt
-!blockmanager/Makefile_changed.png
+algorithm/blockmanager/**
+!algorithm/blockmanager/BM.h
+!algorithm/blockmanager/BM_Block.c
+!algorithm/blockmanager/BM_Heap.c
+!algorithm/blockmanager/BM_Queue.c
+!algorithm/blockmanager/BM_Interface.c
+!algorithm/blockmanager/BM_Main.c
+!algorithm/blockmanager/Makefile
+!algorithm/blockmanager/Makefile_test
 
-
+algorithm/blockmanager_jiho/
+blockmanager_BeforeRefactoring/
 blockmanager_6.2/
 blockmanager_7.1/
 blockmanager_dirt_trash/
