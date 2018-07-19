@@ -208,6 +208,7 @@ uint32_t __demand_set(request *const req){
 	data than number of data page !!! */
 	int32_t lpa; // Logical data page address
 	int32_t ppa; // Physical data page address
+	int32_t t_ppa; // Translation page address
 	C_TABLE *c_table; // Cache mapping entry pointer
 	D_TABLE *p_table; // pointer of p_table on cme
 	algo_req *my_req; // pseudo request pointer
@@ -222,12 +223,13 @@ uint32_t __demand_set(request *const req){
 	}
 	c_table = &CMT[D_IDX];
 	p_table = c_table->p_table;
+	t_ppa = c_table->t_ppa;
 
 	if(p_table){ /* Cache hit */
 		if(!c_table->flag){
 			c_table->flag = 2;
-			VBM[c_table->t_ppa] = 0;
-			block_array[c_table->t_ppa/p_p_b].Invalid++;
+			VBM[t_ppa] = 0;
+			block_array[t_ppa/p_p_b].Invalid++;
 		}
 		lru_update(lru, c_table->queue_ptr);
 	}
@@ -241,7 +243,7 @@ uint32_t __demand_set(request *const req){
 		c_table->queue_ptr = lru_push(lru, (void*)c_table);
 		c_table->flag = 1;
 	 	num_caching++;
-		if(c_table->t_ppa == -1){ // this case, there is no previous mapping table on device
+		if(t_ppa == -1){ // this case, there is no previous mapping table on device
 			c_table->flag = 2;
 		}
 	}
