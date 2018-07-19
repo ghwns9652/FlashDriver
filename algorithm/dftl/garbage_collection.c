@@ -17,7 +17,7 @@ int32_t tpage_GC(){
 		all = 1;
 	}
 	else if(victim->Invalid == 0){
-		printf("tp_full\n");
+		printf("\n!!!tp_full!!!\n");
 		exit(2);
 	}
 	//exchange block
@@ -100,7 +100,7 @@ int32_t dpage_GC(){
 		all = 1;
 	}
 	else if(victim->Invalid == 0){
-		printf("dp_full\n");
+		printf("\n!!!dp_full!!!\n");
 		exit(3);
 	}
 	//exchange block
