@@ -291,7 +291,7 @@ void inf_init(){
 	mp.algo=&__demand;
 #endif
 
-#ifdef page
+#ifdef new_pftl
 	mp.algo=&algo_pbase;
 #endif
 

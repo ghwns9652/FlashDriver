@@ -1,7 +1,7 @@
 export CC=g++
 
-TARGET_LOWER=posix_async
-TARGET_ALGO=lsmtree
+TARGET_LOWER=posix
+TARGET_ALGO=new_pftl
 PWD=$(pwd)
 
 COMMONFLAGS=\
@@ -40,8 +40,8 @@ CFLAGS +=\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
 		 -D_BSD_SOURCE\
--DBENCH\
 -DCDF\
+-DBENCH\
 
 SRCS +=\
 	./interface/queue.c\
@@ -93,7 +93,8 @@ duma_simulator: ./interface/main.c libsimulator.a
 libsimulator.a: $(TARGETOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) clean && $(MAKE) && cd ../../
-	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
+	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../
+	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 	$(AR) r $(@) ./object/*
 
