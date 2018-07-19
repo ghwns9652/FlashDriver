@@ -14,13 +14,23 @@
 #include "dftl_queue.h"
 
 #define TYPE uint8_t
+#ifdef posix_memory
+#define DATA_R 10
+#define DATA_W 11
+#else
 #define DATA_R 0
 #define DATA_W 1
+#endif
 #define MAPPING_R 2
 #define MAPPING_W 3
 #define MAPPING_M 4
+#ifdef posix_memory
+#define GC_R 15
+#define GC_W 16
+#else
 #define GC_R 5
 #define GC_W 6
+#endif
 
 #define EPP (PAGESIZE / 4) //Number of table entries per page
 #define D_IDX (lpa / EPP)	// Idx of directory table
