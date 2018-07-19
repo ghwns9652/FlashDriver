@@ -35,6 +35,7 @@ int8_t block_CheckLastOffset(uint32_t* lastoffset_array, uint32_t PBA, uint32_t 
 #define EXIST (1)
 #define NONEXIST (0)
 
+//#define BFTL_KEYDEBUG
 //#define BFTL_DEBUG1
 //#define BFTL_DEBUG2
 //#define BFTL_DEBUG3

@@ -8,7 +8,7 @@
 #include "../../include/container.h"
 
 /* Type of member variable */
-typedef uint32_t	PBA_T;
+typedef int32_t		PBA_T;
 typedef int32_t 	IV_T;
 typedef int8_t		TYPE_T;
 typedef uint8_t		ValidP_T;  /* Caution: ValidP type is actually ARRAY of uint8_t */
@@ -44,6 +44,14 @@ typedef struct b_queue{
 	b_node *tail;
 } b_queue;
 
+typedef struct _blockmanager{
+	Block *barray;
+	Heap **harray;
+	b_queue **qarray;
+	int h_count;
+	int q_count;
+} BM_T;
+
 extern int32_t numBlock;
 extern int32_t PagePerBlock;
 
@@ -70,9 +78,9 @@ static inline int32_t BM_GetnumItem() {
 
 /* BM_Block.h */
 // Interface Functions for blockArray
-int32_t BM_Init(Block** blockArray);
+BM_T* BM_Init(int h_count, int q_count);
 int32_t BM_InitBlockArray(Block* blockArray);
-int32_t BM_Free(Block* blockArray);
+int32_t BM_Free(BM_T* BM);
 
 // Interface Functions for Heap
 Heap* BM_Heap_Init(int max_size);

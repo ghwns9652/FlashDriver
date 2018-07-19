@@ -6,24 +6,25 @@ int32_t numBlock;
 int32_t PagePerBlock;
 
 /* Initiation of Block Manager */
-int32_t BM_Init(Block** blockArray)
+BM_T* BM_Init(int h_count, int q_count)
 {
 	numBlock = _NOS;
 	PagePerBlock = _PPS;
 
-	*blockArray = (Block*)malloc(sizeof(Block) * numBlock);
+	BM_T* res = (BM_T*)malloc(sizeof(BM_T));
+	res->barray = (Block*)malloc(sizeof(Block) * numBlock);
+	if (h_count != 0)
+		res->harray = (Heap**)malloc(sizeof(Heap*) * h_count);
+	if (q_count != 0)
+		res->qarray = (b_queue**)malloc(sizeof(b_queue*) * q_count);
+	res->h_count = h_count;
+	res->q_count = q_count;
 
 	/* Initialize blockArray */
-	BM_InitBlockArray(*blockArray);
+	BM_InitBlockArray(res->barray);
 
-	printf("blockArray Test 0~4\n");
-	for (int i=0; i<5; ++i){
-		printf("PBA: %d\n", (*blockArray)[i].PBA);
-		printf("Invalid: %d\n", (*blockArray)[i].Invalid);
-	}
-	
 	printf("BM_Init() End!\n");
-	return 0;
+	return res;
 }
 
 /* Initalize blockArray */
@@ -36,36 +37,46 @@ int32_t BM_InitBlockArray(Block* blockArray)
 		blockArray[i].Invalid = 0;
 		blockArray[i].hn_ptr = NULL;
 		blockArray[i].type = 0;
+		blockArray[i].ValidP = (ValidP_T*)malloc(numItem);
 
 		/* Initialization with INVALIDPAGE */
-		/* for (int j=0; j<PagePerBlock; ++j)
+		for (int j=0; j<numItem; ++j)
 			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
-		memset(blockArray[i].ValidP, BM_INVALIDPAGE, sizeof(ValidP_T)*4); */
+		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, numItem);
 
 		/* Initialization with VALIDPAGE */
-		blockArray[i].ValidP = (ValidP_T*)malloc(numItem);
+#if 0
 		for (int j=0; j<numItem; ++j)
 			blockArray[i].ValidP[j] = BM_VALIDPAGE;
+#endif
 	}
 	return 0;
 }
 
 /* Shutdown of Block structures */
-int32_t BM_Free(Block* blockArray)
+int32_t BM_Free(BM_T* BM)
 {
 	for (int i=0; i<numBlock; ++i)
-		free(blockArray[i].ValidP);
-	free(blockArray);
+		free(BM->barray[i].ValidP);
+	free(BM->barray);
+
+	if (BM->h_count != 0){
+		for (int i=0; i<BM->h_count; i++)
+			heap_free(BM->harray[i]);
+		free(BM->harray);
+	}
+
+	if (BM->q_count != 0){
+		for (int i = 0; i < BM->q_count; i++)
+			freequeue(BM->qarray[i]);
+		free(BM->qarray);
+	}
 	return 0;
 }
 
 /* Heap Interface Functions */
 Heap* BM_Heap_Init(int max_size){
 	return heap_init(max_size);
-}
-
-void BM_Heap_Free(Heap *heap){
-	heap_free(heap);
 }
 
 h_node* BM_Heap_Insert(Heap *heap, Block *value){
@@ -95,10 +106,6 @@ Block* BM_Heap_Get_Max(Heap *heap){
 /* Queue Interface Functions */
 void BM_Queue_Init(b_queue **q){
 	initqueue(q);
-}
-
-void BM_Queue_Free(b_queue *q){
-	freequeue(q);
 }
 
 void BM_Enqueue(b_queue *q, Block* value){
