@@ -20,15 +20,12 @@ blockmanager_dirt_trash/
 macro.sh
 algorithm/practice
 
-algorithm/block/**
-!algorithm/block/block.c
-!algorithm/block/block2.c
-!algorithm/block/block_linearsearch.c
-!algorithm/block/block_queue.c
-!algorithm/block/block_queue.h
-!algorithm/block/block_withBM.c
-!algorithm/block/block.h
-!algorithm/block/Makefile
+algorithm/bftl/**
+!algorithm/bftl/block.c
+!algorithm/bftl/block_queue.c
+!algorithm/bftl/block_queue.h
+!algorithm/bftl/block.h
+!algorithm/bftl/Makefile
 			
 #blockmanager/libbm.a
 #blockmanager/memset.c

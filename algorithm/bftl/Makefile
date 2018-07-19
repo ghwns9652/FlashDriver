@@ -1,7 +1,7 @@
 CC = g++
 
 SRCS +=\
-		block2.c\
+		block.c\
 		block_queue.c\
 #block_linearsearch.c\
 

@@ -36,8 +36,8 @@
 #define _NOS (TOTALSIZE/(_PPS*PAGESIZE))
 #define _NOB (BPS*_NOS)
 #define _RNOS (REALSIZE/(_PPS*PAGESIZE))//real number of segment
-//#define RANGE (1*128*1025L) // 1 G
-#define RANGE (1*128*256L) // 256 M
+#define RANGE (1*128*1024L) // 1 G
+//#define RANGE (1*128*1L) // 1 M
 
 #define FSTYPE uint8_t
 #define KEYT uint32_t

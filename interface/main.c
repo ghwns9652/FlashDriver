@@ -61,7 +61,7 @@ int main(){/*
 */
 
 	inf_init();
-#define SEQ
+#define RAND
 #ifdef SEQ
 	bench_init(2);
 	char t_value[PAGESIZE];
@@ -69,8 +69,8 @@ int main(){/*
 	int a=16*1024, b=16*1024;
 	//bench_add(SEQSET,0,a,b);
 	//bench_add(SEQGET,0,a,b);
-	bench_add(SEQSET,0,RANGE,RANGE);
-	bench_add(SEQGET,0,RANGE,RANGE);
+	bench_add(SEQSET,0,RANGE,2*RANGE);
+	bench_add(SEQGET,0,RANGE,2*RANGE);
 	//bench_add(RANDSET,0,1*1024,1*1024);
 	//bench_add(RANDGET,0,1*1024,1*1024);
 	//bench_add(RANDRW,0,16*1024,64*1024);

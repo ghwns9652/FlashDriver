@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_LOWER=posix#bdbm_drv
-TARGET_ALGO=block
+TARGET_ALGO=bftl
 PWD=$(pwd)
 
 COMMONFLAGS=\

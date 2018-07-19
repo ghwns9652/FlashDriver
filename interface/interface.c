@@ -91,7 +91,7 @@ void inf_init(){
 #ifdef bdbm_drv
 	mp.li=&memio_info;
 #endif
-#ifdef block
+#ifdef bftl
 	mp.algo=&__block;
 #endif
 

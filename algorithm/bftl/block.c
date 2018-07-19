@@ -161,6 +161,7 @@ uint32_t block_set(request *const req){
 	uint32_t PPA;
 	int8_t checker = 0;
 
+	printf("Start set! key: %d, LBA: %d, offset: %d\n", my_req->parents->key, LBA, offset);
 
 	//if (checker == 0) {
 		/* There is NO free space in flash block */
@@ -313,6 +314,7 @@ void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offs
 	uint32_t new_PBA = block_maptable[LBA];
 	uint32_t new_PPA_zero = new_PBA * ppb_;
 	uint32_t i = 0;
+	printf("moving start! LBA: %d, offset: %d, old_PBA: %d, new_PBA: %d ------------------------------------------\n", LBA, offset, PBA, new_PBA);
 
 	/* Start move */
 #ifdef BFTL_DEBUG1
