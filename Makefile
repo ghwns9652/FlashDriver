@@ -1,6 +1,7 @@
 export CC=g++
 
-TARGET_LOWER=posix
+TARGET_INF=interface
+TARGET_LOWER=bdbm_drv
 TARGET_ALGO=dftl
 PWD=$(pwd)
 
@@ -39,6 +40,7 @@ CFLAGS +=\
 		 $(CFLAGS_ALGO)\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
+		 -D$(TARGET_INF)\
 		 -D_BSD_SOURCE\
 -DBENCH\
 -DCDF\
