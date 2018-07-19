@@ -24,7 +24,8 @@ Heap *trans_b; // trans block heap
 C_TABLE *CMT; // Cached Mapping Table
 D_OOB *demand_OOB; // Page OOB
 uint8_t *VBM; // Valid BitMap
-mem_table *mem_all; // for p_table allocation. please change allocate and free function.
+mem_table* mem_arr;
+m_queue *mem_q; // for p_table allocation. please change allocate and free function.
 
 Block *block_array; // array that point all block
 Block *t_reserved; // pointer of reserved block for translation gc
@@ -79,7 +80,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	// Table Allocation and global variables initialization
 	CMT = (C_TABLE*)malloc(sizeof(C_TABLE) * max_cache_entry);
 	VBM = (uint8_t*)malloc(num_page);
-	mem_all = (mem_table*)malloc(sizeof(mem_table) * num_max_cache);
+	mem_arr = (mem_table*)malloc(sizeof(mem_table) * num_max_cache);
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * num_page);
 	algo->li = li;
 
@@ -95,8 +96,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	memset(demand_OOB, -1, num_page * sizeof(D_OOB));
 
 	for(int i = 0; i < num_max_cache; i++){
-		mem_all[i].mem_p = (D_TABLE*)malloc(PAGESIZE);
-		mem_all[i].flag = 0;
+		mem_arr[i].mem_p = (D_TABLE*)malloc(PAGESIZE);
 	}
 
  	num_caching = 0;
@@ -106,6 +106,10 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
 	lru_init(&lru);
 	q_init(&dftl_q, 1024);
+	initqueue(&mem_q);
+	for(int i = 0; i < num_max_cache; i++){
+		mem_enq(mem_q, mem_arr[i].mem_p);
+	}
 	BM_Queue_Init(&free_b);
 	for(int i = 0; i < num_block - 2; i++){
 		BM_Enqueue(free_b, &block_array[i]);
@@ -126,10 +130,11 @@ void demand_destroy(lower_info *li, algorithm *algo)
 	BM_Heap_Free(data_b);
 	BM_Heap_Free(trans_b);
 	BM_Free(block_array);
+	freequeue(mem_q);
 	for(int i = 0; i < num_max_cache; i++){
-		free(mem_all[i].mem_p);
+		free(mem_arr[i].mem_p);
 	}
-	free(mem_all);
+	free(mem_arr);
 	free(VBM);
 	free(demand_OOB);
 	free(CMT);
@@ -237,7 +242,7 @@ uint32_t __demand_set(request *const req){
 		if(num_caching == num_max_cache){
 			demand_eviction('W');
 		}
-		p_table = mem_alloc();
+		p_table = mem_deq(mem_q);
 		memset(p_table, -1, PAGESIZE); // initialize p_table
 		c_table->p_table = p_table;
 		c_table->queue_ptr = lru_push(lru, (void*)c_table);
@@ -343,7 +348,7 @@ uint32_t __demand_get(request *const req){
 		if(num_caching == num_max_cache){
 			demand_eviction('R');
 		}
-		p_table = mem_alloc();
+		p_table = mem_deq(mem_q);
 		memcpy(p_table, req->value->value, PAGESIZE); // just copy mapping data into memory
 		c_table->p_table = p_table;
 		c_table->queue_ptr = lru_push(lru, (void*)c_table);
@@ -407,7 +412,7 @@ uint32_t demand_eviction(char req_t){
 	cache_ptr->queue_ptr = NULL;
 	cache_ptr->p_table = NULL;
  	num_caching--;
-	mem_free(p_table);
+	mem_enq(mem_q, p_table);
 	return 1;
 }
 

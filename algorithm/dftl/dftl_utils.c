@@ -15,23 +15,12 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 	return pseudo_my_req;
 }
 
-D_TABLE* mem_alloc(){ // inefficient function for give heap pointer
-	for(int i = 0; i < num_max_cache; i++){
-		if(mem_all[i].flag == 0){
-			mem_all[i].flag = 1;
-			return mem_all[i].mem_p;
-		}
-	}
-	return NULL;
+D_TABLE* mem_deq(m_queue *q){ // inefficient function for give heap pointer
+	return (D_TABLE*)m_dequeue(q);
 }
 
-void mem_free(D_TABLE *input){ // inefficient function for free heap pointer
-	for(int i = 0; i < num_max_cache; i++){
-		if(mem_all[i].mem_p == input){
-			mem_all[i].flag = 0;
-			return ;
-		}
-	}
+void mem_enq(m_queue *q, D_TABLE *input){ // inefficient function for free heap pointer
+	m_enqueue(q, (void*)input);
 }
 
 void merge_w_origin(D_TABLE *src, D_TABLE *dst){ // merge trans table.
