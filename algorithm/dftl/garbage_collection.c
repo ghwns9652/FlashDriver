@@ -16,6 +16,10 @@ int32_t tpage_GC(){
 	if(victim->Invalid == p_p_b){ // if all invalid block
 		all = 1;
 	}
+	else if(victim->Invalid == 0){
+		printf("tp_full\n");
+		exit(2);
+	}
 	//exchange block
 	victim->Invalid = 0;
 	victim->type = 0;
@@ -94,6 +98,10 @@ int32_t dpage_GC(){
 	victim = BM_Heap_Get_Max(data_b);
 	if(victim->Invalid == p_p_b){ // if all invalid block
 		all = 1;
+	}
+	else if(victim->Invalid == 0){
+		printf("dp_full\n");
+		exit(3);
 	}
 	//exchange block
 	victim->Invalid = 0;
