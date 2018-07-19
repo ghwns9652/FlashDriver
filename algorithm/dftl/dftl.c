@@ -27,6 +27,7 @@ uint8_t *VBM; // Valid BitMap
 mem_table* mem_arr;
 m_queue *mem_q; // for p_table allocation. please change allocate and free function.
 
+BM_T *bm;
 Block *block_array; // array that point all block
 Block *t_reserved; // pointer of reserved block for translation gc
 Block *d_reserved; // pointer of reserved block for data gc
@@ -100,7 +101,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	}
 
  	num_caching = 0;
-	BM_Init(&block_array);
+	bm = BM_Init(2, 1);
+	block_array = bm->barray;
 	t_reserved = &block_array[num_block - 2];
 	d_reserved = &block_array[num_block - 1];
 
@@ -116,6 +118,9 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	}
 	data_b = BM_Heap_Init(num_dblock);
 	trans_b = BM_Heap_Init(num_tblock);
+	bm->harray[0] = data_b;
+	bm->harray[1] = trans_b;
+	bm->qarray[0] = free_b;
 	return 0;
 }
 
@@ -126,10 +131,7 @@ void demand_destroy(lower_info *li, algorithm *algo)
 	printf("num of translation page gc w/ read op: %d\n", read_tgc_count);
 	q_free(dftl_q);
 	lru_free(lru);
-	BM_Queue_Free(free_b);
-	BM_Heap_Free(data_b);
-	BM_Heap_Free(trans_b);
-	BM_Free(block_array);
+	BM_Free(bm);
 	freequeue(mem_q);
 	for(int i = 0; i < num_max_cache; i++){
 		free(mem_arr[i].mem_p);
