@@ -1,13 +1,10 @@
-CC=gcc
-
-CFLAGS +=\
-		 -g\
-		 -std=c99\
-		 -Wno-discarded-qualifiers\
-
+CC = g++
 
 SRCS +=\
-	   page_revised.c\
+		BM_Block.c\
+		BM_Heap.c\
+		BM_Queue.c\
+		BM_Interface.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -15,18 +12,18 @@ OBJS :=\
 TARGETOBJ:=\
 	$(addprefix ../../object/,$(OBJS))\
 
-
+LEAK: all
 all: $(TARGETOBJ) 
 
-libnom.a : $(TARGETOBJ)
+libbm.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)
 
 .c.o :
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 ../../object/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 clean : 
-	@$(RM) libnom.a
+	@$(RM) libbm.a
 	@$(RM) *.o
