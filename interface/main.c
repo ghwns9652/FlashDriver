@@ -65,13 +65,17 @@ int main(){/*
 	for(int i=0; i<PAGESIZE;i++){
 		t_value2[i]=rand()%256;
 	}*/
+	//bench_add(RANDRW,0,128*1024,2*128*1024);
+	//bench_add(SEQSET,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
+	//bench_add(MIXED,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
 	bench_add(SEQSET,0,0.8*RANGE,0.8*RANGE);
 	bench_add(MIXED,0,0.8*RANGE,0.8*RANGE);
-	//bench_add(RANDRW,0,128*1024,2*128*1024);
+//	bench_add(RANDRW,0,RANGE,2*RANGE);
+//	bench_add(RANDSET,0,15*1024,15*1024);
+//	bench_add(RANDGET,0,15*1024,15*1024);
 	bench_value *value;
 
 	value_set temp;
-	printf("input data is : %c\n",t_value[0]);
 	temp.value=t_value;
 	//temp.value=NULL;
 	temp.dmatag=-1;
@@ -79,9 +83,6 @@ int main(){/*
 	int cnt=0;
 	while((value=get_bench())){
 		temp.length=value->length;
-	//	if(value->mark!=0){
-	//		printf("??\n");
-	//	}
 		/*
 		if(cnt==RANGE){ //for trim test
 			KEYT t_ppa=(rand()%RANGE)/(1<<14);
@@ -102,6 +103,7 @@ int main(){/*
 #endif
 	}
 	bench_print();
+
 	bench_free();
 	inf_free();
 	return 0;

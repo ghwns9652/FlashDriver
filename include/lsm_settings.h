@@ -11,8 +11,8 @@
 #define PIECE 512
 //#define LEVELUSINGHEAP
 //#define TIERING
-#define CACHE
-#define CACHESIZE (128*8*100)//1*128==1M
+//#define CACHE
+//#define CACHESIZE (128*8*100)//1*128==1M
 
 /*lsmtree flash thread*/
 #define KEYNUM 1024
@@ -37,6 +37,6 @@
 //#define FLASHCHECK
 
 //#define SNU_TEST
-//#define SPINLOCK
-#define MUTEXLOCK
+#define SPINLOCK
+//#define MUTEXLOCK
 #endif

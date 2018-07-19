@@ -1,6 +1,7 @@
 export CC=g++
 
-TARGET_LOWER=posix_async #bdbm_drv
+TARGET_INF=interface
+TARGET_LOWER=posix_async
 TARGET_ALGO=new_pftl
 PWD=$(pwd)
 
@@ -39,9 +40,10 @@ CFLAGS +=\
 		 $(CFLAGS_ALGO)\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
+		 -D$(TARGET_INF)\
 		 -D_BSD_SOURCE\
--DCDF\
 -DBENCH\
+-DCDF\
 
 SRCS +=\
 	./interface/queue.c\
