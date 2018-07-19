@@ -168,6 +168,7 @@ snode *skiplist_insert_existIgnore(skiplist *list,KEYT key,KEYT ppa,bool deletef
 snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	snode *update[MAX_L+1];
 	snode *x=list->header;
+
 	for(int i=list->level; i>=1; i--){
 		while(x->list[i]->key<key)
 			x=x->list[i];
@@ -228,8 +229,9 @@ snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	return x;
 }
 
+//static int make_value_cnt=0;
 value_set **skiplist_make_valueset(skiplist *input, level *from){
-	gc_check(DATA,false);
+	//printf("make_value_cnt:%d\n",++make_value_cnt);
 	value_set **res=(value_set**)malloc(sizeof(value_set*)*(KEYNUM+1));
 	memset(res,0,sizeof(value_set*)*(KEYNUM+1));
 	l_bucket b;
@@ -266,7 +268,8 @@ value_set **skiplist_make_valueset(skiplist *input, level *from){
 		res_idx++;
 	}
 	b.idx[PAGESIZE/PIECE]=0;
-
+	
+	//level_moveTo_front_page(from);//setting to erased block started;
 	for(int i=0; i<PAGESIZE/PIECE+1; i++){
 		if(b.idx[i]!=0)
 			break;

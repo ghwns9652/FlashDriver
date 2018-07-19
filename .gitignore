@@ -37,8 +37,10 @@ algorithm/bftl/**
 
 simulator
 simulator_memory_check
+duma_*
 data/
 object/
+data/
 tags
 *log
 .

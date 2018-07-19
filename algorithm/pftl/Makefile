@@ -1,17 +1,5 @@
-CC=g++
-
-TARGET_CACHE_UNIT=UNIT_T
-
-CFLAGS_ALGO +=\
-		 -D$(TARGET_CACHE_UNIT)\
-
 SRCS +=\
-	   dftl_init.c\
-	   dftl_main.c\
-	   tpage_dftl_main.c\
-	   dftl_gc.c\
-	   tpage_dftl_gc.c\
-	   dftl_queue.c\
+	   page_aio.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -19,7 +7,7 @@ OBJS :=\
 TARGETOBJ:=\
 	$(addprefix ../../object/,$(OBJS))\
 
-LEAK: all
+
 all: $(TARGETOBJ) 
 
 libnom.a : $(TARGETOBJ)

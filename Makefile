@@ -1,12 +1,12 @@
 export CC=g++
 
-TARGET_LOWER=posix#bdbm_drv
+TARGET_INF=interface
+TARGET_LOWER=posix
 TARGET_ALGO=bftl
 PWD=$(pwd)
 
 COMMONFLAGS=\
 			-DSLC\
-
 
 export CFLAGS_ALGO=\
 			 -g\
@@ -40,14 +40,15 @@ CFLAGS +=\
 		 $(CFLAGS_ALGO)\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
+		 -D$(TARGET_INF)\
 		 -D_BSD_SOURCE\
--DCDF\
 -DBENCH\
-
+-DCDF\
 
 SRCS +=\
 	./interface/queue.c\
 	./interface/interface.c\
+	./interface/bb_checker.c\
 	./include/FS.c\
 	./bench/measurement.c\
 	./bench/bench.c\

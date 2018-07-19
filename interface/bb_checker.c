@@ -3,32 +3,27 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef TEST
-#include "frontend/libmemio/libmemio.h"
-extern memio_t *mio;
-#endif
 bb_checker checker;
-static uint64_t target_cnt, _cnt, badblock_cnt;
+uint64_t target_cnt, _cnt, badblock_cnt;
 uint32_t array[128];
 
-void bb_checker_start(){
-	printf("hello!\n");
+void bb_checker_start(lower_info *li){
 	memset(&checker,0,sizeof(checker));
 	target_cnt=_RNOS*64;
-	printf("_nos:%u\n",_NOS);
+	printf("_nos:%ld\n",_NOS);
+	
+	if(!li->device_badblock_checker){
+		return;
+	}
 	for(uint64_t i=0; i<_RNOS; i++){
-		checker.ent[i].origin_segnum=i*(1<<14);
-#ifndef TEST
-		memio_trim(mio,i*(1<<14),(1<<14)*PAGESIZE,bb_checker_process);
-#endif
+		checker.ent[i].origin_segnum=i*_PPS;
+		li->device_badblock_checker(i*_PPS,_PPS*PAGESIZE,bb_checker_process);
+		//memio_trim(mio,i*(1<<14),(1<<14)*PAGESIZE,bb_checker_process);
 	}
 
-#ifndef TEST
 	while(target_cnt!=_cnt){}
-#endif
-
 	printf("\n");
-	printf("badblock_cnt: %d\n",badblock_cnt);
+	printf("badblock_cnt: %lu\n",badblock_cnt);
 	bb_checker_fixing();
 	printf("checking done!\n");
 	//exit(1);
@@ -44,7 +39,7 @@ void *bb_checker_process(uint64_t bad_seg,uint8_t isbad){
 	}
 	_cnt++;
 	if(_cnt%10==0){
-		printf("\rbad_block_checking...[%lf%]",(double)_cnt/target_cnt*100);
+		printf("\rbad_block_checking...[ %lf ]",(double)_cnt/target_cnt*100);
 		fflush(stdout);
 	}
 	return NULL;
@@ -104,7 +99,7 @@ void bb_checker_fixing(){/*
 			printf("[%d]seg can't used\n",i);
 		}
 	}*/
-	printf("_RNOS:%d\n",_RNOS);
+	printf("_RNOS:%ld\n",_RNOS);
 	checker.back_index=_RNOS-1;
 #ifdef MLC
 	for(int i=0; i<1*_NOS; i++){
