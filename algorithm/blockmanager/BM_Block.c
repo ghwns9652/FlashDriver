@@ -51,10 +51,12 @@ Block* BM_Heap_Get_Max(Heap *heap){
 	max_heapify(heap);
 	res = (Block*)heap->body[0].value;
 	res->hn_ptr = NULL;
-	heap->body[0].value = heap->body[heap->idx - 1].value;
-	heap->body[heap->idx - 1].value = NULL;
-	first = (Block*)heap->body[0].value;
-	first->hn_ptr = &heap->body[0];
+	if(heap->idx != 1){
+		heap->body[0].value = heap->body[heap->idx - 1].value;
+		heap->body[heap->idx - 1].value = NULL;
+		first = (Block*)heap->body[0].value;
+		first->hn_ptr = &heap->body[0];
+	}
 	heap->idx--;
 	return res;
 }
