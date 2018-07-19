@@ -1,5 +1,6 @@
 export CC=g++
 
+TARGET_INF=interface
 TARGET_LOWER=posix_async
 TARGET_ALGO=dftl
 PWD=$(pwd)
@@ -39,6 +40,7 @@ CFLAGS +=\
 		 $(CFLAGS_ALGO)\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
+		 -D$(TARGET_INF)\
 		 -D_BSD_SOURCE\
 -DCDF\
 -DBENCH\
