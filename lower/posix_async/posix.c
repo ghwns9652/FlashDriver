@@ -5,6 +5,7 @@
 #include "../../bench/bench.h"
 #include "../../bench/measurement.h"
 #include "../../interface/queue.h"
+#include "../../interface/bb_checker.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,10 @@
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
+//#include <readline/readline.h>
+//#include <readline/history.h>
 
+static FILE *_fp;
 static int _fd;
 pthread_mutex_t fd_lock;
 queue *p_q;
@@ -29,6 +33,7 @@ lower_info my_posix={
 	.push_data=posix_push_data,
 	.pull_data=posix_pull_data,
 #endif
+	.device_badblock_checker=posix_badblock_checker,
 	.trim_block=posix_trim_block,
 	.refresh=posix_refresh,
 	.stop=posix_stop,
@@ -43,7 +48,7 @@ void *l_main(void *__input){
 	while(1){
 		//stopflag 어디서 전달
 		if(stopflag){
-			printf("posix bye bye!\n");
+			//printf("posix bye bye!\n");
 			pthread_exit(NULL);
 			break;
 		}
@@ -51,6 +56,8 @@ void *l_main(void *__input){
 			continue;
 		}
 		inf_req=(posix_request*)_inf_req;
+		//chang ppa, mapping right ppa from bad block or somthing
+		inf_req->key=bb_checker_fix_ppa(inf_req->key);
 		switch(inf_req->type){
 			case FS_LOWER_W:
 				posix_push_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, (algo_req*)(inf_req->upper_req));
@@ -131,18 +138,24 @@ void *posix_make_trim(KEYT PPA, bool async){
 }
 
 uint32_t posix_create(lower_info *li){
-	li->NOB=_NOB;
+	li->NOB=_NOS;
 	li->NOP=_NOP;
-	li->SOB=BLOCKSIZE;
+	li->SOB=BLOCKSIZE*BPS;
 	li->SOP=PAGESIZE;
 	li->SOK=sizeof(KEYT);
-	li->PPB=_PPB;
+	li->PPB=_PPS;
 	li->TS=TOTALSIZE;
 
 	li->write_op=li->read_op=li->trim_op=0;
 	_fd=open("data/simulator.data",O_RDWR|O_CREAT|O_TRUNC,0666);
 	if(_fd==-1){
 		printf("file open error!\n");
+		exit(-1);
+	}
+
+	_fp=fopen("badblock.txt","r");	
+	if(_fp==NULL){
+		printf("bb file open error!\n");
 		exit(-1);
 	}
 	pthread_mutex_init(&fd_lock,NULL);
@@ -164,7 +177,7 @@ void *posix_refresh(lower_info *li){
 }
 
 void *posix_destroy(lower_info *li){
-	close(_fd);
+	fclose(_fp);
 #if (ASYNC==1)
 	stopflag = true;
 #endif
@@ -191,13 +204,6 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		bench_lower_end(req->parents);
 	bench_lower_w_end(&my_posix);
 	req->end_req(req);
-/*
-	if(async){
-		req->end_req(req);
-	}else{
-	
-	}
-	*/
 	return NULL;
 }
 
@@ -247,6 +253,36 @@ void *posix_trim_block(KEYT PPA, bool async){
 	}
 	pthread_mutex_unlock(&fd_lock);
 	free(temp);
+	return NULL;
+}
+
+extern uint64_t _cnt;
+void* posix_badblock_checker(KEYT ppa, uint32_t size, void*(*process)(uint64_t,uint8_t)){
+	static uint64_t bbn=0;//badblock number
+	static bool checking_done=false;
+	static bool need_dispatch=true;
+	for(int i=0; i<_PPS/_PPB; i++){
+		if(checking_done){
+			_cnt++;
+			continue;
+		}
+		else if(need_dispatch){
+			if(fscanf(_fp,"%lu",&bbn)==EOF){
+				checking_done=true;
+			}
+		}
+
+	
+		if(bbn==ppa){
+			need_dispatch=true;
+			process(bbn/(1<<14),1);
+		}
+		else{
+			need_dispatch=false;
+			_cnt++;
+		}
+		ppa+=_PPB;
+	}
 	return NULL;
 }
 

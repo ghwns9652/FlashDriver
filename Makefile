@@ -1,12 +1,11 @@
 export CC=g++
 
 TARGET_LOWER=bdbm_drv
-TARGET_ALGO=normal
+TARGET_ALGO=dftl
 PWD=$(pwd)
 
 COMMONFLAGS=\
 			-DSLC\
-
 
 export CFLAGS_ALGO=\
 			 -g\
@@ -44,10 +43,10 @@ CFLAGS +=\
 -DCDF\
 -DBENCH\
 
-
 SRCS +=\
 	./interface/queue.c\
 	./interface/interface.c\
+	./interface/bb_checker.c\
 	./include/FS.c\
 	./bench/measurement.c\
 	./bench/bench.c\
