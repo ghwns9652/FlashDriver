@@ -1,4 +1,4 @@
-#include "gecko.h"
+#include "gecko_skiplist.h"
 
 skiplist *skiplist_init(){
 	skiplist *point = (skiplist *)malloc(sizeof(skiplist));
@@ -9,8 +9,8 @@ skiplist *skiplist_init(){
 		point->header->list[i] = point->header;
 	}
 	point->header->key = INT_MAX;
-	point->start=UINT_MAX;
-	point->end=0;
+	point->start = 0;
+	point->end = UINT_MAX;
 	point->size = 0;
 	return point;
 }
@@ -44,7 +44,7 @@ static int getLevel(){
 	return level;
 }
 
-snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
+snode *skiplist_insert(skiplist *list, KEYT key, uint8_t offset, ERASET flag){
 	snode *update[MAX_L + 1];
 	snode *x = list->header;
 	for(int i = list->level; i >= 1; i--){
@@ -54,24 +54,24 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
 		update[i] = x;
 	}
 	x = x->list[1];
-	if(key < list->start){
-		list->start=key;
-	}
-	if(key > list->end){
-		list->end=key;
-	}
 	if(key == x->key){
 		if(flag == 1){
-			for (int i = 0; i < BM_RANGE; i++){
+			for (int i = 0; i < 4; i++){
 				x->VBM[i] = 0;
 			}
 			x->erase = flag;
 		}
 		else{
-			x->VBM[offset / BPE] |= (uint8_t)(1 << (offset % 8));
+			x->VBM[offset / 64] |= ((uint64_t)1 << (offset % 64));
 		}
 	}
 	else{
+		if(key > list->start){
+			list->start = key;
+		}
+		if(key < list->end){
+			list->end = key;
+		}
 		int level = getLevel();
 		if(level > list->level){
 			for(int i = list->level + 1; i <= level; i++){
@@ -84,17 +84,17 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
 		x->list = (snode **)malloc(sizeof(snode *) * (level + 1));
 		x->key = key;
 		if(flag == 1){
-			for(int i = 0; i < BM_RANGE; i++){
+			for(int i = 0; i < 4; i++){
 				x->VBM[i] = 0;
 			}
 			x->erase = flag;
 		}
 		else{
-			for(int i = 0; i < BM_RANGE; i++){
+			for(int i = 0; i < 4; i++){
 				x->VBM[i] = 0;
 			}
 			x->erase = 0;
-			x->VBM[offset / BPE] |= (uint8_t)(1 << (offset % 8));
+			x->VBM[offset / 64] |= ((uint64_t)1 << (offset % 64));
 		}
 		for(int i = 1; i <= level; i++){
 			x->list[i] = update[i]->list[i];
@@ -106,7 +106,7 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
 	return x;
 }
 //must insert newest node first
-snode *skiplist_snode_insert(skiplist *list, snode *input){
+snode *skiplist_merge_insert(skiplist *list, snode *input){
 	snode *update[MAX_L + 1];
 	snode *x = list->header;
 	for(int i = list->level; i >= 1; i--){
@@ -116,21 +116,21 @@ snode *skiplist_snode_insert(skiplist *list, snode *input){
 		update[i] = x;
 	}
 	x = x->list[1];
-	if(input->key < list->start){
-		list->start = input->key;
-	}
-	if(input->key > list->end){
-		list->end = input->key;
-	}
 	if(input->key == x->key){
 		if(x->erase != 1){
-			for (int i = 0; i < BM_RANGE; i++){
+			for (int i = 0; i < 4; i++){
 				x->VBM[i] |= input->VBM[i];
 			}
 			x->erase = input->erase;
 		}
 	}
 	else{
+		if(input->key > list->start){
+			list->start = input->key;
+		}
+		if(input->key < list->end){
+			list->end = input->key;
+		}
 		int level = getLevel();
 		if(level > list->level){
 			for(int i = list->level + 1; i <= level; i++){
@@ -142,7 +142,7 @@ snode *skiplist_snode_insert(skiplist *list, snode *input){
 		x = (snode *)malloc(sizeof(snode));
 		x->list = (snode **)malloc(sizeof(snode *) * (level + 1));
 		x->key = input->key;
-		for(int i = 0; i < BM_RANGE; i++){
+		for(int i = 0; i < 4; i++){
 			x->VBM[i] = input->VBM[i];
 		}
 		x->erase = input->erase;
@@ -246,18 +246,14 @@ struct node* skiplist_flush(skiplist *list){
 }
 
 PTR skiplist_make_data(skiplist *input){
-	int loc;
+	PTR Wrappage = (PTR)malloc(PAGESIZE);
+	memset(Wrappage, 0, PAGESIZE); //나중엔 노쓸모
+	int loc = 0;
+	sk_iter *iter = skiplist_get_iterator(input);
 	snode *now;
-	PTR Wrappage;
-	sk_iter *iter;
-
-	loc = 0;
-	Wrappage = (PTR)malloc(PAGESIZE);
-	memset(Wrappage, 1, PAGESIZE);
-	iter = skiplist_get_iterator(input);
 	while(now = skiplist_get_next(iter)){
-		memcpy(&Wrappage[loc], now, GE_SIZE);
-		loc += GE_SIZE;
+		memcpy(&Wrappage[loc], now, sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET));
+		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
 	}
 	free(iter);
 	return Wrappage;
@@ -269,10 +265,10 @@ PTR skiplist_lsm_merge(skiplist *input, KEYT key, KEYT *nxtkey, KEYT *last){
 	int loc = 0;
 	snode *now = skiplist_find(input, key);
 	sk_iter *iter = skiplist_get_iter_from_here(input, now);
-	for(int i = 0; i < gepp; i++){
+	for(int i = 0; i < MAX_PER_PAGE; i++){
 		memcpy(&Wrappage[loc], now, sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET));
 		loc += sizeof(uint64_t) * 4 + sizeof(KEYT) + sizeof(ERASET);
-		if(i == gepp - 1){
+		if(i == MAX_PER_PAGE - 1){
 			*last = now->key;
 		}
 		now = skiplist_get_next(iter);
@@ -303,11 +299,9 @@ void skiplist_dump_key_value(skiplist *list){
 	sk_iter *iter = skiplist_get_iterator(list);
 	snode *now;
 	while(now = skiplist_get_next(iter)){
-		printf("key(%u): ", now->key);
-		for(int i = 0; i < BM_RANGE; i++){
-			printf("hexvalue%i: %d\n", i, now->VBM[i]);
-		}
-		printf("key(%d): ", now->erase);
+		printf("key(%u): hexvalue1(0x%" PRIx64 "), hexvalue2(0x%" PRIx64 "), \
+hexvalue3(0x%" PRIx64 "), hexvalue4(0x%" PRIx64 "), erase(%d)\n",
+			   now->key, now->VBM[0], now->VBM[1], now->VBM[2], now->VBM[3], now->erase);
 	}
 	free(iter);
 }

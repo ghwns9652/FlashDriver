@@ -245,7 +245,7 @@ value_set **skiplist_make_valueset(skiplist *input, level *from){
 	free(iter);
 
 	int res_idx=0;
-	for(int i=0; i<b.idx[PAGESIZE/PIECE]; i++){//full page 
+	for(int i=0; i<b.idx[PAGESIZE/PIECE]; i++){//full page
 		target=b.bucket[PAGESIZE/PIECE][i];
 		res[res_idx]=target->value;
 		level_moveTo_front_page(from);
