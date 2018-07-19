@@ -46,7 +46,7 @@ int32_t tpage_GC(){
 	/* read valid pages in block */
 	for(int i = old_block; i < old_block + p_p_b; i++){
 		if(VBM[i]){ // read valid page
-			temp_set[valid_page_num] = SRAM_load(d_sram, i, valid_page_num);
+			temp_set[valid_page_num] = SRAM_load(d_sram, i, valid_page_num, 'T');
 			valid_page_num++;
 		}
 	}
@@ -60,7 +60,7 @@ int32_t tpage_GC(){
 
 	for(int i = 0; i < valid_page_num; i++){ // write page into new block
 		CMT[d_sram[i].OOB_RAM.lpa].t_ppa = new_block + i;
-		SRAM_unload(d_sram, new_block + i, i);
+		SRAM_unload(d_sram, new_block + i, i, 'T');
 	}
 
 	free(temp_set);
@@ -132,7 +132,7 @@ int32_t dpage_GC(){
 	/* read valid pages in block */
 	for(int i = old_block; i < old_block + p_p_b; i++){
 		if(VBM[i]){
-			temp_set[valid_num] = SRAM_load(d_sram, i, valid_num);
+			temp_set[valid_num] = SRAM_load(d_sram, i, valid_num, 'D');
 			valid_num++;
 		}
 	}
@@ -243,7 +243,7 @@ int32_t dpage_GC(){
 	/* Write dpages */ 
 	for(int i = 0; i < valid_num; i++){
 		if(d_sram[i].origin_ppa != -1){
-			SRAM_unload(d_sram, new_block + real_valid++, i);
+			SRAM_unload(d_sram, new_block + real_valid++, i, 'D');
 		}
 		else{
 			free(d_sram[i].DATA_RAM); // free without SRAM_unload, because this is not valid data

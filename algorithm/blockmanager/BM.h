@@ -72,7 +72,7 @@ static inline int32_t BM_GetnumItem() {
 // Interface Functions for blockArray
 int32_t BM_Init(Block** blockArray);
 int32_t BM_InitBlockArray(Block* blockArray);
-int32_t BM_Free(Block* blockArray);
+void BM_Free(Block* blockArray);
 
 // Interface Functions for Heap
 Heap* BM_Heap_Init(int max_size);

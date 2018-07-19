@@ -24,13 +24,10 @@
 #define MAPPING_R 2
 #define MAPPING_W 3
 #define MAPPING_M 4
-#ifdef posix_memory
-#define GC_R 15
-#define GC_W 16
-#else
-#define GC_R 5
-#define GC_W 6
-#endif
+#define TGC_R 5
+#define TGC_W 6
+#define DGC_R 12
+#define DGC_W 13
 
 #define EPP (PAGESIZE / 4) //Number of table entries per page
 #define D_IDX (lpa / EPP)	// Idx of directory table
@@ -129,8 +126,8 @@ void merge_w_origin(D_TABLE *src, D_TABLE *dst);
 int lpa_compare(const void *a, const void *b);
 int32_t tp_alloc(char req_t);
 int32_t dp_alloc();
-value_set* SRAM_load(D_SRAM* d_sram, int32_t ppa, int idx);
-void SRAM_unload(D_SRAM* d_sram, int32_t ppa, int idx);
+value_set* SRAM_load(D_SRAM* d_sram, int32_t ppa, int idx, char t);
+void SRAM_unload(D_SRAM* d_sram, int32_t ppa, int idx, char t);
 void cache_show(char* dest);
 
 //garbage_collection.c

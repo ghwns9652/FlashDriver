@@ -24,3 +24,7 @@ typedef struct posix_request {
 	bool isAsync;
 	uint32_t size;
 }posix_request;
+
+typedef struct mem_seg {
+	PTR storage;
+} mem_seg;

@@ -14,7 +14,7 @@
 int32_t BM_Init(Block **blockarray){
 	int32_t nob = _NOS;
 	*blockarray = (Block*)malloc(sizeof(Block) * nob);
-	for (int i = 0; i < nob; i++){
+	for(int i = 0; i < nob; i++){
 		(*blockarray)[i].PBA = i;
 		(*blockarray)[i].Invalid = 0;
 		(*blockarray)[i].hn_ptr = NULL;

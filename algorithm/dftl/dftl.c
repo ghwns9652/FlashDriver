@@ -169,10 +169,16 @@ void *demand_end_req(algo_req* input){
 			pthread_mutex_unlock(&params->dftl_mutex);
 			return NULL;
 			break;
-		case GC_R:
+		case TGC_R:
 			gc_load++;	
 			break;
-		case GC_W:
+		case TGC_W:
+			inf_free_valueset(temp_v, FS_MALLOC_W);
+			break;
+		case DGC_R:
+			gc_load++;	
+			break;
+		case DGC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
 			break;
 	}

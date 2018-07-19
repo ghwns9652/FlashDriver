@@ -103,10 +103,15 @@ int32_t dp_alloc(){ // Data page allocation
 	return ppa++;
 }
 
-value_set* SRAM_load(D_SRAM* d_sram, int32_t ppa, int idx){
+value_set* SRAM_load(D_SRAM* d_sram, int32_t ppa, int idx, char t){
 	value_set *temp_value_set;
 	temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-	__demand.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(GC_R, NULL, NULL)); // read in gc act as async pull for speed
+	if(t == 'T'){
+		__demand.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(TGC_R, NULL, NULL));
+	}
+	else{
+		__demand.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(DGC_R, NULL, NULL));
+	}
 	d_sram[idx].DATA_RAM = (D_TABLE*)malloc(PAGESIZE);
 	d_sram[idx].OOB_RAM = demand_OOB[ppa];
 	d_sram[idx].origin_ppa = ppa;
@@ -114,10 +119,15 @@ value_set* SRAM_load(D_SRAM* d_sram, int32_t ppa, int idx){
 	return temp_value_set;
 }
 
-void SRAM_unload(D_SRAM* d_sram, int32_t ppa, int idx){
+void SRAM_unload(D_SRAM* d_sram, int32_t ppa, int idx, char t){
 	value_set *temp_value_set;
 	temp_value_set = inf_get_valueset((PTR)d_sram[idx].DATA_RAM, FS_MALLOC_W, PAGESIZE);
-	__demand.li->push_data(ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(GC_W, temp_value_set, NULL));
+	if(t == 'T'){
+		__demand.li->push_data(ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(TGC_W, temp_value_set, NULL));
+	}
+	else{
+		__demand.li->push_data(ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(DGC_W, temp_value_set, NULL));
+	}
 	demand_OOB[ppa] = d_sram[idx].OOB_RAM;
 	VBM[ppa] = 1;
 	free(d_sram[idx].DATA_RAM);

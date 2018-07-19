@@ -6,7 +6,8 @@
 #include "../../bench/measurement.h"
 #include "../../interface/queue.h"
 #include "../../interface/bb_checker.h"
-#include "../../algorithm/lsmtree/lsmtree.h"
+//#include "../../algorithm/lsmtree/lsmtree.h"
+#include "../../algorithm/dftl/dftl.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,11 +20,13 @@
 //#include <readline/history.h>
 
 static FILE *_fp;
-static int _fd;
 pthread_mutex_t fd_lock;
 queue *p_q;
 pthread_t t_id;
 bool stopflag;
+
+mem_seg *seg_table;
+
 lower_info my_posix={
 	.create=posix_create,
 	.destroy=posix_destroy,
@@ -58,7 +61,7 @@ void *l_main(void *__input){
 		}
 		inf_req=(posix_request*)_inf_req;
 		//chang ppa, mapping right ppa from bad block or somthing
-		inf_req->key=bb_checker_fix_ppa(inf_req->key);
+		//inf_req->key=bb_checker_fix_ppa(inf_req->key);
 		switch(inf_req->type){
 			case FS_LOWER_W:
 				posix_push_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, (algo_req*)(inf_req->upper_req));
@@ -149,12 +152,10 @@ uint32_t posix_create(lower_info *li){
 	li->TS=TOTALSIZE;
 
 	li->write_op=li->read_op=li->trim_op=0;
-	_fd=open("data/simulator.data",O_RDWR|O_CREAT|O_TRUNC,0666);
-	if(_fd==-1){
-		printf("file open error!\n");
-		exit(-1);
+	seg_table = (mem_seg*)malloc(sizeof(mem_seg)*li->NOB);
+	for(uint32_t i = 0; i < li->NOB; i++){
+		seg_table[i].storage = NULL;
 	}
-
 	_fp=fopen("badblock.txt","r");	
 	if(_fp==NULL){
 		printf("bb file open error!\n");
@@ -179,7 +180,12 @@ void *posix_refresh(lower_info *li){
 }
 
 void *posix_destroy(lower_info *li){
-	fclose(_fp);
+	for(uint32_t i = 0; i < li->NOB; i++){
+		if(seg_table[i].storage){
+			free(seg_table[i].storage);
+		}
+	}
+	free(seg_table);
 #if (ASYNC==1)
 	stopflag = true;
 #endif
@@ -196,13 +202,18 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		bench_lower_start(req->parents);
 	pthread_mutex_lock(&fd_lock);
 
+	if(my_posix.SOP*PPA >= my_posix.TS){
+		printf("write error\n");
+		exit(2);
+	}
 //	if(((lsm_params*)req->params)->lsm_type!=5){
-	if(lseek64(_fd,((off64_t)my_posix.SOP)*PPA,SEEK_SET)==-1){
-		printf("lseek error in write\n");
-	}//
-	if(!write(_fd,value->value,size)){
-		printf("write none!\n");
-	}	
+	if(((demand_params*)req->params)->type < 10){
+		if(!seg_table[PPA/my_posix.PPS].storage){
+			seg_table[PPA/my_posix.PPS].storage = (PTR)malloc(my_posix.SOB);
+		}
+		PTR loc = seg_table[PPA/my_posix.PPS].storage;
+		memcpy(&loc[(PPA%my_posix.PPS)*my_posix.SOP],value->value,size);
+	}
 //	}
 	pthread_mutex_unlock(&fd_lock);
 	if(req->parents)
@@ -223,13 +234,14 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 
 	pthread_mutex_lock(&fd_lock);
 
-//	if(((lsm_params*)req->params)->lsm_type!=4){
-	if(lseek64(_fd,((off64_t)my_posix.SOP)*PPA,SEEK_SET)==-1){
-		printf("lseek error in read\n");
+	if(my_posix.SOP*PPA >= my_posix.TS){
+		printf("read error\n");
+		exit(3);
 	}
-	int res;
-	if(!(res=read(_fd,value->value,size))){
-		//printf("%d:read none!\n",res);
+//	if(((lsm_params*)req->params)->lsm_type!=4){
+	if(((demand_params*)req->params)->type < 10){
+		PTR loc = seg_table[PPA/my_posix.PPS].storage;
+		memcpy(value->value,&loc[(PPA%my_posix.PPS)*my_posix.SOP],size);
 	}
 //	}
 	pthread_mutex_unlock(&fd_lock);
@@ -253,12 +265,8 @@ void *posix_trim_block(KEYT PPA, bool async){
 	char *temp=(char *)malloc(my_posix.SOB);
 	memset(temp,0,my_posix.SOB);
 	pthread_mutex_lock(&fd_lock);
-	if(lseek64(_fd,((off64_t)my_posix.SOP)*PPA,SEEK_SET)==-1){
-		printf("lseek error in trim\n");
-	}
-	if(!write(_fd,temp,BLOCKSIZE)){
-		printf("write none\n");
-	}
+	free(seg_table[PPA/my_posix.PPS].storage);
+	seg_table[PPA/my_posix.PPS].storage = NULL;
 	pthread_mutex_unlock(&fd_lock);
 	free(temp);
 	return NULL;
