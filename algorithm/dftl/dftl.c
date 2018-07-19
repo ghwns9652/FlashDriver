@@ -53,7 +53,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	num_page = _NOP;
 	num_block = _NOS;
 	p_p_b = _PPS;
-	num_tblock = (num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0);
+	num_tblock = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 2;
 	num_tpage = num_tblock * p_p_b;
 	num_dblock = num_block - num_tblock - 2;
 	num_dpage = num_dblock * p_p_b;
