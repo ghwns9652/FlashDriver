@@ -1,10 +1,5 @@
 SRCS +=\
-	   BM_Block.c\
-	   BM_Heap.c\
-	   BM_Interface.c\
-	   PM_blockqueue.c\
-	   page_PM.c\
-	   PM_operation.c\
+	   page_aio.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
@@ -19,10 +14,10 @@ libnom.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)
 
 .c.o :
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 ../../object/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 clean : 
 	@$(RM) libnom.a
