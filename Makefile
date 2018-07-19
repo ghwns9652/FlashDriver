@@ -40,8 +40,8 @@ CFLAGS +=\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
 		 -D_BSD_SOURCE\
--DCDF\
 -DBENCH\
+-DCDF\
 
 SRCS +=\
 	./interface/queue.c\
