@@ -1,4 +1,4 @@
-#include "page.h"
+#include "pftl.h"
 #include "../../bench/bench.h"
 
 struct algorithm algo_pbase={
@@ -14,9 +14,8 @@ Heap *b_heap;
 
 TABLE *page_TABLE;
 P_OOB *page_OOB;
-uint8_t *VBM;
 
-Block *block_array;
+BM_T *bm;
 Block *reserved;
 int32_t gc_load;
 
@@ -37,33 +36,30 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 
 	page_TABLE = (TABLE*)malloc(sizeof(TABLE) * num_page);
 	page_OOB = (P_OOB*)malloc(sizeof(P_OOB) * num_page);
-	VBM = (uint8_t*)malloc(num_page);
 	algo->li = li;
 
 	for(int i = 0; i < num_page; i++){
      	page_TABLE[i].ppa = -1;
 	}
 
-	memset(VBM, 0, num_page);
 	memset(page_OOB, -1, num_page * sizeof(P_OOB));
 
-	BM_Init(&block_array);
-	reserved = &block_array[num_block - 1];
+	bm = BM_Init(1, 1);
+	reserved = &bm->barray[num_block - 1];
 
 	BM_Queue_Init(&free_b);
 	for(int i = 0; i < num_block - 1; i++){
-		BM_Enqueue(free_b, &block_array[i]);
+		BM_Enqueue(free_b, &bm->barray[i]);
 	}
 	b_heap = BM_Heap_Init(num_block - 1);
+	bm->harray[0] = b_heap;
+	bm->qarray[0] = free_b;
 	return 0;
 }
 
 void pbase_destroy(lower_info* li, algorithm *algo){
 	printf("gc count: %d\n", gc_count);
-	BM_Queue_Free(free_b);
-	BM_Heap_Free(b_heap);
-	BM_Free(block_array);
-	free(VBM);
+	BM_Free(bm);
 	free(page_OOB);
 	free(page_TABLE);
 }
@@ -124,11 +120,10 @@ uint32_t pbase_set(request* const req){
 	bench_algo_end(req);
 	algo_pbase.li->push_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
 	if(page_TABLE[lpa].ppa != -1){
-		VBM[page_TABLE[lpa].ppa] = 0;
-		block_array[page_TABLE[lpa].ppa/p_p_b].Invalid++;
+		BM_InvalidatePage(bm, page_TABLE[lpa].ppa);
 	}
 	page_TABLE[lpa].ppa = ppa;
-	VBM[ppa] = 1;
+	BM_ValidatePage(bm, ppa);
 	page_OOB[ppa].lpa = lpa;
 	return 0;
 }
@@ -139,6 +134,7 @@ uint32_t pbase_remove(request* const req){
 	bench_algo_start(req);
 	lpa = req->key;
 	page_TABLE[lpa].ppa = -1; //reset to default.
+	BM_InvalidatePage(bm, page_TABLE[lpa].ppa);
 	page_OOB[lpa].lpa = -1; //reset reverse_table to default.
 	bench_algo_end(req);
 	return 0;

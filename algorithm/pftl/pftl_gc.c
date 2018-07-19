@@ -1,4 +1,4 @@
-#include "page.h"
+#include "pftl.h"
 
 int32_t pbase_garbage_collection(){
 	int32_t old_block;
@@ -41,7 +41,7 @@ int32_t pbase_garbage_collection(){
 
 	/* read valid pages in block */
 	for(int i = old_block; i < old_block + p_p_b; i++){
-		if(VBM[i]){ // read valid page
+		if(BM_IsValidPage(bm, i)){ // read valid page
 			temp_set[valid_page_num] = SRAM_load(d_sram, i, valid_page_num);
 			valid_page_num++;
 		}

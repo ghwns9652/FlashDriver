@@ -6,17 +6,18 @@ int32_t numBlock;
 int32_t PagePerBlock;
 
 /* Initiation of Block Manager */
-BM_T* BM_Init(int h_count, int q_count)
-{
+BM_T* BM_Init(int h_count, int q_count){
 	numBlock = _NOS;
 	PagePerBlock = _PPS;
 
 	BM_T* res = (BM_T*)malloc(sizeof(BM_T));
 	res->barray = (Block*)malloc(sizeof(Block) * numBlock);
-	if(h_count != 0)
+	if(h_count != 0){
 		res->harray = (Heap**)malloc(sizeof(Heap*) * h_count);
-	if(q_count != 0)
+	}
+	if(q_count != 0){
 		res->qarray = (b_queue**)malloc(sizeof(b_queue*) * q_count);
+	}
 	res->h_count = h_count;
 	res->q_count = q_count;
 
@@ -28,8 +29,7 @@ BM_T* BM_Init(int h_count, int q_count)
 }
 
 /* Initalize blockArray */
-int32_t BM_InitBlockArray(Block* blockArray)
-{
+int32_t BM_InitBlockArray(Block* blockArray){
 	int numItem = BM_GetnumItem();
 
 	for(int i=0; i<numBlock; ++i){
@@ -40,8 +40,9 @@ int32_t BM_InitBlockArray(Block* blockArray)
 		blockArray[i].ValidP = (ValidP_T*)malloc(numItem);
 
 		/* Initialization with INVALIDPAGE */
-		for(int j=0; j<numItem; ++j)
+		for(int j=0; j<numItem; ++j){
 			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
+		}
 		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, numItem);
 
 		/* Initialization with VALIDPAGE */
@@ -54,23 +55,26 @@ int32_t BM_InitBlockArray(Block* blockArray)
 }
 
 /* Shutdown of Block structures */
-int32_t BM_Free(BM_T* BM)
-{
-	for(int i=0; i<numBlock; ++i)
+int32_t BM_Free(BM_T* BM){
+	for(int i=0; i<numBlock; ++i){
 		free(BM->barray[i].ValidP);
+	}
 	free(BM->barray);
 
 	if(BM->h_count != 0){
-		for (int i=0; i<BM->h_count; i++)
+		for (int i=0; i<BM->h_count; i++){
 			heap_free(BM->harray[i]);
+		}
 		free(BM->harray);
 	}
 
 	if(BM->q_count != 0){
-		for (int i = 0; i < BM->q_count; i++)
+		for (int i = 0; i < BM->q_count; i++){
 			freequeue(BM->qarray[i]);
+		}
 		free(BM->qarray);
 	}
+	free(BM);
 	return 0;
 }
 
@@ -93,12 +97,15 @@ h_node* BM_Heap_Insert(Heap *heap, Block *value){
 Block* BM_Heap_Get_Max(Heap *heap){
 	Block *first, *res;
 	max_heapify(heap);
+	//heap_print(heap);
 	res = (Block*)heap->body[0].value;
 	res->hn_ptr = NULL;
-	heap->body[0].value = heap->body[heap->idx - 1].value;
-	heap->body[heap->idx - 1].value = NULL;
-	first = (Block*)heap->body[0].value;
-	first->hn_ptr = &heap->body[0];
+	if(heap->idx != 1){
+		heap->body[0].value = heap->body[heap->idx - 1].value;
+		heap->body[heap->idx - 1].value = NULL;
+		first = (Block*)heap->body[0].value;
+		first->hn_ptr = &heap->body[0];
+	}
 	heap->idx--;
 	return res;
 }

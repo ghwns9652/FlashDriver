@@ -7,7 +7,8 @@
 #include "../../interface/queue.h"
 #include "../../interface/bb_checker.h"
 //#include "../../algorithm/lsmtree/lsmtree.h"
-#include "../../algorithm/dftl/dftl.h"
+//#include "../../algorithm/dftl/dftl.h"
+#include "../../algorithm/pftl/pftl.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -186,6 +187,7 @@ void *posix_destroy(lower_info *li){
 		}
 	}
 	free(seg_table);
+	pthread_mutex_destroy(&fd_lock);
 #if (ASYNC==1)
 	stopflag = true;
 #endif
@@ -206,15 +208,16 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("write error\n");
 		exit(2);
 	}
-//	if(((lsm_params*)req->params)->lsm_type!=5){
-	if(((demand_params*)req->params)->type < 10){
+	//if(((lsm_params*)req->params)->lsm_type!=5){
+	//if(((demand_params*)req->params)->type < 10){
+	if(((pbase_params*)req->params)->type > 10){
 		if(!seg_table[PPA/my_posix.PPS].storage){
 			seg_table[PPA/my_posix.PPS].storage = (PTR)malloc(my_posix.SOB);
 		}
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
 		memcpy(&loc[(PPA%my_posix.PPS)*my_posix.SOP],value->value,size);
 	}
-//	}
+
 	pthread_mutex_unlock(&fd_lock);
 	if(req->parents)
 		bench_lower_end(req->parents);
@@ -238,12 +241,13 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("read error\n");
 		exit(3);
 	}
-//	if(((lsm_params*)req->params)->lsm_type!=4){
-	if(((demand_params*)req->params)->type < 10){
+	//if(((lsm_params*)req->params)->lsm_type!=4){
+	//if(((demand_params*)req->params)->type < 10){
+	if(((pbase_params*)req->params)->type > 10){
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
 		memcpy(value->value,&loc[(PPA%my_posix.PPS)*my_posix.SOP],size);
 	}
-//	}
+
 	pthread_mutex_unlock(&fd_lock);
 
 	if(req->parents)

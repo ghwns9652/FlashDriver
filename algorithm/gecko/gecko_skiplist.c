@@ -68,7 +68,7 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
 			x->erase = flag;
 		}
 		else{
-			x->VBM[offset / BPE] |= (uint8_t)(1 << (offset % 8));
+			x->VBM[offset / BPE] |= ((uint8_t)1 << (offset % 8));
 		}
 	}
 	else{
@@ -94,7 +94,7 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
 				x->VBM[i] = 0;
 			}
 			x->erase = 0;
-			x->VBM[offset / BPE] |= (uint8_t)(1 << (offset % 8));
+			x->VBM[offset / BPE] |= ((uint8_t)1 << (offset % 8));
 		}
 		for(int i = 1; i <= level; i++){
 			x->list[i] = update[i]->list[i];

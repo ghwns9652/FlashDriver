@@ -1,4 +1,4 @@
-#include "page.h"
+#include "pftl.h"
 
 algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 	algo_req *pseudo_my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -17,7 +17,7 @@ value_set* SRAM_load(SRAM* sram, int32_t ppa, int idx){
 	algo_pbase.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(GC_R, NULL, NULL)); // read in gc act as async pull for speed
 	sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
 	sram[idx].OOB_RAM = page_OOB[ppa];
-	VBM[ppa] = 0; // invalidate VBM but don't need to update heap, because this block will be erased
+	BM_GC_InvalidatePage(bm, ppa);
 	return temp_value_set;
 }
 
@@ -26,7 +26,7 @@ void SRAM_unload(SRAM* sram, int32_t ppa, int idx){
 	temp_value_set = inf_get_valueset((PTR)sram[idx].PTR_RAM, FS_MALLOC_W, PAGESIZE);
 	algo_pbase.li->push_data(ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(GC_W, temp_value_set, NULL));
 	page_OOB[ppa] = sram[idx].OOB_RAM;
-	VBM[ppa] = 1;
+	BM_ValidatePage(bm, ppa);
 	free(sram[idx].PTR_RAM);
 }
 

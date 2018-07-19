@@ -2,62 +2,60 @@
 #include "BM.h"
 
 /* Interface Functions for editing blockArray */
-int32_t		BM_IsValidPage(Block* blockArray, PPA_T PPA) 
-{
+int32_t	BM_IsValidPage(BM_T* BM, PPA_T PPA){
 	/*
 	 * Return whether parameter PPA is VALID or INVALID
 	 * if valid -> return=1
 	 * if invalid -> return=0
 	 */
-	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	Block* blockArray = BM->barray;
+	PBA_T PBA = PPA/PagePerBlock;
 	uint32_t offset = PPA % PagePerBlock;
-
 	uint32_t index = offset / 8;
 	offset = offset % 8;
 
-	if (blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset))
+	if(blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset)){
 		return 1; // is valid
-	else
+	}
+	else{
 		return 0; // is invalid
+	}
 }
 
-int32_t		BM_ValidatePage(Block* blockArray, PPA_T PPA)
-{
+int32_t	BM_ValidatePage(BM_T* BM, PPA_T PPA){
 	/*
 	 * if valid -> do nothing, return=0
 	 * if invalid -> Update ValidP and numValid, return=1
 	 */
-	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	Block* blockArray = BM->barray;
+	PBA_T PBA = PPA/PagePerBlock;
 	uint32_t offset = PPA % PagePerBlock;
-
 	uint32_t index = offset / 8;
 	offset = offset % 8;
-	uint8_t off_num = (uint8_t)1<<offset;
 
-	if (blockArray[PBA].ValidP[index] & (off_num)) // is valid?
+	if(blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset)){ // is valid?
 		return 0;
+	}
 	else { // is invalid. Do Validate.
-		blockArray[PBA].ValidP[index] |= (off_num);
-		//blockArray[PBA].Invalid--;
+		blockArray[PBA].ValidP[index] |= ((uint8_t)1<<offset);
 		return 1;
 	}
 }
 
-int32_t		BM_InvalidatePage(Block* blockArray, PPA_T PPA)
-{
+int32_t	BM_InvalidatePage(BM_T* BM, PPA_T PPA){
 	/*
 	 * if valid -> Update ValidP and numValid, return=1
 	 * if invalid -> do nothing, return=0
 	 */
-	PBA_T PBA = BM_PPA_TO_PBA(PPA);
+	Block* blockArray = BM->barray;
+	PBA_T PBA = PPA/PagePerBlock;
 	uint32_t offset = PPA % PagePerBlock;
 
 	uint32_t index = offset / 8;
 	offset = offset % 8;
-	uint8_t off_num = (uint8_t)1<<offset;
 
-	if (blockArray[PBA].ValidP[index] & (off_num)) { // is valid?
-		blockArray[PBA].ValidP[index] &= ~(off_num);
+	if (blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset)) { // is valid?
+		blockArray[PBA].ValidP[index] &= ~((uint8_t)1<<offset);
 		blockArray[PBA].Invalid++;
 		return 1;
 	}
@@ -65,8 +63,28 @@ int32_t		BM_InvalidatePage(Block* blockArray, PPA_T PPA)
 		return 0;
 }
 
-int8_t		BM_ValidateBlock(Block* blockArray, PBA_T PBA)
-{
+int32_t	BM_GC_InvalidatePage(BM_T* BM, PPA_T PPA){
+	/*
+	 * if valid -> Update ValidP and numValid, return=1
+	 * if invalid -> do nothing, return=0
+	 */
+	Block* blockArray = BM->barray;
+	PBA_T PBA = PPA/PagePerBlock;
+	uint32_t offset = PPA % PagePerBlock;
+
+	uint32_t index = offset / 8;
+	offset = offset % 8;
+
+	if (blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset)) { // is valid?
+		blockArray[PBA].ValidP[index] &= ~((uint8_t)1<<offset);
+		return 1;
+	}
+	else  // is invalid.
+		return 0;
+}
+
+int8_t BM_ValidateBlock(BM_T* BM, PBA_T PBA){
+	Block* blockArray = BM->barray;
 	int numItem = BM_GetnumItem(); // number of ValidP elements
 
 	for (int j=0; j<numItem; ++j)
@@ -75,8 +93,8 @@ int8_t		BM_ValidateBlock(Block* blockArray, PBA_T PBA)
 	return (0);
 }
 
-int8_t		BM_InvalidateBlock(Block* blockArray, PBA_T PBA)
-{
+int8_t BM_InvalidateBlock(BM_T* BM, PBA_T PBA){
+	Block* blockArray = BM->barray;
 	int numItem = BM_GetnumItem(); // number of ValidP elements
 
 	memset(blockArray[PBA].ValidP, BM_INVALIDPAGE, numItem);
@@ -84,9 +102,9 @@ int8_t		BM_InvalidateBlock(Block* blockArray, PBA_T PBA)
 	return (0);
 }
 
-int32_t		BM_ValidateAll(Block* blockArray)
-{
+int32_t BM_ValidateAll(BM_T* BM){
 	/* Validate All pages */
+	Block* blockArray = BM->barray;
 	int numItem = BM_GetnumItem(); // number of ValidP elements
 
 	for (int i=0; i<numBlock; ++i) {
@@ -97,9 +115,9 @@ int32_t		BM_ValidateAll(Block* blockArray)
 	return (0);
 }
 
-int32_t		BM_InvalidateAll(Block* blockArray)
-{
+int32_t	BM_InvalidateAll(BM_T* BM){
 	/* Invalidate All pages */
+	Block* blockArray = BM->barray;
 	int numItem = BM_GetnumItem(); // number of ValidP elements
 
 	for (int i=0; i<numBlock; i++) {

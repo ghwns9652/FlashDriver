@@ -39,10 +39,9 @@ extern b_queue *free_b;
 extern Heap *b_heap;
 
 extern TABLE *page_TABLE; // Cached Mapping Table
-extern uint8_t *VBM;
 extern P_OOB *page_OOB; // Page level OOB
 
-extern Block *block_array;
+extern BM_T *bm;
 extern Block *reserved;
 extern int32_t gc_load;
 
