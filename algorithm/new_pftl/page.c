@@ -26,19 +26,14 @@ int32_t p_p_b;
 int32_t gc_count;
 
 uint32_t pbase_create(lower_info* li, algorithm *algo){
-	/*
-	   init table and oob area.
-	   set global as macro.
-	   init blockmanager and heap.
-	*/
 	num_page = _NOP;
 	num_block = _NOS;
 	p_p_b = _PPS;
 	gc_count = 0;
 
-	//printf("number of block: %d\n", num_block);
-	//printf("page per block: %d\n", p_p_b);
-	//printf("number of page: %d\n", num_page);
+	printf("number of block: %d\n", num_block);
+	printf("page per block: %d\n", p_p_b);
+	printf("number of page: %d\n", num_page);
 
 	page_TABLE = (TABLE*)malloc(sizeof(TABLE) * num_page);
 	page_OOB = (P_OOB*)malloc(sizeof(P_OOB) * num_page);
@@ -47,16 +42,16 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 
 	for(int i = 0; i < num_page; i++){
      	page_TABLE[i].ppa = -1;
-		page_OOB[i].lpa = -1;
 	}
 
 	memset(VBM, 0, num_page);
+	memset(page_OOB, -1, num_page * sizeof(P_OOB));
 
 	BM_Init(&block_array);
-	reserved = &block_array[0];
+	reserved = &block_array[num_block - 1];
 
 	BM_Queue_Init(&free_b);
-	for(int i = 1; i < num_block; i++){
+	for(int i = 0; i < num_block - 1; i++){
 		BM_Enqueue(free_b, &block_array[i]);
 	}
 	b_heap = BM_Heap_Init(num_block - 1);
@@ -64,10 +59,6 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 }
 
 void pbase_destroy(lower_info* li, algorithm *algo){
-	/*
-	   abandon all memories.
-	   destroy blockmanager.
-	*/
 	printf("gc count: %d\n", gc_count);
 	BM_Queue_Free(free_b);
 	BM_Heap_Free(b_heap);
@@ -78,10 +69,6 @@ void pbase_destroy(lower_info* li, algorithm *algo){
 }
 
 void *pbase_end_req(algo_req* input){
-	/*
-	   end params and algo_request.
-	   differs accroding to types.
-	*/
 	pbase_params *params = (pbase_params*)input->params;
 	value_set *temp_v = params->value;
 	request *res = input->parents;
@@ -97,10 +84,10 @@ void *pbase_end_req(algo_req* input){
 				res->end_req(res);
 			}
 			break;
-		case GC_R://custom_read from SRAM_load.
+		case GC_R:
 			gc_load++;	
 			break;
-		case GC_W://custom write from SRAM_unload.
+		case GC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
 			break;
 	}
@@ -110,11 +97,6 @@ void *pbase_end_req(algo_req* input){
 }
 
 uint32_t pbase_get(request* const req){
-	/*
-	   sends pull req to lower.
-	   req made from assign_pseudo_req.
-	   find ppa from table.
-	*/
 	int32_t lpa;
 	int32_t ppa;
 
@@ -133,13 +115,9 @@ uint32_t pbase_get(request* const req){
 }
 
 uint32_t pbase_set(request* const req){
-	/*
-	   sends push req to lower.
-	   !!pushes data before mapping.!!
-	   maps table + updates table.
-	*/
 	int32_t lpa;
 	int32_t ppa;
+
 	bench_algo_start(req);
 	lpa = req->key;
 	ppa = alloc_page();
@@ -157,6 +135,7 @@ uint32_t pbase_set(request* const req){
 
 uint32_t pbase_remove(request* const req){
 	int32_t lpa;
+
 	bench_algo_start(req);
 	lpa = req->key;
 	page_TABLE[lpa].ppa = -1; //reset to default.
