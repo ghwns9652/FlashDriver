@@ -1,6 +1,6 @@
 export CC=g++
 
-TARGET_LOWER=posix_async
+TARGET_LOWER=posix
 TARGET_ALGO=dftl
 PWD=$(pwd)
 
@@ -40,8 +40,8 @@ CFLAGS +=\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
 		 -D_BSD_SOURCE\
--DCDF\
 -DBENCH\
+-DCDF\
 
 SRCS +=\
 	./interface/queue.c\

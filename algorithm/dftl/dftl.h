@@ -11,6 +11,7 @@
 #include "../../include/container.h"
 #include "../blockmanager/BM.h"
 #include "lru_list.h"
+#include "dftl_queue.h"
 
 #define TYPE uint8_t
 #define DATA_R 0
@@ -64,7 +65,6 @@ typedef struct read_params{
 
 typedef struct mem_table{
 	D_TABLE *mem_p;
-	unsigned char flag;
 } mem_table;
 
 /* extern variables */
@@ -76,7 +76,7 @@ extern Heap *trans_b;
 
 extern C_TABLE *CMT; // Cached Mapping Table
 extern uint8_t *VBM;
-extern mem_table *mem_all;
+extern m_queue *mem_q;
 extern D_OOB *demand_OOB; // Page level OOB
 
 extern Block *block_array;
@@ -113,8 +113,8 @@ uint32_t demand_eviction(char req_t);
 
 //dftl_utils.c
 algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req);
-D_TABLE* mem_alloc();
-void mem_free(D_TABLE *input);
+D_TABLE* mem_deq(m_queue *q);
+void mem_enq(m_queue *q, D_TABLE *input);
 void merge_w_origin(D_TABLE *src, D_TABLE *dst);
 int lpa_compare(const void *a, const void *b);
 int32_t tp_alloc(char req_t);
