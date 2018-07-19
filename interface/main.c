@@ -58,7 +58,7 @@ int main(){/*
 */
 
 	inf_init();
-	bench_init(1);
+	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
 	/*

@@ -9,56 +9,68 @@ struct algorithm algo_pbase={
 	.remove = pbase_remove
 };
 
+//heap globals.
 b_queue *free_b;
 Heap *b_heap;
 
-TABLE *page_TABLE;
-P_OOB *page_OOB;
-uint8_t *VBM;
+TABLE *page_TABLE; //mapping table.
+P_OOB *page_OOB;   //OOB area.
+uint8_t *VBM;      //Valid Bitmap.
 
-Block *block_array;
-Block *reserved;
+//blockmanager globals.
+Block *block_array; //empty array.
+Block *reserved;    //reserved.
+
+//global for macro.
+int32_t _g_nop;
+int32_t _g_nob;
+int32_t _g_ppb;
+
 int32_t gc_load;
-
-int32_t num_page;
-int32_t num_block;
-int32_t p_p_b;
 int32_t gc_count;
 
 uint32_t pbase_create(lower_info* li, algorithm *algo){
-	num_page = _NOP;
-	num_block = _NOS;
-	p_p_b = _PPS;
+	/*
+	   initializes table, oob and blockmanager.
+	   alloc globals for macro.
+	   init heap.
+	*/
+	_g_nop = _NOP;
+	_g_nob = _NOS;
+	_g_ppb = _PPS;
 	gc_count = 0;
 
-	printf("number of block: %d\n", num_block);
-	printf("page per block: %d\n", p_p_b);
-	printf("number of page: %d\n", num_page);
+	//printf("number of block: %d\n", _g_nob);
+	//printf("page per block: %d\n", _g_ppb);
+	//printf("number of page: %d\n", _g_nop);
 
-	page_TABLE = (TABLE*)malloc(sizeof(TABLE) * num_page);
-	page_OOB = (P_OOB*)malloc(sizeof(P_OOB) * num_page);
-	VBM = (uint8_t*)malloc(num_page);
+	page_TABLE = (TABLE*)malloc(sizeof(TABLE) * _g_nop);
+	page_OOB = (P_OOB*)malloc(sizeof(P_OOB) * _g_nop);
+	VBM = (uint8_t*)malloc(_g_nop);
 	algo->li = li;
 
-	for(int i = 0; i < num_page; i++){
+	for(int i=0;i<_g_nop;i++){
      	page_TABLE[i].ppa = -1;
-	}
-
-	memset(VBM, 0, num_page);
-	memset(page_OOB, -1, num_page * sizeof(P_OOB));
+		page_OOB[i].lpa = -1;
+		VBM[i] = 0;
+	}//init table, oob and vbm.
 
 	BM_Init(&block_array);
-	reserved = &block_array[num_block - 1];
+	reserved = &block_array[0];
 
 	BM_Queue_Init(&free_b);
-	for(int i = 0; i < num_block - 1; i++){
+	for(int i=1;i<_g_nob;i++){
 		BM_Enqueue(free_b, &block_array[i]);
 	}
-	b_heap = BM_Heap_Init(num_block - 1);
+	b_heap = BM_Heap_Init(_g_nob - 1);//total size == NOB - 1.
 	return 0;
 }
 
 void pbase_destroy(lower_info* li, algorithm *algo){
+	/*
+	 * frees allocated mem.
+	 * destroys blockmanager.
+	 */
 	printf("gc count: %d\n", gc_count);
 	BM_Queue_Free(free_b);
 	BM_Heap_Free(b_heap);
@@ -69,8 +81,13 @@ void pbase_destroy(lower_info* li, algorithm *algo){
 }
 
 void *pbase_end_req(algo_req* input){
+	/*
+	 * end req differs according to type.
+	 * frees params and input.
+	 * in some case, frees inf_req.
+	 */
 	pbase_params *params = (pbase_params*)input->params;
-	value_set *temp_v = params->value;
+	value_set *temp_set = params->value;
 	request *res = input->parents;
 
 	switch(params->type){
@@ -88,7 +105,7 @@ void *pbase_end_req(algo_req* input){
 			gc_load++;	
 			break;
 		case GC_W:
-			inf_free_valueset(temp_v, FS_MALLOC_W);
+			inf_free_valueset(temp_set, FS_MALLOC_W);
 			break;
 	}
 	free(params);
@@ -97,6 +114,11 @@ void *pbase_end_req(algo_req* input){
 }
 
 uint32_t pbase_get(request* const req){
+	/*
+	 * gives pull request to lower level.
+	 * reads mapping data.
+	 * !!if not mapped, does not pull!!
+	 */
 	int32_t lpa;
 	int32_t ppa;
 
@@ -115,6 +137,12 @@ uint32_t pbase_get(request* const req){
 }
 
 uint32_t pbase_set(request* const req){
+	/*
+	 * gives push request to lower level.
+	 * write mapping data, AFTER push request.
+	 * need to write OR update table, oob, VBM.
+	 * if necessary, allocation may perf garbage collection.
+	 */
 	int32_t lpa;
 	int32_t ppa;
 
@@ -123,9 +151,9 @@ uint32_t pbase_set(request* const req){
 	ppa = alloc_page();
 	bench_algo_end(req);
 	algo_pbase.li->push_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
-	if(page_TABLE[lpa].ppa != -1){
+	if(page_TABLE[lpa].ppa != -1){//already mapped case.(update)
 		VBM[page_TABLE[lpa].ppa] = 0;
-		block_array[page_TABLE[lpa].ppa/p_p_b].Invalid++;
+		block_array[page_TABLE[lpa].ppa/_g_ppb].Invalid++;
 	}
 	page_TABLE[lpa].ppa = ppa;
 	VBM[ppa] = 1;
@@ -134,6 +162,8 @@ uint32_t pbase_set(request* const req){
 }
 
 uint32_t pbase_remove(request* const req){
+	/*reset info. not being used now. */
+
 	int32_t lpa;
 
 	bench_algo_start(req);

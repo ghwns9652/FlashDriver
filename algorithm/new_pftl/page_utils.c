@@ -14,10 +14,10 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 value_set* SRAM_load(SRAM* sram, int32_t ppa, int idx){
 	value_set *temp_value_set;
 	temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-	algo_pbase.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(GC_R, NULL, NULL)); // read in gc act as async pull for speed
+	algo_pbase.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(GC_R, NULL, NULL)); // pull in gc is ALWAYS async
 	sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
 	sram[idx].OOB_RAM = page_OOB[ppa];
-	VBM[ppa] = 0; // invalidate VBM but don't need to update heap, because this block will be erased
+	VBM[ppa] = 0;
 	return temp_value_set;
 }
 
@@ -33,14 +33,14 @@ void SRAM_unload(SRAM* sram, int32_t ppa, int idx){
 int32_t alloc_page(){
 	static int32_t ppa = -1; // static for ppa
 	Block *block;
-	if(ppa != -1 && ppa % p_p_b == 0){
+	if((ppa != -1) && (ppa % _g_ppb == 0)){
 		ppa = -1; // initialize that this need new block
 	}
 	if(ppa == -1){
 		block = BM_Dequeue(free_b); // dequeue block from free block queue
 		if(block){
 			block->hn_ptr = BM_Heap_Insert(b_heap, block);
-			ppa = block->PBA * p_p_b;
+			ppa = block->PBA * _g_ppb;
 		}
 		else{
 			ppa = pbase_garbage_collection();

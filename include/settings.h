@@ -22,7 +22,7 @@
 #define TOTALSIZE (1L*G)
 #define REALSIZE (40L*G)
 #define PAGESIZE (8*K)
-#define _PPB (1<<14)
+#define _PPB (256)
 #define _PPS (1<<14)
 #define BPS (64)
 
@@ -42,7 +42,7 @@
 #define OOBT uint64_t
 #define V_PTR char * const
 #define PTR char*
-#define ASYNC 0
+#define ASYNC 1
 #define QSIZE (1024)
 #define THREADSIZE (1)
 

@@ -9,6 +9,7 @@
 #include "../../include/container.h"
 #include "../blockmanager/BM.h"
 
+//algo end req type definition.
 #define TYPE uint8_t
 #define DATA_R 0
 #define DATA_W 1
@@ -38,17 +39,18 @@ extern algorithm algo_pbase;
 extern b_queue *free_b;
 extern Heap *b_heap;
 
-extern TABLE *page_TABLE; // Cached Mapping Table
-extern uint8_t *VBM;
-extern P_OOB *page_OOB; // Page level OOB
+extern TABLE *page_TABLE;  // mapping Table.
+extern uint8_t *VBM;	   //valid bitmap.
+extern P_OOB *page_OOB;	   // Page level OOB.
 
 extern Block *block_array;
 extern Block *reserved;
-extern int32_t gc_load;
 
-extern int32_t num_page;
-extern int32_t num_block;
-extern int32_t p_p_b;
+extern int32_t _g_nop;
+extern int32_t _g_nob;
+extern int32_t _g_ppb;
+
+extern int32_t gc_load;
 extern int32_t gc_count;
 
 //page.c
