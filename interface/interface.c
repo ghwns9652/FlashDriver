@@ -105,6 +105,10 @@ void *p_main(void *__input){
 		}
 		inf_req=(request*)_inf_req;
 
+#ifdef CDF
+		measure_init(&inf_req->latency_checker);
+		measure_start(&inf_req->latency_checker);
+#endif
 		switch(inf_req->type){
 			case FS_GET_T:
 				mp.algo->get(inf_req);
@@ -477,11 +481,6 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value)
 	req->mark=mark;
 #endif
 
-
-#ifdef CDF
-	measure_init(&req->latency_checker);
-	measure_start(&req->latency_checker);
-#endif
 	switch(type){
 		case FS_GET_T:
 			break;
@@ -578,6 +577,7 @@ void inf_free(){
 void inf_print_debug(){
 
 }
+
 
 value_set *inf_get_valueset(PTR in_v, int type, uint32_t length){
 	value_set *res=(value_set*)malloc(sizeof(value_set));
