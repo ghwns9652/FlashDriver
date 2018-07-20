@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix
+TARGET_LOWER=posix_async
 TARGET_ALGO=bftl
 PWD=$(pwd)
 

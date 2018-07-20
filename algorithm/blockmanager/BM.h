@@ -54,6 +54,7 @@ typedef struct _blockmanager{
 
 extern int32_t numBlock;
 extern int32_t PagePerBlock;
+extern int32_t numBITMAPB; // number of Bytes(elements) in each bitmap
 
 
 /* Macros for finding PBA from PPA */
@@ -111,10 +112,19 @@ void* dequeue(b_queue *q);
 int32_t		BM_IsValidPage(Block* blockArray, PPA_T PPA);
 int32_t		BM_ValidatePage(Block* blockArray, PPA_T PPA);
 int32_t		BM_InvalidatePage(Block* blockArray, PPA_T PPA);
-int8_t		BM_ValidateBlock(Block* blockArray, PBA_T PBA);
-int8_t		BM_InvalidateBlock(Block* blockArray, PBA_T PBA);
-int32_t		BM_ValidateAll(Block* blockArray);
-int32_t		BM_InvalidateAll(Block* blockArray);
+
+/* For GC, Call this function to initialize vimctim block */
+static inline void BM_InitializeBlock(Block* blockArray, PBA_T PBA) {
+	memset(blockArray[PBA].ValidP, BM_INVALIDPAGE, numBITMAPB);
+	blockArray[PBA].Invalid = 0;
+}
+/* Initalize all Block */
+static inline void BM_InitializeAll(Block* blockArray) {
+	for (int i=0; i<numBlock; i++){
+		memset(blockArray[i].ValidP, BM_INVALIDPAGE, numBITMAPB);
+		blockArray[i].Invalid = 0;
+	}
+}
 
 // Interface Functions for 'number of invalid pages(Invalid)' change only (no Bitmap change)
 static inline void BM_InvalidPlus_PBA(Block* blockArray, PBA_T PBA) {
