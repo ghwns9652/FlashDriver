@@ -54,6 +54,7 @@ typedef struct _blockmanager{
 
 extern int32_t numBlock;
 extern int32_t PagePerBlock;
+extern int32_t numBITMAPB;
 
 /* Macros that indicate whether the page is valid or not */ 
 #define BM_VALIDPAGE	(0xff) // 8 bits
@@ -66,9 +67,6 @@ extern int32_t PagePerBlock;
 
 /* Inline functions(Macros) for get numItem(number of ValidP elements) */
 #define numBits_ValidP	(8)
-static inline int32_t BM_GetnumItem() {
-	return (PagePerBlock % numBits_ValidP > 0) + (PagePerBlock/numBits_ValidP);
-}
 
 /* BM_Block.h */
 // Interface Functions for blockArray

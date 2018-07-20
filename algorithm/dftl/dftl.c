@@ -34,6 +34,7 @@ Block *d_reserved; // pointer of reserved block for data gc
 
 int32_t num_caching; // Number of translation page on cache
 int32_t gc_load; // gc data load count
+int32_t gc_write;
 
 int32_t num_page;
 int32_t num_block;
@@ -48,6 +49,8 @@ int32_t num_max_cache;
 int32_t tgc_count;
 int32_t dgc_count;
 int32_t read_tgc_count;
+int32_t evict_count;
+int32_t read_count;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// initialize all value by using macro.
@@ -60,11 +63,14 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	num_dpage = num_dblock * p_p_b;
 	max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 	// you can control amount of max number of ram reside cache entry
-	num_max_cache = max_cache_entry / 2 == 0 ? 1 : max_cache_entry / 2;
+	//num_max_cache = max_cache_entry / 2 == 0 ? 1 : max_cache_entry / 2;
+	num_max_cache = max_cache_entry;
 
 	tgc_count = 0;
 	dgc_count = 0;
 	read_tgc_count = 0;
+	evict_count = 0;
+	read_count = 0;
 
 	printf("!!! print info !!!\n");
 	printf("number of block: %d\n", num_block);
@@ -124,11 +130,12 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	return 0;
 }
 
-void demand_destroy(lower_info *li, algorithm *algo)
-{
+void demand_destroy(lower_info *li, algorithm *algo){
 	printf("num of translation page gc: %d\n", tgc_count);
 	printf("num of data page gc: %d\n", dgc_count);
 	printf("num of translation page gc w/ read op: %d\n", read_tgc_count);
+	printf("num of evict: %d\n", evict_count);
+	printf("num of read: %d\n", read_count);
 	q_free(dftl_q);
 	lru_free(lru);
 	BM_Free(bm);
@@ -171,17 +178,23 @@ void *demand_end_req(algo_req* input){
 			pthread_mutex_unlock(&params->dftl_mutex);
 			return NULL;
 			break;
+		case GC_MAPPING_W:
+			inf_free_valueset(temp_v, FS_MALLOC_W);
+			gc_write++;
+			break;
 		case TGC_R:
 			gc_load++;	
 			break;
 		case TGC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
+			gc_load++;
 			break;
 		case DGC_R:
 			gc_load++;	
 			break;
 		case DGC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
+			gc_load++;
 			break;
 	}
 	free(params);
@@ -306,6 +319,7 @@ uint32_t __demand_get(request *const req){
 			return UINT32_MAX;
 		}
 		else if(ppa != -1){ /* Cache hit */
+			read_count++;
 			lru_update(lru, c_table->queue_ptr);
 			bench_algo_end(req);
 			__demand.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req)); // Get data in ppa
@@ -390,6 +404,7 @@ uint32_t demand_eviction(char req_t){
 
 	/* Eviction */
 
+	evict_count++;
 	cache_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
 	p_table = cache_ptr->p_table;
 	t_ppa = cache_ptr->t_ppa;

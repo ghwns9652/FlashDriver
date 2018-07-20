@@ -4,11 +4,13 @@
 
 int32_t numBlock;
 int32_t PagePerBlock;
+int32_t numBITMAPB;
 
 /* Initiation of Block Manager */
 BM_T* BM_Init(int h_count, int q_count){
 	numBlock = _NOS;
 	PagePerBlock = _PPS;
+	numBITMAPB = (PagePerBlock % numBits_ValidP > 0) + (PagePerBlock/numBits_ValidP);
 
 	BM_T* res = (BM_T*)malloc(sizeof(BM_T));
 	res->barray = (Block*)malloc(sizeof(Block) * numBlock);
@@ -23,24 +25,21 @@ BM_T* BM_Init(int h_count, int q_count){
 
 	/* Initialize blockArray */
 	BM_InitBlockArray(res->barray);
-
-	printf("BM_Init() End!\n");
 	return res;
 }
 
 /* Initalize blockArray */
 int32_t BM_InitBlockArray(Block* blockArray){
-	int numItem = BM_GetnumItem();
 
 	for(int i=0; i<numBlock; ++i){
 		blockArray[i].PBA = i;
 		blockArray[i].Invalid = 0;
 		blockArray[i].hn_ptr = NULL;
 		blockArray[i].type = 0;
-		blockArray[i].ValidP = (ValidP_T*)malloc(numItem);
+		blockArray[i].ValidP = (ValidP_T*)malloc(numBITMAPB);
 
 		/* Initialization with INVALIDPAGE */
-		for(int j=0; j<numItem; ++j){
+		for(int j = 0; j < numBITMAPB; j++){
 			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
 		}
 		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, numItem);

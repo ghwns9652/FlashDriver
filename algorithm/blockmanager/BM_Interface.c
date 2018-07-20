@@ -85,44 +85,42 @@ int32_t	BM_GC_InvalidatePage(BM_T* BM, PPA_T PPA){
 
 int8_t BM_ValidateBlock(BM_T* BM, PBA_T PBA){
 	Block* blockArray = BM->barray;
-	int numItem = BM_GetnumItem(); // number of ValidP elements
 
-	for (int j=0; j<numItem; ++j)
-		blockArray[PBA].ValidP[j] = BM_VALIDPAGE;
+	for (int i = 0; i < numBITMAPB; i++){
+		blockArray[PBA].ValidP[i] = BM_VALIDPAGE;
+	}
 	blockArray[PBA].Invalid = 0;
-	return (0);
+	return 0;
 }
 
 int8_t BM_InvalidateBlock(BM_T* BM, PBA_T PBA){
 	Block* blockArray = BM->barray;
-	int numItem = BM_GetnumItem(); // number of ValidP elements
 
-	memset(blockArray[PBA].ValidP, BM_INVALIDPAGE, numItem);
+	memset(blockArray[PBA].ValidP, BM_INVALIDPAGE, numBITMAPB);
 	blockArray[PBA].Invalid = PagePerBlock;
-	return (0);
+	return 0;
 }
 
 int32_t BM_ValidateAll(BM_T* BM){
 	/* Validate All pages */
 	Block* blockArray = BM->barray;
-	int numItem = BM_GetnumItem(); // number of ValidP elements
 
-	for (int i=0; i<numBlock; ++i) {
-		for (int j=0; j<numItem; ++j)
+	for (int i = 0; i < numBlock; i++){
+		for (int j = 0; j < numBITMAPB; j++){
 			blockArray[i].ValidP[j] = BM_VALIDPAGE;
+		}
 		blockArray[i].Invalid = 0;
 	}
-	return (0);
+	return 0;
 }
 
 int32_t	BM_InvalidateAll(BM_T* BM){
 	/* Invalidate All pages */
 	Block* blockArray = BM->barray;
-	int numItem = BM_GetnumItem(); // number of ValidP elements
 
-	for (int i=0; i<numBlock; i++) {
-		memset(blockArray[i].ValidP, BM_INVALIDPAGE, numItem);
+	for (int i = 0; i < numBlock; i++){
+		memset(blockArray[i].ValidP, BM_INVALIDPAGE, numBITMAPB);
 		blockArray[i].Invalid = PagePerBlock;
 	}
-	return (0);
+	return 0;
 }

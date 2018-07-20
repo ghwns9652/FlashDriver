@@ -58,10 +58,14 @@ int32_t tpage_GC(){
 		inf_free_valueset(temp_set[i], FS_MALLOC_R); //미리 value_set을 free시켜서 불필요한 value_set 낭비 줄임
 	}
 
+	gc_load = 0;
+
 	for(int i = 0; i < valid_page_num; i++){ // write page into new block
 		CMT[d_sram[i].OOB_RAM.lpa].t_ppa = new_block + i;
 		SRAM_unload(d_sram, new_block + i, i, 'T');
 	}
+
+	while(gc_load != valid_page_num) {} // polling for reading all mapping data
 
 	free(temp_set);
 	free(d_sram);
@@ -79,6 +83,7 @@ int32_t dpage_GC(){
 	int32_t t_ppa;
 	int32_t old_block;
 	int32_t new_block;
+	int32_t twrite;
 	int valid_num;
 	int real_valid;
 	Block *victim;
@@ -118,6 +123,8 @@ int32_t dpage_GC(){
 	valid_num = 0;
 	real_valid = 0;
 	gc_load = 0;
+	gc_write = 0;
+	twrite = 0;
 	tce = INT32_MAX; // Initial state
 	temp_table = (D_TABLE*)malloc(PAGESIZE);
 	d_sram = (D_SRAM*)malloc(sizeof(D_SRAM) * p_p_b);
@@ -231,14 +238,17 @@ int32_t dpage_GC(){
 		if(tce == INT32_MAX){ // flush temp table into device
 			VBM[t_ppa] = 0;
 			block_array[t_ppa/p_p_b].Invalid++;
+			twrite++;
 			t_ppa = tp_alloc('D');
 			temp_value_set = inf_get_valueset((PTR)temp_table, FS_MALLOC_W, PAGESIZE); // Make valueset to WRITEMODE
-			__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_W, temp_value_set, NULL));	// Unload page to ppa
+			__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(GC_MAPPING_W, temp_value_set, NULL));	// Unload page to ppa
 			demand_OOB[t_ppa].lpa = c_table->idx;
 			VBM[t_ppa] = 1;
 			c_table->t_ppa = t_ppa; // Update CMT t_ppa
 		}
 	}
+
+	gc_load = 0;
 
 	/* Write dpages */ 
 	for(int i = 0; i < valid_num; i++){
@@ -249,6 +259,8 @@ int32_t dpage_GC(){
 			free(d_sram[i].DATA_RAM); // free without SRAM_unload, because this is not valid data
 		}
 	}
+
+	while(gc_load + gc_write != real_valid + twrite) {} // polling for reading all data
 
 	free(temp_table);
 	free(temp_set);
