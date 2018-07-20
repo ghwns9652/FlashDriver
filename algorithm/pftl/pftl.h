@@ -43,7 +43,7 @@ extern P_OOB *page_OOB; // Page level OOB
 
 extern BM_T *bm;
 extern Block *reserved;
-extern int32_t gc_load;
+extern int32_t gc_poll;
 
 extern int32_t num_page;
 extern int32_t num_block;

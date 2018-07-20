@@ -7,8 +7,12 @@
 #include "../../interface/queue.h"
 #include "../../interface/bb_checker.h"
 //#include "../../algorithm/lsmtree/lsmtree.h"
+#ifdef dftl
 //#include "../../algorithm/dftl/dftl.h"
+#endif
+#ifdef pftl
 #include "../../algorithm/pftl/pftl.h"
+#endif
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -209,8 +213,14 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		exit(2);
 	}
 	//if(((lsm_params*)req->params)->lsm_type!=5){
-	//if(((demand_params*)req->params)->type < 10){
-	if(((pbase_params*)req->params)->type > 10){
+#ifdef dftl
+	uint8_t req_type = ((demand_params*)req->params)->type;
+	if(req_type == 3 || req_type == 5 || req_type == 7){
+#endif
+#ifdef pftl
+	uint8_t req_type = ((pbase_params*)req->params)->type;
+	if(req_type > 10){
+#endif
 		if(!seg_table[PPA/my_posix.PPS].storage){
 			seg_table[PPA/my_posix.PPS].storage = (PTR)malloc(my_posix.SOB);
 		}
@@ -242,8 +252,14 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		exit(3);
 	}
 	//if(((lsm_params*)req->params)->lsm_type!=4){
-	//if(((demand_params*)req->params)->type < 10){
-	if(((pbase_params*)req->params)->type > 10){
+#ifdef dftl
+	uint8_t req_type = ((demand_params*)req->params)->type;
+	if(req_type == 2 || req_type == 4 || req_type == 6){
+#endif
+#ifdef pftl
+	uint8_t req_type = ((pbase_params*)req->params)->type;
+	if(req_type > 10){
+#endif
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
 		memcpy(value->value,&loc[(PPA%my_posix.PPS)*my_posix.SOP],size);
 	}

@@ -17,7 +17,6 @@ value_set* SRAM_load(SRAM* sram, int32_t ppa, int idx){
 	algo_pbase.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(GC_R, NULL, NULL)); // read in gc act as async pull for speed
 	sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
 	sram[idx].OOB_RAM = page_OOB[ppa];
-	BM_GC_InvalidatePage(bm, ppa);
 	return temp_value_set;
 }
 

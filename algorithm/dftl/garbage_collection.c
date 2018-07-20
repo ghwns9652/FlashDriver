@@ -33,7 +33,7 @@ int32_t tpage_GC(){
 		return new_block;
 	}
 	valid_page_num = 0;
-	gc_load = 0;
+	trans_gc_poll = 0;
 	d_sram = (D_SRAM*)malloc(sizeof(D_SRAM) * p_p_b); //필요한 만큼만 할당하는 걸로 변경
 	temp_set = (value_set**)malloc(sizeof(value_set*) * p_p_b);
 
@@ -51,21 +51,21 @@ int32_t tpage_GC(){
 		}
 	}
 
-	while(gc_load != valid_page_num) {} // polling for reading all mapping data
+	while(trans_gc_poll != valid_page_num) {} // polling for reading all mapping data
 
 	for(int i = 0; i < valid_page_num; i++){ // copy data to memory and free dma valueset
 		memcpy(d_sram[i].DATA_RAM, temp_set[i]->value, PAGESIZE);
 		inf_free_valueset(temp_set[i], FS_MALLOC_R); //미리 value_set을 free시켜서 불필요한 value_set 낭비 줄임
 	}
 
-	gc_load = 0;
+	trans_gc_poll = 0;
 
 	for(int i = 0; i < valid_page_num; i++){ // write page into new block
 		CMT[d_sram[i].OOB_RAM.lpa].t_ppa = new_block + i;
 		SRAM_unload(d_sram, new_block + i, i, 'T');
 	}
 
-	while(gc_load != valid_page_num) {} // polling for reading all mapping data
+	while(trans_gc_poll != valid_page_num) {} // polling for reading all mapping data
 
 	free(temp_set);
 	free(d_sram);
@@ -122,8 +122,7 @@ int32_t dpage_GC(){
 	}
 	valid_num = 0;
 	real_valid = 0;
-	gc_load = 0;
-	gc_write = 0;
+	data_gc_poll = 0;
 	twrite = 0;
 	tce = INT32_MAX; // Initial state
 	temp_table = (D_TABLE*)malloc(PAGESIZE);
@@ -144,7 +143,7 @@ int32_t dpage_GC(){
 		}
 	}
 
-	while(gc_load != valid_num) {} // polling for reading all data
+	while(data_gc_poll != valid_num) {} // polling for reading all data
 
 	for(int i = 0; i < valid_num; i++){
 		memcpy(d_sram[i].DATA_RAM, temp_set[i]->value, PAGESIZE);
@@ -248,7 +247,7 @@ int32_t dpage_GC(){
 		}
 	}
 
-	gc_load = 0;
+	data_gc_poll = 0;
 
 	/* Write dpages */ 
 	for(int i = 0; i < valid_num; i++){
@@ -260,7 +259,7 @@ int32_t dpage_GC(){
 		}
 	}
 
-	while(gc_load + gc_write != real_valid + twrite) {} // polling for reading all data
+	while(data_gc_poll != real_valid + twrite) {} // polling for reading all data
 
 	free(temp_table);
 	free(temp_set);

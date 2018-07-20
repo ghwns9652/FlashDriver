@@ -103,36 +103,35 @@ void* dequeue(b_queue *q);
 int32_t		BM_IsValidPage(BM_T* BM, PPA_T PPA);
 int32_t		BM_ValidatePage(BM_T* BM, PPA_T PPA);
 int32_t		BM_InvalidatePage(BM_T* BM, PPA_T PPA);
-int32_t		BM_GC_InvalidatePage(BM_T* BM, PPA_T PPA);
 int8_t		BM_ValidateBlock(BM_T* BM, PBA_T PBA);
 int8_t		BM_InvalidateBlock(BM_T* BM, PBA_T PBA);
 int32_t		BM_ValidateAll(BM_T* BM);
 int32_t		BM_InvalidateAll(BM_T* BM);
 
 // Interface Functions for 'number of invalid pages(Invalid)' change only (no Bitmap change)
-static inline void BM_InvalidPlus_PBA(Block* blockArray, PBA_T PBA) {
-	blockArray[PBA].Invalid++;
+static inline void BM_InvalidPlus_PBA(BM_T* BM, PBA_T PBA) {
+	BM->barray[PBA].Invalid++;
 }
-static inline void BM_InvalidPlus_PPA(Block* blockArray, PPA_T PPA) {
-	blockArray[PPA/PagePerBlock].Invalid++;
+static inline void BM_InvalidPlus_PPA(BM_T* BM, PPA_T PPA) {
+	BM->barray[PPA/PagePerBlock].Invalid++;
 }
-static inline void BM_InvalidMinus_PBA(Block* blockArray, PBA_T PBA) {
-	blockArray[PBA].Invalid--;
+static inline void BM_InvalidMinus_PBA(BM_T* BM, PBA_T PBA) {
+	BM->barray[PBA].Invalid--;
 }
-static inline void BM_InvalidMinus_PPA(Block* blockArray, PPA_T PPA) {
-	blockArray[PPA/PagePerBlock].Invalid--;
+static inline void BM_InvalidMinus_PPA(BM_T* BM, PPA_T PPA) {
+	BM->barray[PPA/PagePerBlock].Invalid--;
 }
-static inline void BM_InvalidZero_PBA(Block* blockArray, PBA_T PBA) {
-	blockArray[PBA].Invalid = 0;
+static inline void BM_InvalidZero_PBA(BM_T* BM, PBA_T PBA) {
+	BM->barray[PBA].Invalid = 0;
 }
-static inline void BM_InvalidZero_PPA(Block* blockArray, PPA_T PPA) {
-	blockArray[PPA/PagePerBlock].Invalid = 0;
+static inline void BM_InvalidZero_PPA(BM_T* BM, PPA_T PPA) {
+	BM->barray[PPA/PagePerBlock].Invalid = 0;
 }
-static inline void BM_InvalidPPB_PBA(Block* blockArray, PBA_T PBA) {
-	blockArray[PBA].Invalid = PagePerBlock;
+static inline void BM_InvalidPPB_PBA(BM_T* BM, PBA_T PBA) {
+	BM->barray[PBA].Invalid = PagePerBlock;
 }
-static inline void BM_InvalidPPB_PPA(Block* blockArray, PPA_T PPA) {
-	blockArray[PPA/PagePerBlock].Invalid = PagePerBlock;
+static inline void BM_InvalidPPB_PPA(BM_T* BM, PPA_T PPA) {
+	BM->barray[PPA/PagePerBlock].Invalid = PagePerBlock;
 }
 #endif // !_BM_H_
 

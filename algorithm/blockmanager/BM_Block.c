@@ -39,16 +39,7 @@ int32_t BM_InitBlockArray(Block* blockArray){
 		blockArray[i].ValidP = (ValidP_T*)malloc(numBITMAPB);
 
 		/* Initialization with INVALIDPAGE */
-		for(int j = 0; j < numBITMAPB; j++){
-			blockArray[i].ValidP[j] = BM_INVALIDPAGE;
-		}
-		//memset(blockArray[i].ValidP, BM_INVALIDPAGE, numItem);
-
-		/* Initialization with VALIDPAGE */
-#if 0
-		for (int j=0; j<numItem; ++j)
-			blockArray[i].ValidP[j] = BM_VALIDPAGE;
-#endif
+		memset(blockArray[i].ValidP, BM_INVALIDPAGE, numBITMAPB);
 	}
 	return 0;
 }

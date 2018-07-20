@@ -33,13 +33,8 @@ int32_t	BM_ValidatePage(BM_T* BM, PPA_T PPA){
 	uint32_t index = offset / 8;
 	offset = offset % 8;
 
-	if(blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset)){ // is valid?
-		return 0;
-	}
-	else { // is invalid. Do Validate.
-		blockArray[PBA].ValidP[index] |= ((uint8_t)1<<offset);
-		return 1;
-	}
+	blockArray[PBA].ValidP[index] |= ((uint8_t)1<<offset);
+	return 1;
 }
 
 int32_t	BM_InvalidatePage(BM_T* BM, PPA_T PPA){
@@ -50,37 +45,12 @@ int32_t	BM_InvalidatePage(BM_T* BM, PPA_T PPA){
 	Block* blockArray = BM->barray;
 	PBA_T PBA = PPA/PagePerBlock;
 	uint32_t offset = PPA % PagePerBlock;
-
 	uint32_t index = offset / 8;
 	offset = offset % 8;
 
-	if (blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset)) { // is valid?
-		blockArray[PBA].ValidP[index] &= ~((uint8_t)1<<offset);
-		blockArray[PBA].Invalid++;
-		return 1;
-	}
-	else  // is invalid.
-		return 0;
-}
-
-int32_t	BM_GC_InvalidatePage(BM_T* BM, PPA_T PPA){
-	/*
-	 * if valid -> Update ValidP and numValid, return=1
-	 * if invalid -> do nothing, return=0
-	 */
-	Block* blockArray = BM->barray;
-	PBA_T PBA = PPA/PagePerBlock;
-	uint32_t offset = PPA % PagePerBlock;
-
-	uint32_t index = offset / 8;
-	offset = offset % 8;
-
-	if (blockArray[PBA].ValidP[index] & ((uint8_t)1<<offset)) { // is valid?
-		blockArray[PBA].ValidP[index] &= ~((uint8_t)1<<offset);
-		return 1;
-	}
-	else  // is invalid.
-		return 0;
+	blockArray[PBA].ValidP[index] &= ~((uint8_t)1<<offset);
+	blockArray[PBA].Invalid++;
+	return 1;
 }
 
 int8_t BM_ValidateBlock(BM_T* BM, PBA_T PBA){
@@ -97,7 +67,7 @@ int8_t BM_InvalidateBlock(BM_T* BM, PBA_T PBA){
 	Block* blockArray = BM->barray;
 
 	memset(blockArray[PBA].ValidP, BM_INVALIDPAGE, numBITMAPB);
-	blockArray[PBA].Invalid = PagePerBlock;
+	blockArray[PBA].Invalid = 0;
 	return 0;
 }
 

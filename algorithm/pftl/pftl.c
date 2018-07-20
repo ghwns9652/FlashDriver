@@ -17,7 +17,7 @@ P_OOB *page_OOB;
 
 BM_T *bm;
 Block *reserved;
-int32_t gc_load;
+int32_t gc_poll;
 
 int32_t num_page;
 int32_t num_block;
@@ -81,10 +81,11 @@ void *pbase_end_req(algo_req* input){
 			}
 			break;
 		case GC_R:
-			gc_load++;	
+			gc_poll++;	
 			break;
 		case GC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
+			gc_poll++;	
 			break;
 	}
 	free(params);

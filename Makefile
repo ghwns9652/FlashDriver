@@ -1,8 +1,8 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix_async
-TARGET_ALGO=dftl
+TARGET_LOWER=posix_memory
+TARGET_ALGO=pftl
 PWD=$(pwd)
 
 COMMONFLAGS=\
@@ -27,6 +27,10 @@ export CFLAGS_LOWER=\
 CFLAGS_ALGO+=$(COMMONFLAGS)\
 
 CFLAGS_LOWER+=$(COMMONFLAGS)\
+
+ifeq ($(TARGET_LOWER), posix_memory)
+ CFLAGS_LOWER+=-D$(TARGET_ALGO)
+endif
 
 ifeq ($(CC), gcc)
  CFLAGS_ALGO+=-Wno-discarded-qualifiers -std=c99

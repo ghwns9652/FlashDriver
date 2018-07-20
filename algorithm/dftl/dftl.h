@@ -87,8 +87,8 @@ extern Block *block_array;
 extern Block *t_reserved;
 extern Block *d_reserved;
 
-extern int32_t gc_load;
-extern int32_t gc_write;
+extern int32_t trans_gc_poll;
+extern int32_t data_gc_poll;
 
 extern int32_t num_page;
 extern int32_t num_block;

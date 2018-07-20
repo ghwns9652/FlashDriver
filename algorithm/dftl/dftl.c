@@ -33,8 +33,8 @@ Block *t_reserved; // pointer of reserved block for translation gc
 Block *d_reserved; // pointer of reserved block for data gc
 
 int32_t num_caching; // Number of translation page on cache
-int32_t gc_load; // gc data load count
-int32_t gc_write;
+int32_t trans_gc_poll;
+int32_t data_gc_poll;
 
 int32_t num_page;
 int32_t num_block;
@@ -180,21 +180,21 @@ void *demand_end_req(algo_req* input){
 			break;
 		case GC_MAPPING_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
-			gc_write++;
+			data_gc_poll++;
 			break;
 		case TGC_R:
-			gc_load++;	
+			trans_gc_poll++;	
 			break;
 		case TGC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
-			gc_load++;
+			trans_gc_poll++;
 			break;
 		case DGC_R:
-			gc_load++;	
+			data_gc_poll++;	
 			break;
 		case DGC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
-			gc_load++;
+			data_gc_poll++;
 			break;
 	}
 	free(params);
