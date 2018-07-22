@@ -9,12 +9,14 @@
 #include"../../interface/interface.h"
 #include "footer.h"
 
+#ifdef lsmtree
 extern OOBT *oob;
+#endif
 skiplist *skiplist_init(){
 	skiplist *point=(skiplist*)malloc(sizeof(skiplist));
 	point->level=1;
 	point->header=(snode*)malloc(sizeof(snode));
-	point->header->list=(snode**)malloc(sizeof(snode)*(MAX_L+1));
+	point->header->list=(snode**)malloc(sizeof(snode*)*(MAX_L+1));
 	for(int i=0; i<MAX_L; i++) point->header->list[i]=point->header;
 	point->header->key=INT_MAX;
 
@@ -229,6 +231,7 @@ snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	return x;
 }
 
+#ifdef lsmtree
 //static int make_value_cnt=0;
 value_set **skiplist_make_valueset(skiplist *input, level *from){
 	//printf("make_value_cnt:%d\n",++make_value_cnt);
@@ -333,6 +336,7 @@ value_set **skiplist_make_valueset(skiplist *input, level *from){
 #endif
 	return res;
 }
+#endif
 
 snode *skiplist_at(skiplist *list, int idx){
 	snode *header=list->header;
