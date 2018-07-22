@@ -53,12 +53,12 @@ int32_t tpage_GC(){
 
 	while(trans_gc_poll != valid_page_num) {} // polling for reading all mapping data
 
+	trans_gc_poll = 0;
+
 	for(int i = 0; i < valid_page_num; i++){ // copy data to memory and free dma valueset
 		memcpy(d_sram[i].DATA_RAM, temp_set[i]->value, PAGESIZE);
 		inf_free_valueset(temp_set[i], FS_MALLOC_R); //미리 value_set을 free시켜서 불필요한 value_set 낭비 줄임
 	}
-
-	trans_gc_poll = 0;
 
 	for(int i = 0; i < valid_page_num; i++){ // write page into new block
 		CMT[d_sram[i].OOB_RAM.lpa].t_ppa = new_block + i;
@@ -145,6 +145,8 @@ int32_t dpage_GC(){
 
 	while(data_gc_poll != valid_num) {} // polling for reading all data
 
+	data_gc_poll = 0;
+	
 	for(int i = 0; i < valid_num; i++){
 		memcpy(d_sram[i].DATA_RAM, temp_set[i]->value, PAGESIZE);
 		inf_free_valueset(temp_set[i], FS_MALLOC_R);
@@ -247,7 +249,6 @@ int32_t dpage_GC(){
 		}
 	}
 
-	data_gc_poll = 0;
 
 	/* Write dpages */ 
 	for(int i = 0; i < valid_num; i++){

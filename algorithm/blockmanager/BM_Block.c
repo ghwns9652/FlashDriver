@@ -68,6 +68,7 @@ int32_t BM_Free(BM_T* BM)
 			freequeue(BM->qarray[i]);
 		free(BM->qarray);
 	}
+	free(BM);
 	return 0;
 }
 
