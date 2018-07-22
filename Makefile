@@ -1,8 +1,8 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix_async
-TARGET_ALGO=normal
+TARGET_LOWER=posix_memory
+TARGET_ALGO=dftl
 PWD=$(pwd)
 
 COMMONFLAGS=\

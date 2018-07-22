@@ -64,8 +64,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 	// you can control amount of max number of ram reside cache entry
 	//num_max_cache = max_cache_entry;
-	num_max_cache = max_cache_entry / 2 == 0 ? 1 : max_cache_entry / 2;
-	//num_max_cache = 1;
+	//num_max_cache = max_cache_entry / 2 == 0 ? 1 : max_cache_entry / 2;
+	num_max_cache = 1;
 
 	tgc_count = 0;
 	dgc_count = 0;
