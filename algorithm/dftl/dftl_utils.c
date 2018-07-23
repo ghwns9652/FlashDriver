@@ -15,12 +15,12 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 	return pseudo_my_req;
 }
 
-D_TABLE* mem_deq(m_queue *q){ // inefficient function for give heap pointer
-	return (D_TABLE*)m_dequeue(q);
+D_TABLE* mem_deq(b_queue *q){ // inefficient function for give heap pointer
+	return (D_TABLE*)dequeue(q);
 }
 
-void mem_enq(m_queue *q, D_TABLE *input){ // inefficient function for free heap pointer
-	m_enqueue(q, (void*)input);
+void mem_enq(b_queue *q, D_TABLE *input){ // inefficient function for free heap pointer
+	enqueue(q, (void*)input);
 }
 
 void merge_w_origin(D_TABLE *src, D_TABLE *dst){ // merge trans table.
@@ -29,8 +29,7 @@ void merge_w_origin(D_TABLE *src, D_TABLE *dst){ // merge trans table.
 			dst[i].ppa = src[i].ppa;
 		}
 		else if(src[i].ppa != -1){
-			VBM[src[i].ppa] = 0;
-			block_array[src[i].ppa/p_p_b].Invalid++;
+			BM_InvalidatePage(bm, src[i].ppa);
 		}
 	}
 }
@@ -61,6 +60,9 @@ int32_t tp_alloc(char req_t){
 			if(req_t == 'R'){
 				read_tgc_count++;
 			}
+			else if(req_t == 'D'){
+				tgc_w_dgc_count++;
+			}
 			return ppa++;
 		}
 		block = BM_Dequeue(free_b); // dequeue block from free block queue
@@ -73,6 +75,9 @@ int32_t tp_alloc(char req_t){
 			ppa = tpage_GC();
 			if(req_t == 'R'){
 				read_tgc_count++;
+			}
+			else if(req_t == 'D'){
+				tgc_w_dgc_count++;
 			}
 		}
 	}
@@ -115,7 +120,6 @@ value_set* SRAM_load(D_SRAM* d_sram, int32_t ppa, int idx, char t){
 	d_sram[idx].DATA_RAM = (D_TABLE*)malloc(PAGESIZE);
 	d_sram[idx].OOB_RAM = demand_OOB[ppa];
 	d_sram[idx].origin_ppa = ppa;
-	VBM[ppa] = 0; // invalidate VBM but don't need to update heap, because this block will be erased
 	return temp_value_set;
 }
 
@@ -129,7 +133,7 @@ void SRAM_unload(D_SRAM* d_sram, int32_t ppa, int idx, char t){
 		__demand.li->push_data(ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(DGC_W, temp_value_set, NULL));
 	}
 	demand_OOB[ppa] = d_sram[idx].OOB_RAM;
-	VBM[ppa] = 1;
+	BM_ValidatePage(bm, ppa);
 	free(d_sram[idx].DATA_RAM);
 }
 

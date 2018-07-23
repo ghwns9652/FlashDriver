@@ -9,10 +9,12 @@
 #include "../../interface/interface.h"
 #include "../../interface/queue.h"
 #include "../../include/container.h"
+#include "../../include/dftl_settings.h"
+#ifdef W_BUFF
 #include "../lsmtree/skiplist.h"
+#endif
 #include "../blockmanager/BM.h"
 #include "lru_list.h"
-#include "dftl_queue.h"
 
 #define TYPE uint8_t
 #define DATA_R 0
@@ -26,11 +28,9 @@
 #define DGC_R 8
 #define DGC_W 9
 
-
 #define EPP (PAGESIZE / 4) //Number of table entries per page
 #define D_IDX (lpa / EPP)	// Idx of directory table
 #define P_IDX (lpa % EPP)	// Idx of page table
-#define MAX_SL 1024
 
 // Page table data structure
 typedef struct demand_mapping_table{
@@ -82,10 +82,10 @@ extern Heap *trans_b;
 
 extern C_TABLE *CMT; // Cached Mapping Table
 extern uint8_t *VBM;
-extern m_queue *mem_q;
+extern b_queue *mem_q;
 extern D_OOB *demand_OOB; // Page level OOB
 
-extern Block *block_array;
+extern BM_T *bm;
 extern Block *t_reserved;
 extern Block *d_reserved;
 
@@ -105,6 +105,7 @@ extern int32_t num_max_cache;
 extern int32_t tgc_count;
 extern int32_t dgc_count;
 extern int32_t read_tgc_count;
+extern int32_t tgc_w_dgc_count;
 /* extern variables */
 
 //dftl.c
@@ -120,8 +121,8 @@ uint32_t demand_eviction(char req_t);
 
 //dftl_utils.c
 algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req);
-D_TABLE* mem_deq(m_queue *q);
-void mem_enq(m_queue *q, D_TABLE *input);
+D_TABLE* mem_deq(b_queue *q);
+void mem_enq(b_queue *q, D_TABLE *input);
 void merge_w_origin(D_TABLE *src, D_TABLE *dst);
 int lpa_compare(const void *a, const void *b);
 int32_t tp_alloc(char req_t);

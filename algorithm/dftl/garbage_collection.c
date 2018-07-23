@@ -21,7 +21,6 @@ int32_t tpage_GC(){
 		exit(2);
 	}
 	//exchange block
-	victim->Invalid = 0;
 	victim->type = 0;
 	old_block = victim->PBA * p_p_b;
 	new_block = t_reserved->PBA * p_p_b;
@@ -30,6 +29,7 @@ int32_t tpage_GC(){
 	t_reserved = victim;
 	if(all){ // if all page is invalid, then just trim and return
 		__demand.li->trim_block(old_block, false);
+		BM_InitializeBlock(bm, victim->PBA);
 		return new_block;
 	}
 	valid_page_num = 0;
@@ -45,15 +45,19 @@ int32_t tpage_GC(){
 
 	/* read valid pages in block */
 	for(int i = old_block; i < old_block + p_p_b; i++){
-		if(VBM[i]){ // read valid page
+		if(BM_IsValidPage(bm, i)){ // read valid page
 			temp_set[valid_page_num] = SRAM_load(d_sram, i, valid_page_num, 'T');
 			valid_page_num++;
 		}
 	}
 
+	BM_InitializeBlock(bm, victim->PBA);
+
 	while(trans_gc_poll != valid_page_num) {} // polling for reading all mapping data
 
+#if GC_POLL
 	trans_gc_poll = 0;
+#endif
 
 	for(int i = 0; i < valid_page_num; i++){ // copy data to memory and free dma valueset
 		memcpy(d_sram[i].DATA_RAM, temp_set[i]->value, PAGESIZE);
@@ -65,7 +69,9 @@ int32_t tpage_GC(){
 		SRAM_unload(d_sram, new_block + i, i, 'T');
 	}
 
+#if GC_POLL
 	while(trans_gc_poll != valid_page_num) {} // polling for reading all mapping data
+#endif
 
 	free(temp_set);
 	free(d_sram);
@@ -137,15 +143,19 @@ int32_t dpage_GC(){
 
 	/* read valid pages in block */
 	for(int i = old_block; i < old_block + p_p_b; i++){
-		if(VBM[i]){
+		if(BM_IsValidPage(bm, i)){
 			temp_set[valid_num] = SRAM_load(d_sram, i, valid_num, 'D');
 			valid_num++;
 		}
 	}
 
+	BM_InitializeBlock(bm, victim->PBA);
+
 	while(data_gc_poll != valid_num) {} // polling for reading all data
 
+#if GC_POLL
 	data_gc_poll = 0;
+#endif
 	
 	for(int i = 0; i < valid_num; i++){
 		memcpy(d_sram[i].DATA_RAM, temp_set[i]->value, PAGESIZE);
@@ -179,14 +189,12 @@ int32_t dpage_GC(){
 						else if(on_dma[i].ppa != -1){
 							/* !!! if prev ppa was in victim block, then do nothing !!! */
 							if(on_dma[i].ppa/p_p_b != d_reserved->PBA){ 	// this mean that this ppa was on victim block
-								VBM[on_dma[i].ppa] = 0;							// it doesn't need update
-								block_array[on_dma[i].ppa/p_p_b].Invalid++;
+								BM_InvalidatePage(bm, on_dma[i].ppa);       // it doesn't need update
 							}
 						}
 					}
 					c_table->flag = 2;
-					VBM[t_ppa] = 0;
-					block_array[t_ppa/p_p_b].Invalid++;
+					BM_InvalidatePage(bm, t_ppa);
 					free(params);
 					free(temp_req);
 					inf_free_valueset(temp_value_set, FS_MALLOC_R);
@@ -209,8 +217,7 @@ int32_t dpage_GC(){
 					p_table[P_IDX].ppa = new_block + i;
 					if(c_table->flag == 0){
 						c_table->flag = 2;
-						VBM[t_ppa] = 0;
-						block_array[t_ppa/p_p_b].Invalid++;
+						BM_InvalidatePage(bm, t_ppa);
 					}
 				}
 				continue;
@@ -239,14 +246,13 @@ int32_t dpage_GC(){
 			tce = INT32_MAX;
 		}
 		if(tce == INT32_MAX){ // flush temp table into device
-			VBM[t_ppa] = 0;
-			block_array[t_ppa/p_p_b].Invalid++;
+			BM_InvalidatePage(bm, t_ppa);
 			twrite++;
 			t_ppa = tp_alloc('D');
 			temp_value_set = inf_get_valueset((PTR)temp_table, FS_MALLOC_W, PAGESIZE); // Make valueset to WRITEMODE
 			__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(GC_MAPPING_W, temp_value_set, NULL));	// Unload page to ppa
 			demand_OOB[t_ppa].lpa = c_table->idx;
-			VBM[t_ppa] = 1;
+			BM_ValidatePage(bm, t_ppa);
 			c_table->t_ppa = t_ppa; // Update CMT t_ppa
 		}
 	}
@@ -262,7 +268,9 @@ int32_t dpage_GC(){
 		}
 	}
 
+#if GC_POLL
 	while(data_gc_poll != real_valid + twrite) {} // polling for reading all data
+#endif
 
 	free(temp_table);
 	free(temp_set);

@@ -20,16 +20,16 @@ queue *dftl_q; // for async get
 b_queue *free_b; // block allocate
 Heap *data_b; // data block heap
 Heap *trans_b; // trans block heap
+#if W_BUFF
 skiplist *mem_buf;
+#endif
 
 C_TABLE *CMT; // Cached Mapping Table
 D_OOB *demand_OOB; // Page OOB
-uint8_t *VBM; // Valid BitMap
 mem_table* mem_arr;
-m_queue *mem_q; // for p_table allocation. please change allocate and free function.
+b_queue *mem_q; // for p_table allocation. please change allocate and free function.
 
 BM_T *bm;
-Block *block_array; // array that point all block
 Block *t_reserved; // pointer of reserved block for translation gc
 Block *d_reserved; // pointer of reserved block for data gc
 
@@ -49,9 +49,12 @@ int32_t num_max_cache;
 
 int32_t tgc_count;
 int32_t dgc_count;
+int32_t tgc_w_dgc_count;
 int32_t read_tgc_count;
 int32_t evict_count;
+#if W_BUFF
 int32_t buf_hit;
+#endif
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// initialize all value by using macro.
@@ -68,27 +71,22 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	num_max_cache = max_cache_entry / 2 == 0 ? 1 : max_cache_entry / 2;
 	//num_max_cache = 1;
 
-	tgc_count = 0;
-	dgc_count = 0;
-	read_tgc_count = 0;
-	evict_count = 0;
-	buf_hit = 0;
-
 	printf("!!! print info !!!\n");
-	printf("number of block: %d\n", num_block);
+	printf("use wirte buffer: %d\n", W_BUFF);
+	printf("use gc polling: %d\n", GC_POLL);
+	printf("# of total block: %d\n", num_block);
+	printf("# of total page: %d\n", num_page);
 	printf("page per block: %d\n", p_p_b);
-	printf("number of page: %d\n", num_page);
-	printf("number of translation block: %d\n", num_tblock);
-	printf("number of translation page: %d\n", num_tpage);
-	printf("number of data block: %d\n", num_dblock);
-	printf("number of data page: %d\n", num_dpage);
-	printf("number of total cache mapping entry: %d\n", max_cache_entry);
-	printf("max number of ram reside cme: %d\n", num_max_cache);
+	printf("# of translation block: %d\n", num_tblock);
+	printf("# of translation page: %d\n", num_tpage);
+	printf("# of data block: %d\n", num_dblock);
+	printf("# of data page: %d\n", num_dpage);
+	printf("# of total cache mapping entry: %d\n", max_cache_entry);
+	printf("max # of ram reside cme: %d\n", num_max_cache);
 	printf("!!! print info !!!\n");
 
 	// Table Allocation and global variables initialization
 	CMT = (C_TABLE*)malloc(sizeof(C_TABLE) * max_cache_entry);
-	VBM = (uint8_t*)malloc(num_page);
 	mem_arr = (mem_table*)malloc(sizeof(mem_table) * num_max_cache);
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * num_page);
 	algo->li = li;
@@ -101,7 +99,6 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 		CMT[i].flag = 0;
 	}
 
-	memset(VBM, 0, num_page);
 	memset(demand_OOB, -1, num_page * sizeof(D_OOB));
 
 	for(int i = 0; i < num_max_cache; i++){
@@ -109,47 +106,51 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	}
 
  	num_caching = 0;
-	bm = BM_Init(2, 1);
-	block_array = bm->barray;
-	t_reserved = &block_array[num_block - 2];
-	d_reserved = &block_array[num_block - 1];
+	bm = BM_Init(2, 2);
+	t_reserved = &bm->barray[num_block - 2];
+	d_reserved = &bm->barray[num_block - 1];
 
+#if W_BUFF
 	mem_buf = skiplist_init();
+#endif
 
 	lru_init(&lru);
 	q_init(&dftl_q, 1024);
-	initqueue(&mem_q);
+	BM_Queue_Init(&mem_q);
 	for(int i = 0; i < num_max_cache; i++){
 		mem_enq(mem_q, mem_arr[i].mem_p);
 	}
 	BM_Queue_Init(&free_b);
 	for(int i = 0; i < num_block - 2; i++){
-		BM_Enqueue(free_b, &block_array[i]);
+		BM_Enqueue(free_b, &bm->barray[i]);
 	}
 	data_b = BM_Heap_Init(num_dblock);
 	trans_b = BM_Heap_Init(num_tblock);
 	bm->harray[0] = data_b;
 	bm->harray[1] = trans_b;
 	bm->qarray[0] = free_b;
+	bm->qarray[1] = mem_q;
 	return 0;
 }
 
 void demand_destroy(lower_info *li, algorithm *algo){
-	printf("num of translation page gc: %d\n", tgc_count);
-	printf("num of data page gc: %d\n", dgc_count);
-	printf("num of translation page gc w/ read op: %d\n", read_tgc_count);
-	printf("num of evict: %d\n", evict_count);
-	printf("num of buf hit: %d\n", buf_hit);
+	printf("# of gc: %d\n", tgc_count + dgc_count);
+	printf("# of translation page gc: %d\n", tgc_count);
+	printf("# of data page gc: %d\n", dgc_count);
+	printf("# of translation page gc w/ data page gc: %d\n", tgc_w_dgc_count);
+	printf("# of translation page gc w/ read op: %d\n", read_tgc_count);
+	printf("# of evict: %d\n", evict_count);
+#if W_BUFF
+	printf("# of buf hit: %d\n", buf_hit);
 	skiplist_free(mem_buf);
+#endif
 	q_free(dftl_q);
 	lru_free(lru);
 	BM_Free(bm);
-	freequeue(mem_q);
 	for(int i = 0; i < num_max_cache; i++){
 		free(mem_arr[i].mem_p);
 	}
 	free(mem_arr);
-	free(VBM);
 	free(demand_OOB);
 	free(CMT);
 }
@@ -166,10 +167,13 @@ void *demand_end_req(algo_req* input){
 			}
 			break;
 		case DATA_W:
-			/*if(res){
-				res->end_req(res);
-			}*/
+#if W_BUFF		
 			inf_free_valueset(temp_v, FS_MALLOC_W);
+#else
+			if(res){
+				res->end_req(res);
+			}
+#endif
 			break;
 		case MAPPING_R: // only used in async
 			((read_params*)res->params)->read = 1;
@@ -186,21 +190,27 @@ void *demand_end_req(algo_req* input){
 			break;
 		case GC_MAPPING_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
+#if GC_POLL
 			data_gc_poll++;
+#endif
 			break;
 		case TGC_R:
 			trans_gc_poll++;	
 			break;
 		case TGC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
+#if GC_POLL
 			trans_gc_poll++;
+#endif
 			break;
 		case DGC_R:
 			data_gc_poll++;	
 			break;
 		case DGC_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
+#if GC_POLL
 			data_gc_poll++;
+#endif
 			break;
 	}
 	free(params);
@@ -244,6 +254,7 @@ uint32_t __demand_set(request *const req){
 	C_TABLE *c_table; // Cache mapping entry pointer
 	D_TABLE *p_table; // pointer of p_table on cme
 	algo_req *my_req; // pseudo request pointer
+#if W_BUFF
 	snode *temp;
 
 	bench_algo_start(req);
@@ -263,8 +274,7 @@ uint32_t __demand_set(request *const req){
 			if(p_table){ /* Cache hit */
 				if(!c_table->flag){
 					c_table->flag = 2;
-					VBM[t_ppa] = 0;
-					block_array[t_ppa/p_p_b].Invalid++;
+					BM_InvalidatePage(bm, t_ppa);
 				}
 				lru_update(lru, c_table->queue_ptr);
 			}
@@ -287,11 +297,10 @@ uint32_t __demand_set(request *const req){
 			__demand.li->push_data(ppa, PAGESIZE, temp->value, ASYNC, my_req); // Write actual data in ppa
 			// if there is previous data with same lpa, then invalidate it
 			if(p_table[P_IDX].ppa != -1){
-				VBM[p_table[P_IDX].ppa] = 0;
-				block_array[p_table[P_IDX].ppa/p_p_b].Invalid++;
+				BM_InvalidatePage(bm, p_table[P_IDX].ppa);
 			}
 			p_table[P_IDX].ppa = ppa;
-			VBM[ppa] = 1;
+			BM_ValidatePage(bm, ppa);
 			demand_OOB[ppa].lpa = lpa;
 		}
 		skiplist_free(mem_buf);
@@ -302,8 +311,54 @@ uint32_t __demand_set(request *const req){
 	req->value = NULL;
 	bench_algo_end(req);
 	req->end_req(req);
+#else
+	bench_algo_start(req);
+	lpa = req->key;
+	if(lpa > RANGE){ // range check
+		printf("range error\n");
+		printf("뇌인지 에러\n");
+		printf("lpa : %d\n", lpa);
+		exit(3);
+	}
+	c_table = &CMT[D_IDX];
+	p_table = c_table->p_table;
+	t_ppa = c_table->t_ppa;
+
+	if(p_table){ /* Cache hit */
+		if(!c_table->flag){
+			c_table->flag = 2;
+			BM_InvalidatePage(bm, t_ppa);
+		}
+		lru_update(lru, c_table->queue_ptr);
+	}
+	else{ /* Cache miss */
+		if(num_caching == num_max_cache){
+			demand_eviction('W');
+		}
+		p_table = mem_deq(mem_q);
+		memset(p_table, -1, PAGESIZE); // initialize p_table
+		c_table->p_table = p_table;
+		c_table->queue_ptr = lru_push(lru, (void*)c_table);
+		c_table->flag = 1;
+	 	num_caching++;
+		if(t_ppa == -1){ // this case, there is no previous mapping table on device
+			c_table->flag = 2;
+		}
+	}
+	ppa = dp_alloc();
+	my_req = assign_pseudo_req(DATA_W, NULL, req);
+	bench_algo_end(req);
+	__demand.li->push_data(ppa, PAGESIZE, req->value, ASYNC, my_req); // Write actual data in ppa
+	if(p_table[P_IDX].ppa != -1){ // if there is previous data with same lpa, then invalidate it
+		BM_InvalidatePage(bm, p_table[P_IDX].ppa);
+	}
+	p_table[P_IDX].ppa = ppa;
+	BM_ValidatePage(bm, ppa);
+	demand_OOB[ppa].lpa = lpa;
+#endif
 	return 1;
 }
+
 
 uint32_t __demand_get(request *const req){ 
 	int32_t lpa; // Logical data page address
@@ -312,7 +367,9 @@ uint32_t __demand_get(request *const req){
 	C_TABLE* c_table; // Cache mapping entry pointer
 	D_TABLE* p_table; // pointer of p_table on cme
 	algo_req *my_req; // pseudo request pointer
+#if W_BUFF
 	snode *temp;
+#endif
 #if !ASYNC
 	demand_params *params; // used for mutex lock
 #else
@@ -326,6 +383,7 @@ uint32_t __demand_get(request *const req){
 		exit(3);
 	}
 
+#if W_BUFF
 	if((temp = skiplist_find(mem_buf, lpa))){
 		buf_hit++;
 		memcpy(req->value->value, temp->value->value, PAGESIZE);
@@ -333,6 +391,7 @@ uint32_t __demand_get(request *const req){
 		req->end_req(req);
 		return 1;
 	}
+#endif
 	// initialization
 	c_table = &CMT[D_IDX];
 	p_table = c_table->p_table;
@@ -405,8 +464,7 @@ uint32_t __demand_get(request *const req){
 	else{ // in this case, we need to merge with dirty mapping table on cache
 		merge_w_origin((D_TABLE*)req->value->value, p_table);
 		c_table->flag = 2;
-		VBM[t_ppa] = 0; // now we could invalidate translation page
-		block_array[t_ppa/p_p_b].Invalid++;
+		BM_InvalidatePage(bm, t_ppa);
 	}
 	ppa = p_table[P_IDX].ppa;
 	lru_update(lru, c_table->queue_ptr);
@@ -446,15 +504,14 @@ uint32_t demand_eviction(char req_t){
 			free(params);
 			free(temp_req);
 			inf_free_valueset(temp_value_set, FS_MALLOC_R);
-			VBM[t_ppa] = 0; // now invalidate t_ppa
-			block_array[t_ppa/p_p_b].Invalid++;
+			BM_InvalidatePage(bm, t_ppa);
 		}
 		/* Write translation page */
 		t_ppa = tp_alloc(req_t);	
 		temp_value_set = inf_get_valueset((PTR)p_table, FS_MALLOC_W, PAGESIZE);
 		demand_OOB[t_ppa].lpa = cache_ptr->idx;
 		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_W, temp_value_set, NULL));
-		VBM[t_ppa] = 1;
+		BM_ValidatePage(bm, t_ppa);
 		cache_ptr->t_ppa = t_ppa;
 		cache_ptr->flag = 0;
 	}
