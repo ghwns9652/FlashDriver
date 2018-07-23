@@ -32,7 +32,7 @@ BM_T* BM_Init(int h_count, int q_count)
 /* Initalize blockArray */
 int32_t BM_InitBlockArray(Block* blockArray)
 {
-	int numBITMAPB = BM_GetnumItem();
+	numBITMAPB = BM_GetnumItem();
 
 	for (int i=0; i<numBlock; ++i){
 		blockArray[i].PBA = i;
@@ -68,6 +68,7 @@ int32_t BM_Free(BM_T* BM)
 			freequeue(BM->qarray[i]);
 		free(BM->qarray);
 	}
+	free(BM);
 	return 0;
 }
 
