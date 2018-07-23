@@ -11,7 +11,7 @@ BM_T* BM_Init(int h_count, int q_count)
 {
 	numBlock = _NOS;
 	PagePerBlock = _PPS;
-	numBITMAPB = BM_GetnumItem();
+	numBITMAPB = (PagePerBlock % numBits_ValidP > 0) + (PagePerBlock/numBits_ValidP);
 
 	BM_T* res = (BM_T*)malloc(sizeof(BM_T));
 	res->barray = (Block*)malloc(sizeof(Block) * numBlock);
