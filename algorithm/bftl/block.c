@@ -193,10 +193,10 @@ uint32_t block_set(request *const req){
 		//PPA = PBA * PPB + offset;
 		PPA = set_pointer * ppb_ + offset; // Equal to above 2 lines
 
-		if (BM_IsValidPage(BM->barray, PPA))
+		if (BM_IsValidPage(BM, PPA))
 			while(1)
 				printf("ERROROROROROR!\n");
-		BM_ValidatePage(BM->barray, PPA);
+		BM_ValidatePage(BM, PPA);
 
 		// write
 		//printf("block_set 2!\n");
@@ -213,7 +213,7 @@ uint32_t block_set(request *const req){
 
 		// data가 차있는 page를 valid라고 할 지 invalid라고 할 지 제대로 골라야 할 것 같다. 지금은 차있는 page를 invalid라고 설정하여 그 page에 write하려고 할 시에 GC를 하도록 하였다. valid로 바꾸는 게 맞는 것 같긴 한데, 그렇게 하면 write할 수 있는(비어있는) page들은 모두 invalid 상태라고 여기는 것이 된다. 그건 또 이상하다.. 그냥 block ftl에서는 write할 수 있는(비어있는) page를 valid page로, write할 수 없는(쓰여있는) page를 invalid page로 여기고 BM을 사용한다고 여기면 될 것 같다.
 		// 그리고 block level에서의 valid/invalid 여부는 BM valid/invalid와 상관없다. 각 page마다 0/1을 구분하기 위해 BM의 page 단위 validity를 쓴 것일 뿐이다.
-		if (!BM_IsValidPage(BM->barray, PPA))
+		if (!BM_IsValidPage(BM, PPA))
 		{
 #ifdef BFTL_DEBUG1	
 			printf("\tcase 2\n"); // 비어있는 page인 경우. 그대로 write 가능하다.
@@ -225,13 +225,13 @@ uint32_t block_set(request *const req){
 				GC_moving(req, my_req, LBA, offset, PBA, PPA, checker);
 			}
 			else {
-				BM_ValidatePage(BM->barray, PPA); // write되어 차있는 page라고 적어놓는다.
+				BM_ValidatePage(BM, PPA); // write되어 차있는 page라고 적어놓는다.
 				block_valid_array[PBA] = EXIST;
 				bench_algo_end(req);
 				__block.li->push_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
 			}
 		}
-		else if (BM_IsValidPage(BM->barray, PPA))
+		else if (BM_IsValidPage(BM, PPA))
 		{
 #ifdef BFTL_DEBUG1	
 			printf("\tcase 3(GC)\n");
@@ -374,8 +374,8 @@ void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offs
 			printf("SRAM_unload: %d\n", i);
 #endif
 		// SRAM_unload
-		BM_ValidatePage(BM->barray, new_PPA_zero + i);
-		BM_InvalidatePage(BM->barray, old_PPA_zero + i);
+		BM_ValidatePage(BM, new_PPA_zero + i);
+		BM_InvalidatePage(BM, old_PPA_zero + i);
 		if (i != offset)
 			SRAM_unload(i, new_PPA_zero);
 		else
