@@ -32,8 +32,6 @@ BM_T* BM_Init(int h_count, int q_count)
 /* Initalize blockArray */
 int32_t BM_InitBlockArray(Block* blockArray)
 {
-	numBITMAPB = BM_GetnumItem();
-
 	for (int i=0; i<numBlock; ++i){
 		blockArray[i].PBA = i;
 		blockArray[i].Invalid = 0;
