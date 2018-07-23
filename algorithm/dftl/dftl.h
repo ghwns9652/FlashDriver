@@ -9,6 +9,7 @@
 #include "../../interface/interface.h"
 #include "../../interface/queue.h"
 #include "../../include/container.h"
+#include "../lsmtree/skiplist.h"
 #include "../blockmanager/BM.h"
 #include "lru_list.h"
 #include "dftl_queue.h"
@@ -29,6 +30,7 @@
 #define EPP (PAGESIZE / 4) //Number of table entries per page
 #define D_IDX (lpa / EPP)	// Idx of directory table
 #define P_IDX (lpa % EPP)	// Idx of page table
+#define MAX_SL 1024
 
 // Page table data structure
 typedef struct demand_mapping_table{

@@ -20,6 +20,7 @@ queue *dftl_q; // for async get
 b_queue *free_b; // block allocate
 Heap *data_b; // data block heap
 Heap *trans_b; // trans block heap
+skiplist *mem_buf;
 
 C_TABLE *CMT; // Cached Mapping Table
 D_OOB *demand_OOB; // Page OOB
@@ -50,7 +51,7 @@ int32_t tgc_count;
 int32_t dgc_count;
 int32_t read_tgc_count;
 int32_t evict_count;
-int32_t read_count;
+int32_t buf_hit;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// initialize all value by using macro.
@@ -64,14 +65,14 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 	// you can control amount of max number of ram reside cache entry
 	//num_max_cache = max_cache_entry;
-	//num_max_cache = max_cache_entry / 2 == 0 ? 1 : max_cache_entry / 2;
-	num_max_cache = 1;
+	num_max_cache = max_cache_entry / 2 == 0 ? 1 : max_cache_entry / 2;
+	//num_max_cache = 1;
 
 	tgc_count = 0;
 	dgc_count = 0;
 	read_tgc_count = 0;
 	evict_count = 0;
-	read_count = 0;
+	buf_hit = 0;
 
 	printf("!!! print info !!!\n");
 	printf("number of block: %d\n", num_block);
@@ -113,6 +114,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	t_reserved = &block_array[num_block - 2];
 	d_reserved = &block_array[num_block - 1];
 
+	mem_buf = skiplist_init();
+
 	lru_init(&lru);
 	q_init(&dftl_q, 1024);
 	initqueue(&mem_q);
@@ -136,7 +139,8 @@ void demand_destroy(lower_info *li, algorithm *algo){
 	printf("num of data page gc: %d\n", dgc_count);
 	printf("num of translation page gc w/ read op: %d\n", read_tgc_count);
 	printf("num of evict: %d\n", evict_count);
-	printf("num of read: %d\n", read_count);
+	printf("num of buf hit: %d\n", buf_hit);
+	skiplist_free(mem_buf);
 	q_free(dftl_q);
 	lru_free(lru);
 	BM_Free(bm);
@@ -162,9 +166,10 @@ void *demand_end_req(algo_req* input){
 			}
 			break;
 		case DATA_W:
-			if(res){
+			/*if(res){
 				res->end_req(res);
-			}
+			}*/
+			inf_free_valueset(temp_v, FS_MALLOC_W);
 			break;
 		case MAPPING_R: // only used in async
 			((read_params*)res->params)->read = 1;
@@ -239,52 +244,64 @@ uint32_t __demand_set(request *const req){
 	C_TABLE *c_table; // Cache mapping entry pointer
 	D_TABLE *p_table; // pointer of p_table on cme
 	algo_req *my_req; // pseudo request pointer
+	snode *temp;
 
 	bench_algo_start(req);
-	lpa = req->key;
-	if(lpa > RANGE){ // range check
+	if(req->key > RANGE){ // range check
 		printf("range error\n");
-		printf("뇌인지 에러\n");
-		printf("lpa : %d\n", lpa);
+		printf("lpa : %d\n", req->key);
 		exit(3);
 	}
-	c_table = &CMT[D_IDX];
-	p_table = c_table->p_table;
-	t_ppa = c_table->t_ppa;
+	if(mem_buf->size == MAX_SL){
+		for(int i = 0; i < MAX_SL; i++){
+			temp = skiplist_pop(mem_buf);
+			lpa = temp->key;
+			c_table = &CMT[D_IDX];
+			p_table = c_table->p_table;
+			t_ppa = c_table->t_ppa;
 
-	if(p_table){ /* Cache hit */
-		if(!c_table->flag){
-			c_table->flag = 2;
-			VBM[t_ppa] = 0;
-			block_array[t_ppa/p_p_b].Invalid++;
+			if(p_table){ /* Cache hit */
+				if(!c_table->flag){
+					c_table->flag = 2;
+					VBM[t_ppa] = 0;
+					block_array[t_ppa/p_p_b].Invalid++;
+				}
+				lru_update(lru, c_table->queue_ptr);
+			}
+			else{ /* Cache miss */
+				if(num_caching == num_max_cache){
+					demand_eviction('W');
+				}
+				p_table = mem_deq(mem_q);
+				memset(p_table, -1, PAGESIZE); // initialize p_table
+				c_table->p_table = p_table;
+				c_table->queue_ptr = lru_push(lru, (void*)c_table);
+				c_table->flag = 1;
+				num_caching++;
+				if(t_ppa == -1){ // this case, there is no previous mapping table on device
+					c_table->flag = 2;
+				}
+			}
+			ppa = dp_alloc();
+			my_req = assign_pseudo_req(DATA_W, temp->value, NULL);
+			__demand.li->push_data(ppa, PAGESIZE, temp->value, ASYNC, my_req); // Write actual data in ppa
+			// if there is previous data with same lpa, then invalidate it
+			if(p_table[P_IDX].ppa != -1){
+				VBM[p_table[P_IDX].ppa] = 0;
+				block_array[p_table[P_IDX].ppa/p_p_b].Invalid++;
+			}
+			p_table[P_IDX].ppa = ppa;
+			VBM[ppa] = 1;
+			demand_OOB[ppa].lpa = lpa;
 		}
-		lru_update(lru, c_table->queue_ptr);
+		skiplist_free(mem_buf);
+		mem_buf = skiplist_init();
 	}
-	else{ /* Cache miss */
-		if(num_caching == num_max_cache){
-			demand_eviction('W');
-		}
-		p_table = mem_deq(mem_q);
-		memset(p_table, -1, PAGESIZE); // initialize p_table
-		c_table->p_table = p_table;
-		c_table->queue_ptr = lru_push(lru, (void*)c_table);
-		c_table->flag = 1;
-	 	num_caching++;
-		if(t_ppa == -1){ // this case, there is no previous mapping table on device
-			c_table->flag = 2;
-		}
-	}
-	ppa = dp_alloc();
-	my_req = assign_pseudo_req(DATA_W, NULL, req);
+	lpa = req->key;
+	skiplist_insert(mem_buf, lpa, req->value, false);
+	req->value = NULL;
 	bench_algo_end(req);
-	__demand.li->push_data(ppa, PAGESIZE, req->value, ASYNC, my_req); // Write actual data in ppa
-	if(p_table[P_IDX].ppa != -1){ // if there is previous data with same lpa, then invalidate it
-		VBM[p_table[P_IDX].ppa] = 0;
-		block_array[p_table[P_IDX].ppa/p_p_b].Invalid++;
-	}
-	p_table[P_IDX].ppa = ppa;
-	VBM[ppa] = 1;
-	demand_OOB[ppa].lpa = lpa;
+	req->end_req(req);
 	return 1;
 }
 
@@ -295,6 +312,7 @@ uint32_t __demand_get(request *const req){
 	C_TABLE* c_table; // Cache mapping entry pointer
 	D_TABLE* p_table; // pointer of p_table on cme
 	algo_req *my_req; // pseudo request pointer
+	snode *temp;
 #if !ASYNC
 	demand_params *params; // used for mutex lock
 #else
@@ -306,6 +324,14 @@ uint32_t __demand_get(request *const req){
 	if(lpa > RANGE){ // range check
 		printf("range error\n");
 		exit(3);
+	}
+
+	if((temp = skiplist_find(mem_buf, lpa))){
+		buf_hit++;
+		memcpy(req->value->value, temp->value->value, PAGESIZE);
+		bench_algo_end(req);
+		req->end_req(req);
+		return 1;
 	}
 	// initialization
 	c_table = &CMT[D_IDX];
@@ -320,7 +346,6 @@ uint32_t __demand_get(request *const req){
 			return UINT32_MAX;
 		}
 		else if(ppa != -1){ /* Cache hit */
-			read_count++;
 			lru_update(lru, c_table->queue_ptr);
 			bench_algo_end(req);
 			__demand.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req)); // Get data in ppa

@@ -163,32 +163,34 @@ int32_t dpage_GC(){
 		p_table = c_table->p_table;
 		
 		if(p_table){
-			if(c_table->flag == 1){ // dirty cache, need merge
-				temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-				temp_req = assign_pseudo_req(MAPPING_M, temp_value_set, NULL);
-				params = (demand_params*)temp_req->params;
-				__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
-				pthread_mutex_lock(&params->dftl_mutex);
-				pthread_mutex_destroy(&params->dftl_mutex);
-				on_dma = (D_TABLE*)temp_value_set->value;
-				for(int i = 0; i < EPP; i++){
-					if(p_table[i].ppa == -1){
-						p_table[i].ppa = on_dma[i].ppa;
-					}
-					else if(on_dma[i].ppa != -1){
-						/* !!! if prev ppa was in victim block, then do nothing !!! */
-						if(on_dma[i].ppa/p_p_b != d_reserved->PBA){ 	// this mean that this ppa was on victim block
-							VBM[on_dma[i].ppa] = 0;							// it doesn't need update
-							block_array[on_dma[i].ppa/p_p_b].Invalid++;
+			if(c_table->flag == 1){
+				if(p_table[P_IDX].ppa == -1){ // dirty cache, need merge
+					temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+					temp_req = assign_pseudo_req(MAPPING_M, temp_value_set, NULL);
+					params = (demand_params*)temp_req->params;
+					__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
+					pthread_mutex_lock(&params->dftl_mutex);
+					pthread_mutex_destroy(&params->dftl_mutex);
+					on_dma = (D_TABLE*)temp_value_set->value;
+					for(int i = 0; i < EPP; i++){
+						if(p_table[i].ppa == -1){
+							p_table[i].ppa = on_dma[i].ppa;
+						}
+						else if(on_dma[i].ppa != -1){
+							/* !!! if prev ppa was in victim block, then do nothing !!! */
+							if(on_dma[i].ppa/p_p_b != d_reserved->PBA){ 	// this mean that this ppa was on victim block
+								VBM[on_dma[i].ppa] = 0;							// it doesn't need update
+								block_array[on_dma[i].ppa/p_p_b].Invalid++;
+							}
 						}
 					}
+					c_table->flag = 2;
+					VBM[t_ppa] = 0;
+					block_array[t_ppa/p_p_b].Invalid++;
+					free(params);
+					free(temp_req);
+					inf_free_valueset(temp_value_set, FS_MALLOC_R);
 				}
-				c_table->flag = 2;
-				VBM[t_ppa] = 0;
-				block_array[t_ppa/p_p_b].Invalid++;
-				free(params);
-				free(temp_req);
-				inf_free_valueset(temp_value_set, FS_MALLOC_R);
 				if(p_table[P_IDX].ppa != d_sram[i].origin_ppa){ // if not same as origin, it mean this is actually invalid data
 					d_sram[i].origin_ppa = -1;
 					continue;

@@ -12,11 +12,16 @@ SRCS +=\
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
 
+OBJS+=skiplist.o
+
 TARGETOBJ:=\
 	$(addprefix ../../object/,$(OBJS))\
 
 LEAK: all
 all: $(TARGETOBJ) 
+
+../../object/skiplist.o: ../lsmtree/skiplist.c
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 libnom.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)

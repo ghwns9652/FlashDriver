@@ -28,6 +28,10 @@ CFLAGS_ALGO+=$(COMMONFLAGS)\
 
 CFLAGS_LOWER+=$(COMMONFLAGS)\
 
+ifeq ($(TARGET_ALGO), lsmtree)
+ CFLAGS_ALGO+=-DLSM_SKIP
+endif
+
 ifeq ($(TARGET_LOWER), posix_memory)
  CFLAGS_LOWER+=-D$(TARGET_ALGO)
 endif
