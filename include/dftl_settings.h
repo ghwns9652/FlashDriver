@@ -7,6 +7,9 @@
 // gc polling flag
 #define GC_POLL 1
 
+// eviction polling flag
+#define EVICT_POLL 1
+
 // max size of write buffer
 #define MAX_SL 1024
 

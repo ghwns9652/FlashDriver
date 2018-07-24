@@ -176,7 +176,7 @@ int32_t dpage_GC(){
 			if(c_table->flag == 1){
 				if(p_table[P_IDX].ppa == -1){ // dirty cache, need merge
 					temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-					temp_req = assign_pseudo_req(MAPPING_M, temp_value_set, NULL);
+					temp_req = assign_pseudo_req(MAPPING_MR, temp_value_set, NULL);
 					params = (demand_params*)temp_req->params;
 					__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
 					pthread_mutex_lock(&params->dftl_mutex);
@@ -226,7 +226,7 @@ int32_t dpage_GC(){
 		if(tce == INT32_MAX){ // read t_page into temp_table
 			tce = D_IDX;
 			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-			temp_req = assign_pseudo_req(MAPPING_M, temp_value_set, NULL);
+			temp_req = assign_pseudo_req(MAPPING_MR, temp_value_set, NULL);
 			params = (demand_params*)temp_req->params;
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
 			pthread_mutex_lock(&params->dftl_mutex);

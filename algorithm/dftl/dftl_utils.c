@@ -6,7 +6,7 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 	pseudo_my_req->parents = req;
 	params->type = type;
 	params->value = temp_v;
-	if(type == MAPPING_M){
+	if(type == MAPPING_MR || type == MAPPING_MW){
 		pthread_mutex_init(&params->dftl_mutex, NULL);
 		pthread_mutex_lock(&params->dftl_mutex);
 	}

@@ -21,12 +21,13 @@
 #define DATA_W 1
 #define MAPPING_R 2
 #define MAPPING_W 3
-#define MAPPING_M 4
-#define GC_MAPPING_W 5
-#define TGC_R 6
-#define TGC_W 7
-#define DGC_R 8
-#define DGC_W 9
+#define MAPPING_MR 4
+#define MAPPING_MW 5
+#define GC_MAPPING_W 6
+#define TGC_R 7
+#define TGC_W 8
+#define DGC_R 9
+#define DGC_W 10
 
 #define DTIMESLOT 100
 #define EPP (PAGESIZE / 4) //Number of table entries per page

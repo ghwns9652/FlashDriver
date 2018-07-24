@@ -75,6 +75,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	printf("!!! print info !!!\n");
 	printf("use wirte buffer: %d\n", W_BUFF);
 	printf("use gc polling: %d\n", GC_POLL);
+	printf("use eviction polling: %d\n", EVICT_POLL);
 	printf("# of total block: %d\n", num_block);
 	printf("# of total page: %d\n", num_page);
 	printf("page per block: %d\n", p_p_b);
@@ -136,6 +137,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 }
 
 void dftl_cdf_print(dftl_time *_d){
+	uint64_t t_number = 0;
 	uint64_t cumulate_number;
 	for(int j = 0; j < 4; j++){
 		cumulate_number=0;
@@ -147,17 +149,19 @@ void dftl_cdf_print(dftl_time *_d){
 			printf("%d\t\t%ld\n",i,_d->dftl_cdf[j][i]);
 		}
 		printf("total count in case %d: %ld\n", j, cumulate_number);
+		t_number += cumulate_number;
 	}
+	printf("total read: %ld\n", t_number);
 }
 
 void time_dftl(request *req){
-	measure_calc(&req->latency_dftl);
-	int slot_num=req->latency_dftl.micro_time/DTIMESLOT;
+	measure_calc(&req->latency_ftl);
+	int slot_num=req->latency_ftl.micro_time/DTIMESLOT;
 	if(slot_num>=1000000/DTIMESLOT){
-		dftl_tt->dftl_cdf[req->type_dftl][1000000/DTIMESLOT]++;
+		dftl_tt->dftl_cdf[req->type_ftl][1000000/DTIMESLOT]++;
 	}
 	else{
-		dftl_tt->dftl_cdf[req->type_dftl][slot_num]++;
+		dftl_tt->dftl_cdf[req->type_ftl][slot_num]++;
 	}
 }
 
@@ -172,6 +176,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
 	printf("# of buf hit: %d\n", buf_hit);
 	skiplist_free(mem_buf);
 #endif
+	printf("0: hit, 1: read, 2: read & evict, 3: read & evict & gc\n");
 	dftl_cdf_print(dftl_tt);
 	q_free(dftl_q);
 	lru_free(lru);
@@ -214,7 +219,12 @@ void *demand_end_req(algo_req* input){
 		case MAPPING_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
 			break;
-		case MAPPING_M: // unlock mutex lock for read mapping data completely
+		case MAPPING_MR: // unlock mutex lock for read mapping data completely
+			pthread_mutex_unlock(&params->dftl_mutex);
+			return NULL;
+			break;
+		case MAPPING_MW: // unlock mutex lock for read mapping data completely
+			inf_free_valueset(temp_v, FS_MALLOC_W);
 			pthread_mutex_unlock(&params->dftl_mutex);
 			return NULL;
 			break;
@@ -403,7 +413,7 @@ uint32_t __demand_get(request *const req){
 #endif
 
 	bench_algo_start(req);
-	MS(&req->latency_dftl);
+	MS(&req->latency_ftl);
 	lpa = req->key;
 	if(lpa > RANGE){ // range check
 		printf("range error\n");
@@ -447,6 +457,7 @@ uint32_t __demand_get(request *const req){
 		return UINT32_MAX;
 	}
 	/* Load tpage to cache */
+	req->type_ftl = 1;
 #if ASYNC
 	if(req->params == NULL){ // this is cache miss and request come into get first time
 		checker = (read_params*)malloc(sizeof(read_params));
@@ -454,8 +465,7 @@ uint32_t __demand_get(request *const req){
 		checker->t_ppa = t_ppa;
 		req->params = (void*)checker;
 		my_req = assign_pseudo_req(MAPPING_R, NULL, req); // need to read mapping data
-		req->type_dftl = 1;
-		MA(&req->latency_dftl);
+		MA(&req->latency_ftl);
 		bench_algo_end(req);
 		__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
 		return 1;
@@ -465,8 +475,7 @@ uint32_t __demand_get(request *const req){
 			((read_params*)req->params)->read = 0; 				// read value is invalid now
 			((read_params*)req->params)->t_ppa = t_ppa; 		// these could mapping to reserved area
 			my_req = assign_pseudo_req(MAPPING_R, NULL, req); 	// send req read mapping table again.
-			req->type_dftl = 1;
-			MA(&req->latency_dftl);
+			MA(&req->latency_ftl);
 			bench_algo_end(req);
 			__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
 			return 1; // very inefficient way, change after
@@ -476,7 +485,7 @@ uint32_t __demand_get(request *const req){
 		}
 	}
 #else
-	my_req = assign_pseudo_req(MAPPING_M, NULL, NULL);	// when sync get cache miss, we need to wait
+	my_req = assign_pseudo_req(MAPPING_MR, NULL, NULL);	// when sync get cache miss, we need to wait
 	params = (demand_params*)my_req->params;			// until read mapping table completely.
 	__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
 	pthread_mutex_lock(&params->dftl_mutex);
@@ -488,10 +497,10 @@ uint32_t __demand_get(request *const req){
 		if(num_caching == num_max_cache){
 			demand_eviction('R', &gc_flag);
 			if(gc_flag == false){
-				req->type_dftl = 2;
+				req->type_ftl = 2;
 			}
 			else{
-				req->type_dftl = 3;
+				req->type_ftl = 3;
 			}
 		}
 		p_table = mem_deq(mem_q);
@@ -535,7 +544,7 @@ uint32_t demand_eviction(char req_t, bool *flag){
 	if(cache_ptr->flag){ // When t_page on cache has changed
 		if(cache_ptr->flag == 1){ // this case is dirty mapping and not merged with original one
 			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-			temp_req = assign_pseudo_req(MAPPING_M, NULL, NULL);
+			temp_req = assign_pseudo_req(MAPPING_MR, NULL, NULL);
 			params = (demand_params*)temp_req->params;
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
 			pthread_mutex_lock(&params->dftl_mutex);
@@ -547,10 +556,22 @@ uint32_t demand_eviction(char req_t, bool *flag){
 			BM_InvalidatePage(bm, t_ppa);
 		}
 		/* Write translation page */
-		t_ppa = tp_alloc(req_t, flag);	
+		t_ppa = tp_alloc(req_t, flag);
 		temp_value_set = inf_get_valueset((PTR)p_table, FS_MALLOC_W, PAGESIZE);
+#if EVICT_POLL
+		temp_req = assign_pseudo_req(MAPPING_MW, temp_value_set, NULL);
+		params = (demand_params*)temp_req->params;
+#else
+		temp_req = assign_pseudo_req(MAPPING_W, temp_value_set, NULL);
+#endif
+		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
+#if EVICT_POLL
+		pthread_mutex_lock(&params->dftl_mutex);
+		pthread_mutex_destroy(&params->dftl_mutex);
+		free(params);
+		free(temp_req);
+#endif
 		demand_OOB[t_ppa].lpa = cache_ptr->idx;
-		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(MAPPING_W, temp_value_set, NULL));
 		BM_ValidatePage(bm, t_ppa);
 		cache_ptr->t_ppa = t_ppa;
 		cache_ptr->flag = 0;
