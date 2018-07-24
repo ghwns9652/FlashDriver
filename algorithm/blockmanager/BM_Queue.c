@@ -1,3 +1,4 @@
+/* Queue Internal Functions */
 #include "BM.h"
 
 void initqueue(b_queue **q){

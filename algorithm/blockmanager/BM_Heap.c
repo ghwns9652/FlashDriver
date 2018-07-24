@@ -1,5 +1,10 @@
+/* Heap Internal Functions */
+
 #include "BM.h"
 
+/*
+ * Internal Functions for Max-Heap of Invalid
+ */
 void heap_swap(h_node *a, h_node *b){
 	Block *ablock = (Block*)a->value;
 	Block *bblock = (Block*)b->value;

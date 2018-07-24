@@ -4,6 +4,7 @@ SRCS +=\
 		BM_Block.c\
 		BM_Heap.c\
 		BM_Queue.c\
+		BM_Interface.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
