@@ -6,7 +6,11 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 	pseudo_my_req->parents = req;
 	params->type = type;
 	params->value = temp_v;
-	if(type == MAPPING_MR || type == MAPPING_MW){
+#if EVICT_POLL
+	if(type == MAPPING_M || type == MAPPING_W){
+#else
+	if(type == MAPPING_M){
+#endif
 		pthread_mutex_init(&params->dftl_mutex, NULL);
 		pthread_mutex_lock(&params->dftl_mutex);
 	}
@@ -63,7 +67,7 @@ int32_t tp_alloc(char req_t, bool *flag){
 			else if(req_t == 'D'){
 				tgc_w_dgc_count++;
 			}
-			if(!flag){
+			if(flag){
 				*flag = true;
 			}
 			return ppa++;
@@ -82,7 +86,7 @@ int32_t tp_alloc(char req_t, bool *flag){
 			else if(req_t == 'D'){
 				tgc_w_dgc_count++;
 			}
-			if(!flag){
+			if(flag){
 				*flag = true;
 			}
 		}

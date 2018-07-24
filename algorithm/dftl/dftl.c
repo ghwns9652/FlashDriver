@@ -218,13 +218,12 @@ void *demand_end_req(algo_req* input){
 			break;
 		case MAPPING_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);
-			break;
-		case MAPPING_MR: // unlock mutex lock for read mapping data completely
+#if EVICT_POLL
 			pthread_mutex_unlock(&params->dftl_mutex);
 			return NULL;
+#endif
 			break;
-		case MAPPING_MW: // unlock mutex lock for read mapping data completely
-			inf_free_valueset(temp_v, FS_MALLOC_W);
+		case MAPPING_M: // unlock mutex lock for read mapping data completely
 			pthread_mutex_unlock(&params->dftl_mutex);
 			return NULL;
 			break;
@@ -414,6 +413,7 @@ uint32_t __demand_get(request *const req){
 
 	bench_algo_start(req);
 	MS(&req->latency_ftl);
+	gc_flag = false;
 	lpa = req->key;
 	if(lpa > RANGE){ // range check
 		printf("range error\n");
@@ -485,7 +485,7 @@ uint32_t __demand_get(request *const req){
 		}
 	}
 #else
-	my_req = assign_pseudo_req(MAPPING_MR, NULL, NULL);	// when sync get cache miss, we need to wait
+	my_req = assign_pseudo_req(MAPPING_M, NULL, NULL);	// when sync get cache miss, we need to wait
 	params = (demand_params*)my_req->params;			// until read mapping table completely.
 	__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
 	pthread_mutex_lock(&params->dftl_mutex);
@@ -495,11 +495,9 @@ uint32_t __demand_get(request *const req){
 #endif
 	if(!p_table){ // there is no dirty mapping table on cache
 		if(num_caching == num_max_cache){
+			req->type_ftl = 2;
 			demand_eviction('R', &gc_flag);
-			if(gc_flag == false){
-				req->type_ftl = 2;
-			}
-			else{
+			if(gc_flag == true){
 				req->type_ftl = 3;
 			}
 		}
@@ -544,7 +542,7 @@ uint32_t demand_eviction(char req_t, bool *flag){
 	if(cache_ptr->flag){ // When t_page on cache has changed
 		if(cache_ptr->flag == 1){ // this case is dirty mapping and not merged with original one
 			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-			temp_req = assign_pseudo_req(MAPPING_MR, NULL, NULL);
+			temp_req = assign_pseudo_req(MAPPING_M, NULL, NULL);
 			params = (demand_params*)temp_req->params;
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
 			pthread_mutex_lock(&params->dftl_mutex);
@@ -558,11 +556,9 @@ uint32_t demand_eviction(char req_t, bool *flag){
 		/* Write translation page */
 		t_ppa = tp_alloc(req_t, flag);
 		temp_value_set = inf_get_valueset((PTR)p_table, FS_MALLOC_W, PAGESIZE);
-#if EVICT_POLL
-		temp_req = assign_pseudo_req(MAPPING_MW, temp_value_set, NULL);
-		params = (demand_params*)temp_req->params;
-#else
 		temp_req = assign_pseudo_req(MAPPING_W, temp_value_set, NULL);
+#if EVICT_POLL
+		params = (demand_params*)temp_req->params;
 #endif
 		__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
 #if EVICT_POLL
