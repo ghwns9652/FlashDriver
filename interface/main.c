@@ -68,7 +68,8 @@ int main(){/*
 	//bench_add(RANDRW,0,128*1024,2*128*1024);
 	//bench_add(SEQSET,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
 	//bench_add(MIXED,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
-	bench_add(RANDRW,0,RANGE,4*RANGE);
+	bench_add(RANDRW,0,0.8*RANGE,1.6*RANGE);
+//	bench_add(MIXED,0,0.8*RANGE,0.8*RANGE);
 //	bench_add(RANDRW,0,RANGE,2*RANGE);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);

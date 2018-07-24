@@ -17,6 +17,7 @@ int32_t pbase_garbage_collection(){
 	all = 0;
 	gc_count++;
 	victim = BM_Heap_Get_Max(b_heap);
+	printf("invalid: %d\n", victim->Invalid);
 	if(victim->Invalid == _g_ppb){ // every page is invalid.
 		all = 1;
 	}

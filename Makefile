@@ -1,8 +1,8 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix_async
-TARGET_ALGO=new_pftl
+TARGET_LOWER=posix_memory
+TARGET_ALGO=lsmtree
 PWD=$(pwd)
 
 COMMONFLAGS=\
@@ -27,6 +27,10 @@ export CFLAGS_LOWER=\
 CFLAGS_ALGO+=$(COMMONFLAGS)\
 
 CFLAGS_LOWER+=$(COMMONFLAGS)\
+
+ifeq ($(TARGET_ALGO), lsmtree)
+ CFLAGS_ALGO+=-DLSM_SKIP
+endif
 
 ifeq ($(CC), gcc)
  CFLAGS_ALGO+=-Wno-discarded-qualifiers -std=c99
@@ -96,7 +100,6 @@ libsimulator.a: $(TARGETOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) clean && $(MAKE) && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
-	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 	$(AR) r $(@) ./object/*
 

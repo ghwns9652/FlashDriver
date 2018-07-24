@@ -59,7 +59,8 @@ static void assign_req(request* req){
 #endif
 	}
 
-	if(!req->isAsync){
+	//if(!req->isAsync){
+	if(!ASYNC){
 		pthread_mutex_lock(&req->async_mutex);	
 		pthread_mutex_destroy(&req->async_mutex);
 		free(req);
@@ -105,6 +106,10 @@ void *p_main(void *__input){
 		}
 		inf_req=(request*)_inf_req;
 
+#ifdef CDF
+		measure_init(&inf_req->latency_checker);
+		measure_start(&inf_req->latency_checker);
+#endif
 		switch(inf_req->type){
 			case FS_GET_T:
 				mp.algo->get(inf_req);
@@ -411,7 +416,7 @@ void inf_init(){
 	   pthread_mutex_init(&inf_lock,NULL);
 	   pthread_mutex_lock(&inf_lock);*/
 	measure_init(&mt);
-#if defined(posix) || defined(posix_async)
+#if defined(posix) || defined(posix_async) || defined(posix_memory)
 	mp.li=&my_posix;
 #endif
 
@@ -442,7 +447,7 @@ void inf_init(){
 	mp.algo=&__demand;
 #endif
 
-#ifdef new_pftl
+#ifdef page
 	mp.algo=&algo_pbase;
 #endif
 
@@ -477,11 +482,6 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value)
 	req->mark=mark;
 #endif
 
-
-#ifdef CDF
-	measure_init(&req->latency_checker);
-	measure_start(&req->latency_checker);
-#endif
 	switch(type){
 		case FS_GET_T:
 			break;
@@ -578,6 +578,7 @@ void inf_free(){
 void inf_print_debug(){
 
 }
+
 
 value_set *inf_get_valueset(PTR in_v, int type, uint32_t length){
 	value_set *res=(value_set*)malloc(sizeof(value_set));
