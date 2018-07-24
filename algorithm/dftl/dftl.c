@@ -256,13 +256,15 @@ uint32_t __demand_set(request *const req){
 	algo_req *my_req; // pseudo request pointer
 #if W_BUFF
 	snode *temp;
-
+#endif
 	bench_algo_start(req);
-	if(req->key > RANGE){ // range check
+	lpa = req->key;
+	if(lpa > RANGE){ // range check
 		printf("range error\n");
-		printf("lpa : %d\n", req->key);
+		printf("lpa : %d\n", lpa);
 		exit(3);
 	}
+#if W_BUFF
 	if(mem_buf->size == MAX_SL){
 		for(int i = 0; i < MAX_SL; i++){
 			temp = skiplist_pop(mem_buf);
@@ -312,14 +314,6 @@ uint32_t __demand_set(request *const req){
 	bench_algo_end(req);
 	req->end_req(req);
 #else
-	bench_algo_start(req);
-	lpa = req->key;
-	if(lpa > RANGE){ // range check
-		printf("range error\n");
-		printf("뇌인지 에러\n");
-		printf("lpa : %d\n", lpa);
-		exit(3);
-	}
 	c_table = &CMT[D_IDX];
 	p_table = c_table->p_table;
 	t_ppa = c_table->t_ppa;

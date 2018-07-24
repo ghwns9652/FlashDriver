@@ -43,6 +43,10 @@ struct request {
 
 	MeasureTime algo;
 	MeasureTime lower;
+#ifdef dftl
+	MeasureTime latency_dftl;
+	uint8_t type_dftl;
+#endif
 #ifdef CDF
 	MeasureTime latency_checker;
 #endif
