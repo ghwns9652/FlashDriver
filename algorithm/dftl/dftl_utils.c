@@ -48,7 +48,7 @@ int lpa_compare(const void *a, const void *b){
 	}
 }
 
-int32_t tp_alloc(char req_t){
+int32_t tp_alloc(char req_t, bool *flag){
 	static int32_t ppa = -1; // static for ppa
 	Block *block;
 	if(ppa != -1 && ppa % p_p_b == 0){
@@ -62,6 +62,9 @@ int32_t tp_alloc(char req_t){
 			}
 			else if(req_t == 'D'){
 				tgc_w_dgc_count++;
+			}
+			if(!flag){
+				*flag = true;
 			}
 			return ppa++;
 		}
@@ -78,6 +81,9 @@ int32_t tp_alloc(char req_t){
 			}
 			else if(req_t == 'D'){
 				tgc_w_dgc_count++;
+			}
+			if(!flag){
+				*flag = true;
 			}
 		}
 	}

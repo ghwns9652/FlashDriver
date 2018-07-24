@@ -248,7 +248,7 @@ int32_t dpage_GC(){
 		if(tce == INT32_MAX){ // flush temp table into device
 			BM_InvalidatePage(bm, t_ppa);
 			twrite++;
-			t_ppa = tp_alloc('D');
+			t_ppa = tp_alloc('D', NULL);
 			temp_value_set = inf_get_valueset((PTR)temp_table, FS_MALLOC_W, PAGESIZE); // Make valueset to WRITEMODE
 			__demand.li->push_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(GC_MAPPING_W, temp_value_set, NULL));	// Unload page to ppa
 			demand_OOB[t_ppa].lpa = c_table->idx;

@@ -28,6 +28,7 @@
 #define DGC_R 8
 #define DGC_W 9
 
+#define DTIMESLOT 100
 #define EPP (PAGESIZE / 4) //Number of table entries per page
 #define D_IDX (lpa / EPP)	// Idx of directory table
 #define P_IDX (lpa % EPP)	// Idx of page table
@@ -73,6 +74,10 @@ typedef struct mem_table{
 	D_TABLE *mem_p;
 } mem_table;
 
+typedef struct dftltime{
+	uint64_t dftl_cdf[4][1000000/DTIMESLOT+1];
+} dftl_time;
+
 /* extern variables */
 extern algorithm __demand;
 
@@ -117,7 +122,7 @@ uint32_t demand_get(request *const);
 uint32_t __demand_set(request *const);
 uint32_t __demand_get(request *const);
 uint32_t demand_remove(request *const);
-uint32_t demand_eviction(char req_t);
+uint32_t demand_eviction(char, bool*);
 
 //dftl_utils.c
 algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req);
@@ -125,7 +130,7 @@ D_TABLE* mem_deq(b_queue *q);
 void mem_enq(b_queue *q, D_TABLE *input);
 void merge_w_origin(D_TABLE *src, D_TABLE *dst);
 int lpa_compare(const void *a, const void *b);
-int32_t tp_alloc(char req_t);
+int32_t tp_alloc(char, bool*);
 int32_t dp_alloc();
 value_set* SRAM_load(D_SRAM* d_sram, int32_t ppa, int idx, char t);
 void SRAM_unload(D_SRAM* d_sram, int32_t ppa, int idx, char t);
