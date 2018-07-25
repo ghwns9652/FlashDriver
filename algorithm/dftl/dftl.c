@@ -367,7 +367,7 @@ uint32_t __demand_set(request *const req){
 	}
 	else{ /* Cache miss */
 		if(num_caching == num_max_cache){
-			demand_eviction('W');
+			demand_eviction('W', &gc_flag);
 		}
 		p_table = mem_deq(mem_q);
 		memset(p_table, -1, PAGESIZE); // initialize p_table
