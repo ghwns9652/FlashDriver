@@ -85,6 +85,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	printf("# of data page: %d\n", num_dpage);
 	printf("# of total cache mapping entry: %d\n", max_cache_entry);
 	printf("max # of ram reside cme: %d\n", num_max_cache);
+	printf("cache percentage: %0.3f%%\n", ((float)num_max_cache/max_cache_entry)*100);
 	printf("!!! print info !!!\n");
 
 	// Table Allocation and global variables initialization
