@@ -9,6 +9,8 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
+extern int req_cnt_test;
+extern uint64_t dm_intr_cnt;
 int main(){/*
 	int Input_cycle;
 	int Input_type;
@@ -38,7 +40,7 @@ int main(){/*
 		else if(Input_type == 5)
 			bench_add(SEQRW,start,end,Input_size);
 		else if(Input_type == 6)
-			bench_add(RANDSET,start,end,Input_size);
+			/bench_add(RANDSET,start,end,Input_size);
 		else if(Input_type == 7)
 			bench_add(MIXED,start,end,Input_size);
 		else{
@@ -95,7 +97,14 @@ int main(){/*
 		inf_make_req(value->type,value->key,&temp,value->mark);
 		cnt++;
 	}
-	
+
+	if(req_cnt_test==cnt){
+		printf("dpne!\n");
+	}
+	else{
+		printf("req_cnt_test:cnt -> %d:%d fuck\n",req_cnt_test,cnt);
+	}
+
 	while(!bench_is_finish()){
 #ifdef LEAKCHECK
 		sleep(1);
