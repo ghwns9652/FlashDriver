@@ -55,6 +55,9 @@ int32_t read_tgc_count;
 int32_t evict_count;
 #if W_BUFF
 int32_t buf_hit;
+#if W_BUFF_POLL
+int32_t	w_poll;
+#endif
 #endif
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
@@ -74,6 +77,9 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
 	printf("!!! print info !!!\n");
 	printf("use wirte buffer: %d\n", W_BUFF);
+#if W_BUFF
+	printf("use wirte buffer polling: %d\n", W_BUFF_POLL);
+#endif
 	printf("use gc polling: %d\n", GC_POLL);
 	printf("use eviction polling: %d\n", EVICT_POLL);
 	printf("# of total block: %d\n", num_block);
@@ -205,6 +211,9 @@ void *demand_end_req(algo_req* input){
 		case DATA_W:
 #if W_BUFF		
 			inf_free_valueset(temp_v, FS_MALLOC_W);
+#if W_BUFF_POLL
+			w_poll++;
+#endif
 #else
 			if(res){
 				res->end_req(res);
@@ -307,6 +316,9 @@ uint32_t __demand_set(request *const req){
 	}
 #if W_BUFF
 	if(mem_buf->size == MAX_SL){
+#if W_BUFF_POLL
+	w_poll = 0;
+#endif
 		for(int i = 0; i < MAX_SL; i++){
 			temp = skiplist_pop(mem_buf);
 			lpa = temp->key;
@@ -348,6 +360,9 @@ uint32_t __demand_set(request *const req){
 		}
 		skiplist_free(mem_buf);
 		mem_buf = skiplist_init();
+#if W_BUFF_POLL
+		while(w_poll != MAX_SL) {} // polling for reading all mapping data
+#endif
 	}
 	lpa = req->key;
 	skiplist_insert(mem_buf, lpa, req->value, false);
