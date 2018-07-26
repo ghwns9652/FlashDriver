@@ -20,10 +20,9 @@
 
 #elif defined(SLC)
 
-#define TOTALSIZE (10L*G)
-//#define REALSIZE (512L*G)
+#define TOTALSIZE (200L*G)
+#define REALSIZE (512L*G)
 //#define TOTALSIZE (128*M) // 1 Segment(16384 Page) 하나마다 TOTALSIZE 128 M만큼 필요
-#define REALSIZE (256L*G)
 #define PAGESIZE (8*K)
 #define _PPB (256)
 #define _PPS (1<<14)
@@ -37,7 +36,7 @@
 #define _NOB (BPS*_NOS)
 #define _RNOS (REALSIZE/(_PPS*PAGESIZE))//real number of segment
 //#define RANGE (1*128*1024L) // 1 G
-#define RANGE (1*128*32) // 32 M
+#define RANGE (200*128*1024L) 
 
 #define FSTYPE uint8_t
 #define KEYT uint32_t

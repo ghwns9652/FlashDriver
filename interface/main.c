@@ -9,6 +9,8 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
+extern int req_cnt_test;
+extern uint64_t dm_intr_cnt;
 int main(){/*
 >>>>>>> 5c776eb8c03af5769e5d04f2343aebeb491e8220
 	int Input_cycle;
@@ -39,7 +41,7 @@ int main(){/*
 		else if(Input_type == 5)
 			bench_add(SEQRW,start,end,Input_size);
 		else if(Input_type == 6)
-			bench_add(RANDSET,start,end,Input_size);
+			/bench_add(RANDSET,start,end,Input_size);
 		else if(Input_type == 7)
 			bench_add(MIXED,start,end,Input_size);
 		else{
@@ -59,7 +61,7 @@ int main(){/*
 */
 
 	inf_init();
-#define SEQ
+#define RAND
 #ifdef SEQ
 	bench_init(2);
 	char t_value[PAGESIZE];
@@ -84,7 +86,7 @@ int main(){/*
 	//bench_add(RANDSET,0,1*1024,1*1024);
 	//bench_add(RANDGET,0,1*1024,1*1024);
 	//bench_add(RANDRW,0,16*1024,32*1024);
-	bench_add(RANDRW,0,200*RANGE,RANGE);
+	bench_add(RANDRW,0,RANGE,RANGE/200);
 #endif
 
 	/*
@@ -106,7 +108,14 @@ int main(){/*
 		inf_make_req(value->type,value->key,&temp,value->mark);
 		cnt++;
 	}
-	
+
+	if(req_cnt_test==cnt){
+		printf("dpne!\n");
+	}
+	else{
+		printf("req_cnt_test:cnt -> %d:%d fuck\n",req_cnt_test,cnt);
+	}
+
 	while(!bench_is_finish()){
 #ifdef LEAKCHECK
 		sleep(1);

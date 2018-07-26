@@ -5,16 +5,20 @@
 #include<unistd.h>
 #include<sys/types.h>
 #include"skiplist.h"
-#include"page.h"
 #include"../../interface/interface.h"
+#ifdef LSM_SKIP
+#include"page.h"
 #include "footer.h"
 
+
 extern OOBT *oob;
+#endif
+
 skiplist *skiplist_init(){
 	skiplist *point=(skiplist*)malloc(sizeof(skiplist));
 	point->level=1;
 	point->header=(snode*)malloc(sizeof(snode));
-	point->header->list=(snode**)malloc(sizeof(snode)*(MAX_L+1));
+	point->header->list=(snode**)malloc(sizeof(snode*)*(MAX_L+1));
 	for(int i=0; i<MAX_L; i++) point->header->list[i]=point->header;
 	point->header->key=INT_MAX;
 
@@ -47,6 +51,7 @@ static int getLevel(){
 	return level;
 }
 
+#ifdef LSM_SKIP
 snode *skiplist_insert_wP(skiplist *list, KEYT key, KEYT ppa,bool deletef){
 	if(key>RANGE){
 		printf("bad page read\n");
@@ -164,6 +169,7 @@ snode *skiplist_insert_existIgnore(skiplist *list,KEYT key,KEYT ppa,bool deletef
 	}
 	return x;
 }
+#endif
 
 snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	snode *update[MAX_L+1];
@@ -229,6 +235,7 @@ snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	return x;
 }
 
+#ifdef LSM_SKIP
 //static int make_value_cnt=0;
 value_set **skiplist_make_valueset(skiplist *input, level *from){
 	//printf("make_value_cnt:%d\n",++make_value_cnt);
@@ -247,7 +254,7 @@ value_set **skiplist_make_valueset(skiplist *input, level *from){
 	free(iter);
 
 	int res_idx=0;
-	for(int i=0; i<b.idx[PAGESIZE/PIECE]; i++){//full page 
+	for(int i=0; i<b.idx[PAGESIZE/PIECE]; i++){//full page
 		target=b.bucket[PAGESIZE/PIECE][i];
 		res[res_idx]=target->value;
 		level_moveTo_front_page(from);
@@ -333,6 +340,7 @@ value_set **skiplist_make_valueset(skiplist *input, level *from){
 #endif
 	return res;
 }
+#endif
 
 snode *skiplist_at(skiplist *list, int idx){
 	snode *header=list->header;
@@ -456,6 +464,7 @@ snode *skiplist_pop(skiplist *list){
 	return NULL;	
 }
 
+#ifdef LSM_SKIP
 skiplist *skiplist_cut(skiplist *list, KEYT num,KEYT limit){
 	if(num==0) return NULL;
 	if(list->size<num) return NULL;
@@ -505,6 +514,7 @@ skiplist *skiplist_cut(skiplist *list, KEYT num,KEYT limit){
 	   }*/
 	return res;
 }
+#endif
 void skiplist_save(skiplist *input){
 	return;
 }

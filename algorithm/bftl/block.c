@@ -150,7 +150,7 @@ uint32_t block_set(request *const req){
 	my_req->parents = req;
 	my_req->end_req = block_end_req;
 #ifdef BFTL_KEYDEBUG
-	if (my_req->parents->key % 1000 == 0)
+	//if (my_req->parents->key % 1000 == 0)
 		printf("Start set! key: %d\n", my_req->parents->key);
 #endif
 	//printf("seq:%d\n",set_seq++);
@@ -168,6 +168,7 @@ uint32_t block_set(request *const req){
 		/* We need OverProvisioning area, maybe. */
 #ifdef BFTL_DEBUG1	
 	printf("LBA: %d, offset: %d\n", LBA, offset);
+	printf("block_maptable[LBA=%d] = %d\n", LBA, block_maptable[LBA]);
 #endif
 
 	if (block_maptable[LBA] == NIL)

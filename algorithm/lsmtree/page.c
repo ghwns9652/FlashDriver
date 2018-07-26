@@ -303,12 +303,12 @@ void block_save(block *b){
 }
 #endif
 
-void gc_data_read(KEYT ppa,htable_t *value){
+void gc_data_read(KEYT ppa,htable_t *value,bool isdata){
 	gc_read_wait++;
 	algo_req *areq=(algo_req*)malloc(sizeof(algo_req));
 	lsm_params *params=(lsm_params*)malloc(sizeof(lsm_params));
 
-	params->lsm_type=GCR;
+	params->lsm_type=isdata?GCDR:GCHR;
 	params->value=inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
 	params->target=(PTR*)value->sets;
 	value->origin=params->value;
@@ -321,18 +321,18 @@ void gc_data_read(KEYT ppa,htable_t *value){
 	return;
 }
 
-void gc_data_write(KEYT ppa,htable_t *value){
+void gc_data_write(KEYT ppa,htable_t *value,bool isdata){
 	algo_req *areq=(algo_req*)malloc(sizeof(algo_req));
 	lsm_params *params=(lsm_params*)malloc(sizeof(lsm_params));
 
-	params->lsm_type=GCW;
+	params->lsm_type=isdata?GCDW:GCHW;
 	params->value=inf_get_valueset((PTR)(value)->sets,FS_MALLOC_W,PAGESIZE);
 
 	areq->parents=NULL;
 	areq->end_req=lsm_end_req;
 	areq->params=(void*)params;
 
-	algo_lsm.li->push_data(ppa,PAGESIZE,params->value,0,areq);
+	algo_lsm.li->push_data(ppa,PAGESIZE,params->value,ASYNC,areq);
 	return;
 }
 
@@ -492,10 +492,13 @@ void gc_check(uint8_t type, bool force){
 			switch(type){
 				case HEADER:
 					target_p=&header_m;
-					header_gc_cnt++; break;
+					header_gc_cnt++; 
+					break;
 				case DATA:
+					compaction_force();
 					target_p=&data_m;
-					data_gc_cnt++; break;
+					data_gc_cnt++; 
+					break;
 				case BLOCK:
 					target_p=&block_m;
 					block_gc_cnt++; break;
@@ -724,10 +727,15 @@ void gc_data_header_update(gc_node **gn,int size, int target_level){
 		int htable_idx=0;
 		gc_general_wait_init();
 
+		if(entries==NULL){
+			printf("entry null!\n");
+		//	level_all_print();
+		}
+
 		for(int j=0; entries[j]!=NULL;j++){
 			datas[htable_idx]=(htable_t*)malloc(sizeof(htable_t));
 			//reading header
-			gc_data_read(entries[j]->pbn,datas[htable_idx]);
+			gc_data_read(entries[j]->pbn,datas[htable_idx],false);
 			htable_idx++;
 		}
 
@@ -773,7 +781,7 @@ void gc_data_header_update(gc_node **gn,int size, int target_level){
 				//printf("start----\n");
 				//printf("change %u->%u\n",temp_header,entries[j]->pbn);
 			}*/
-			gc_data_write(entries[j]->pbn,data);
+			gc_data_write(entries[j]->pbn,data,false);
 			free(data);
 		}
 		free(entries);
@@ -998,7 +1006,7 @@ int gc_header(KEYT tbn){
 						continue;
 					}
 #endif
-					gc_data_read(t_ppa,tables[i]);
+					gc_data_read(t_ppa,tables[i],false);
 					break;
 				}
 			}
@@ -1021,7 +1029,7 @@ int gc_header(KEYT tbn){
 							break;
 						}
 #endif
-						gc_data_read(t_ppa,tables[i]);
+						gc_data_read(t_ppa,tables[i],false);
 					}
 				}
 			}
@@ -1045,7 +1053,7 @@ int gc_header(KEYT tbn){
 		test=target_ent[i];
 		table=tables[i];
 		test->pbn=n_ppa;
-		gc_data_write(n_ppa,table);
+		gc_data_write(n_ppa,table,false);
 		free(tables[i]);
 	}
 	free(tables);
@@ -1130,7 +1138,7 @@ int gc_data(KEYT tbn){//
 #endif
 		tables[i]=(htable_t*)malloc(sizeof(htable_t));
 		KEYT t_ppa=start+i;
-		gc_data_read(t_ppa,tables[i]);
+		gc_data_read(t_ppa,tables[i],true);
 	}
 
 	gc_general_waiting(); //wait for read req;
@@ -1159,7 +1167,7 @@ int gc_data(KEYT tbn){//
 			gc_data_write(n_ppa/(PAGESIZE/PIECE),data);
 #else
 			oob[n_ppa]=PBITSET(d_lpa,true);
-			gc_data_write(n_ppa,data);
+			gc_data_write(n_ppa,data,true);
 #endif
 			free(tables[i]);
 
