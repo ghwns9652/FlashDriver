@@ -58,7 +58,7 @@ void* block_end_req(algo_req*);
 
 //block_utils.c
 algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req);
-int8_t block_CheckLastOffset(block_status* bs, int32_t lba, int32_t offset);
+int8_t block_CheckLastOffset(int32_t lba, int32_t offset);
 value_set* SRAM_load(block_sram* sram, int32_t ppa, int idx);
 void SRAM_unload(block_sram* sram, int32_t ppa, int idx);
 

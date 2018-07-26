@@ -98,7 +98,7 @@ int32_t dp_alloc(){ // Data page allocation
 	static int32_t ppa = -1; // static for ppa
 	Block *block;
 #if W_BUFF
-	if(data_b->idx == data_b->max_size){
+	if(data_b->idx == data_b->max_size){ //이건 좀 아닌거같은데;;
 		if(p_p_b - (ppa % p_p_b) < MAX_SL){
 			ppa = dpage_GC();
 			return ppa++;

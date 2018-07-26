@@ -134,7 +134,7 @@ uint32_t block_set(request *const req){
 	}
 	pba = BS[lba].pba;
 	ppa = pba * ppb_ + offset;
-	if(!block_CheckLastOffset(BS, lba, offset) || BM_IsValidPage(BM, ppa)){
+	if(!block_CheckLastOffset(lba, offset) || BM_IsValidPage(BM, ppa)){
 		GC_moving(req->value, lba, offset);
 		bench_algo_end(req);
 		req->end_req(req);

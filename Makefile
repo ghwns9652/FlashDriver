@@ -2,7 +2,7 @@ export CC=g++
 
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
-TARGET_ALGO=bftl
+TARGET_ALGO=dftl
 PWD=$(pwd)
 
 COMMONFLAGS=\

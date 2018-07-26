@@ -12,8 +12,8 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 }
 
 /* Check Last offset */
-int8_t block_CheckLastOffset(block_status* bs, int32_t lba, int32_t offset){
-	if (bs[lba].last_offset > offset){
+int8_t block_CheckLastOffset(int32_t lba, int32_t offset){
+	if (BS[lba].last_offset > offset){
 		return 0;
 	}
 	return 1;
