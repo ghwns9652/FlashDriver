@@ -12,6 +12,7 @@
 typedef struct block_params{
 	request *parents;
 	int test;
+	FSTYPE type;
 }block_params;
 
 /* global pointer/variable declaration */

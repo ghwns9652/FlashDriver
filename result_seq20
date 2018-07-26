@@ -1,0 +1,247 @@
+mutex_t : 0x17ca068 q:0x17ca060, size:1024
+mutex_t : 0x17cb418 q:0x17cb410, size:1024
+block_create start!
+BM_Init() End!
+block_create end!
+TOTALSIZE: 10737418240
+REALSIZE: 274877906944
+PAGESIZE: 8192
+_PPB: 256, ppb = 16384, _PPS: 16384, BPS: 64
+BLOCKSIZE: 2097152
+_NOP: 1310720
+_NOS: 80
+_NOB: 5120
+_RNOS: 2048
+RANGE: 4096
+async: 1
+_nos:80
+
+badblock_cnt: 68
+_RNOS:2048
+bad block 753664 -> 33538048
+bad block 1179648 -> 33521664
+bad block 1474560 -> 33505280
+bad block 1490944 -> 33488896
+bad block 1736704 -> 33472512
+bad block 1900544 -> 33456128
+bad block 2555904 -> 33439744
+checking done!
+making seq Set bench!
+ testing...... [0%] testing...... [1%] testing...... [2%] testing...... [3%] testing...... [4%] testing...... [5%] testing...... [6%] testing...... [7%] testing...... [8%] testing...... [9%] testing...... [10%] testing...... [11%] testing...... [12%] testing...... [13%] testing...... [14%] testing...... [15%] testing...... [16%] testing...... [17%] testing...... [18%] testing...... [19%] testing...... [20%] testing...... [21%] testing...... [22%] testing...... [23%] testing...... [24%] testing...... [25%] testing...... [26%] testing...... [27%] testing...... [28%] testing...... [29%] testing...... [30%] testing...... [31%] testing...... [32%] testing...... [33%] testing...... [34%] testing...... [35%] testing...... [36%] testing...... [37%] testing...... [38%] testing...... [39%] testing...... [40%] testing...... [41%] testing...... [42%] testing...... [43%] testing...... [44%] testing...... [45%] testing...... [46%] testing...... [47%] testing...... [48%] testing...... [49%] testing...... [50%] testing...... [51%] testing...... [52%] testing...... [53%] testing...... [54%] testing...... [55%] testing...... [56%] testing...... [57%] testing...... [58%] testing...... [59%] testing...... [60%] testing...... [61%] testing...... [62%] testing...... [63%] testing...... [64%] testing...... [65%] testing...... [66%] testing...... [67%] testing...... [68%] testing...... [69%] testing...... [70%] testing...... [71%] testing...... [72%] testing...... [73%] testing...... [74%] testing...... [75%] testing...... [76%] testing...... [77%] testing...... [78%] testing...... [79%] testing...... [80%] testing...... [81%] testing...... [82%] testing...... [83%] testing...... [84%] testing...... [85%] testing...... [86%] testing...... [87%] testing...... [88%] testing...... [89%] testing...... [90%] testing...... [91%] testing...... [92%] testing...... [93%] testing...... [94%] testing...... [95%] testing...... [96%] testing...... [97%] testing...... [98%] testing...... [99%] testing...... [100%]testing...... [100%] done!
+
+making seq Get bench!
+ testing...... [0%] testing...... [1%] testing...... [2%] testing...... [3%] testing...... [4%] testing...... [5%] testing...... [6%] testing...... [7%] testing...... [8%] testing...... [9%] testing...... [10%] testing...... [11%] testing...... [12%] testing...... [13%] testing...... [14%] testing...... [15%] testing...... [16%] testing...... [17%] testing...... [18%] testing...... [19%] testing...... [20%] testing...... [21%] testing...... [22%] testing...... [23%] testing...... [24%] testing...... [25%] testing...... [26%] testing...... [27%] testing...... [28%] testing...... [29%] testing...... [30%] testing...... [31%] testing...... [32%] testing...... [33%] testing...... [34%] testing...... [35%] testing...... [36%] testing...... [37%] testing...... [38%] testing...... [39%] testing...... [40%] testing...... [41%] testing...... [42%] testing...... [43%] testing...... [44%] testing...... [45%] testing...... [46%] testing...... [47%] testing...... [48%] testing...... [49%] testing...... [50%] testing...... [51%] testing...... [52%] testing...... [53%] testing...... [54%] testing...... [55%] testing...... [56%] testing...... [57%] testing...... [58%] testing...... [59%] testing...... [60%] testing...... [61%] testing...... [62%] testing...... [63%] testing...... [64%] testing...... [65%] testing...... [66%] testing...... [67%] testing...... [68%] testing...... [69%] testing...... [70%] testing...... [71%] testing...... [72%] testing...... [73%] testing...... [74%] testing...... [75%] testing...... [76%] testing...... [77%] testing...... [78%] testing...... [79%] testing...... [80%] testing...... [81%] testing...... [82%] testing...... [83%] testing...... [84%] testing...... [85%] testing...... [86%] testing...... [87%] testing...... [88%] testing...... [89%] testing...... [90%] testing...... [91%] testing...... [92%] testing...... [93%] testing...... [94%] testing...... [95%] testing...... [96%] testing...... [97%] testing...... [98%] testing...... [99%] testing...... [100%]testing...... [100%] done!
+
+
+
+
+[cdf]read---
+--------------------------------------------
+|            bench type:                   |
+--------------------------------------------
+----algorithm----
+[0~100(usec)]: 131092
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----lower----
+[0~100(usec)]: 131008
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 17
+[900~1000(usec)]: 62
+[over_ms]: 5
+[over__s]: 0
+----average----
+[avg_algo]: 0.0
+[avg_low]: 0.20
+-----lower_info----
+[write_op]: 442388
+[read_op]: 327660
+[trim_op]:19
+[WAF, RAF]: 3.374638, 2.499466
+[if rw test]: 6.749275(WAF), 4.998932(RAF)
+[all write Time]:4.30201
+[all read Time]:0.949088
+
+----summary----
+[all_time]: 7.39571
+[size]: 1024.156250(mb)
+[FAIL NUM] 0
+[SUCCESS RATIO] 1.000000
+[throughput] 148977.260120(kb/s)
+             145.485606(mb/s)
+[READ WRITE CNT] 0 131092
+
+
+
+[cdf]read---
+0		10		0.000076
+1		17		0.000206
+2		15		0.000320
+3		18		0.000458
+4		17		0.000587
+5		18		0.000725
+6		14		0.000831
+7		15		0.000946
+8		15		0.001060
+9		16		0.001182
+10		20		0.001335
+11		17		0.001465
+12		19		0.001610
+13		15		0.001724
+14		19		0.001869
+15		19		0.002014
+16		18		0.002151
+17		17		0.002281
+18		17		0.002411
+19		18		0.002548
+20		17		0.002678
+21		17		0.002807
+22		17		0.002937
+23		14		0.003044
+24		17		0.003173
+25		13		0.003273
+26		18		0.003410
+27		17		0.003539
+28		16		0.003662
+29		13		0.003761
+30		18		0.003898
+31		17		0.004028
+32		19		0.004173
+33		19		0.004318
+34		16		0.004440
+35		15		0.004554
+36		16		0.004676
+37		17		0.004806
+38		15		0.004920
+39		16		0.005042
+40		16		0.005164
+41		18		0.005302
+42		15		0.005416
+43		17		0.005546
+44		126		0.006507
+45		81		0.007125
+46		90		0.007811
+47		116		0.008696
+48		282		0.010847
+49		4114		0.042230
+50		50631		0.428455
+51		32621		0.677295
+52		10748		0.759284
+53		4154		0.790971
+54		6199		0.838259
+55		8898		0.906135
+56		5310		0.946641
+57		1687		0.959509
+58		1315		0.969540
+59		435		0.972859
+60		165		0.974117
+61		127		0.975086
+62		131		0.976085
+63		148		0.977214
+64		163		0.978458
+65		113		0.979320
+66		58		0.979762
+67		58		0.980205
+68		53		0.980609
+69		48		0.980975
+70		51		0.981364
+71		47		0.981723
+72		52		0.982119
+73		42		0.982440
+74		46		0.982791
+75		51		0.983180
+76		50		0.983561
+77		51		0.983950
+78		59		0.984400
+79		63		0.984881
+80		61		0.985346
+81		61		0.985811
+82		52		0.986208
+83		55		0.986628
+84		46		0.986979
+85		42		0.987299
+86		46		0.987650
+87		49		0.988024
+88		48		0.988390
+89		62		0.988863
+90		75		0.989435
+91		44		0.989771
+92		42		0.990091
+93		59		0.990541
+94		57		0.990976
+95		70		0.991510
+96		148		0.992639
+97		73		0.993196
+98		25		0.993386
+99		29		0.993608
+100		30		0.993836
+101		222		0.995530
+102		339		0.998116
+103		247		1.000000
+--------------------------------------------
+|            bench type:                   |
+--------------------------------------------
+----algorithm----
+[0~100(usec)]: 131092
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----lower----
+[0~100(usec)]: 131092
+[100~200(usec)]: 0
+[200~300(usec)]: 0
+[300~400(usec)]: 0
+[400~500(usec)]: 0
+[500~600(usec)]: 0
+[600~700(usec)]: 0
+[700~800(usec)]: 0
+[800~900(usec)]: 0
+[900~1000(usec)]: 0
+[over_ms]: 0
+[over__s]: 0
+----average----
+[avg_algo]: 0.0
+[avg_low]: 0.2
+-----lower_info----
+[write_op]: 16364
+[read_op]: 131092
+[trim_op]:1
+[WAF, RAF]: 0.124828, 1.000000
+[if rw test]: 0.249657(WAF), 2.000000(RAF)
+[all write Time]:0.33635
+[all read Time]:0.415979
+
+----summary----
+[all_time]: 0.783043
+[size]: 1024.156250(mb)
+[FAIL NUM] 0
+[SUCCESS RATIO] 1.000000
+[throughput] 1339308.313847(kb/s)
+             1307.918275(mb/s)
+[READ WRITE CNT] 131092 0
+result of ms:
+---
+bye bye!

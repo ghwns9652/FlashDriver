@@ -59,7 +59,7 @@ int main(){/*
 */
 
 	inf_init();
-#define RAND
+#define SEQ
 #ifdef SEQ
 	bench_init(2);
 	char t_value[PAGESIZE];

@@ -7,7 +7,7 @@
 #include "../../interface/queue.h"
 #include "../../interface/bb_checker.h"
 //#include "../../algorithm/lsmtree/lsmtree.h"
-#include "../../algorithm/dftl/dftl.h"
+//#include "../../algorithm/dftl/dftl.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
