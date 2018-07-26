@@ -314,7 +314,7 @@ void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offs
 	uint32_t new_PBA = block_maptable[LBA];
 	uint32_t new_PPA_zero = new_PBA * ppb_;
 	uint32_t i = 0;
-	printf("moving start! LBA: %d, offset: %d, old_PBA: %d, new_PBA: %d ------------------------------------------\n", LBA, offset, PBA, new_PBA);
+	//printf("moving start! LBA: %d, offset: %d, old_PBA: %d, new_PBA: %d ------------------------------------------\n", LBA, offset, PBA, new_PBA);
 
 	/* Start move */
 #ifdef BFTL_DEBUG1
@@ -327,8 +327,8 @@ void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offs
 	memset(sram_valueset, 0, sizeof(value_set) * ppb_);
 	//sleep(2);
 
-	if (offset % 4 == 0)
-		printf("in GC, offset: %d\n", offset);
+	//if (offset % 4 == 0)
+		//printf("in GC, offset: %d\n", offset);
 	for (i=0; i<ppb_; ++i) { // non-empty page만 옮겨야 하지 않을까? 이것도 상관은 없지만..
 #ifdef BFTL_DEBUG3
 		if (i % EPOCH == 0)
