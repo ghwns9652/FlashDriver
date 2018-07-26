@@ -318,7 +318,7 @@ uint32_t __demand_set(request *const req){
 #if W_BUFF
 	if(mem_buf->size == MAX_SL){
 #if W_BUFF_POLL
-	w_poll = 0;
+		w_poll = 0;
 #endif
 		for(int i = 0; i < MAX_SL; i++){
 			temp = skiplist_pop(mem_buf);

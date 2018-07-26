@@ -11,54 +11,28 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 	return pseudo_my_req;
 }
 
-/* Set set_pointer to first-meet ERASE index from current set_pointer like a round-robin */
-int32_t block_findsp(int32_t checker)
-{
-	set_pointer = 0;
-
-	for (; set_pointer < nob; ++set_pointer) {
-		if (block_valid_array[set_pointer] == ERASE) {
-			checker = 1;
-			break;
-		}
-	}
-	if (checker == 0) {
-		for (set_pointer =0; set_pointer < nob; ++set_pointer)
-			if (block_valid_array[set_pointer] == ERASE){
-				checker = 1;
-				break;
-			}
-	}
-	return checker;
-}
-
 /* Check Last offset */
-int8_t block_CheckLastOffset(uint32_t* lastoffset_array, uint32_t PBA, uint32_t offset)
-{
-	if (lastoffset_array[PBA] <= offset) {
-		lastoffset_array[PBA] = offset;
-		return 1;
-	}
-	else // Moving Block with target offset update
+int8_t block_CheckLastOffset(block_status* bs, int32_t lba, int32_t offset){
+	if (bs[lba].last_offset > offset){
 		return 0;
+	}
+	return 1;
 }
 
-value_set* SRAM_load(uint32_t i, uint32_t old_PPA_zero)
-{
-	algo_req* temp_req = (algo_req*)malloc(sizeof(algo_req));
-	value_set* temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-	temp_req->parents = NULL;
-	temp_req->end_req = block_algo_end_req;
-	__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_value_set, ASYNC, temp_req);
+value_set* SRAM_load(block_sram* sram, int32_t ppa, int idx){
+	value_set *temp_value_set;
+	temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+	__block.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(GC_R, NULL, NULL)); // pull in gc is ALWAYS async
+	sram[idx].PTR_RAM = (PTR)malloc(PAGESIZE);
+	sram[idx].OOB_RAM = block_oob[ppa];
 	return temp_value_set;
 }
 
-void SRAM_unload(uint32_t i, uint32_t new_PPA_zero)
-{
-	algo_req* temp_req2 = (algo_req*)malloc(sizeof(algo_req));
-	value_set* temp_value_set2 = inf_get_valueset(sram_valueset[i].value, FS_MALLOC_W, PAGESIZE);
-	temp_req2->parents = NULL;
-	temp_req2->end_req = block_algo_end_req;
-	__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_value_set2, ASYNC, temp_req2);
-	inf_free_valueset(temp_value_set2, FS_MALLOC_W);
+void SRAM_unload(block_sram* sram, int32_t ppa, int idx){
+	value_set *temp_value_set;
+	temp_value_set = inf_get_valueset(sram[idx].PTR_RAM, FS_MALLOC_W, PAGESIZE);
+	__block.li->push_data(ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(GC_W, temp_value_set, NULL));
+	block_oob[ppa] = sram[idx].OOB_RAM;
+	BM_ValidatePage(BM, ppa);
+	free(sram[idx].PTR_RAM);
 }

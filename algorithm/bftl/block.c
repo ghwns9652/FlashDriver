@@ -1,13 +1,6 @@
 #include "block.h"
 #include "../../bench/bench.h"
 
-/* ASYNC ver */
-
-int32_t nob_;
-int32_t ppb_;
-int32_t numLoaded;
-BM_T* BM;
-
 struct algorithm __block={
 	.create=block_create,
 	.destroy=block_destroy,
@@ -16,59 +9,55 @@ struct algorithm __block={
 	.remove=block_remove
 };
 
+/* ASYNC ver */
+int32_t nop_;
+int32_t nob_;
+int32_t ppb_;
+int32_t numLoaded;
+BM_T* BM;
+b_queue *free_b;
+block_status* BS;
+B_OOB* block_oob;
+
 uint32_t block_create (lower_info* li,algorithm *algo){
 	printf("block_create start!\n");
-	algo->li=li;
-	//BM_Init(&blockArray);
+	
+	nop_ = _NOP;
 	nob_ = _NOS;
 	ppb_ = _PPS;
-
+	
 	printf("async: %d\n", ASYNC);
-	printf("# of page: %ld\n", _NOP);
-	printf("# of block: %ld\n", nob_);
-	printf("page per block: %ld\n", ppb_);
+	printf("# of page: %d\n", nop_);
+	printf("# of block: %d\n", nob_);
+	printf("page per block: %d\n", ppb_);
 
-	BM = BM_Init(0, 0);
-	block_maptable = (int32_t*)malloc(sizeof(int32_t) * nob);
-	uint32_t i=0;
-	for (; i<nob; ++i){ // maptable initialization
-		block_maptable[i] = NIL;
+	algo->li=li;
+	BS = (block_status*)malloc(sizeof(block_status) * nob_);
+	block_oob = (B_OOB*)malloc(sizeof(B_OOB) * nop_);
+	for (int i = 0; i < nob_; i++){
+		BS[i].pba = -1;
+		BS[i].last_offset = 0;
+		BS[i].alloc_block = NULL;
+	}
+	for(int i = 0; i < nop_; i++){
+		block_oob[i].lpa = -1;
 	}
 
-	//BM_ValidateAll(BM->barray); // Actually, BM initialization is validate.
-
-	lastoffset_array = (uint32_t*)malloc(sizeof(uint32_t) * nob);
-	for (uint32_t i=0; i<nob; i++)
-		lastoffset_array[i] = 0;
-
-	block_valid_array = (int8_t*)malloc(sizeof(int8_t) * nob);
-	for (i = 0; i < nob; ++i)
-		block_valid_array[i] = ERASE; // 0 means ERASED, 1 means VALID
-
-	/* Queue */
-#ifdef Queue
-	FreeQ = (Queue_t*)malloc(sizeof(Queue_t));
-	InitQueue(FreeQ);
-	for (int i=0; i<nob; ++i) {
-		Enqueue(FreeQ, i);
+	BM = BM_Init(0, 1);
+	BM_Queue_Init(&free_b);
+	for(int i = 1; i < nob_; i++){
+		BM_Enqueue(free_b, &BM->barray[i]);
 	}
-#endif
+	BM->qarray[0] = free_b;
+
 	printf("block_create end!\n");
 	return 0;
 
 }
 void block_destroy (lower_info* li, algorithm *algo){
-
-	free(lastoffset_array);
-	free(block_maptable);
-	free(block_valid_array);
-	//free(sram_valueset);
-
-#ifdef Queue
-	free(FreeQ);
-#endif
-
 	BM_Free(BM);
+	free(BS);
+	free(block_oob);
 }
 
 void* block_end_req(algo_req* input){
@@ -110,133 +99,54 @@ uint32_t block_get(request *const req){
 	lpa = req->key;
 	lba = lpa / ppb_;
 	offset = lpa % ppb_;
+	pba = BS[lba].pba;
+	ppa = pba * ppb_ + offset;
 
-	if(!BM_IsValidPage(BM, lpa)){
+	if(!BM_IsValidPage(BM, ppa)){
 		bench_algo_end(req);
 		req->type = FS_NOTFOUND_T;
 		req->end_req(req);
 		return 1;
 	}
-	pba = block_maptable[lba];
-	ppa = pba * ppb_ + offset;
 	bench_algo_end(req);
 	__block.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
 	return 0;
 }
 
 uint32_t block_set(request *const req){
-	algo_req* my_req;
+	int32_t lba;
+	int32_t lpa;
+	int32_t pba;
+	int32_t ppa;
+	int32_t offset;
+
 	bench_algo_start(req);
-
-	/* Request production */
-	my_req = (algo_req*)malloc(sizeof(algo_req));
-	my_req->parents = req;
-	my_req->end_req = block_end_req;
-#ifdef BFTL_KEYDEBUG
-	if (my_req->parents->key % 1000 == 0)
-		printf("Start set! key: %d\n", my_req->parents->key);
-#endif
-	//printf("seq:%d\n",set_seq++);
-	//printf("block_set 1!\n");
-	uint32_t LBA = my_req->parents->key / ppb_;
-	uint32_t offset = my_req->parents->key % ppb_;
-	uint32_t PBA;
-	uint32_t PPA;
-	int8_t checker = 0;
-
-	//printf("Start set! key: %d, LBA: %d, offset: %d\n", my_req->parents->key, LBA, offset);
-
-	//if (checker == 0) {
-		/* There is NO free space in flash block */
-		/* We need OverProvisioning area, maybe. */
-#ifdef BFTL_DEBUG1	
-	printf("LBA: %d, offset: %d\n", LBA, offset);
-#endif
-
-	if (block_maptable[LBA] == NIL)
-	{
-#ifdef BFTL_DEBUG1	
-		printf("\tcase 1\n");
-#endif
-#ifdef Queue
-		set_pointer = Dequeue(FreeQ);
-#endif
-#ifdef Linear
-		checker = block_findsp(checker);
-#endif
-		if (set_pointer == (uint32_t)-1) while(1) printf("WHAT!");
-
-		// Switch ERASE to EXIST of block_valid_array
-		block_valid_array[set_pointer] = EXIST;
-
-		// Write PBA of mapping result in maptable
-		block_maptable[LBA] = set_pointer;
-
-		//PBA = block_maptable[LBA];
-		//PPA = PBA * PPB + offset;
-		PPA = set_pointer * ppb_ + offset; // Equal to above 2 lines
-
-		if (BM_IsValidPage(BM, PPA))
-			while(1)
-				printf("ERROROROROROR!\n");
-		BM_ValidatePage(BM, PPA);
-
-		// write
-		//printf("block_set 2!\n");
-		//printf("my_req -> length: %d\n", my_req->parents->value->length);
+	lpa = req->key;
+	lba = lpa / ppb_;
+	offset = lpa % ppb_;
+	if(BS[lba].pba == -1){
+		BS[lba].alloc_block = BM_Dequeue(free_b);
+		if(BS[lba].alloc_block == NULL){
+			printf("!!!full!!!\n");
+			exit(1);
+		}
+		BS[lba].pba = BS[lba].alloc_block->PBA;
+	}
+	pba = BS[lba].pba;
+	ppa = pba * ppb_ + offset;
+	if(!block_CheckLastOffset(BS, lba, offset) || BM_IsValidPage(BM, ppa)){
+		GC_moving(req->value, lba, offset);
 		bench_algo_end(req);
-		__block.li->push_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
-		//printf("block_set 3!\n");
+		req->end_req(req);
 	}
-
-	else
-	{
-		PBA = block_maptable[LBA];
-		PPA = PBA  * ppb_ + offset;
-
-		// data가 차있는 page를 valid라고 할 지 invalid라고 할 지 제대로 골라야 할 것 같다. 지금은 차있는 page를 invalid라고 설정하여 그 page에 write하려고 할 시에 GC를 하도록 하였다. valid로 바꾸는 게 맞는 것 같긴 한데, 그렇게 하면 write할 수 있는(비어있는) page들은 모두 invalid 상태라고 여기는 것이 된다. 그건 또 이상하다.. 그냥 block ftl에서는 write할 수 있는(비어있는) page를 valid page로, write할 수 없는(쓰여있는) page를 invalid page로 여기고 BM을 사용한다고 여기면 될 것 같다.
-		// 그리고 block level에서의 valid/invalid 여부는 BM valid/invalid와 상관없다. 각 page마다 0/1을 구분하기 위해 BM의 page 단위 validity를 쓴 것일 뿐이다.
-		if (!BM_IsValidPage(BM, PPA))
-		{
-#ifdef BFTL_DEBUG1	
-			printf("\tcase 2\n"); // 비어있는 page인 경우. 그대로 write 가능하다.
-#endif
-			int offsetcase = block_CheckLastOffset(lastoffset_array, PBA, offset);
-			if (offsetcase == 0){
-				// Moving Block with target offset update
-				// 새로운 block으로 옮기고 metadata 다 update하기. 사실상 그냥 case 3이랑 똑같음
-				GC_moving(req, my_req, LBA, offset, PBA, PPA, checker);
-			}
-			else {
-				BM_ValidatePage(BM, PPA); // write되어 차있는 page라고 적어놓는다.
-				block_valid_array[PBA] = EXIST;
-				bench_algo_end(req);
-				__block.li->push_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
-			}
-		}
-		else if (BM_IsValidPage(BM, PPA))
-		{
-#ifdef BFTL_DEBUG1	
-			printf("\tcase 3(GC)\n");
-#endif
-			GC_moving(req, my_req, LBA, offset, PBA, PPA, checker);
-		}
-		else
-			while(1) printf("Valid???");
+	else{
+		bench_algo_end(req);
+		__block.li->push_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
+		BS[lba].last_offset = offset;
+		BM_ValidatePage(BM, ppa);
+		block_oob[ppa].lpa = lpa;
 	}
-#ifdef BFTL_DEBUG1
-	printf("end)LBA: %d, offset: %d\n", LBA, offset);
-#endif
-#if 0
-	if (offset > 16375){
-		printf("LBA: %d, offset: %d\n", LBA, offset);
-		printf("PBA: %d, PPA: %d\n", PBA, PPA);
-		sleep(1);
-	}
-#endif
-	
 	return 0;
-
 }
 
 uint32_t block_remove(request *const req){

@@ -1,107 +1,77 @@
 #include "block.h"
 
-void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offset, uint32_t PBA, uint32_t PPA, int8_t checker)
-{
-	/* Allocate an empty block */
-#ifdef Queue
-	set_pointer = Dequeue(FreeQ);
-#endif
-#ifdef Linear
-	checker = block_findsp(checker);
-#endif
+void GC_moving(value_set *data, int32_t lba, int32_t offset){
+	int32_t new_pba;
+	int32_t new_ppa;
+	int32_t t_offset;
+	int32_t old_pba;
+	int32_t old_ppa;
+	int valid_page_num;
+	Block* old_block;
+	value_set **temp_set;
+	block_sram *d_sram;
+	
+	old_block = BS[lba].alloc_block;
+	old_pba = BS[lba].pba;
+	old_ppa = old_pba * ppb_;
 
-	/* Maptable updates for data moving */
-	block_maptable[LBA] = set_pointer;
-	block_valid_array[set_pointer] = EXIST;
-	block_valid_array[PBA] = ERASE; // PBA means old_PBA
+	BS[lba].alloc_block = BM_Dequeue(free_b);
+	if(BS[lba].alloc_block == NULL){
+		printf("!!!full!!!\n");
+		exit(2);
+	}
+	BS[lba].pba = BS[lba].alloc_block->PBA;
+	new_pba = BS[lba].pba;
+	new_ppa = new_pba * ppb_;
 
-	uint32_t old_PPA_zero = PBA * ppb_;
-	uint32_t new_PBA = block_maptable[LBA];
-	uint32_t new_PPA_zero = new_PBA * ppb_;
-	uint32_t i = 0;
-	//printf("moving start! LBA: %d, offset: %d, old_PBA: %d, new_PBA: %d ------------------------------------------\n", LBA, offset, PBA, new_PBA);
-
-	/* Start move */
-#ifdef BFTL_DEBUG1
-	printf("Start move!\n");
-#endif
-
+	valid_page_num = 0;
 	numLoaded = 0;
-	value_set** temp_set = (value_set**)malloc(sizeof(value_set*)*ppb_);
-	sram_valueset = (value_set*)malloc(sizeof(value_set) * ppb_);
-	memset(sram_valueset, 0, sizeof(value_set) * ppb_);
-	//sleep(2);
+	d_sram = (block_sram*)malloc(sizeof(block_sram) * ppb_);
+	temp_set = (value_set**)malloc(sizeof(value_set*) * ppb_);
 
-	//if (offset % 4 == 0)
-		//printf("in GC, offset: %d\n", offset);
-	for (i=0; i<ppb_; ++i) { // non-empty page만 옮겨야 하지 않을까? 이것도 상관은 없지만..
-#ifdef BFTL_DEBUG3
-		if (i % EPOCH == 0)
-			printf("SRAM_load: %d\n", i);
-#endif
-		// SRAM_load
-		if (i != offset) {
-			temp_set[i] = SRAM_load(i, old_PPA_zero);
-#ifdef BFTL_DEBUG2
-			printf("temp_set[%d]->value: %c\n", i, *(temp_set[i]->value));
-#endif
-		}
+	for(int i = 0; i < ppb_; i++){
+		d_sram[i].PTR_RAM = NULL;
+		d_sram[i].OOB_RAM.lpa = -1;
+		temp_set[i] = NULL;
 	}
-	//printf("numLoaded: %d\n", numLoaded);
 
-	while (numLoaded != ppb_ - 1) {} // polling for reading all pages in a block
-
-	for (i=0; i<ppb_; ++i) {
-#ifdef BFTL_DEBUG3
-		if (i % EPOCH == 0)
-			printf("memcpy: %d\n", i);
-#endif
-		// copy data 
-		if (i != offset) {
-			memcpy(&sram_valueset[i], temp_set[i], sizeof(value_set));
-			/*
-			   else {
-			   memcpy(&sram_valueset[i], req->value, sizeof(value_set)); // req->value: value_set*
-			   printf("target page offset: %d\n", i);
-			   }
-			 */
-#ifdef BFTL_DEBUG2
-			printf("sram_valueset[%d].value: %c\n", i, *(sram_valueset[i].value));
-#endif
-			//printf("sram_valueset[%d].length: %u\n", i, (sram_valueset[i].length));
+	/* read valid pages in block */
+	for(int i = 0; i < ppb_; i++){
+		if(i == offset){
+			d_sram[valid_page_num].PTR_RAM = (PTR)malloc(PAGESIZE);
+			d_sram[valid_page_num].OOB_RAM.lpa = lba * ppb_ + offset;
+			valid_page_num++;
+		}
+		else if(BM_IsValidPage(BM, old_ppa + i)){
+			temp_set[valid_page_num] = SRAM_load(d_sram, old_ppa + i, valid_page_num);
+			valid_page_num++;
 		}
 	}
 
+	while (numLoaded != valid_page_num - 1) {}
 
-	for (i=0; i<ppb_; ++i) {
-#ifdef BFTL_DEBUG3
-		if (i % EPOCH == 0)
-			printf("SRAM_unload: %d\n", i);
-#endif
-		// SRAM_unload
-		BM_ValidatePage(BM, new_PPA_zero + i);
-		BM_InvalidatePage(BM, old_PPA_zero + i);
-		if (i != offset)
-			SRAM_unload(i, new_PPA_zero);
-		else
-			__block.li->push_data(new_PPA_zero + offset, PAGESIZE, req->value, ASYNC, my_req);
-
-	}
-	for (i=0; i<ppb_; ++i)
-		if (i != offset)
+	for(int i = 0; i < valid_page_num; i++){
+		if(!temp_set[i]){
+			memcpy(d_sram[i].PTR_RAM, data->value, PAGESIZE);
+		}
+		else{
+			memcpy(d_sram[i].PTR_RAM, temp_set[i]->value, PAGESIZE);
 			inf_free_valueset(temp_set[i], FS_MALLOC_R);
+		}
+	}
 
-	//printf("numLoaded: %d\n", numLoaded);
-	/* Trim the block of old PPA */
-#ifdef BFTL_DEBUG1
-	printf("trim!\n");
-#endif
-	__block.li->trim_block(old_PPA_zero, false);
-#ifdef Queue
-	Enqueue(FreeQ, PBA);
-#endif
-#ifdef BFTL_DEBUG1
-	printf("trim end!\n");
-#endif
-	free(sram_valueset);
+	for(int i = 0; i < valid_page_num + 1; i++){
+		t_offset = d_sram[i].OOB_RAM.lpa % ppb_;
+		SRAM_unload(d_sram, new_ppa + t_offset, i);
+	}
+
+	free(temp_set);
+	free(d_sram);
+
+	BM_InitializeBlock(BM, old_pba);
+	BM_Enqueue(free_b, old_block);
+
+	/* Trim block */
+	__block.li->trim_block(old_ppa, false);
+	return ;
 }
