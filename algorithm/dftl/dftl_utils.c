@@ -97,6 +97,14 @@ int32_t tp_alloc(char req_t, bool *flag){
 int32_t dp_alloc(){ // Data page allocation
 	static int32_t ppa = -1; // static for ppa
 	Block *block;
+#if W_BUFF
+	if(data_b->idx == data_b->max_size){
+		if(p_p_b - (ppa % p_p_b) < MAX_SL){
+			ppa = dpage_GC();
+			return ppa++;
+		}
+	}
+#endif
 	if(ppa != -1 && ppa % p_p_b == 0){
 		ppa = -1; // initialize that this need new block
 	}
