@@ -76,6 +76,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	//num_max_cache = 1;
 
 	printf("!!! print info !!!\n");
+	printf("Async status: %d\n", ASYNC);
 	printf("use wirte buffer: %d\n", W_BUFF);
 #if W_BUFF
 	printf("use wirte buffer polling: %d\n", W_BUFF_POLL);
