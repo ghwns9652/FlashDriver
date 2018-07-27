@@ -7,16 +7,20 @@ SRCS +=\
 	   garbage_collection.c\
 	   dftl_utils.c\
 	   lru_list.c\
-	   dftl_queue.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
+
+OBJS+=skiplist.o
 
 TARGETOBJ:=\
 	$(addprefix ../../object/,$(OBJS))\
 
 LEAK: all
 all: $(TARGETOBJ) 
+
+../../object/skiplist.o: ../lsmtree/skiplist.c
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 libnom.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)

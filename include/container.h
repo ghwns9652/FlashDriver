@@ -43,13 +43,18 @@ struct request {
 
 	MeasureTime algo;
 	MeasureTime lower;
-#ifdef CDF
+	MeasureTime latency_ftl;
+	uint8_t type_ftl;
+	bool isstart;
 	MeasureTime latency_checker;
-#endif
 };
 
 struct algo_req{
 	request * parents;
+	MeasureTime lower_latency_checker;
+	uint64_t lower_latency_data;
+
+	int lower_path_flag;
 	void *(*end_req)(struct algo_req *const);
 	void *params;
 };
@@ -65,10 +70,7 @@ struct lower_info {
 	void (*stop)();
 	int (*lower_alloc) (int type, char** buf);
 	void (*lower_free) (int type, int dmaTag);
-	/*
-	void*(*push_data)(int num, ...);
-	void*(*pull_data)(int num, ...);
-	*/
+
 	lower_status (*statusOfblock)(BLOCKT);
 	pthread_mutex_t lower_lock;
 	

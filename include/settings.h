@@ -33,7 +33,6 @@
 #define _NOS (TOTALSIZE/(_PPS*PAGESIZE))
 #define _NOB (BPS*_NOS)
 #define _RNOS (REALSIZE/(_PPS*PAGESIZE))//real number of segment
-
 #define RANGE (10*128*1024L)
 
 
