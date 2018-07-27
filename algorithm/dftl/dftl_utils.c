@@ -100,14 +100,6 @@ int32_t dp_alloc(){ // Data page allocation
 	if(ppa != -1 && ppa % p_p_b == 0){
 		ppa = -1; // initialize that this need new block
 	}
-#if W_BUFF
-	else if(data_b->idx == data_b->max_size){ //이건 좀 아닌거같은데;; gc가 또돌면???
-		if(p_p_b - (ppa % p_p_b) < MAX_SL){
-			ppa = dpage_GC();
-			return ppa++;
-		}
-	}
-#endif
 	if(ppa == -1){
 		if(data_b->idx == data_b->max_size){ // to maintain heap struct
 			ppa = dpage_GC();

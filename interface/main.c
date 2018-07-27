@@ -60,7 +60,7 @@ int main(){/*
 */
 
 	inf_init();
-	bench_init(1);
+	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
 	/*
@@ -100,7 +100,7 @@ int main(){/*
 	}
 
 	if(req_cnt_test==cnt){
-		printf("dpne!\n");
+		printf("done!\n");
 	}
 	else{
 		printf("req_cnt_test:cnt -> %d:%d fuck\n",req_cnt_test,cnt);

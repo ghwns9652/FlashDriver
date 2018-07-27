@@ -71,7 +71,7 @@ extern int32_t numBITMAPB; // number of Bytes(elements) in each bitmap
 
 /* BM_Block.h */
 // Interface Functions for blockArray
-BM_T* BM_Init(int32_t nob, int32_t ppb, int32_t h_count, int32_t q_count);
+BM_T* BM_Init(int32_t nob, int32_t ppb, int h_count, int q_count);
 int32_t BM_InitBlockArray(Block* blockArray);
 int32_t BM_Free(BM_T* BM);
 

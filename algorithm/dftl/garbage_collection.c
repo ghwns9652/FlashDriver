@@ -10,6 +10,7 @@ int32_t tpage_GC(){
 	D_SRAM *d_sram; // SRAM for contain block data temporarily
 
 	/* Load valid pages to SRAM */
+	printf("tgc start\n");
 	all = 0;
 	tgc_count++;
 	victim = BM_Heap_Get_Max(trans_b);
@@ -75,6 +76,7 @@ int32_t tpage_GC(){
 
 	free(temp_set);
 	free(d_sram);
+	printf("tgc end\n");
 
 	/* Trim block */
 	__demand.li->trim_block(old_block, false);
@@ -104,6 +106,7 @@ int32_t dpage_GC(){
 	value_set **temp_set;
 
 	/* Load valid pages to SRAM */
+	printf("dgc start\n");
 	all = 0;
 	dgc_count++;
 	victim = BM_Heap_Get_Max(data_b);
@@ -275,6 +278,7 @@ int32_t dpage_GC(){
 	free(temp_table);
 	free(temp_set);
 	free(d_sram);
+	printf("dgc end\n");
 
 	/* Trim data block */
 	__demand.li->trim_block(old_block, false);

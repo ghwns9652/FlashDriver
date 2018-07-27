@@ -210,7 +210,7 @@ void *demand_end_req(algo_req* input){
 			}
 			break;
 		case DATA_W:
-#if W_BUFF		
+#if W_BUFF
 			inf_free_valueset(temp_v, FS_MALLOC_W);
 #if W_BUFF_POLL
 			w_poll++;
@@ -309,6 +309,7 @@ uint32_t __demand_set(request *const req){
 	snode *temp;
 #endif
 	bench_algo_start(req);
+	printf("set start\n");
 	lpa = req->key;
 	if(lpa > RANGE){ // range check
 		printf("range error\n");
@@ -317,6 +318,7 @@ uint32_t __demand_set(request *const req){
 	}
 #if W_BUFF
 	if(mem_buf->size == MAX_SL){
+		printf("flush start\n");
 #if W_BUFF_POLL
 		w_poll = 0;
 #endif
@@ -336,6 +338,7 @@ uint32_t __demand_set(request *const req){
 			}
 			else{ /* Cache miss */
 				if(num_caching == num_max_cache){
+					printf("evict start\n");
 					demand_eviction('W', &gc_flag);
 				}
 				p_table = mem_deq(mem_q);
@@ -365,6 +368,7 @@ uint32_t __demand_set(request *const req){
 		while(w_poll != MAX_SL) {} // polling for reading all mapping data
 #endif
 	}
+	printf("set end\n");
 	lpa = req->key;
 	skiplist_insert(mem_buf, lpa, req->value, false);
 	req->value = NULL;
@@ -429,6 +433,7 @@ uint32_t __demand_get(request *const req){
 #endif
 
 	bench_algo_start(req);
+	printf("get start\n");
 	MS(&req->latency_ftl);
 	gc_flag = false;
 	lpa = req->key;
@@ -439,6 +444,7 @@ uint32_t __demand_get(request *const req){
 
 #if W_BUFF
 	if((temp = skiplist_find(mem_buf, lpa))){
+		printf("buf get start\n");
 		buf_hit++;
 		memcpy(req->value->value, temp->value->value, PAGESIZE);
 		time_dftl(req);
@@ -454,6 +460,7 @@ uint32_t __demand_get(request *const req){
 
 	// p_table 
 	if(p_table){
+		printf("ptable hit\n");
 		ppa = p_table[P_IDX].ppa;
 		if(ppa == -1 && c_table->flag != 1){ // no mapping data -> not found
 			bench_algo_end(req);
@@ -502,6 +509,7 @@ uint32_t __demand_get(request *const req){
 		}
 	}
 #else
+	printf("get mutex start\n");
 	my_req = assign_pseudo_req(MAPPING_M, NULL, NULL);	// when sync get cache miss, we need to wait
 	params = (demand_params*)my_req->params;			// until read mapping table completely.
 	__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
@@ -509,9 +517,11 @@ uint32_t __demand_get(request *const req){
 	pthread_mutex_destroy(&params->dftl_mutex);
 	free(params);
 	free(my_req);
+	printf("get mutex end\n");
 #endif
 	if(!p_table){ // there is no dirty mapping table on cache
 		if(num_caching == num_max_cache){
+			printf("get evict\n");
 			req->type_ftl = 2;
 			demand_eviction('R', &gc_flag);
 			if(gc_flag == true){
@@ -525,6 +535,7 @@ uint32_t __demand_get(request *const req){
 		num_caching++;
 	}
 	else{ // in this case, we need to merge with dirty mapping table on cache
+		printf("get merge\n");
 		merge_w_origin((D_TABLE*)req->value->value, p_table);
 		c_table->flag = 2;
 		BM_InvalidatePage(bm, t_ppa);
@@ -536,6 +547,7 @@ uint32_t __demand_get(request *const req){
 		bench_algo_end(req);
 		return UINT32_MAX;
 	}
+	printf("get end\n");
 	time_dftl(req);
 	bench_algo_end(req);
 	__demand.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req)); // Get data in ppa
@@ -552,6 +564,7 @@ uint32_t demand_eviction(char req_t, bool *flag){
 
 	/* Eviction */
 
+	printf("evict start\n");
 	evict_count++;
 	cache_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
 	p_table = cache_ptr->p_table;
@@ -593,6 +606,7 @@ uint32_t demand_eviction(char req_t, bool *flag){
 	cache_ptr->p_table = NULL;
  	num_caching--;
 	mem_enq(mem_q, p_table);
+	printf("evict end\n");
 	return 1;
 }
 
