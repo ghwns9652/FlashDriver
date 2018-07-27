@@ -1,5 +1,7 @@
 #include "dftl.h"
 
+//#define LEAKCHECK
+
 int32_t tpage_GC(){
 	int32_t old_block;
 	int32_t new_block;
@@ -53,7 +55,11 @@ int32_t tpage_GC(){
 
 	BM_InitializeBlock(bm, victim->PBA);
 
-	while(trans_gc_poll != valid_page_num) {} // polling for reading all mapping data
+	while(trans_gc_poll != valid_page_num) {
+#ifdef LEAKCHECK
+		sleep(1);
+#endif
+	} // polling for reading all mapping data
 
 #if GC_POLL
 	trans_gc_poll = 0;
@@ -151,7 +157,11 @@ int32_t dpage_GC(){
 
 	BM_InitializeBlock(bm, victim->PBA);
 
-	while(data_gc_poll != valid_num) {} // polling for reading all data
+	while(data_gc_poll != valid_num) {
+#ifdef LEAKCHECK
+		sleep(1);
+#endif
+	}// polling for reading all data
 
 #if GC_POLL
 	data_gc_poll = 0;

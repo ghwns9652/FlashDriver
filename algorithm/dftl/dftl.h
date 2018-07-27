@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "../../interface/interface.h"
 #include "../../interface/queue.h"
 #include "../../include/container.h"
