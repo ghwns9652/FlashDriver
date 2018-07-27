@@ -23,6 +23,11 @@ typedef struct block_status{
 	Block* alloc_block;
 } block_status;
 
+typedef struct seg_status{
+	Block seg;
+	Block **block;
+} seg_status;
+
 typedef struct block_OOB{
 	int32_t lpa;
 } B_OOB;
@@ -42,9 +47,15 @@ extern algorithm __block;
 extern int32_t nop_;
 extern int32_t nob_;
 extern int32_t ppb_;
+extern int32_t nos_;
+extern int32_t pps_;
+extern int32_t bps_;
 extern int32_t numLoaded;
 extern BM_T* BM;
 extern b_queue *free_b;
+extern Heap *b_heap;
+extern seg_status *SS;
+extern seg_status *reserved;
 extern block_status* BS;
 extern B_OOB* block_oob;
 
@@ -64,5 +75,6 @@ void SRAM_unload(block_sram* sram, int32_t ppa, int idx);
 
 //block_gc.c
 void GC_moving(value_set *data, int32_t lba, int32_t offset);
+void block_GC();
 
 #endif

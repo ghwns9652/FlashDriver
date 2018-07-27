@@ -54,7 +54,7 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 	}//init table, oob and vbm.
 
 	//BM_Init(&block_array);
-	BM = BM_Init(1, 1);
+	BM = BM_Init(_g_nob, _g_ppb, 1, 1);
 
 	reserved = &BM->barray[0];
 	BM_Queue_Init(&free_b);

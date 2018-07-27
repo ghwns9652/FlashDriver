@@ -7,10 +7,10 @@ int32_t PagePerBlock;
 int32_t numBITMAPB; // number of Bytes(elements) in each bitmap
 
 /* Initiation of Block Manager */
-BM_T* BM_Init(int h_count, int q_count)
+BM_T* BM_Init(int32_t nob, int32_t ppb, int32_t h_count, int32_t q_count)
 {
-	numBlock = _NOS;
-	PagePerBlock = _PPS;
+	numBlock = nob;
+	PagePerBlock = ppb;
 	numBITMAPB = (PagePerBlock % numBits_ValidP > 0) + (PagePerBlock/numBits_ValidP);
 
 	BM_T* res = (BM_T*)malloc(sizeof(BM_T));

@@ -97,17 +97,17 @@ int32_t tp_alloc(char req_t, bool *flag){
 int32_t dp_alloc(){ // Data page allocation
 	static int32_t ppa = -1; // static for ppa
 	Block *block;
+	if(ppa != -1 && ppa % p_p_b == 0){
+		ppa = -1; // initialize that this need new block
+	}
 #if W_BUFF
-	if(data_b->idx == data_b->max_size){ //이건 좀 아닌거같은데;;
+	else if(data_b->idx == data_b->max_size){ //이건 좀 아닌거같은데;; gc가 또돌면???
 		if(p_p_b - (ppa % p_p_b) < MAX_SL){
 			ppa = dpage_GC();
 			return ppa++;
 		}
 	}
 #endif
-	if(ppa != -1 && ppa % p_p_b == 0){
-		ppa = -1; // initialize that this need new block
-	}
 	if(ppa == -1){
 		if(data_b->idx == data_b->max_size){ // to maintain heap struct
 			ppa = dpage_GC();

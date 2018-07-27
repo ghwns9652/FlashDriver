@@ -117,7 +117,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	}
 
  	num_caching = 0;
-	bm = BM_Init(2, 2);
+	bm = BM_Init(num_block, p_p_b, 2, 2);
 	t_reserved = &bm->barray[num_block - 2];
 	d_reserved = &bm->barray[num_block - 1];
 
