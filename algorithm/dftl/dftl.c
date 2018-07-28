@@ -491,10 +491,10 @@ uint32_t __demand_get(request *const req){
 			if(gc_flag == false && m_flag == true){
 				req->type_ftl = 4;
 			}
-			else if(m_flag == true && m_flag == false){
+			else if(gc_flag == true && m_flag == false){
 				req->type_ftl = 5;
 			}
-			else if(m_flag == true && m_flag == true){
+			else if(gc_flag == true && m_flag == true){
 				req->type_ftl = 6;
 			}
 		}
