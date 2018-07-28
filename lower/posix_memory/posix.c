@@ -259,7 +259,6 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 #endif
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
 		memcpy(value->value,&loc[(PPA%my_posix.PPS)*my_posix.SOP],size);
-		req->type_lower=1;
 	}
 
 	pthread_mutex_unlock(&fd_lock);
