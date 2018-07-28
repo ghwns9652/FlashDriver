@@ -77,9 +77,7 @@ void *l_main(void *__input){
 				break;
 		}
 		free(inf_req);
-#ifdef LEAKCHECK
 		sleep(1);
-#endif
 	}
 	return NULL;
 }
@@ -98,9 +96,6 @@ void *posix_make_push(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 		if(q_enqueue((void*)p_req,p_q)){
 			flag=true;
 		}
-#ifdef LEAKCHECK
-		sleep(1);
-#endif
 	}
 	return NULL;
 }
@@ -119,9 +114,6 @@ void *posix_make_pull(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 		if(q_enqueue((void*)p_req,p_q)){
 			flag=true;
 		}
-#ifdef LEAKCHECK
-		sleep(1);
-#endif
 	}
 	return NULL;
 }
@@ -137,9 +129,6 @@ void *posix_make_trim(KEYT PPA, bool async){
 		if(q_enqueue((void*)p_req,p_q)){
 			flag=true;
 		}
-#ifdef LEAKCHECK
-		sleep(1);
-#endif
 	}
 	return NULL;
 }
