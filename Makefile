@@ -56,10 +56,11 @@ CFLAGS +=\
 -DBENCH\
 
 SRCS +=\
-	./interface/queue.c\
+	./interface/lfqueue.c\
 	./interface/interface.c\
 	./interface/bb_checker.c\
 	./include/FS.c\
+	./include/dl_sync.c\
 	./bench/measurement.c\
 	./bench/bench.c\
 

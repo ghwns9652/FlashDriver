@@ -49,7 +49,8 @@ lower_info my_posix={
 	.refresh=posix_refresh,
 	.stop=posix_stop,
 	.lower_alloc=NULL,
-	.lower_free=NULL
+	.lower_free=NULL,
+	.lower_flying_req_wait=posix_flying_req_wait
 };
 
 #if (ASYNC==1)
@@ -91,11 +92,12 @@ void *posix_make_push(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 	p_req->upper_req=req;
 	p_req->isAsync=async;
 	p_req->size=size;
-	
+
 	while(!flag){
 		if(q_enqueue((void*)p_req,p_q)){
 			flag=true;
 		}
+
 	}
 	return NULL;
 }
@@ -109,10 +111,15 @@ void *posix_make_pull(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 	p_req->upper_req=req;
 	p_req->isAsync=async;
 	p_req->size=size;
-	
+	req->type_lower=0;
+	bool once=true;
 	while(!flag){
 		if(q_enqueue((void*)p_req,p_q)){
 			flag=true;
+		}	
+		if(!flag && once){
+			req->type_lower=1;
+			once=false;
 		}
 	}
 	return NULL;
@@ -199,10 +206,11 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("\nwrite error\n");
 		exit(2);
 	}
-	//if(((lsm_params*)req->params)->lsm_type!=5){
+
+	//if(((lsm_params*)req->params)->lsm_type<=5){
 #ifdef dftl
-	uint8_t req_type = ((demand_params*)req->params)->type;
-	if(req_type == 3 || req_type == 5 || req_type == 7){
+		uint8_t req_type = ((demand_params*)req->params)->type;
+		if(req_type == 3 || req_type == 5 || req_type == 7){
 #endif
 #if defined(normal) || defined(pftl) || defined(bftl)
 	if(0){
@@ -224,6 +232,9 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 }
 
 void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo_req *const req){	
+	if(req->type_lower!=1 && req->type_lower!=0){
+		req->type_lower=0;
+	}
 	if(value->dmatag==-1){
 		printf("dmatag -1 error!\n");
 		exit(1);
@@ -238,7 +249,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("\nread error\n");
 		exit(3);
 	}
-	//if(((lsm_params*)req->params)->lsm_type!=4){
+	//if(((lsm_params*)req->params)->lsm_type<=5){
 #ifdef dftl
 	uint8_t req_type = ((demand_params*)req->params)->type;
 	if(req_type == 2 || req_type == 4 || req_type == 6){
@@ -286,3 +297,9 @@ void *posix_trim_block(KEYT PPA, bool async){
 }
 
 void posix_stop(){}
+
+void posix_flying_req_wait(){
+#if (ASYNC==1)
+	while(p_q->size!=0){}
+#endif
+}

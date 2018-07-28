@@ -9,6 +9,7 @@
 #include "../../include/container.h"
 #include "../../include/settings.h"
 #include "../../include/lsm_settings.h"
+#include "../../include/dl_sync.h"
 
 #define OLDDATA 1
 #define HEADERR 2
@@ -23,6 +24,14 @@
 #define RANGER 11
 #define BLOCKW 12
 #define BLOCKR 13
+
+//lower type, algo type
+typedef struct lsm_cdf_struct{
+	uint64_t total_micro;
+	uint64_t cnt;
+	uint64_t max;
+	uint64_t min;
+}lsm_cdf;
 
 typedef struct keyset{
 	KEYT lpa;
@@ -52,7 +61,7 @@ typedef struct htable_t{
 }htable_t;
 
 typedef struct lsm_params{
-	pthread_mutex_t lock;
+	dl_sync lock;
 	uint8_t lsm_type;
 	KEYT ppa;
 	PTR test;

@@ -51,10 +51,9 @@ struct request {
 
 struct algo_req{
 	request * parents;
-	MeasureTime lower_latency_checker;
-	uint64_t lower_latency_data;
+	MeasureTime latency_lower;
+	int type_lower;
 
-	int lower_path_flag;
 	void *(*end_req)(struct algo_req *const);
 	void *params;
 };
@@ -70,6 +69,7 @@ struct lower_info {
 	void (*stop)();
 	int (*lower_alloc) (int type, char** buf);
 	void (*lower_free) (int type, int dmaTag);
+	void (*lower_flying_req_wait) ();
 
 	lower_status (*statusOfblock)(BLOCKT);
 	pthread_mutex_t lower_lock;
