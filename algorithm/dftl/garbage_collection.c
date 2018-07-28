@@ -189,8 +189,7 @@ int32_t dpage_GC(){
 					temp_req = assign_pseudo_req(MAPPING_M, temp_value_set, NULL);
 					params = (demand_params*)temp_req->params;
 					__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
-					pthread_mutex_lock(&params->dftl_mutex);
-					pthread_mutex_destroy(&params->dftl_mutex);
+					dl_sync_wait(&params->dftl_mutex);
 					on_dma = (D_TABLE*)temp_value_set->value;
 					for(int i = 0; i < EPP; i++){
 						if(p_table[i].ppa == -1){
@@ -239,8 +238,7 @@ int32_t dpage_GC(){
 			temp_req = assign_pseudo_req(MAPPING_M, temp_value_set, NULL);
 			params = (demand_params*)temp_req->params;
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
-			pthread_mutex_lock(&params->dftl_mutex);
-			pthread_mutex_destroy(&params->dftl_mutex);
+			dl_sync_wait(&params->dftl_mutex);
 			memcpy(temp_table, temp_value_set->value, PAGESIZE);
 			free(params);
 			free(temp_req);

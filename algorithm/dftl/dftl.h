@@ -11,6 +11,7 @@
 #include "../../interface/queue.h"
 #include "../../include/container.h"
 #include "../../include/dftl_settings.h"
+#include "../../include/dl_sync.h"
 #ifdef W_BUFF
 #include "../lsmtree/skiplist.h"
 #endif
@@ -29,7 +30,6 @@
 #define DGC_R 8
 #define DGC_W 9
 
-#define DTIMESLOT 100
 #define EPP (PAGESIZE / 4) //Number of table entries per page
 #define D_IDX (lpa / EPP)	// Idx of directory table
 #define P_IDX (lpa % EPP)	// Idx of page table
@@ -62,7 +62,7 @@ typedef struct demand_SRAM{
 
 typedef struct demand_params{
 	value_set *value;
-	pthread_mutex_t dftl_mutex;
+	dl_sync dftl_mutex;
 	TYPE type;
 } demand_params;
 
@@ -76,7 +76,10 @@ typedef struct mem_table{
 } mem_table;
 
 typedef struct dftltime{
-	uint64_t dftl_cdf[4][1000000/DTIMESLOT+1];
+	uint64_t total_micro;
+	uint64_t cnt;
+	uint64_t max;
+	uint64_t min;
 } dftl_time;
 
 /* extern variables */
@@ -123,7 +126,7 @@ uint32_t demand_get(request *const);
 uint32_t __demand_set(request *const);
 uint32_t __demand_get(request *const);
 uint32_t demand_remove(request *const);
-uint32_t demand_eviction(char, bool*);
+uint32_t demand_eviction(request *const, char, bool*, bool*);
 
 //dftl_utils.c
 algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req);

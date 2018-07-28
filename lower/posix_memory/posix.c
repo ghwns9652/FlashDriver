@@ -239,6 +239,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("dmatag -1 error!\n");
 		exit(1);
 	}
+	MS(&req->latency_lower);
 	bench_lower_r_start(&my_posix);
 	if(req->parents)
 		bench_lower_start(req->parents);
@@ -258,6 +259,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 #endif
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
 		memcpy(value->value,&loc[(PPA%my_posix.PPS)*my_posix.SOP],size);
+		req->type_lower=1;
 	}
 
 	pthread_mutex_unlock(&fd_lock);
@@ -265,6 +267,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 	if(req->parents)
 		bench_lower_end(req->parents);
 	bench_lower_r_end(&my_posix);
+	MC(&req->latency_lower);
 	req->end_req(req);
 	/*
 	if(async){

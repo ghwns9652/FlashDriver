@@ -1,6 +1,8 @@
 #include "dftl.h"
 #include "../../bench/bench.h"
 
+#define ALGOTYPE 7
+#define LOWERTYPE 10
 algorithm __demand = {
 	.create = demand_create,
 	.destroy = demand_destroy,
@@ -28,7 +30,9 @@ C_TABLE *CMT; // Cached Mapping Table
 D_OOB *demand_OOB; // Page OOB
 mem_table* mem_arr;
 b_queue *mem_q; // for p_table allocation. please change allocate and free function.
-dftl_time *dftl_tt;
+//[algor_type][lower_type]
+dftl_time dftl_poll[ALGOTYPE][LOWERTYPE];
+dftl_time dftl_npoll[ALGOTYPE][LOWERTYPE];
 
 BM_T *bm;
 Block *t_reserved; // pointer of reserved block for translation gc
@@ -100,7 +104,6 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	mem_arr = (mem_table*)malloc(sizeof(mem_table) * num_max_cache);
 	demand_OOB = (D_OOB*)malloc(sizeof(D_OOB) * num_page);
 	algo->li = li;
-	dftl_tt = (dftl_time*)malloc(sizeof(dftl_time));
 
 	for(int i = 0; i < max_cache_entry; i++){
 		CMT[i].t_ppa = -1;
@@ -116,8 +119,11 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 		mem_arr[i].mem_p = (D_TABLE*)malloc(PAGESIZE);
 	}
 
-	for(int i = 0; i < 4; i++){
-		memset(dftl_tt->dftl_cdf[i], 0, sizeof(uint64_t) * (1000000/DTIMESLOT+1));
+	for(int i = 0; i < ALGOTYPE; i++){
+		for(int j = 0; j < LOWERTYPE; j++){
+			dftl_poll[i][j].min = UINT64_MAX;
+			dftl_npoll[i][j].min = UINT64_MAX;
+		}
 	}
 
  	num_caching = 0;
@@ -148,33 +154,47 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	return 0;
 }
 
-void dftl_cdf_print(dftl_time *_d){
-	uint64_t t_number = 0;
-	uint64_t cumulate_number;
-	for(int j = 0; j < 4; j++){
-		cumulate_number=0;
-		printf("\ncase: %d\n", j);
-		for(int i = 0; i < 1000000/DTIMESLOT + 1; i++){
-			cumulate_number+=_d->dftl_cdf[j][i];
-			if(_d->dftl_cdf[j][i] == 0)
+void dftl_cdf_print(){
+	printf("H:hit, R: read, MC: memcpy, MG: merge, E: eviction, GC: garbage collection\n");
+	printf("a_type--->>> 0: H, 1: R & MC\n");
+	printf("2: R & MG, 3: R & E & MC\n");
+	printf("4: R & E & MG & MC, 5: R & E & GC & MC\n");
+	printf("6: R & E & MG & GC & MC\n");
+	printf("polling\n");
+	printf("a_type\tl_type\tmax\tmin\tavg\t\tcnt\n");
+	for(int i = 0; i < ALGOTYPE; i++){
+		for(int j = 0; j < LOWERTYPE; j++){
+			if(!dftl_poll[i][j].cnt)
 				continue;
-			printf("%d\t\t%ld\n",i,_d->dftl_cdf[j][i]);
+			printf("%d\t%d\t%lu\t%lu\t%f\t%lu\n",i,j,dftl_poll[i][j].max,dftl_poll[i][j].min,(float)dftl_poll[i][j].total_micro/dftl_poll[i][j].cnt,dftl_poll[i][j].cnt);
 		}
-		printf("total count in case %d: %ld\n", j, cumulate_number);
-		t_number += cumulate_number;
 	}
-	printf("total read: %ld\n", t_number);
+	printf("subtract polling\n");
+	printf("a_type\tl_type\tmax\tmin\tavg\t\tcnt\n");
+	for(int i = 0; i < ALGOTYPE; i++){
+		for(int j = 0; j < LOWERTYPE; j++){
+			if(!dftl_npoll[i][j].cnt)
+				continue;
+			printf("%d\t%d\t%lu\t%lu\t%f\t%lu\n",i,j,dftl_npoll[i][j].max,dftl_npoll[i][j].min,(float)dftl_npoll[i][j].total_micro/dftl_npoll[i][j].cnt,dftl_npoll[i][j].cnt);
+		}
+	}
 }
 
-void time_dftl(request *req){
+void time_dftl(request *const req, int lower_type){
+	dftl_time *temp;
 	measure_calc(&req->latency_ftl);
-	int slot_num=req->latency_ftl.micro_time/DTIMESLOT;
-	if(slot_num>=1000000/DTIMESLOT){
-		dftl_tt->dftl_cdf[req->type_ftl][1000000/DTIMESLOT]++;
-	}
-	else{
-		dftl_tt->dftl_cdf[req->type_ftl][slot_num]++;
-	}
+	temp = &dftl_poll[req->type_ftl][lower_type];
+	req->latency_ftl.micro_time += req->latency_ftl.adding.tv_sec*1000000 + req->latency_ftl.adding.tv_usec;
+	temp->total_micro += req->latency_ftl.micro_time;
+	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
+	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
+	temp->cnt++;
+	temp = &dftl_npoll[req->type_ftl][lower_type];
+	req->latency_ftl.micro_time -= req->latency_poll.adding.tv_sec*1000000 + req->latency_poll.adding.tv_usec;
+	temp->total_micro += req->latency_ftl.micro_time;
+	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
+	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
+	temp->cnt++;
 }
 
 void demand_destroy(lower_info *li, algorithm *algo){
@@ -188,15 +208,13 @@ void demand_destroy(lower_info *li, algorithm *algo){
 	printf("# of buf hit: %d\n", buf_hit);
 	skiplist_free(mem_buf);
 #endif
-	printf("0: hit, 1: read, 2: read & evict, 3: read & evict & gc\n");
-	dftl_cdf_print(dftl_tt);
+	dftl_cdf_print();
 	q_free(dftl_q);
 	lru_free(lru);
 	BM_Free(bm);
 	for(int i = 0; i < num_max_cache; i++){
 		free(mem_arr[i].mem_p);
 	}
-	free(dftl_tt);
 	free(mem_arr);
 	free(demand_OOB);
 	free(CMT);
@@ -209,9 +227,7 @@ void *demand_end_req(algo_req* input){
 
 	switch(params->type){
 		case DATA_R:
-			if(res){
-				res->end_req(res);
-			}
+			time_dftl(res, input->type_lower);
 			break;
 		case DATA_W:
 #if W_BUFF
@@ -219,10 +235,6 @@ void *demand_end_req(algo_req* input){
 #if W_BUFF_POLL
 			w_poll++;
 #endif
-#else
-			if(res){
-				res->end_req(res);
-			}
 #endif
 			break;
 		case MAPPING_R: // only used in async
@@ -239,7 +251,7 @@ void *demand_end_req(algo_req* input){
 #endif
 			break;
 		case MAPPING_M: // unlock mutex lock for read mapping data completely
-			pthread_mutex_unlock(&params->dftl_mutex);
+			dl_sync_arrive(&params->dftl_mutex);
 			return NULL;
 			break;
 		case GC_MAPPING_W:
@@ -266,6 +278,9 @@ void *demand_end_req(algo_req* input){
 			data_gc_poll++;
 #endif
 			break;
+	}
+	if(res){
+		res->end_req(res);
 	}
 	free(params);
 	free(input);
@@ -309,11 +324,16 @@ uint32_t __demand_set(request *const req){
 	D_TABLE *p_table; // pointer of p_table on cme
 	algo_req *my_req; // pseudo request pointer
 	bool gc_flag;
+	bool m_flag;
 #if W_BUFF
 	snode *temp;
 	sk_iter *iter;
 #endif
 	bench_algo_start(req);
+	measure_init(&req->latency_ftl);
+	measure_init(&req->latency_poll);
+	gc_flag = false;
+	m_flag = false;
 	lpa = req->key;
 	if(lpa > RANGE){ // range check
 		printf("range error\n");
@@ -342,7 +362,7 @@ uint32_t __demand_set(request *const req){
 			}
 			else{ /* Cache miss */
 				if(num_caching == num_max_cache){
-					demand_eviction('W', &gc_flag);
+					demand_eviction(req, 'W', &gc_flag, &m_flag);
 				}
 				p_table = mem_deq(mem_q);
 				memset(p_table, -1, PAGESIZE); // initialize p_table
@@ -392,7 +412,7 @@ uint32_t __demand_set(request *const req){
 	}
 	else{ /* Cache miss */
 		if(num_caching == num_max_cache){
-			demand_eviction('W', &gc_flag);
+			demand_eviction(req, 'W', &gc_flag, &m_flag);
 		}
 		p_table = mem_deq(mem_q);
 		memset(p_table, -1, PAGESIZE); // initialize p_table
@@ -418,7 +438,6 @@ uint32_t __demand_set(request *const req){
 	return 1;
 }
 
-
 uint32_t __demand_get(request *const req){ 
 	int32_t lpa; // Logical data page address
 	int32_t ppa; // Physical data page address
@@ -427,6 +446,7 @@ uint32_t __demand_get(request *const req){
 	D_TABLE* p_table; // pointer of p_table on cme
 	algo_req *my_req; // pseudo request pointer
 	bool gc_flag;
+	bool m_flag;
 #if W_BUFF
 	snode *temp;
 #endif
@@ -437,8 +457,11 @@ uint32_t __demand_get(request *const req){
 #endif
 
 	bench_algo_start(req);
+	measure_init(&req->latency_ftl);
+	measure_init(&req->latency_poll);
 	MS(&req->latency_ftl);
 	gc_flag = false;
+	m_flag = false;
 	lpa = req->key;
 	if(lpa > RANGE){ // range check
 		printf("range error\n");
@@ -449,7 +472,7 @@ uint32_t __demand_get(request *const req){
 	if((temp = skiplist_find(mem_buf, lpa))){
 		buf_hit++;
 		memcpy(req->value->value, temp->value->value, PAGESIZE);
-		time_dftl(req);
+		time_dftl(req, 0);
 		bench_algo_end(req);
 		req->end_req(req);
 		return 1;
@@ -469,7 +492,6 @@ uint32_t __demand_get(request *const req){
 		}
 		else if(ppa != -1){ /* Cache hit */
 			lru_update(lru, c_table->queue_ptr);
-			time_dftl(req);
 			bench_algo_end(req);
 			__demand.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req)); // Get data in ppa
 			return 1;
@@ -481,7 +503,6 @@ uint32_t __demand_get(request *const req){
 		return UINT32_MAX;
 	}
 	/* Load tpage to cache */
-	req->type_ftl = 1;
 #if ASYNC
 	if(req->params == NULL){ // this is cache miss and request come into get first time
 		checker = (read_params*)malloc(sizeof(read_params));
@@ -509,17 +530,25 @@ uint32_t __demand_get(request *const req){
 	my_req = assign_pseudo_req(MAPPING_M, NULL, NULL);	// when sync get cache miss, we need to wait
 	params = (demand_params*)my_req->params;			// until read mapping table completely.
 	__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
-	pthread_mutex_lock(&params->dftl_mutex);
-	pthread_mutex_destroy(&params->dftl_mutex);
+	MS(&req->latency_poll);
+	dl_sync_wait(&params->dftl_mutex);
+	MA(&req->latency_poll);
 	free(params);
 	free(my_req);
 #endif
 	if(!p_table){ // there is no dirty mapping table on cache
+		req->type_ftl = 1;
 		if(num_caching == num_max_cache){
-			req->type_ftl = 2;
-			demand_eviction('R', &gc_flag);
-			if(gc_flag == true){
-				req->type_ftl = 3;
+			req->type_ftl = 3;
+			demand_eviction(req, 'R', &gc_flag, &m_flag);
+			if(gc_flag == false && m_flag == true){
+				req->type_ftl = 4;
+			}
+			else if(m_flag == true && m_flag == false){
+				req->type_ftl = 5;
+			}
+			else if(m_flag == true && m_flag == true){
+				req->type_ftl = 6;
 			}
 		}
 		p_table = mem_deq(mem_q);
@@ -529,6 +558,7 @@ uint32_t __demand_get(request *const req){
 		num_caching++;
 	}
 	else{ // in this case, we need to merge with dirty mapping table on cache
+		req->type_ftl = 2;
 		merge_w_origin((D_TABLE*)req->value->value, p_table);
 		c_table->flag = 2;
 		BM_InvalidatePage(bm, t_ppa);
@@ -540,13 +570,12 @@ uint32_t __demand_get(request *const req){
 		bench_algo_end(req);
 		return UINT32_MAX;
 	}
-	time_dftl(req);
 	bench_algo_end(req);
 	__demand.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req)); // Get data in ppa
 	return 1;
 }
 
-uint32_t demand_eviction(char req_t, bool *flag){
+uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *mflag){
 	int32_t t_ppa; // Translation page address
 	C_TABLE *cache_ptr; // Cache mapping entry pointer
 	D_TABLE *p_table; // pointer of p_table on cme
@@ -561,12 +590,14 @@ uint32_t demand_eviction(char req_t, bool *flag){
 	t_ppa = cache_ptr->t_ppa;
 	if(cache_ptr->flag){ // When t_page on cache has changed
 		if(cache_ptr->flag == 1){ // this case is dirty mapping and not merged with original one
+			*mflag = true;
 			temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 			temp_req = assign_pseudo_req(MAPPING_M, NULL, NULL);
 			params = (demand_params*)temp_req->params;
 			__demand.li->pull_data(t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
-			pthread_mutex_lock(&params->dftl_mutex);
-			pthread_mutex_destroy(&params->dftl_mutex);
+			MS(&req->latency_poll);
+			dl_sync_wait(&params->dftl_mutex);
+			MA(&req->latency_poll);
 			merge_w_origin((D_TABLE*)temp_value_set->value, p_table);
 			free(params);
 			free(temp_req);

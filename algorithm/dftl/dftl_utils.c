@@ -11,8 +11,7 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 #else
 	if(type == MAPPING_M){
 #endif
-		pthread_mutex_init(&params->dftl_mutex, NULL);
-		pthread_mutex_lock(&params->dftl_mutex);
+		dl_sync_init(&params->dftl_mutex, 1);
 	}
 	pseudo_my_req->end_req = demand_end_req;
 	pseudo_my_req->params = (void*)params;
