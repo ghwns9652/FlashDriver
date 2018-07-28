@@ -116,6 +116,10 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 		mem_arr[i].mem_p = (D_TABLE*)malloc(PAGESIZE);
 	}
 
+	for(int i = 0; i < 4; i++){
+		memset(dftl_tt->dftl_cdf[i], 0, sizeof(uint64_t) * (1000000/DTIMESLOT+1));
+	}
+
  	num_caching = 0;
 	bm = BM_Init(num_block, p_p_b, 2, 2);
 	t_reserved = &bm->barray[num_block - 2];
@@ -490,20 +494,17 @@ uint32_t __demand_get(request *const req){
 		__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
 		return 1;
 	}
-	else{ 
-		if(((read_params*)req->params)->t_ppa != t_ppa){ 		// mapping has changed in data gc
-			((read_params*)req->params)->read = 0; 				// read value is invalid now
-			((read_params*)req->params)->t_ppa = t_ppa; 		// these could mapping to reserved area
-			my_req = assign_pseudo_req(MAPPING_R, NULL, req); 	// send req read mapping table again.
-			MA(&req->latency_ftl);
-			bench_algo_end(req);
-			__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
-			return 1; // very inefficient way, change after
-		}
-		else{ // mapping data is vaild
-			free(req->params);
-		}
+	if(((read_params*)req->params)->t_ppa != t_ppa){ 		// mapping has changed in data gc
+		((read_params*)req->params)->read = 0; 				// read value is invalid now
+		((read_params*)req->params)->t_ppa = t_ppa; 		// these could mapping to reserved area
+		my_req = assign_pseudo_req(MAPPING_R, NULL, req); 	// send req read mapping table again.
+		MA(&req->latency_ftl);
+		bench_algo_end(req);
+		__demand.li->pull_data(t_ppa, PAGESIZE, req->value, ASYNC, my_req);
+		return 1; // very inefficient way, change after
 	}
+	// mapping data is vaild
+	free(req->params);
 #else
 	my_req = assign_pseudo_req(MAPPING_M, NULL, NULL);	// when sync get cache miss, we need to wait
 	params = (demand_params*)my_req->params;			// until read mapping table completely.

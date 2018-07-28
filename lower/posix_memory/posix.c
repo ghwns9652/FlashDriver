@@ -188,6 +188,7 @@ void *posix_destroy(lower_info *li){
 	pthread_mutex_destroy(&fd_lock);
 #if (ASYNC==1)
 	stopflag = true;
+	q_free(p_q);
 #endif
 	return NULL;
 }
@@ -211,8 +212,7 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 #ifdef dftl
 		uint8_t req_type = ((demand_params*)req->params)->type;
 		if(req_type == 3 || req_type == 5 || req_type == 7){
-#endif
-#if defined(normal) || defined(pftl) || defined(bftl)
+#else
 	if(0){
 #endif
 		if(!seg_table[PPA/my_posix.PPS].alloc){
@@ -253,8 +253,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 #ifdef dftl
 	uint8_t req_type = ((demand_params*)req->params)->type;
 	if(req_type == 2 || req_type == 4 || req_type == 6){
-#endif
-#if defined(normal) || defined(pftl) || defined(bftl)
+#else
 	if(0){
 #endif
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
