@@ -153,11 +153,13 @@ void demand_destroy(lower_info *li, algorithm *algo){
 	printf("# of buf hit: %d\n", buf_hit);
 	skiplist_free(mem_buf);
 #endif
+	printf("!!! print info !!!\n");
 	printf("H:hit, R: read, MC: memcpy, MG: merge, E: eviction, GC: garbage collection\n");
 	printf("a_type--->>> 0: H, 1: R & MC\n");
 	printf("2: R & MG, 3: R & E & MC\n");
 	printf("4: R & E & MG & MC, 5: R & E & GC & MC\n");
 	printf("6: R & E & MG & GC & MC\n");
+	printf("!!! print info !!!\n");
 	q_free(dftl_q);
 	lru_free(lru);
 	BM_Free(bm);
