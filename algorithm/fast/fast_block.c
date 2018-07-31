@@ -1,4 +1,4 @@
-#include "FAST.h"
+#include "fast.h"
 
 char fast_AllocDataBlockEntry(KEYT key, uint32_t* physical_address)
 {

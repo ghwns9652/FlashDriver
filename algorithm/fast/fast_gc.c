@@ -1,4 +1,4 @@
-#include "FAST.h"
+#include "fast.h"
 
 char fast_FullMerge(int logical_block, request* const req)
 {

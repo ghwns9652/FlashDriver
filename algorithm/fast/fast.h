@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include "../../include/container.h"
 #include "../../include/FS.h"
@@ -8,48 +9,39 @@
 /*@
  * Structure Definition
  */
-typedef struct {
+typedef struct FAST_Parameters{
     request* parents;
-} FAST_Parameters;
+} fast_params;
+
+typedef struct SW_MappingTable{
+    int32_t lba;
+    int32_t pba;
+    int32_t num_page;
+} SW_MT;
 
 typedef struct {
-    int logical_block;
-    int sw_log_block;
-    int number_of_stored_sector;
-} SW_MappingInfo;
-
-typedef struct {
-    SW_MappingInfo* data;       /* Should allocate with value of lower_info */
-} SW_MappingTable;
-
-typedef struct {
-    int physical_block;
-    int physical_offset;
-    int logical_block;
-    int logical_offset;
-    char state;
+    int32_t pba;
+    int32_t p_offset;
+    int32_t lba;
+    int32_t l_offset;
+    int8_t state;
 } RW_MappingInfo;
 
-typedef struct {
-    int* rw_log_block;
+typedef struct RW_MappingTable{
+    int32_t number_of_full_log_block;
+    int32_t offset;
+    RW_MappingInfo* data;      /* Should allocate with value of lower_info */
     char current_position;
-    int number_of_full_log_block;
-    int offset;
-    RW_MappingInfo* data;       /* Should allocate with value of lower_info */
-} RW_MappingTable;
+} RW_MT;
+
+typedef struct Block_MappingTable{
+    int32_t pba;
+} DT_MT;
 
 typedef struct {
-    int physical_block;
-} Block_MappingInfo;
-
-typedef struct {
-    Block_MappingInfo* data;    /* Should allocate with the value of lower_info */
-} Block_MappingTable;
-
-typedef struct {
-    SW_MappingTable* sw_MappingTable;
-    RW_MappingTable* rw_MappingTable;
-    Block_MappingTable* block_MappingTable;
+    SW_MT* sw_MappingTable;
+    RW_MT* rw_MappingTable;
+    DT_MT* block_MappingTable;
 } TableInfo;
 
 /*@

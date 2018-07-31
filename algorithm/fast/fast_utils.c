@@ -1,4 +1,4 @@
-#include "FAST.h"
+#include "fast.h"
 
 uint32_t BLOCK(uint32_t logical_address)             
     { return logical_address / PAGE_PER_BLOCK; }
