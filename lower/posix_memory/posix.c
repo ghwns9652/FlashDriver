@@ -5,10 +5,9 @@
 #include "../../bench/bench.h"
 #include "../../bench/measurement.h"
 #include "../../interface/queue.h"
+#include "../../interface/bb_checker.h"
 //#include "../../algorithm/lsmtree/lsmtree.h"
-#ifdef dftl
 #include "../../algorithm/dftl/dftl.h"
-#endif
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,8 +18,6 @@
 #include <limits.h>
 //#include <readline/readline.h>
 //#include <readline/history.h>
-
-//#define LEAKCHECK
 
 pthread_mutex_t fd_lock;
 mem_seg *seg_table;
@@ -78,7 +75,6 @@ void *l_main(void *__input){
 				break;
 		}
 		free(inf_req);
-		sleep(1);
 	}
 	return NULL;
 }
@@ -207,12 +203,10 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("\nwrite error\n");
 		exit(2);
 	}
-
 	//if(((lsm_params*)req->params)->lsm_type<=5){
-#ifdef dftl
-		uint8_t req_type = ((demand_params*)req->params)->type;
-		if(req_type == 3 || req_type == 5 || req_type == 7){
-#else
+	uint8_t req_type = ((demand_params*)req->params)->type;
+	if(req_type == 3 || req_type == 5 || req_type == 7){
+#ifdef normal
 	if(0){
 #endif
 		if(!seg_table[PPA/my_posix.PPS].alloc){
@@ -239,7 +233,6 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("dmatag -1 error!\n");
 		exit(1);
 	}
-	MS(&req->latency_lower);
 	bench_lower_r_start(&my_posix);
 	if(req->parents)
 		bench_lower_start(req->parents);
@@ -251,14 +244,14 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		exit(3);
 	}
 	//if(((lsm_params*)req->params)->lsm_type<=5){
-#ifdef dftl
 	uint8_t req_type = ((demand_params*)req->params)->type;
 	if(req_type == 2 || req_type == 4 || req_type == 6){
-#else
+#ifdef normal
 	if(0){
 #endif
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
 		memcpy(value->value,&loc[(PPA%my_posix.PPS)*my_posix.SOP],size);
+		req->type_lower=1;
 	}
 
 	pthread_mutex_unlock(&fd_lock);
@@ -266,7 +259,6 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 	if(req->parents)
 		bench_lower_end(req->parents);
 	bench_lower_r_end(&my_posix);
-	MC(&req->latency_lower);
 	req->end_req(req);
 	/*
 	if(async){

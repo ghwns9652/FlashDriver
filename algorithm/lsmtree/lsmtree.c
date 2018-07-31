@@ -18,7 +18,6 @@
 #ifdef DEBUG
 #endif
 
-#define LOWERTYPE 10
 struct algorithm algo_lsm={
 	.create=lsm_create,
 	.destroy=lsm_destroy,
@@ -30,20 +29,11 @@ extern OOBT *oob;
 lsmtree LSM;
 int save_fd;
 
-//[algor_type][lower_type]
-lsm_cdf l_cdfs[LEVELN+1][LOWERTYPE];
 MeasureTime __get_mt;
 MeasureTime __get_mt2;
 uint64_t __get_max_value;
 
-void lsm_cdf_print(){
-	printf("a_type\tl_type\tmax\tmin\tavg\t\tcnt\n");
-	for(int i=0; i<LEVELN+1; i++){
-		for(int j=0;j<LOWERTYPE; j++){
-			if(!l_cdfs[i][j].cnt)continue;
-			printf("%d\t%d\t%lu\t%lu\t%f\t%lu\n",i,j,l_cdfs[i][j].max,l_cdfs[i][j].min,(float)l_cdfs[i][j].total_micro/l_cdfs[i][j].cnt,l_cdfs[i][j].cnt);
-		}
-	}
+void lsm_debug_print(){
 	printf("___get_mt:%lu\n",__get_mt.max);
 	printf("___get_mt2:%lu\n",__get_mt2.max);
 	printf("\n");
@@ -53,11 +43,6 @@ uint32_t __lsm_get(request *const);
 uint32_t lsm_create(lower_info *li, algorithm *lsm){
 	measure_init(&__get_mt);
 	measure_init(&__get_mt2);
-	for(int i=0; i<LEVELN+1; i++){
-		for(int j=0;j<LOWERTYPE; j++){
-			l_cdfs[i][j].min=UINT_MAX;
-		}
-	}
 
 	/*
 	   if(save_fd!=-1){
@@ -119,7 +104,7 @@ return 0;
 
 extern uint32_t data_gc_cnt,header_gc_cnt,block_gc_cnt;
 void lsm_destroy(lower_info *li, algorithm *lsm){
-	lsm_cdf_print();
+	lsm_debug_print();
 
 	compaction_free();
 #ifdef DVALUE
@@ -155,7 +140,6 @@ void* lsm_end_req(algo_req* const req){
 	PTR target=NULL;
 	htable **t_table=NULL;
 	htable *table=NULL;
-	lsm_cdf *t_lcdfs;
 	//htable mapinfo;
 #ifdef DVALUE
 	block *bl=NULL;
@@ -232,21 +216,6 @@ void* lsm_end_req(algo_req* const req){
 				case DATAR:
 				//pthread_mutex_destroy(&params->lock);
 				req_temp_params=parents->params;
-				MC(&parents->latency_ftl);
-				if(req_temp_params!=NULL){
-					parents->type_ftl=((int*)req_temp_params)[2];
-					t_lcdfs=&l_cdfs[parents->type_ftl][req->type_lower];
-				}
-				else{
-					t_lcdfs=&l_cdfs[0][req->type_lower];
-				}
-
-				t_lcdfs->total_micro+=parents->latency_ftl.micro_time;
-				t_lcdfs->max=t_lcdfs->max<parents->latency_ftl.micro_time?parents->latency_ftl.micro_time:t_lcdfs->max;
-				t_lcdfs->min=t_lcdfs->min>parents->latency_ftl.micro_time?parents->latency_ftl.micro_time:t_lcdfs->min;
-				t_lcdfs->cnt++;
-
-
 				free(req_temp_params);
 #ifdef DVALUE
 				if(!PBITFULL(parents->value->ppa,false)){//small data

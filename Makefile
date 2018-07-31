@@ -3,7 +3,6 @@ export CC=g++
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
 TARGET_ALGO=dftl
-
 PWD=$(pwd)
 
 COMMONFLAGS=\
@@ -35,10 +34,6 @@ ifeq ($(TARGET_ALGO), lsmtree)
  CFLAGS_ALGO+=-DLSM_SKIP
 endif
 
-ifeq ($(TARGET_LOWER), posix_memory)
- CFLAGS_LOWER+=-D$(TARGET_ALGO)
-endif
-
 ifeq ($(CC), gcc)
  CFLAGS_ALGO+=-Wno-discarded-qualifiers -std=c99
  CFLAGS_LOWER+=-Wno-discarded-qualifiers -std=c99
@@ -53,8 +48,8 @@ CFLAGS +=\
 		 -D$(TARGET_ALGO)\
 		 -D$(TARGET_INF)\
 		 -D_BSD_SOURCE\
--DCDF\
 -DBENCH\
+-DCDF\
 
 SRCS +=\
 	./interface/lfqueue.c\
@@ -107,7 +102,7 @@ duma_simulator: ./interface/main.c libsimulator.a
 libsimulator.a: $(TARGETOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) clean && $(MAKE) && cd ../../
-	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../
+	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
 	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 ifeq ($(TARGET_LOWER), bdbm_drv)
@@ -119,6 +114,7 @@ libsimulator_d.a:$(MEMORYOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) DEBUG && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) DEBUG && cd ../../ 
+	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 ifeq ($(TARGET_LOWER), bdbm_drv)
 	mv ./include/data_struct/*.o ./object/
