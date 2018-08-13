@@ -21,6 +21,7 @@ int8_t *block_valid_array;
 uint32_t* lastoffset_array;
 uint32_t set_pointer = 0;
 value_set* sram_valueset;
+PTR* sram_value;
 
 /* Internal Function declaration */
 value_set* SRAM_load(uint32_t i, uint32_t old_PPA_zero);
@@ -42,8 +43,8 @@ int8_t block_CheckLastOffset(uint32_t* lastoffset_array, uint32_t PBA, uint32_t 
 //#define BFTL_DEBUG3
 #define EPOCH (4095)
 
-#define Linear
-//#define Queue
+//#define Linear
+#define Queue
 
 uint32_t block_create (lower_info*, algorithm *);
 void block_destroy (lower_info*,  algorithm *);

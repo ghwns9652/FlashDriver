@@ -67,8 +67,8 @@ int main(){/*
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
 	int a=128L*K, b=128L*K;
-	bench_add(SEQSET,0,a,a+20);
-	bench_add(SEQGET,0,a,a+20);
+	bench_add(SEQSET,0,a,a+30);
+	bench_add(SEQGET,0,a,a+30);
 	//bench_add(SEQSET,0,1L*M,2L*M);
 	//bench_add(SEQGET,0,1L*M,2L*M);
 	//bench_add(RANDSET,0,1*1024,1*1024);
@@ -103,11 +103,13 @@ int main(){/*
 	temp.dmatag=-1;
 	temp.length=0;
 	int cnt=0;
+	printf("before while\n");
 	while((value=get_bench())){
 		temp.length=value->length;
 		inf_make_req(value->type,value->key,&temp,value->mark);
 		cnt++;
 	}
+	printf("after while\n");
 
 	if(req_cnt_test==cnt){
 		printf("dpne!\n");
