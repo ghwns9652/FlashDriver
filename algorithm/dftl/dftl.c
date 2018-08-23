@@ -194,6 +194,8 @@ void *demand_end_req(algo_req* input){
 			if(!inf_assign_try(res)){ //assign 안돼면??
 				q_enqueue((void*)res, dftl_q);
 			}
+			free(params);
+			return NULL;
 			break;
 		case MAPPING_W:
 			inf_free_valueset(temp_v, FS_MALLOC_W);

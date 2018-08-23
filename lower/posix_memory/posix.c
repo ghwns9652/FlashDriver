@@ -204,11 +204,9 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		exit(2);
 	}
 	//if(((lsm_params*)req->params)->lsm_type<=5){
-	uint8_t req_type = ((demand_params*)req->params)->type;
-	if(req_type == 3 || req_type == 5 || req_type == 7){
-#ifdef normal
+	//uint8_t req_type = ((demand_params*)req->params)->type;
+	//if(req_type == 3 || req_type == 5 || req_type == 7){
 	if(0){
-#endif
 		if(!seg_table[PPA/my_posix.PPS].alloc){
 			seg_table[PPA/my_posix.PPS].storage = (PTR)malloc(my_posix.SOB);
 			seg_table[PPA/my_posix.PPS].alloc = 1;
@@ -244,11 +242,9 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		exit(3);
 	}
 	//if(((lsm_params*)req->params)->lsm_type<=5){
-	uint8_t req_type = ((demand_params*)req->params)->type;
-	if(req_type == 2 || req_type == 4 || req_type == 6){
-#ifdef normal
+	//uint8_t req_type = ((demand_params*)req->params)->type;
+	//if(req_type == 2 || req_type == 4 || req_type == 6){
 	if(0){
-#endif
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
 		memcpy(value->value,&loc[(PPA%my_posix.PPS)*my_posix.SOP],size);
 		req->type_lower=1;

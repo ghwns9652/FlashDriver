@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <inttypes.h>
+//#include "../../include/settings.h"
 #include "gecko_setting.h"
 
 extern int32_t num_page;
@@ -19,7 +20,7 @@ extern int32_t p_p_b;
 extern int32_t gepp;
 
 typedef struct snode{ //skiplist's node for Gecko Entry
-	BITMAP VBM[2048];
+	BITMAP VBM[32];
 	KEYT key;
 	ERASET erase;
 	uint8_t level;
@@ -83,7 +84,6 @@ void skiplist_clear(skiplist*); //clear all snode in skiplist and  reinit skipli
 void skiplist_dump_key(skiplist*); //for test
 void skiplist_dump_key_value(skiplist*); //for test
 sk_iter* skiplist_get_iterator(skiplist*); //get read only iterator
-sk_iter *skiplist_get_iter_from_here(skiplist *, snode*);
 snode *skiplist_get_next(sk_iter*); //get next snode by iterator
 
 PTR skiplist_make_data(skiplist*);

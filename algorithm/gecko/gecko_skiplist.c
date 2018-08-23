@@ -1,10 +1,10 @@
 #include "gecko.h"
 
 skiplist *skiplist_init(){
-	skiplist *point = (skiplist *)malloc(sizeof(skiplist));
+	skiplist *point = (skiplist*)malloc(sizeof(skiplist));
 	point->level = 1;
-	point->header = (snode *)malloc(sizeof(snode));
-	point->header->list = (snode **)malloc(sizeof(snode *) * (MAX_L + 1));
+	point->header = (snode*)malloc(sizeof(snode));
+	point->header->list = (snode**)malloc(sizeof(snode*) * (MAX_L + 1));
 	for(int i = 0; i <= MAX_L; i++){
 		point->header->list[i] = point->header;
 	}
@@ -68,7 +68,7 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
 			x->erase = flag;
 		}
 		else{
-			x->VBM[offset / BPE] |= ((uint8_t)1 << (offset % 8));
+			x->VBM[offset / 8] |= ((uint8_t)1 << (offset % 8));
 		}
 	}
 	else{
@@ -80,8 +80,8 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
 			list->level = level;
 		}
 
-		x = (snode *)malloc(sizeof(snode));
-		x->list = (snode **)malloc(sizeof(snode *) * (level + 1));
+		x = (snode*)malloc(sizeof(snode));
+		x->list = (snode**)malloc(sizeof(snode*) * (level + 1));
 		x->key = key;
 		if(flag == 1){
 			for(int i = 0; i < BM_RANGE; i++){
@@ -94,7 +94,7 @@ snode *skiplist_insert(skiplist *list, KEYT key, uint32_t offset, ERASET flag){
 				x->VBM[i] = 0;
 			}
 			x->erase = 0;
-			x->VBM[offset / BPE] |= ((uint8_t)1 << (offset % 8));
+			x->VBM[offset / 8] |= ((uint8_t)1 << (offset % 8));
 		}
 		for(int i = 1; i <= level; i++){
 			x->list[i] = update[i]->list[i];
@@ -155,49 +155,11 @@ snode *skiplist_snode_insert(skiplist *list, snode *input){
 	}
 	return x;
 }
-// start end 수정 안함
-int skiplist_delete(skiplist* list, KEYT key){
-	if(list->size==0){
-		return -1;
-	}
-	snode *update[MAX_L+1];
-	snode *x=list->header;
-	for(int i=list->level; i>=1; i--){
-		while(x->list[i]->key<key){
-			x=x->list[i];
-		}
-		update[i]=x;
-	}
-	x=x->list[1];
-
-	if(x->key!=key){
-		return -2;
-	}
-
-	for(int i=x->level; i>=1; i--){
-		update[i]->list[i]=x->list[i];
-		if(update[i]==update[i]->list[i]){
-			list->level--;
-		}
-	}
-
-	free(x->list);
-	free(x);
-	list->size--;
-	return 0;
-}
 
 sk_iter *skiplist_get_iterator(skiplist *list){
 	sk_iter *res = (sk_iter *)malloc(sizeof(sk_iter));
 	res->list = list;
 	res->now = list->header;
-	return res;
-}
-
-sk_iter *skiplist_get_iter_from_here(skiplist *list, snode* here){
-	sk_iter *res = (sk_iter *)malloc(sizeof(sk_iter));
-	res->list = list;
-	res->now = here;
 	return res;
 }
 
@@ -236,8 +198,8 @@ void skiplist_free(skiplist *list){
 	return;
 }
 
-struct node* skiplist_flush(skiplist *list){
-	struct node* temp = (struct node *)malloc(sizeof(struct node));
+node* skiplist_flush(skiplist *list){
+	node* temp = (node*)malloc(sizeof(node));
 	temp->memptr = skiplist_make_data(list);
 	temp->max = list->start;
 	temp->min = list->end;
@@ -262,7 +224,8 @@ PTR skiplist_make_data(skiplist *input){
 	free(iter);
 	return Wrappage;
 }
-//for compaction
+
+//for compaction 고쳐야됨
 PTR skiplist_lsm_merge(skiplist *input, KEYT key, KEYT *nxtkey, KEYT *last){
 	PTR Wrappage = (PTR)malloc(PAGESIZE);
 	memset(Wrappage, 0, PAGESIZE); //나중엔 노쓸모
@@ -286,6 +249,7 @@ PTR skiplist_lsm_merge(skiplist *input, KEYT key, KEYT *nxtkey, KEYT *last){
 	free(iter);
 	return Wrappage;
 }
+
 // for test
 void skiplist_dump_key(skiplist *list){
 	sk_iter *iter = skiplist_get_iterator(list);
@@ -298,6 +262,7 @@ void skiplist_dump_key(skiplist *list){
 	}
 	free(iter);
 }
+
 // for test
 void skiplist_dump_key_value(skiplist *list){
 	sk_iter *iter = skiplist_get_iterator(list);

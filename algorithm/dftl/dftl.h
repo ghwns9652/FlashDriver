@@ -31,7 +31,7 @@
 #define DGC_W 9
 
 #define EPP (PAGESIZE / 4) //Number of table entries per page
-#define D_IDX (lpa / EPP)	// Idx of directory table
+#define D_IDX (lpa / EPP)	// Idx of directory tablez 
 #define P_IDX (lpa % EPP)	// Idx of page table
 
 // Page table data structure

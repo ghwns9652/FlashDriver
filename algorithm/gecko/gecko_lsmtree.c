@@ -8,13 +8,13 @@ int32_t gepp; // Gecko entry per page
 
 lsmtree *lsm_init(){
 	// initialize all value by using macro.
-	num_page = _NOP;
-	num_block = _NOS;
-	p_p_b = _PPS;
+	num_page = NOP;
+	num_block = NOB;
+	p_p_b = PPB;
 	gepp = PAGESIZE / GE_SIZE;
 
 	lsmtree *res = (lsmtree *)malloc(sizeof(lsmtree));
-	res->max_level = (int)ceil(log((double)num_block / (double)gepp) / log(T_value));
+	res->max_level = (int)ceil(log((double)num_block / (double)gepp) / log((double)T_value));
 	res->levels = level_init(res->max_level);
 	res->buffer = skiplist_init();
 	res->fd = open("./storage.data", O_RDWR|O_CREAT|O_TRUNC, 0666);
@@ -24,12 +24,13 @@ lsmtree *lsm_init(){
 	}
 
 	printf("!!! print info !!!\n");
-	printf("number of block: %d\n", num_block);
 	printf("page per block: %d\n", p_p_b);
+	printf("number of block: %d\n", num_block);
 	printf("number of page: %d\n", num_page);
 	printf("GeckoEntry per Page: %d\n", gepp);
 	printf("Max level: %d\n", res->max_level);
 	printf("!!! print info !!!\n");
+	exit(1);
 	
 	return res;
 }
@@ -42,9 +43,9 @@ void lsm_free(lsmtree *lsm){
 }
 
 level *level_init(int max_lv){
-	level *res = (level *)malloc(sizeof(level) * (max_lv));
+	level *res = (level *)malloc(sizeof(level) * (max_lv + 1));
 	uint32_t lpa = 0;
-	for(int i = 0; i < max_lv; i++){
+	for(int i = 0; i <= max_lv; i++){
 		res[i].cur_cap = 0;
 		res[i].max_cap = pow(T_value, i);
 		res[i].array = (node *)malloc(sizeof(node) * res[i].max_cap);
@@ -56,7 +57,7 @@ level *level_init(int max_lv){
 }
 
 void level_free(level *lv, int max_lv){
-	for(int i = 0; i < max_lv; i++){
+	for(int i = 0; i <= max_lv; i++){
 		free(lv[i].array);
 	}
 	free(lv);
@@ -66,6 +67,7 @@ void lsm_buf_update(lsmtree *lsm, KEYT key, uint8_t offset, ERASET flag){
 	skiplist_insert(lsm->buffer, key, offset, flag);
 	if(lsm->buffer->size == gepp){
 		lsm_buffer_flush(lsm, skiplist_flush(lsm->buffer));
+		lsm->buffer = skiplist_init();
 	}
 }
 
@@ -79,13 +81,12 @@ void lsm_node_fwrite(lsmtree *lsm, int lv_off, int nd_off){
 
 void lsm_buffer_flush(lsmtree *lsm, node *data){
 	//printf("flush\n");
-	if(lsm->levels[1].cur_cap == lsm->levels[1].max_cap){
-		lsm_merge(lsm, 1);
-	}
-	memcpy(&lsm->levels[1].array[lsm->levels[1].cur_cap], data, sizeof(node));
+	memcpy(&lsm->levels[0].array[lsm->levels[0].cur_cap], data, sizeof(node));
 	free(data);
 	lsm_node_fwrite(lsm, 1, lsm->levels[1].cur_cap++); //범위가 작은게 뒤로 가도 되는가? 일단은 최근값이 뒤로 들어가는것으로로
-	lsm->buffer = skiplist_init();
+	if(lsm->levels[1].cur_cap == lsm->levels[1].max_cap){
+		//lsm_merge(lsm, 1);
+	}
 }
 
 void lsm_node_recover(lsmtree *lsm, int lv_off, int nd_off){
@@ -104,12 +105,13 @@ void lsm_node_recover(lsmtree *lsm, int lv_off, int nd_off){
 		for(int i = 0; i < BM_RANGE; i++){
 			printf("hexvalue%i: %d\n", i, t->VBM[i]);
 		}
-		printf("key(%d): ", t->erase);
+		printf("erase(%d): ", t->erase);
 		loc += sizeof(BITMAP) * BM_RANGE + sizeof(KEYT) + sizeof(ERASET);
 	}
 	free(temp);
 }
 
+// 고쳐야됨
 int lsm_merge(lsmtree *lsm, int lv_off){ //뒤에부터 들어가야됨 일단은 전부 꺼내서 전부 merge하는것으로로
 	printf("merge start w/ level %d\n", lv_off);
 	if(lsm->levels[lv_off + 1].cur_cap == lsm->levels[lv_off + 1].max_cap){
