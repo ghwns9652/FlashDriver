@@ -35,6 +35,8 @@ algorithm/bftl/**
 #blockmanager/*.o
 #blockmanager/*.a
 
+currsetting.c
+result
 simulator
 simulator_memory_check
 duma_*

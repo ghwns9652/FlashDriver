@@ -23,6 +23,34 @@ uint32_t set_pointer = 0;
 value_set* sram_valueset;
 PTR* sram_value;
 
+/* Table Structure Declaration */
+typedef struct {
+	int32_t PBA; // LPA to PBA
+	int32_t lastoffset; // last page offset
+	int8_t valid; // valid block or not
+	Block* alloc_block; // allocated block from Queue
+} block_table;
+
+typedef struct {
+	Block segblock; // Block as a segment for using BM heap API
+	Block** blockmap; 
+} segment_table;
+	
+typedef struct {
+	uint32_t LPA;
+} block_OOB;
+
+typedef struct {
+	block_OOB SRAM_OOB;
+	PTR SRAM_PTR;
+} block_sram;
+
+
+inline int32_t LBA_TO_PSA(uint32_t LBA) {
+	return BS[LBA].PBA / bps_;
+}
+
+
 /* Internal Function declaration */
 value_set* SRAM_load(uint32_t i, uint32_t old_PPA_zero);
 void SRAM_unload(uint32_t i, uint32_t new_PPA_zero);

@@ -12,7 +12,7 @@ cat interface/main.c >> ${filename}
 echo "simulator end!"
 
 touch ${fullresult}
-cat ${filename} >> ${fullresult}
+cat ${filename} > ${fullresult}
 echo "-----------------------simaultor result-------------------------------" >> ${fullresult}
 cat ${resultname} >> ${fullresult}
 rm ${filename}
