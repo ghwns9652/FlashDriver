@@ -31,25 +31,35 @@ struct request {
 	FSTYPE type;
 	KEYT key;
 	//KEYT ppa;
+	KEYT seq;
 	value_set *value;
 	void *upper_req;
 	void *(*upper_end)(void *);
 	bool (*end_req)(struct request *const);
 	bool isAsync;
 	void *params;
+	void *__hash_node;
 	pthread_mutex_t async_mutex;
 
 	int mark;
 
 	MeasureTime algo;
 	MeasureTime lower;
-#ifdef CDF
+	MeasureTime latency_ftl;
+	uint8_t type_ftl;
+	uint8_t type_lower;
+	uint8_t before_type_lower;
+	MeasureTime latency_poll;
+	bool isstart;
 	MeasureTime latency_checker;
-#endif
 };
 
 struct algo_req{
 	request * parents;
+	MeasureTime latency_lower;
+	bool rapid;
+	uint8_t type_lower;
+
 	void *(*end_req)(struct algo_req *const);
 	void *params;
 };
@@ -65,10 +75,9 @@ struct lower_info {
 	void (*stop)();
 	int (*lower_alloc) (int type, char** buf);
 	void (*lower_free) (int type, int dmaTag);
-	/*
-	void*(*push_data)(int num, ...);
-	void*(*pull_data)(int num, ...);
-	*/
+	void (*lower_flying_req_wait) ();
+	void (*lower_show_info)();
+
 	lower_status (*statusOfblock)(BLOCKT);
 	pthread_mutex_t lower_lock;
 	

@@ -1,13 +1,17 @@
 #ifndef __H_SETLSM__
 #define __H_SETLSM__
-
+#include "settings.h"
 
 /*lsmtree structure*/
-#define SIZEFACTOR 10
-#define RAF 1
-#define LEVELN 7
+#define KEYNUM 1024
+#define RAF 0.01
+#define LEVELN 3
+
+#if LEVELN!=1
 #define BLOOM
 #define MONKEY
+#endif
+
 #define PIECE 512
 //#define LEVELUSINGHEAP
 //#define TIERING
@@ -15,10 +19,9 @@
 //#define CACHESIZE (128*8*100)//1*128==1M
 
 /*lsmtree flash thread*/
-#define KEYNUM 1024
 #define KEYSIZE ()
 #define CTHREAD 1
-#define CQSIZE 2
+#define CQSIZE 10
 #define FTHREAD 1
 #define FQSIZE 2
 #define RQSIZE 1024
@@ -26,12 +29,12 @@
 //#define NOGC
 
 /*compaction*/
-#define EPC 20 //size factor have to be multiple of SIZEFACTOR
+#define EPC 50 //size factor have to be multiple of SIZEFACTOR
 
 /*block,header,data area variable*/
-#define HEADERSEG 1
+#define HEADERSEG 4
 #define BLOCKSEG (1)
-#define DATASEG ((_NOS-HEADERSEG-BLOCKSEG-1-(BLOCKSEG?1:0))-1)
+#define DATASEG (_NOS-(HEADERSEG+1)-1)
 
 
 //#define FLASHCHECK

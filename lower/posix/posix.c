@@ -4,7 +4,7 @@
 #include "../../include/settings.h"
 #include "../../bench/bench.h"
 #include "../../bench/measurement.h"
-#include "../../algorithm/lsmtree/lsmtree.h"
+#include "../../algorithm/Lsmtree/lsmtree.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +26,8 @@ lower_info my_posix={
 	.refresh=posix_refresh,
 	.stop=posix_stop,
 	.lower_alloc=NULL,
-	.lower_free=NULL
+	.lower_free=NULL,
+	.lower_flying_req_wait=posix_flying_req_wait
 };
 
 uint32_t posix_create(lower_info *li){
@@ -159,3 +160,7 @@ void *posix_trim_block(KEYT PPA, bool async){
 }
 
 void posix_stop(){}
+
+void posix_flying_req_wait(){
+	return ;
+}

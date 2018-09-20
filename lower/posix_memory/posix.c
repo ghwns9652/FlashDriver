@@ -5,9 +5,13 @@
 #include "../../bench/bench.h"
 #include "../../bench/measurement.h"
 #include "../../interface/queue.h"
-//#include "../../algorithm/lsmtree/lsmtree.h"
+#include "../../interface/bb_checker.h"
 #ifdef dftl
 #include "../../algorithm/dftl/dftl.h"
+#elif defined(dftl_fm)
+#include "../../algorithm/dftl_fm/dftl.h"
+#else
+#include "../../algorithm/Lsmtree/lsmtree.h"
 #endif
 #include <fcntl.h>
 #include <stdio.h>
@@ -47,7 +51,8 @@ lower_info my_posix={
 	.refresh=posix_refresh,
 	.stop=posix_stop,
 	.lower_alloc=NULL,
-	.lower_free=NULL
+	.lower_free=NULL,
+	.lower_flying_req_wait=posix_flying_req_wait
 };
 
 #if (ASYNC==1)
@@ -88,11 +93,12 @@ void *posix_make_push(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 	p_req->upper_req=req;
 	p_req->isAsync=async;
 	p_req->size=size;
-	
+
 	while(!flag){
 		if(q_enqueue((void*)p_req,p_q)){
 			flag=true;
 		}
+
 	}
 	return NULL;
 }
@@ -106,10 +112,15 @@ void *posix_make_pull(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 	p_req->upper_req=req;
 	p_req->isAsync=async;
 	p_req->size=size;
-	
+	req->type_lower=0;
+	bool once=true;
 	while(!flag){
 		if(q_enqueue((void*)p_req,p_q)){
 			flag=true;
+		}	
+		if(!flag && once){
+			req->type_lower=1;
+			once=false;
 		}
 	}
 	return NULL;
@@ -178,6 +189,7 @@ void *posix_destroy(lower_info *li){
 	pthread_mutex_destroy(&fd_lock);
 #if (ASYNC==1)
 	stopflag = true;
+	q_free(p_q);
 #endif
 	return NULL;
 }
@@ -196,12 +208,15 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("\nwrite error\n");
 		exit(2);
 	}
-	//if(((lsm_params*)req->params)->lsm_type!=5){
-#ifdef dftl
-	uint8_t req_type = ((demand_params*)req->params)->type;
+
+#if defined(dftl) || defined(dftl_fm)
+	uint8_t req_type = ((demand_params*)(req->params))->type;
 	if(req_type == 3 || req_type == 5 || req_type == 7){
-#endif
+#elif defined(normal)
 	if(0){
+#else
+	if(((lsm_params*)req->params)->lsm_type<=5){
+#endif
 		if(!seg_table[PPA/my_posix.PPS].alloc){
 			seg_table[PPA/my_posix.PPS].storage = (PTR)malloc(my_posix.SOB);
 			seg_table[PPA/my_posix.PPS].alloc = 1;
@@ -219,6 +234,9 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 }
 
 void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo_req *const req){	
+	if(req->type_lower!=1 && req->type_lower!=0){
+		req->type_lower=0;
+	}
 	if(value->dmatag==-1){
 		printf("dmatag -1 error!\n");
 		exit(1);
@@ -233,14 +251,18 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 		printf("\nread error\n");
 		exit(3);
 	}
-	//if(((lsm_params*)req->params)->lsm_type!=4){
-#ifdef dftl
+
+#if defined(dftl) || defined(dftl_fm)
 	uint8_t req_type = ((demand_params*)req->params)->type;
 	if(req_type == 2 || req_type == 4 || req_type == 6){
-#endif
+#elif defined(normal)
 	if(0){
+#else
+	if(((lsm_params*)req->params)->lsm_type<=5){
+#endif
 		PTR loc = seg_table[PPA/my_posix.PPS].storage;
 		memcpy(value->value,&loc[(PPA%my_posix.PPS)*my_posix.SOP],size);
+		req->type_lower=1;
 	}
 
 	pthread_mutex_unlock(&fd_lock);
@@ -279,3 +301,9 @@ void *posix_trim_block(KEYT PPA, bool async){
 }
 
 void posix_stop(){}
+
+void posix_flying_req_wait(){
+#if (ASYNC==1)
+	while(p_q->size!=0){}
+#endif
+}

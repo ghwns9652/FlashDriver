@@ -22,7 +22,9 @@ lower_info memio_info={
 	.refresh=memio_info_refresh,
 	.stop=memio_info_stop,
 	.lower_alloc=memio_alloc_dma,
-	.lower_free=memio_free_dma
+	.lower_free=memio_free_dma,
+	.lower_flying_req_wait=memio_flying_req_wait,
+	.lower_show_info=memio_show_info_
 };
 
 uint32_t memio_info_create(lower_info *li){
@@ -59,9 +61,10 @@ void *memio_info_push_data(KEYT ppa, uint32_t size, value_set *value, bool async
 		printf("dmatag -1 error!\n");
 		exit(1);
 	}
-	bench_lower_w_start(&memio_info);
+	
+	//bench_lower_w_start(&memio_info);
 	//req->parents->ppa=bb_checker_fix_ppa(ppa);
-	bench_lower_w_end(&memio_info);
+	//bench_lower_w_end(&memio_info);
 	memio_write(mio,bb_checker_fix_ppa(ppa),(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//memio_write(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//pthread_mutex_lock(&test_lock);
@@ -73,9 +76,9 @@ void *memio_info_pull_data(KEYT ppa, uint32_t size, value_set *value, bool async
 		printf("dmatag -1 error!\n");
 		exit(1);
 	}
-	bench_lower_r_start(&memio_info);
+	//bench_lower_r_start(&memio_info);
 	//req->parents->ppa=bb_checker_fix_ppa(ppa);
-	bench_lower_r_end(&memio_info);
+	//bench_lower_r_end(&memio_info);
 	memio_read(mio,bb_checker_fix_ppa(ppa),(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//memio_read(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//pthread_mutex_lock(&test_lock);
@@ -105,3 +108,10 @@ void *memio_badblock_checker(KEYT ppa,uint32_t size, void*(*process)(uint64_t,ui
 }
 
 void memio_info_stop(){}
+
+void memio_flying_req_wait(){
+	while(!memio_is_clean(mio));
+}
+void memio_show_info_(){
+	memio_show_info();
+}

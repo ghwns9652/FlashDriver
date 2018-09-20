@@ -9,7 +9,17 @@
 #include "../include/types.h"
 #include "../bench/bench.h"
 #include "interface.h"
-int main(){/*
+extern int req_cnt_test;
+extern uint64_t dm_intr_cnt;
+extern int LOCALITY;
+extern float TARGETRATIO;
+extern master *_master;
+#ifdef Lsmtree
+int skiplist_hit;
+#endif
+bool force_write_start;
+int main(int argc,char* argv[]){
+	/*
 	int Input_cycle;
 	int Input_type;
 	int start;
@@ -38,7 +48,7 @@ int main(){/*
 		else if(Input_type == 5)
 			bench_add(SEQRW,start,end,Input_size);
 		else if(Input_type == 6)
-			bench_add(RANDSET,start,end,Input_size);
+			/bench_add(RANDSET,start,end,Input_size);
 		else if(Input_type == 7)
 			bench_add(MIXED,start,end,Input_size);
 		else{
@@ -56,6 +66,17 @@ int main(){/*
 
 	printf("benchmark setting done. starts now.\n");
 */
+	
+	if(argc==3){
+		LOCALITY=atoi(argv[1]);
+		TARGETRATIO=atof(argv[2]);
+	}
+	else{
+		printf("If you want locality test Usage : [%s (LOCALITY(%%)) (RATIO)]\n",argv[0]);
+		printf("defalut locality=50%% RATIO=0.5\n");
+		LOCALITY=50;
+		TARGETRATIO=0.5;
+	}
 
 	inf_init();
 	bench_init(2);
@@ -66,9 +87,11 @@ int main(){/*
 		t_value2[i]=rand()%256;
 	}*/
 	//bench_add(RANDRW,0,128*1024,2*128*1024);
-	//bench_add(RANDRW,0,RANGE,4*RANGE);
-	bench_add(SEQSET,0,0.8*RANGE,0.8*RANGE);
-	bench_add(MIXED,0,0.8*RANGE,0.8*RANGE);
+	//bench_add(SEQSET,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
+	//bench_add(MIXED,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
+	bench_add(SEQSET,0,RANGE,RANGE);
+//	bench_add(RANDSET,0,RANGE/2,RANGE);
+	bench_add(MIXED,0,RANGE,RANGE);
 //	bench_add(RANDRW,0,RANGE,2*RANGE);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);
@@ -80,30 +103,41 @@ int main(){/*
 	temp.dmatag=-1;
 	temp.length=0;
 	int cnt=0;
+
+	int locality_check=0,locality_check2=0;
 	while((value=get_bench())){
 		temp.length=value->length;
-		/*
-		if(cnt==RANGE){ //for trim test
-			KEYT t_ppa=(rand()%RANGE)/(1<<14);
-			KEYT t_ppa2=(rand()%RANGE)/(1<<14);
-			while(t_ppa==t_ppa2){
-				t_ppa2=(rand()%RANGE)/(1<<14);
-			}
-			inf_make_req(FS_DELETE_T,t_ppa*(1<<14),NULL,0);
-			inf_make_req(FS_DELETE_T,t_ppa2*(1<<14),NULL,0);
-		}*/
 		inf_make_req(value->type,value->key,&temp,value->mark);
 		cnt++;
+		if(_master->m[_master->n_num].type<=SEQRW) continue;
+		if(value->key<RANGE*TARGETRATIO){
+			locality_check++;
+		}
+		else{
+			locality_check2++;
+		}
 	}
 	
+	if(req_cnt_test==cnt){
+		printf("done!\n");
+	}
+	else{
+		printf("req_cnt_test:cnt -> %d:%d fuck\n",req_cnt_test,cnt);
+	}
+
+	force_write_start=true;
 	while(!bench_is_finish()){
 #ifdef LEAKCHECK
 		sleep(1);
 #endif
 	}
 	bench_print();
-
 	bench_free();
+	//printf("locality: 0~%.0f\n",RANGE*TARGETRATIO);
 	inf_free();
+#ifdef Lsmtree
+	printf("skiplist hit:%d\n",skiplist_hit);
+#endif
+	printf("locality check:%f\n",(float)locality_check/(locality_check+locality_check2));
 	return 0;
 }

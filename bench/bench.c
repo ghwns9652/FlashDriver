@@ -1,11 +1,14 @@
 #include "bench.h"
 #include "../include/types.h"
+#include "../include/settings.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+int32_t LOCALITY;
+float TARGETRATIO;
 
 master *_master;
 void seqget(KEYT, KEYT,monitor *);
@@ -16,6 +19,7 @@ void randset(KEYT,KEYT,monitor*);
 void randrw(KEYT,KEYT,monitor*);
 void mixed(KEYT,KEYT,int percentage,monitor*);
 
+KEYT keygenerator(uint32_t range);
 
 pthread_mutex_t bench_lock;
 void bench_init(int benchnum){
@@ -34,10 +38,20 @@ void bench_init(int benchnum){
 
 	_master->n_num=0; _master->m_num=benchnum;
 	pthread_mutex_init(&bench_lock,NULL);
+
+	for(int i=0;i<benchnum;i++){
+		for(int j=0;j<ALGOTYPE;j++){
+			for(int k=0;k<LOWERTYPE;k++){
+				_master->datas[i].ftl_poll[j][k].min = UINT64_MAX;
+				//_master->datas[i].ftl_npoll[j][k].min = UINT64_MAX;
+			}
+		}
+	}
 }
 void bench_make_data(){
 	int idx=_master->n_num;
 	bench_meta *_meta=&_master->meta[idx];
+	bench_data *_d=&_master->datas[idx];
 	monitor * _m=&_master->m[idx];
 	_m->mark=idx;
 	_m->body=(bench_value*)malloc(sizeof(bench_value)*_meta->number);
@@ -71,6 +85,8 @@ void bench_make_data(){
 			mixed(start,end,50,_m);
 			break;
 	}
+	_d->read_cnt=_m->read_cnt;
+	_d->write_cnt=_m->write_cnt;
 	measure_init(&_m->benchTime);
 	MS(&_m->benchTime);
 }
@@ -80,7 +96,7 @@ void bench_add(bench_type type, KEYT start, KEYT end, uint64_t number){
 	_master->meta[idx].start=start;
 	_master->meta[idx].end=end;
 	_master->meta[idx].type=type;
-	_master->meta[idx].number=number;
+	_master->meta[idx].number=number%2?(number/2)*2:number;
 	idx++;
 }
 
@@ -146,7 +162,11 @@ void bench_print(){
 		printf("\n\n");
 		_m=&_master->m[i];
 		bdata=&_master->datas[i];
+#ifdef CDF
 		bench_cdf_print(_m->m_num,_m->type,bdata);
+#endif
+		bench_ftl_cdf_print(bdata);
+		
 		printf("--------------------------------------------\n");
 		printf("|            bench type:                   |\n");
 		printf("--------------------------------------------\n");
@@ -223,6 +243,11 @@ void bench_print(){
 }
 void bench_algo_start(request *const req){
 	measure_init(&req->algo);
+	if(req->params==NULL){
+	//	measure_init(&req->latency_poll);
+		measure_init(&req->latency_ftl);
+		MS(&req->latency_ftl);
+	}
 #ifdef BENCH
 	MS(&req->algo);
 #endif
@@ -244,6 +269,45 @@ void bench_lower_end(request *const req){
 #endif
 }
 
+void bench_update_ftltime(bench_data *_d, request *const req){
+	bench_ftl_time *temp;
+	MC(&req->latency_ftl);
+	temp = &_d->ftl_poll[req->type_ftl][req->type_lower];
+	req->latency_ftl.micro_time += req->latency_ftl.adding.tv_sec*1000000 + req->latency_ftl.adding.tv_usec;
+	temp->total_micro += req->latency_ftl.micro_time;
+	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
+	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
+	temp->cnt++;
+	/*
+	temp = &_d->ftl_npoll[req->type_ftl][req->type_lower];
+	req->latency_ftl.micro_time -= req->latency_poll.adding.tv_sec*1000000 + req->latency_poll.adding.tv_usec;
+	temp->total_micro += req->latency_ftl.micro_time;
+	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
+	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
+	temp->cnt++;*/
+}
+
+void bench_ftl_cdf_print(bench_data *_d){
+	printf("polling\n");
+	printf("a_type\tl_type\tmax\tmin\tavg\tcnt\tpercentage\n");
+	for(int i = 0; i < ALGOTYPE; i++){
+		for(int j = 0; j < LOWERTYPE; j++){
+			if(!_d->ftl_poll[i][j].cnt)
+				continue;
+			printf("%d\t%d\t%lu\t%lu\t%.3f\t%lu\t%.5f%%\n",i,j,_d->ftl_poll[i][j].max,_d->ftl_poll[i][j].min,(float)_d->ftl_poll[i][j].total_micro/_d->ftl_poll[i][j].cnt,_d->ftl_poll[i][j].cnt,(float)_d->ftl_poll[i][j].cnt/_d->read_cnt*100);
+		}
+	}
+	/*
+	printf("subtract polling\n");
+	printf("a_type\tl_type\tmax\tmin\tavg\t\tcnt\n");
+	for(int i = 0; i < ALGOTYPE; i++){
+		for(int j = 0; j < LOWERTYPE; j++){
+			if(!_d->ftl_npoll[i][j].cnt)
+				continue;
+			printf("%d\t%d\t%lu\t%lu\t%f\t%lu\n",i,j,_d->ftl_npoll[i][j].max,_d->ftl_npoll[i][j].min,(float)_d->ftl_npoll[i][j].total_micro/_d->ftl_npoll[i][j].cnt,_d->ftl_npoll[i][j].cnt);
+		}
+	}*/
+}
 
 void __bench_time_maker(MeasureTime mt, bench_data *datas,bool isalgo){
 	uint64_t *target=NULL;
@@ -285,7 +349,7 @@ void bench_cdf_print(uint64_t nor, uint8_t type, bench_data *_d){//number of req
 		for(int i=0; i<1000000/TIMESLOT+1; i++){
 			cumulate_number+=_d->write_cdf[i];
 			if(_d->write_cdf[i]==0) continue;
-			printf("%d\t\t%ld\t\t%f\n",i,_d->write_cdf[i],(float)cumulate_number/nor);
+			printf("%d\t\t%ld\t\t%f\n",i,_d->write_cdf[i],(float)cumulate_number/_d->write_cnt);
 			if(nor==cumulate_number)
 				break;
 		}	
@@ -296,13 +360,21 @@ void bench_cdf_print(uint64_t nor, uint8_t type, bench_data *_d){//number of req
 		for(int i=0; i<1000000/TIMESLOT+1; i++){
 			cumulate_number+=_d->read_cdf[i];
 			if(_d->read_cdf[i]==0) continue;
-			printf("%d\t\t%ld\t\t%f\n",i,_d->read_cdf[i],(float)cumulate_number/nor);	
+			printf("%d\t\t%ld\t\t%f\n",i,_d->read_cdf[i],(float)cumulate_number/_d->read_cnt);	
 			if(nor==cumulate_number)
 				break;
 		}
 	}
 }
 #endif
+void bench_reap_nostart(request *const req){
+	pthread_mutex_lock(&bench_lock);
+	int idx=req->mark;
+	monitor *_m=&_master->m[idx];
+	_m->r_num++;
+	//static int cnt=0;
+	pthread_mutex_unlock(&bench_lock);
+}
 
 void bench_reap_data(request *const req,lower_info *li){
 	pthread_mutex_lock(&bench_lock);
@@ -314,6 +386,10 @@ void bench_reap_data(request *const req,lower_info *li){
 	monitor *_m=&_master->m[idx];
 
 	bench_data *_data=&_master->datas[idx];
+
+	if(req->type==FS_GET_T){
+		bench_update_ftltime(_data, req);
+	}
 #ifdef CDF
 	measure_calc(&req->latency_checker);
 	int slot_num=req->latency_checker.micro_time/TIMESLOT;
@@ -334,6 +410,7 @@ void bench_reap_data(request *const req,lower_info *li){
 		}
 	}
 #endif
+
 
 	if(_m->m_num==_m->r_num+1){
 		_data->bench=_m->benchTime;
@@ -387,6 +464,15 @@ void bench_li_print(lower_info* li,monitor *m){
 	printf("[all read Time]:%ld.%ld\n",sec,usec);
 }
 
+KEYT keygenerator(uint32_t range){
+	if(rand()%100<LOCALITY){
+		return rand()%(int)(range*TARGETRATIO);
+	}
+	else{
+		return (rand()%(int)(range*(1-TARGETRATIO)))+(int)RANGE*TARGETRATIO;
+	}
+}
+
 void seqget(KEYT start, KEYT end,monitor *m){
 	printf("making seq Get bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
@@ -415,7 +501,8 @@ void seqset(KEYT start, KEYT end,monitor *m){
 
 void seqrw(KEYT start, KEYT end, monitor *m){
 	printf("making seq Set and Get bench!\n");
-	for(KEYT i=0; i<m->m_num/2; i++){
+	KEYT i=0;
+	for(i=0; i<m->m_num/2; i++){
 		m->body[i].key=start+(i%(end-start));
 		m->body[i].type=FS_SET_T;
 #ifdef DVALUE
@@ -447,7 +534,12 @@ void randget(KEYT start, KEYT end,monitor *m){
 void randset(KEYT start, KEYT end, monitor *m){
 	printf("making rand Set bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
+#ifdef KEYGEn
+		m->body[i].key=keygenerator(end);
+#else
 		m->body[i].key=start+rand()%(end-start);
+#endif
+
 #ifdef DVALUE
 		m->body[i].length=(rand()%16+1)*512;
 #else	
@@ -462,7 +554,12 @@ void randset(KEYT start, KEYT end, monitor *m){
 void randrw(KEYT start, KEYT end, monitor *m){
 	printf("making rand Set and Get bench!\n");
 	for(KEYT i=0; i<m->m_num/2; i++){
+#ifdef KEYGEN
+		m->body[i].key=keygenerator(end);
+#else
 		m->body[i].key=start+rand()%(end-start);
+#endif
+
 		m->body[i].type=FS_SET_T;
 #ifdef DVALUE
 		m->body[i].length=(rand()%16+1)*512;
@@ -482,7 +579,12 @@ void randrw(KEYT start, KEYT end, monitor *m){
 void mixed(KEYT start, KEYT end,int percentage, monitor *m){
 	printf("making mixed bench!\n");
 	for(KEYT i=0; i<m->m_num; i++){
+#ifdef KEYGEN
+		m->body[i].key=keygenerator(end);
+#else
 		m->body[i].key=start+rand()%(end-start);
+#endif
+
 		if(rand()%100<percentage){
 			m->body[i].type=FS_SET_T;
 #ifdef DVALUE
