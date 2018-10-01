@@ -18,6 +18,7 @@
 
 //determine buff size.
 #define ALGO_BUFSIZE 4
+#define ALGO_CACHESIZE 4
 
 typedef struct mapping_table{
 	int32_t ppa;
@@ -38,6 +39,7 @@ typedef struct pbase_params{
 } pbase_params;
 
 typedef struct w_buff{
+	int32_t lpa;
 	request* req;
 } w_buff;
 
@@ -55,6 +57,9 @@ extern Heap *b_heap;
 extern TABLE *page_TABLE;  // mapping Table.
 extern uint8_t *VBM;	   //valid bitmap.
 extern P_OOB *page_OOB;	   // Page level OOB.
+
+extern w_buff *page_wbuff;
+extern r_cache *page_rcache;
 
 extern BM_T *BM;
 extern Block *reserved;

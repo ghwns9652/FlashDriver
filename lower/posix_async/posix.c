@@ -232,7 +232,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 	}
 	}
 	pthread_mutex_unlock(&fd_lock);
-
+	printf("return : %c\n",value->value[0]);
 	if(req->parents)
 		bench_lower_end(req->parents);
 	bench_lower_r_end(&my_posix);
