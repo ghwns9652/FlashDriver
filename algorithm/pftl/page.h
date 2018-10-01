@@ -16,6 +16,9 @@
 #define GC_R 2
 #define GC_W 3
 
+//determine buff size.
+#define ALGO_BUFSIZE 4
+
 typedef struct mapping_table{
 	int32_t ppa;
 } TABLE;
@@ -34,6 +37,16 @@ typedef struct pbase_params{
 	TYPE type;
 } pbase_params;
 
+typedef struct w_buff{
+	request* req;
+} w_buff;
+
+typedef struct r_cache{
+	int32_t lpa;
+	int32_t ppa;
+	value_set* value;
+} r_cache;	
+	
 extern algorithm algo_pbase;
 
 extern b_queue *free_b;

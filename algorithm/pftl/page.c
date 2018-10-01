@@ -142,12 +142,15 @@ uint32_t pbase_set(request* const req){
 	 * need to write OR update table, oob, VBM.
 	 * if necessary, allocation may perf garbage collection.
 	 */
+
+	/*write buffering.*/
+	/*!write buffering.*/
 	int32_t lpa;
 	int32_t ppa;
 
 	bench_algo_start(req);
 	lpa = req->key;
-	ppa = alloc_page();
+	ppa = alloc_page();//may perform garbage collection.
 	bench_algo_end(req);
 	algo_pbase.li->push_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
 	if(page_TABLE[lpa].ppa != -1){//already mapped case.(update)
