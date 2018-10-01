@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix_memory
+TARGET_LOWER=posix_async
 TARGET_ALGO=pftl
 PWD=$(pwd)
 
@@ -21,12 +21,16 @@ export CFLAGS_LOWER=\
 			 -Wall\
 			 -D_FILE_OFFSET_BITS=64\
 
+export priority="true"
+
 
 #CFLAGS_ALGO+=-DCOMPACTIONLOG\
 	
 CFLAGS_ALGO+=$(COMMONFLAGS)\
+			 -D$(TARGET_ALGO)\
 
 CFLAGS_LOWER+=$(COMMONFLAGS)\
+			  -D$(TARGET_ALGO)\
 
 ifeq ($(TARGET_ALGO), lsmtree)
  CFLAGS_ALGO+=-DLSM_SKIP
@@ -54,6 +58,8 @@ SRCS +=\
 	./interface/interface.c\
 	./interface/bb_checker.c\
 	./include/FS.c\
+	./include/dl_sync.c\
+	./include/data_struct/hash.c\
 	./bench/measurement.c\
 	./bench/bench.c\
 
@@ -101,6 +107,7 @@ libsimulator.a: $(TARGETOBJ)
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) clean && $(MAKE) && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
 	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
+	mv ./include/data_struct/*.o ./object/
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 	$(AR) r $(@) ./object/*
 
@@ -108,6 +115,7 @@ libsimulator_d.a:$(MEMORYOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) DEBUG && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) DEBUG && cd ../../ 
+	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 	$(AR) r $(@) ./object/*
 
@@ -115,6 +123,7 @@ mem_libsimulator.a:$(MEMORYOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) LEAK && cd ../../
 	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
+	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
 	mv ./interface/*.o ./object/ & mv ./bench/*.o ./object/ && mv ./include/*.o ./object/
 	$(AR) r $(@) ./object/*
 

@@ -19,7 +19,7 @@
 
 #elif defined(SLC)
 
-#define TOTALSIZE (10L*G)
+#define TOTALSIZE (100L*G)
 #define REALSIZE (512L*G)
 #define PAGESIZE (8*K)
 #define _PPB (256)
@@ -33,8 +33,7 @@
 #define _NOS (TOTALSIZE/(_PPS*PAGESIZE))
 #define _NOB (BPS*_NOS)
 #define _RNOS (REALSIZE/(_PPS*PAGESIZE))//real number of segment
-
-#define RANGE (10*128*1024L)
+#define RANGE (100*128*1024L*(0.8))
 
 
 #define FSTYPE uint8_t
@@ -44,17 +43,21 @@
 #define V_PTR char * const
 #define PTR char*
 #define ASYNC 1
-#define QSIZE (1024)
+#define QSIZE (128)
+#define QDEPTH (128)
 #define THREADSIZE (1)
+
+#define KEYGEN
+#define SPINSYNC
+#define interface_pq
 
 #ifndef __GNUG__
 typedef enum{false,true} bool;
 #endif
 
 typedef enum{
-	SEQGET,SEQSET,
+	SEQGET,SEQSET,SEQRW,
 	RANDGET,RANDSET,
-	RANDRW,SEQRW,
-	MIXED
+	RANDRW,MIXED
 }bench_type;
 #endif
