@@ -24,6 +24,17 @@ Block *reserved;    //reserved.
 w_buff *page_wbuff;
 r_cache *page_rcache;
 
+//queueing.
+pthread_t pbase_main_thread;
+sem_t empty;
+sem_t full;
+algo_queue* page_queue;
+extern void* pbase_main(void*);
+
+int in = -1;
+int out = -1;
+int32_t end_flag;
+
 //global for macro.
 int32_t _g_nop;
 int32_t _g_nob;
@@ -45,15 +56,15 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 	_g_ppb = _PPS;
 	gc_count = 0;
 	buff_count = 0;
-
-	//printf("number of block: %d\n", _g_nob);
-	//printf("page per block: %d\n", _g_ppb);
-	//printf("number of page: %d\n", _g_nop);
-
+	end_flag = 0;
 	page_TABLE = (TABLE*)malloc(sizeof(TABLE) * _g_nop);
 	page_OOB = (P_OOB*)malloc(sizeof(P_OOB) * _g_nop);
-	page_wbuff = (w_buff*)malloc(sizeof(w_buff)*ALGO_BUFSIZE);
-	page_rcache = (r_cache*)malloc(sizeof(r_cache)*ALGO_CACHESIZE);
+	page_queue = (algo_queue*)malloc(sizeof(algo_queue)*ALGO_QUEUESIZE);
+
+	sem_init(&empty,0,4);
+	sem_init(&full,0,0);
+	pthread_create(&pbase_main_thread,NULL,pbase_main,NULL);
+	
 	algo->li = li;
 
 	for(int i=0;i<_g_nop;i++){
@@ -61,7 +72,6 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 		page_OOB[i].lpa = -1;
 	}//init table, oob and vbm.
 
-	//BM_Init(&block_array);
 	BM = BM_Init(1, 1);
 
 	reserved = &BM->barray[0];
@@ -82,9 +92,15 @@ void pbase_destroy(lower_info* li, algorithm *algo){
 	 * destroys blockmanager.
 	 */
 	printf("gc count: %d\n", gc_count);
+	end_flag = 1;
+//	pthread_join(pbase_main_thread,NULL);
+//	pthread_exit(NULL);
+	sem_destroy(&empty);
+	sem_destroy(&full);
 	BM_Free(BM);
 	free(page_OOB);
 	free(page_TABLE);
+	free(page_queue);
 }
 
 void *pbase_end_req(algo_req* input){
@@ -119,24 +135,50 @@ void *pbase_end_req(algo_req* input){
 	free(input);
 	return NULL;
 }
-
 uint32_t pbase_get(request* const req){
+	printf("get called.\n");
+	sem_wait(&empty);
+	in++;
+	in %= 4;
+	page_queue[in].req = req;
+	page_queue[in].rw = 0;
+	sem_post(&full);
+	return 0;
+}
+
+uint32_t pbase_set(request* const req){
+//	sleep(1);
+	printf("set called.\n");
+	sem_wait(&empty);
+	in++;
+	in %= 4;
+	page_queue[in].req = req;
+	page_queue[in].rw = 1;
+	sem_post(&full);
+	return 0;
+}
+
+
+uint32_t pbase_get_fromqueue(request* const req){
 	/*
 	 * gives pull request to lower level.
 	 * reads mapping data.
 	 * !!if not mapped, does not pull!!
 	 */
-	sleep(1);
 	int32_t lpa = 0;
 	int32_t ppa = 0;
 	int32_t buffer_idx = 0;
 	int8_t flag = 0;
+	/*buffer check code.
 	for(int i=0;i<ALGO_BUFSIZE;i++){
 		if(req->key == page_wbuff[i].lpa){
 			buffer_idx = i;
 			flag = 1;
 		}
 	}
+	*/
+
+	/*buffer / cache check.
 	if(0){//if target lpa is in write buffer,
 		bench_algo_start(req);
 		memcpy(req->value->value,page_wbuff[buffer_idx].req->value->value,sizeof(PAGESIZE));
@@ -150,7 +192,7 @@ uint32_t pbase_get(request* const req){
 
 		req->end_req(req);
 		return 0;
-	}
+	}*/
 
 	bench_algo_start(req);
 	lpa = req->key;
@@ -170,40 +212,38 @@ uint32_t pbase_get(request* const req){
 	return 0;
 }
 
-uint32_t pbase_set(request* const req){
+uint32_t pbase_set_fromqueue(request* const req){
 	/*
 	 * gives push request to lower level.
 	 * write mapping data, AFTER push request.
 	 * need to write OR update table, oob, VBM.
 	 * if necessary, allocation may perf garbage collection.
 	 */
-	/*write buffering.*/
+
+	/*write buffering.
 	if(buff_count != ALGO_BUFSIZE){
 		page_wbuff[buff_count].req = req;
 		page_wbuff[buff_count].lpa = req->key;
 		buff_count++;
 	}
-	/*!write buffering.*/
-	if(buff_count != 4){return 0;}//if buffer is not full, exit.
-	else{//if buffer is full, flush.
-		int32_t lpa;
-		int32_t ppa;
-		for(int i=0;i<ALGO_BUFSIZE;i++){
-			bench_algo_start(page_wbuff[i].req);
-			lpa = page_wbuff[i].req->key;
-			ppa = alloc_page();//may perform garbage collection.
-			bench_algo_end(page_wbuff[i].req);
-			algo_pbase.li->push_data(ppa, PAGESIZE, page_wbuff[i].req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, page_wbuff[i].req));
-			if(page_TABLE[lpa].ppa != -1){//already mapped case.(update)
-				BM_InvalidatePage(BM,page_TABLE[lpa].ppa);
-			}
-			page_TABLE[lpa].ppa = ppa;
-			BM_ValidatePage(BM,ppa);
-			page_OOB[ppa].lpa = lpa;
-			page_wbuff[i].lpa = 0;
-		}
-	buff_count = 0;
+	!write buffering.*/
+
+	//if(buff_count != 4){return 0;}//if buffer is not full, exit.
+	//else{//if buffer is full, flush.
+	int32_t lpa;
+	int32_t ppa;
+	bench_algo_start(req);
+	lpa = req->key;
+	ppa = alloc_page();//may perform garbage collection.
+	bench_algo_end(req);
+	algo_pbase.li->push_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
+	if(page_TABLE[lpa].ppa != -1){//already mapped case.(update)
+		BM_InvalidatePage(BM,page_TABLE[lpa].ppa);
 	}
+	page_TABLE[lpa].ppa = ppa;
+	BM_ValidatePage(BM,ppa);
+	page_OOB[ppa].lpa = lpa;
+	
 	return 0;
 }
 

@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <semaphore.h>
 #include "../../interface/interface.h"
 #include "../../include/container.h"
 #include "../blockmanager/BM.h"
@@ -19,7 +21,7 @@
 //determine buff size.
 #define ALGO_BUFSIZE 4
 #define ALGO_CACHESIZE 4
-
+#define ALGO_QUEUESIZE 4
 typedef struct mapping_table{
 	int32_t ppa;
 } TABLE;
@@ -42,6 +44,11 @@ typedef struct w_buff{
 	int32_t lpa;
 	request* req;
 } w_buff;
+
+typedef struct algo_queue{
+	char rw;
+	request* req;
+}algo_queue;
 
 typedef struct r_cache{
 	int32_t lpa;
@@ -70,12 +77,20 @@ extern int32_t _g_ppb;
 
 extern int32_t gc_load;
 extern int32_t gc_count;
+extern int32_t end_flag;
+extern int in;
+extern int out;
+extern sem_t empty;
+extern sem_t full;
+extern algo_queue* page_queue;
 
 //page.c
 uint32_t pbase_create(lower_info*,algorithm *);
 void *pbase_end_req(algo_req*);
 void pbase_destroy(lower_info*, algorithm *);
+uint32_t pbase_get_fromqueue(request* const);
 uint32_t pbase_get(request* const);
+uint32_t pbase_set_fromqueue(request* const);
 uint32_t pbase_set(request* const);
 uint32_t pbase_remove(request* const);
 
@@ -87,5 +102,7 @@ int32_t alloc_page();
 
 //page_gc.c
 int32_t pbase_garbage_collection(); // page- GC function.
- 
+
+//page_main.c
+void* pbase_main(void*);
 #endif //!_PAGE_H_
