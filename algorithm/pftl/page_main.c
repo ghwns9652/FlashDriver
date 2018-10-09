@@ -8,21 +8,23 @@ void* pbase_main(void* arg){
 	   process request. 
 	 */
 	while(1){
-//		if(end_flag == 1)
-//			break;
+		if(end_flag == 1)
+			break;
 
-		sem_wait(&full);
-		out++;
-		out %= 4;
-		if(page_queue[out].rw == 0){
-			pbase_get_fromqueue(page_queue[out].req);
-		}
-		else if(page_queue[out].rw == 1){
+		if(!sem_trywait(&full)){
+			out++;
+			out %= 4;
+			if(page_queue[out].rw == 0){
+				pbase_get_fromqueue(page_queue[out].req);
+			}
+			else if(page_queue[out].rw == 1){
 			pbase_set_fromqueue(page_queue[out].req);
+			}
+			else
+				printf("not read nor write\n");
+			sem_post(&empty);
+			printf("consumed. count :%d\n",out);
 		}
-		else
-			printf("not read nor write\n");
-		sem_post(&empty);
-		printf("consumed. count :%d\n",out);
 	}
+	printf("fuck you I'm done\n");
 }

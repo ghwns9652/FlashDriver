@@ -93,7 +93,7 @@ void pbase_destroy(lower_info* li, algorithm *algo){
 	 */
 	printf("gc count: %d\n", gc_count);
 	end_flag = 1;
-//	pthread_join(pbase_main_thread,NULL);
+	pthread_join(pbase_main_thread,NULL);
 //	pthread_exit(NULL);
 	sem_destroy(&empty);
 	sem_destroy(&full);
