@@ -61,19 +61,26 @@ int main(){/*
 */
 
 	inf_init();
-#define SEQ
+#define RAND
 #ifdef SEQ
 	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
 	int a=128L*K, b=128L*K;
-	bench_add(SEQSET,0,a,a+4);
-	bench_add(SEQGET,0,a,a+4);
+	bench_add(SEQSET,0,a,a+2);
+	bench_add(SEQGET,0,a,a+2);
 	//bench_add(SEQSET,0,1L*M,2L*M);
 	//bench_add(SEQGET,0,1L*M,2L*M);
 	//bench_add(RANDSET,0,1*1024,1*1024);
 	//bench_add(RANDGET,0,1*1024,1*1024);
 	//bench_add(RANDRW,0,16*1024,64*1024);
+#endif
+#ifdef SEQ2
+	bench_init(2);
+	char t_value[PAGESIZE];
+	memset(t_value,'x',PAGESIZE);
+	bench_add(SEQSET,0,RANGE,RANGE*0.8);
+	bench_add(SEQGET,0,RANGE,RANGE*0.8);
 #endif
 #ifdef RAND
 	bench_init(1);
@@ -82,7 +89,7 @@ int main(){/*
 	//bench_add(RANDSET,0,1*1024,1*1024);
 	//bench_add(RANDGET,0,1*1024,1*1024);
 	//bench_add(RANDRW,0,16*1024,32*1024);
-	bench_add(RANDRW,0,RANGE,RANGE/200);
+	bench_add(RANDRW,0,RANGE,RANGE/50);
 #endif
 
 	/*

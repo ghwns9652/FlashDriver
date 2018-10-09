@@ -22,11 +22,21 @@ algorithm/practice
 
 algorithm/bftl/**
 !algorithm/bftl/block.c
-!algorithm/bftl/block_queue.c
-!algorithm/bftl/block_queue.h
+#!algorithm/bftl/block_queue.c
+#!algorithm/bftl/block_queue.h
 !algorithm/bftl/block.h
+!algorithm/bftl/block_utils.c
+!algorithm/bftl/block_utils.h
+!algorithm/bftl/block_gc.c
+!algorithm/bftl/block_gc.h
 !algorithm/bftl/Makefile
+
+algorithm/bftl_jiho/
+algorithm/bftl_nosegment/
+algorithm/bftl_old_bftl/
+algorithm/bftl_Largepage/
 			
+
 #blockmanager/libbm.a
 #blockmanager/memset.c
 #blockmanager/test.c

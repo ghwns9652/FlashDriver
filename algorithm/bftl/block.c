@@ -1,20 +1,26 @@
 #include "block.h"
-#include <unistd.h>
 
-/* BASIC block ftl(OSTEP algorithm) */
+/* block ftl with SEGMENT support */
+   //need GC algorithm
 
 /* ASYNC ver */
-
-#ifdef Queue
-//Queue_t* FreeQ; // Queue of FREE(ERASE) state blocks
-b_queue* FreeQ;
-#endif
+BM_T* BM;
+b_queue* bQueue;
+Heap* bHeap;
+block_table* BT;
+segment_table* ST;
+segment_table* reservedSeg;
+block_OOB* OOB;
 
 uint32_t numLoaded;
-uint32_t nob;
-uint32_t ppb_;
-BM_T* BM;
+int32_t nop_;
+int32_t nob_;
+int32_t nos_;
+int32_t ppb_;
+int32_t pps_;
+int32_t bps_;
 
+int numGC;
 
 struct algorithm __block={
 	.create=block_create,
@@ -24,90 +30,63 @@ struct algorithm __block={
 	.remove=block_remove
 };
 
-/* Set set_pointer to first-meet ERASE index from current set_pointer like a round-robin */
-int32_t block_findsp(int32_t checker)
-{
-	set_pointer = 0;
-
-	for (; set_pointer < nob; ++set_pointer) {
-		if (block_valid_array[set_pointer] == ERASE) {
-			checker = 1;
-			break;
-		}
-	}
-	if (checker == 0) {
-		while (1) {
-			printf("No Free Block!\n");
-			sleep(5);
-		}
-	}
-	if (checker == 0) {
-		for (set_pointer =0; set_pointer < nob; ++set_pointer)
-			if (block_valid_array[set_pointer] == ERASE){
-				checker = 1;
-				break;
-			}
-	}
-	return checker;
-}
-
-/* Check Last offset */
-int8_t block_CheckLastOffset(uint32_t* lastoffset_array, uint32_t PBA, uint32_t offset)
-{
-	if (lastoffset_array[PBA] <= offset) {
-		lastoffset_array[PBA] = offset;
-		return 1;
-	}
-	else // Moving Block with target offset update
-		return 0;
-}
 
 uint32_t block_create (lower_info* li,algorithm *algo){
 	printf("block_create start!\n");
 	algo->li=li;
-	//BM_Init(&blockArray);
-	nob = _NOS;
-	ppb_ = _PPS;
-	//BM = BM_Init(nob, ppb_, 0, 0);
-#ifdef Linear
-	BM = BM_Init(nob, ppb_, 0, 0);
-#endif
-#ifdef Queue
-	BM = BM_Init(nob, ppb_, 0, 1); // 1 FreeQueue
-#endif
+	nop_ = _NOP;
+	nob_ = _NOB;
+	nos_ = _NOS;
+	ppb_ = _PPB;
+	pps_ = _PPS;
+	bps_ = BPS;
+	BM = BM_Init(nob_, ppb_, 1, 1); // 1 FreeQueue
 
-	block_maptable = (int32_t*)malloc(sizeof(int32_t) * nob);
-	uint32_t i=0;
-	for (; i<nob; ++i){ // maptable initialization
-		block_maptable[i] = NIL;
+	BT = (block_table*)malloc(sizeof(block_table) * nob_);
+	ST = (segment_table*)malloc(sizeof(segment_table) * nos_);
+	OOB = (block_OOB*)malloc(sizeof(block_OOB) * nop_);
+
+	for (int i=0; i<nob_; i++) {
+		BT[i].PBA = NIL;
+		BT[i].lastoffset = 0;
+		BT[i].valid = 1;
+		BT[i].alloc_block = NULL;
 	}
-
-	//BM_ValidateAll(BM->barray); // Actually, BM initialization is validate.
-
-	lastoffset_array = (uint32_t*)malloc(sizeof(uint32_t) * nob);
-	for (uint32_t i=0; i<nob; i++)
-		lastoffset_array[i] = 0;
-
-	block_valid_array = (int8_t*)malloc(sizeof(int8_t) * nob);
-	for (i = 0; i < nob; ++i)
-		block_valid_array[i] = ERASE; // 0 means ERASED, 1 means VALID
-
-	/* Queue */
-#ifdef Queue
-	/*
-	FreeQ = (Queue_t*)malloc(sizeof(Queue_t));
-	InitQueue(FreeQ);
-	for (int i=0; i<nob; ++i) {
-		Enqueue(FreeQ, i);
+	for (int i=0; i<nos_; i++) {
+		ST[i].segblock.PBA = i; // PSA(Physical Segment Address)
+		ST[i].segblock.Invalid = 0; // number of Invalid blocks in Segment i
+		ST[i].segblock.hn_ptr = NULL;
+		//ST[i].segblock.type = 0; // meaningless
+		//ST[i].segblock.ValidP = NULL; // meaningless
+		ST[i].blockmap = (Block**)malloc(sizeof(Block*) * bps_);
+		for (int j=0; j<bps_; ++j) {
+			ST[i].blockmap[j] = &(BM->barray[i*bps_ + j]);
+		}
 	}
-	*/
-	BM_Queue_Init(&FreeQ);
-	for (uint32_t i=0; i<nob; ++i)
-		BM_Enqueue(FreeQ, &BM->barray[i]);
-	BM->qarray[0] = FreeQ;
+	for (int i=0; i<nop_; ++i) {
+		OOB[i].LPA = NIL;
+	}
+	
+
+	reservedSeg = &ST[nos_ - 1]; // reserved segment for GC
+
+	BM_Queue_Init(&bQueue);
+#if 1
+	for(int i = 0; i < nos_ - 1; i++)
+		for(int j = 0; j < bps_; j++)
+			BM_Enqueue(bQueue, &BM->barray[i * bps_ + j]);
 #endif
+#if 0
+	for (int i=0; i<(nob_-bps_); ++i)
+		BM_Enqueue(bQueue, &BM->barray[i]);
+#endif
+	BM->qarray[0] = bQueue;
+
+
+	bHeap = BM_Heap_Init(nos_ - 1);
+	BM->harray[0] = bHeap;
+
 	printf("block_create end!\n");
-
 	printf("TOTALSIZE: %ld\n", TOTALSIZE);
 	printf("REALSIZE: %ld\n", REALSIZE);
 	printf("PAGESIZE: %d\n", PAGESIZE);
@@ -115,7 +94,7 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 	printf("BLOCKSIZE: %d\n", BLOCKSIZE);
 	printf("_NOP: %ld\n", _NOP);
 	printf("_NOS: %ld\n", _NOS);
-	printf("_NOB: %ld\n", _NOB);
+	printf("_nob_: %ld\n", _NOB);
 	printf("_RNOS: %ld\n", _RNOS);
 	printf("RANGE: %ld\n", RANGE);
 	printf("async: %d\n", ASYNC);
@@ -123,167 +102,112 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 
 }
 void block_destroy (lower_info* li, algorithm *algo){
+	free(BT);
+	for (int i=0; i<nos_; ++i)
+		free(ST[i].blockmap);
+	free(ST);
+	free(OOB);
 
-	free(lastoffset_array);
-	free(block_maptable);
-	free(block_valid_array);
-	//free(sram_valueset);
+	printf("block_destroy() called.. Total number of GC: %d\n", numGC);
 
-#ifdef Queue
-	//free(FreeQ);
-#endif
-
-	//BM_Free(blockArray);
 	BM_Free(BM);
 }
 uint32_t block_get(request *const req){
+	uint32_t LBA;
+	uint32_t offset;
+	uint32_t PBA;
+	uint32_t PPA;
+	//algo_req* my_req;
+
 	bench_algo_start(req);
 
 	/* Request production */
-	algo_req *my_req=(algo_req*)malloc(sizeof(algo_req));
-	my_req->parents = req;
-	my_req->end_req=block_end_req;
+	//my_req=(algo_req*)malloc(sizeof(algo_req));
+	//my_req->parents = req;
+	//my_req->end_req=block_end_req;
 
-	uint32_t LBA = my_req->parents->key / ppb_;
-	uint32_t offset = my_req->parents->key % ppb_;
+	LBA = req->key / ppb_;
+	offset = req->key % ppb_;
+	PBA = BT[LBA].PBA;
+	PPA = PBA * ppb_ + offset;
 
-	if (block_maptable[LBA] == NIL){
-		printf("\nRead Empty Page..\n");
+	if (!BM_IsValidPage(BM, PPA)) {
 		bench_algo_end(req);
-		return 0;
+		printf("\nRead Empty Page..\n");
+		req->type = FS_NOTFOUND_T;
+		req->end_req(req);
+		return 1;
 	}
 
-	uint32_t PBA = block_maptable[LBA];
-	uint32_t PPA = PBA * ppb_ + offset;
-
 	bench_algo_end(req);
-	__block.li->pull_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
+	//__block.li->pull_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
+	__block.li->pull_data(PPA, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
 
 	return 0;
 }
 
 uint32_t block_set(request *const req){
-	algo_req* my_req;
+	uint32_t LBA;
+	uint32_t offset;
+	uint32_t PBA;
+	uint32_t PPA;
+	uint32_t PSA;
+	//algo_req* my_req;
+	segment_table* seg_;
+
 	bench_algo_start(req);
 
 	/* Request production */
-	my_req = (algo_req*)malloc(sizeof(algo_req));
-	my_req->parents = req;
-	my_req->end_req = block_end_req;
-#ifdef BFTL_KEYDEBUG
-	//if (my_req->parents->key % 1000 == 0)
-		printf("Start set! key: %d\n", my_req->parents->key);
-#endif
-	//printf("seq:%d\n",set_seq++);
-	//printf("block_set 1!\n");
-	uint32_t LBA = my_req->parents->key / ppb_;
-	uint32_t offset = my_req->parents->key % ppb_;
-	uint32_t PBA;
-	uint32_t PPA;
-	int8_t checker = 0;
+	//my_req = (algo_req*)malloc(sizeof(algo_req));
+	//my_req->parents = req;
+	//my_req->end_req = block_end_req;
 
-	//printf("Start set! key: %d, LBA: %d, offset: %d\n", my_req->parents->key, LBA, offset);
+	LBA = req->key / ppb_;
+	offset =req->key % ppb_;
 
-	//if (checker == 0) {
-		/* There is NO free space in flash block */
-		/* We need OverProvisioning area, maybe. */
-#ifdef BFTL_DEBUG1	
-	printf("LBA: %d, offset: %d\n", LBA, offset);
-	printf("block_maptable[LBA=%d] = %d\n", LBA, block_maptable[LBA]);
-#endif
-
-	if (block_maptable[LBA] == NIL)
+	if (BT[LBA].PBA == NIL)
 	{
-#ifdef BFTL_DEBUG1	
-		printf("\tcase 1\n");
-#endif
-#ifdef Queue
-		//set_pointer = Dequeue(FreeQ);
-		set_pointer = BM_Dequeue(FreeQ)->PBA;
-#endif
-#ifdef Linear
-		checker = block_findsp(checker);
-#endif
-		if (set_pointer == (uint32_t)-1) while(1) printf("WHAT!");
-
-		// Switch ERASE to EXIST of block_valid_array
-		block_valid_array[set_pointer] = EXIST;
-
-		// Write PBA of mapping result in maptable
-		block_maptable[LBA] = set_pointer;
-
-		//PBA = block_maptable[LBA];
-		//PPA = PBA * PPB + offset;
-		PPA = set_pointer * ppb_ + offset; // Equal to above 2 lines
-
-		if (BM_IsValidPage(BM, PPA))
-			while(1)
-				printf("ERROROROROROR!\n");
-		BM_ValidatePage(BM, PPA);
-
-		// write
-		//printf("block_set 2!\n");
-		//printf("my_req -> length: %d\n", my_req->parents->value->length);
-		bench_algo_end(req);
-		__block.li->push_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
-		//printf("block_set 3!\n");
-	}
-
-	else
-	{
-		PBA = block_maptable[LBA];
-		PPA = PBA  * ppb_ + offset;
-
-		// data가 차있는 page를 valid라고 할 지 invalid라고 할 지 제대로 골라야 할 것 같다. 지금은 차있는 page를 invalid라고 설정하여 그 page에 write하려고 할 시에 GC를 하도록 하였다. valid로 바꾸는 게 맞는 것 같긴 한데, 그렇게 하면 write할 수 있는(비어있는) page들은 모두 invalid 상태라고 여기는 것이 된다. 그건 또 이상하다.. 그냥 block ftl에서는 write할 수 있는(비어있는) page를 valid page로, write할 수 없는(쓰여있는) page를 invalid page로 여기고 BM을 사용한다고 여기면 될 것 같다.
-		// 그리고 block level에서의 valid/invalid 여부는 BM valid/invalid와 상관없다. 각 page마다 0/1을 구분하기 위해 BM의 page 단위 validity를 쓴 것일 뿐이다.
-		if (!BM_IsValidPage(BM, PPA))
-		{
-#ifdef BFTL_DEBUG1	
-			printf("\tcase 2\n"); // 비어있는 page인 경우. 그대로 write 가능하다.
-#endif
-			int offsetcase = block_CheckLastOffset(lastoffset_array, PBA, offset);
-			if (offsetcase == 0){
-				// Moving Block with target offset update
-				// 새로운 block으로 옮기고 metadata 다 update하기. 사실상 그냥 case 3이랑 똑같음
-				GC_moving(req, my_req, LBA, offset, PBA, PPA, checker);
-			}
-			else {
-				BM_ValidatePage(BM, PPA); // write되어 차있는 page라고 적어놓는다.
-				block_valid_array[PBA] = EXIST;
-				bench_algo_end(req);
-				__block.li->push_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
-			}
+		BT[LBA].alloc_block = BM_Dequeue(bQueue);
+		if (BT[LBA].alloc_block == NULL) {
+			block_GC();
+			BT[LBA].alloc_block = BM_Dequeue(bQueue);
 		}
-		else if (BM_IsValidPage(BM, PPA))
-		{
-#ifdef BFTL_DEBUG1	
-			printf("\tcase 3(GC)\n");
-#endif
-			GC_moving(req, my_req, LBA, offset, PBA, PPA, checker);
-		}
-		else
-			while(1) printf("Valid???");
-	}
-#ifdef BFTL_DEBUG1
-	printf("end)LBA: %d, offset: %d\n", LBA, offset);
-#endif
+		BT[LBA].PBA = BT[LBA].alloc_block->PBA;
+		seg_ = &ST[BT[LBA].PBA/bps_];
+		if (!seg_->segblock.hn_ptr)
+			seg_->segblock.hn_ptr = BM_Heap_Insert(bHeap, &seg_->segblock);
 #if 0
-	if (offset > 16375){
-		printf("LBA: %d, offset: %d\n", LBA, offset);
-		printf("PBA: %d, PPA: %d\n", PBA, PPA);
-		sleep(1);
-	}
+		PSA = LBA_TO_PSA(BT, LBA);
+		if (ST[PSA].segblock.hn_ptr == NULL) {
+			ST[PSA].segblock.hn_ptr = BM_Heap_Insert(bHeap, &ST[PSA].segblock);
+		}
 #endif
-	
-	return 0;
+	}
+	PBA = BT[LBA].PBA;
+	PPA = PBA * ppb_ + offset;
+	if (!block_CheckLastOffset(LBA, offset) || BM_IsValidPage(BM, PPA)) {
+		// Bad ASC order or Page Collision occurs
+		//GC_moving(req, my_req, LBA, offset, PBA, PPA);
+		GC_moving(req, NULL, LBA, offset, PBA, PPA);
+		bench_algo_end(req);
+		req->end_req(req);
+	}
+	else {
+		// case: We can write the page directly
+		BM_ValidatePage(BM, PPA);
+		OOB[PPA].LPA = req->key; // save LPA
+		BT[LBA].lastoffset = offset;
+		bench_algo_end(req);
+		__block.li->push_data(PPA, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
+	}
 
+	return 0;
 }
 uint32_t block_remove(request *const req){
-	//	block->li->trim_block()
-
 	return 0;
 }
 
+#if 0
 void* block_end_req(algo_req* input){
 	request* res = input->parents;
 	res->end_req(res);
@@ -297,150 +221,36 @@ void* block_algo_end_req(algo_req* input){
 	numLoaded++;
 	return NULL;
 }
-
-value_set* SRAM_load(PTR* sram_value, uint32_t i, uint32_t old_PPA_zero)
-{
-	algo_req* temp_req = (algo_req*)malloc(sizeof(algo_req));
-	value_set* temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-	temp_req->parents = NULL;
-	temp_req->end_req = block_algo_end_req;
-	__block.li->pull_data(old_PPA_zero + i, PAGESIZE, temp_value_set, ASYNC, temp_req);
-	sram_value[i] = (PTR)malloc(PAGESIZE);
-	return temp_value_set;
-	// sram malloc PAGESIZE 여기서. 인수로 sram 받아서 할당하고 unload에서 free.
+void* block_algo_end_req2(algo_req* input){
+	free(input);
+	return NULL;
 }
-
-void SRAM_unload(PTR* sram_value, uint32_t i, uint32_t new_PPA_zero)
-{
-	algo_req* temp_req2 = (algo_req*)malloc(sizeof(algo_req));
-	//value_set* temp_value_set2 = inf_get_valueset(sram_valueset[i].value, FS_MALLOC_W, PAGESIZE);
-	value_set* temp_value_set2 = inf_get_valueset(sram_value[i], FS_MALLOC_W, PAGESIZE);
-	temp_req2->parents = NULL;
-	temp_req2->end_req = block_algo_end_req;
-	__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_value_set2, ASYNC, temp_req2);
-	inf_free_valueset(temp_value_set2, FS_MALLOC_W);
-	free(sram_value[i]);
-}
-void SRAM_unload_target(PTR* sram_value, uint32_t i, uint32_t new_PPA_zero, algo_req* my_req)
-{
-	value_set* temp_value_set2 = inf_get_valueset(sram_value[i], FS_MALLOC_W, PAGESIZE);
-	__block.li->push_data(new_PPA_zero + i, PAGESIZE, temp_value_set2, ASYNC, my_req);
-	inf_free_valueset(temp_value_set2, FS_MALLOC_W);
-	free(sram_value[i]);
-}
-
-void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offset, uint32_t PBA, uint32_t PPA, int8_t checker)
-{
-	/* Allocate an empty block */
-#ifdef Queue
-	//set_pointer = Dequeue(FreeQ);
-	set_pointer = BM_Dequeue(FreeQ)->PBA;
-#endif
-#ifdef Linear
-	checker = block_findsp(checker);
 #endif
 
-	/* Maptable updates for data moving */
-	block_maptable[LBA] = set_pointer;
-	block_valid_array[set_pointer] = EXIST;
-	block_valid_array[PBA] = ERASE; // PBA means old_PBA
+void* block_end_req(algo_req* input){
+	block_params *params = (block_params*)(input->params);
+	value_set *temp_set = params->value;
+	request *res = input->parents;
 
-	uint32_t old_PPA_zero = PBA * ppb_;
-	uint32_t new_PBA = block_maptable[LBA];
-	uint32_t new_PPA_zero = new_PBA * ppb_;
-	uint32_t numValid = 0;
-	uint32_t i = 0;
-#ifdef BFTL_DEBUG0
-	printf("moving start! LBA: %d, offset: %d, old_PBA: %d, new_PBA: %d ------------------------------------------\n", LBA, offset, PBA, new_PBA);
-#endif
-	/* Start move */
-#ifdef BFTL_DEBUG1
-	printf("Start move!\n");
-#endif
-
-	numLoaded = 0;
-	value_set** temp_set = (value_set**)malloc(sizeof(value_set*)*ppb_);
-	//sram_valueset = (value_set*)malloc(sizeof(value_set) * ppb_);
-	//memset(sram_valueset, 0, sizeof(value_set) * ppb_);
-	sram_value = (PTR*)malloc(sizeof(PTR) * ppb_);
-	for (i=0; i<ppb_; ++i)
-		sram_value[i] = NULL;
-
-	// SRAM_load
-	for (i=0; i<ppb_; ++i) {
-		if (BM_IsValidPage(BM, old_PPA_zero+i)) {
-			if (i != offset) {
-				numValid++; // The name is numValid, but it excludes the target offset.
-				temp_set[i] = SRAM_load(sram_value, i, old_PPA_zero);
+	switch(params->type){
+		case DATA_R:
+			if(res){
+				res->end_req(res);
 			}
-		}
-	}
-
-	// Waiting Loading by Polling
-	//printf("numLoaded: %d, numValid: %d\n", numLoaded, numValid);
-	while (numLoaded != numValid) {}
-	//printf("Pass! numLoaded: %d\n", numLoaded);
-
-	// memcpy values from value_set
-
-	for (i=0; i<ppb_; ++i) {
-		if (BM_IsValidPage(BM, old_PPA_zero+i)) {
-			if (i != offset) {
-				//memcpy(&sram_valueset[i], temp_set[i], sizeof(value_set));
-				memcpy(sram_value[i], temp_set[i]->value, PAGESIZE);
-				inf_free_valueset(temp_set[i], FS_MALLOC_R);
+			break;
+		case DATA_W:
+			if(res){
+				res->end_req(res);
 			}
-		}
+			break;
+		case GC_R:
+			numLoaded++;
+			break;
+		case GC_W:
+			inf_free_valueset(temp_set, FS_MALLOC_W);
+			break;
 	}
-	//printf("sram_value[%d]: %p\n", offset, sram_value[offset]);
-	//printf("req->value->value: %p\n", req->value->value);
-	sram_value[offset] = (PTR)malloc(PAGESIZE);
-	memcpy(sram_value[offset], req->value->value, PAGESIZE);
-
-
-	// SRAM_unload
-	for (i=0; i<ppb_; ++i) {
-		BM_InvalidatePage(BM, old_PPA_zero + i);
-		if (sram_value[i]) {
-			if (i != offset)
-				SRAM_unload(sram_value, i, new_PPA_zero);
-			else 
-				SRAM_unload_target(sram_value, i, new_PPA_zero, my_req);
-
-			BM_ValidatePage(BM, new_PPA_zero + i);
-		}
-	}
-
-#if 0
-	for (i=0; i<ppb_; ++i) {
-		if (BM_IsValidPage(BM, old_PPA_zero+i)) {
-			BM_ValidatePage(BM, new_PPA_zero + i);
-			BM_InvalidatePage(BM, old_PPA_zero + i);
-			if (i != offset)
-				SRAM_unload(sram_value, i, new_PPA_zero);
-			else {
-				bench_algo_end(req);
-				__block.li->push_data(new_PPA_zero + offset, PAGESIZE, req->value, ASYNC, my_req);
-			}
-		}
-	}
-#endif
-
-	free(sram_value);
-
-	//printf("numLoaded: %d\n", numLoaded);
-	/* Trim the block of old PPA */
-#ifdef BFTL_DEBUG1
-	printf("trim!\n");
-#endif
-	__block.li->trim_block(old_PPA_zero, false);
-#ifdef Queue
-	//Enqueue(FreeQ, PBA);
-	BM_Enqueue(FreeQ, &BM->barray[PBA]);
-#endif
-	bench_algo_end(req);
-#ifdef BFTL_DEBUG1
-	printf("trim end!\n");
-#endif
-	//free(sram_valueset);
+	free(params);
+	free(input);
+	return NULL;
 }
