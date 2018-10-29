@@ -26,5 +26,4 @@ void* pbase_main(void* arg){
 			printf("consumed. count :%d\n",out);
 		}
 	}
-	printf("fuck you I'm done\n");
 }

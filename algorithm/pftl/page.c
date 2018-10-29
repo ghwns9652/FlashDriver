@@ -60,6 +60,8 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 	page_TABLE = (TABLE*)malloc(sizeof(TABLE) * _g_nop);
 	page_OOB = (P_OOB*)malloc(sizeof(P_OOB) * _g_nop);
 	page_queue = (algo_queue*)malloc(sizeof(algo_queue)*ALGO_QUEUESIZE);
+	
+	page_wbuff = (w_buff*)malloc(sizeof(w_buff)*ALGO_BUFSIZE);
 
 	sem_init(&empty,0,4);
 	sem_init(&full,0,0);
@@ -101,6 +103,7 @@ void pbase_destroy(lower_info* li, algorithm *algo){
 	free(page_OOB);
 	free(page_TABLE);
 	free(page_queue);
+	free(page_wbuff);
 }
 
 void *pbase_end_req(algo_req* input){
@@ -169,17 +172,15 @@ uint32_t pbase_get_fromqueue(request* const req){
 	int32_t ppa = 0;
 	int32_t buffer_idx = 0;
 	int8_t flag = 0;
-	/*buffer check code.
+	//buffer check code.
 	for(int i=0;i<ALGO_BUFSIZE;i++){
 		if(req->key == page_wbuff[i].lpa){
 			buffer_idx = i;
 			flag = 1;
 		}
 	}
-	*/
-
-	/*buffer / cache check.
-	if(0){//if target lpa is in write buffer,
+	//!buffer check code.
+	if(flag == 1){//buffer read case.
 		bench_algo_start(req);
 		memcpy(req->value->value,page_wbuff[buffer_idx].req->value->value,sizeof(PAGESIZE));
 		printf("return from buffer : %c\n",req->value->value[0]);
@@ -188,11 +189,6 @@ uint32_t pbase_get_fromqueue(request* const req){
 		flag = 0;
 		return 0;
 	}
-	else if(0){//if target lpa is in read cache,
-
-		req->end_req(req);
-		return 0;
-	}*/
 
 	bench_algo_start(req);
 	lpa = req->key;
@@ -205,9 +201,6 @@ uint32_t pbase_get_fromqueue(request* const req){
 	}
 	bench_algo_end(req);	
 	algo_pbase.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
-	/*read caching tactic : LRU*/
-	/*read caching*/
-	/*!read cacheing*/
 	
 	return 0;
 }
@@ -220,30 +213,38 @@ uint32_t pbase_set_fromqueue(request* const req){
 	 * if necessary, allocation may perf garbage collection.
 	 */
 
-	/*write buffering.
+	//write buffering.
 	if(buff_count != ALGO_BUFSIZE){
 		page_wbuff[buff_count].req = req;
 		page_wbuff[buff_count].lpa = req->key;
 		buff_count++;
 	}
-	!write buffering.*/
+	//!write buffering.
 
-	//if(buff_count != 4){return 0;}//if buffer is not full, exit.
-	//else{//if buffer is full, flush.
-	int32_t lpa;
-	int32_t ppa;
-	bench_algo_start(req);
-	lpa = req->key;
-	ppa = alloc_page();//may perform garbage collection.
-	bench_algo_end(req);
-	algo_pbase.li->push_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
-	if(page_TABLE[lpa].ppa != -1){//already mapped case.(update)
-		BM_InvalidatePage(BM,page_TABLE[lpa].ppa);
-	}
-	page_TABLE[lpa].ppa = ppa;
-	BM_ValidatePage(BM,ppa);
-	page_OOB[ppa].lpa = lpa;
-	
+	if(buff_count != 4){return 0;}//if buffer is not full, exit.
+	else{//if buffer is full, flush.
+		for(int i=0;i<ALGO_BUFSIZE;i++){
+			int32_t lpa;
+			int32_t ppa;
+			request* const iter_req = page_wbuff[i].req;
+			bench_algo_start(iter_req);
+			lpa = iter_req->key;
+			ppa = alloc_page();//may perform garbage collection.
+			bench_algo_end(iter_req);
+			algo_pbase.li->push_data(ppa, PAGESIZE, iter_req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, iter_req));
+			if(page_TABLE[lpa].ppa != -1){//already mapped case.(update)
+				BM_InvalidatePage(BM,page_TABLE[lpa].ppa);
+			}
+			page_TABLE[lpa].ppa = ppa;
+			BM_ValidatePage(BM,ppa);
+			page_OOB[ppa].lpa = lpa;
+
+			//reset buffer.
+			page_wbuff[i].lpa = -1;
+			page_wbuff[i].req = NULL;
+		}
+		buff_count = 0;
+	}	
 	return 0;
 }
 
