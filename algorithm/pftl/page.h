@@ -21,7 +21,7 @@
 //determine buff size.
 #define ALGO_BUFSIZE 4
 #define ALGO_CACHESIZE 4
-#define ALGO_QUEUESIZE 4
+#define ALGO_QUEUESIZE (8L)
 typedef struct mapping_table{
 	int32_t ppa;
 } TABLE;
@@ -66,7 +66,9 @@ extern uint8_t *VBM;	   //valid bitmap.
 extern P_OOB *page_OOB;	   // Page level OOB.
 
 extern w_buff *page_wbuff;
-//extern r_cache *page_rcache;
+extern struct timeval flush_flag_start;
+extern struct timeval flush_flag_end;
+//extern r_cache *
 
 extern BM_T *BM;
 extern Block *reserved;

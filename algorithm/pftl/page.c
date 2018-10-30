@@ -22,8 +22,8 @@ Block *reserved;    //reserved.
 
 //buffering & caching.
 w_buff *page_wbuff;
-r_cache *page_rcache;
-
+struct timeval flush_flag_start;
+struct timeval flush_flag_end;
 //queueing.
 pthread_t pbase_main_thread;
 sem_t empty;
@@ -63,7 +63,7 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 	
 	page_wbuff = (w_buff*)malloc(sizeof(w_buff)*ALGO_BUFSIZE);
 
-	sem_init(&empty,0,4);
+	sem_init(&empty,0,ALGO_QUEUESIZE);
 	sem_init(&full,0,0);
 	pthread_create(&pbase_main_thread,NULL,pbase_main,NULL);
 	
@@ -93,6 +93,7 @@ void pbase_destroy(lower_info* li, algorithm *algo){
 	 * frees allocated mem.
 	 * destroys blockmanager.
 	 */
+
 	printf("gc count: %d\n", gc_count);
 	end_flag = 1;
 	pthread_join(pbase_main_thread,NULL);
@@ -139,10 +140,10 @@ void *pbase_end_req(algo_req* input){
 	return NULL;
 }
 uint32_t pbase_get(request* const req){
-	printf("get called.\n");
+//	printf("get called.\n");
 	sem_wait(&empty);
 	in++;
-	in %= 4;
+	in %= ALGO_QUEUESIZE;
 	page_queue[in].req = req;
 	page_queue[in].rw = 0;
 	sem_post(&full);
@@ -151,10 +152,10 @@ uint32_t pbase_get(request* const req){
 
 uint32_t pbase_set(request* const req){
 //	sleep(1);
-	printf("set called.\n");
+//	printf("set called.\n");
 	sem_wait(&empty);
 	in++;
-	in %= 4;
+	in %= ALGO_QUEUESIZE;
 	page_queue[in].req = req;
 	page_queue[in].rw = 1;
 	sem_post(&full);
@@ -195,6 +196,7 @@ uint32_t pbase_get_fromqueue(request* const req){
 	ppa = page_TABLE[lpa].ppa;
 	if(ppa == -1){
 		bench_algo_end(req);
+//		printf("not mapped..!\n");
 		req->type = FS_NOTFOUND_T;
 		req->end_req(req);
 		return 1;
@@ -218,10 +220,11 @@ uint32_t pbase_set_fromqueue(request* const req){
 		page_wbuff[buff_count].req = req;
 		page_wbuff[buff_count].lpa = req->key;
 		buff_count++;
+		gettimeofday(&flush_flag_start,NULL);
 	}
 	//!write buffering.
 
-	if(buff_count != 4){return 0;}//if buffer is not full, exit.
+	if(buff_count != ALGO_BUFSIZE){return 0;}//if buffer is not full, exit.
 	else{//if buffer is full, flush.
 		for(int i=0;i<ALGO_BUFSIZE;i++){
 			int32_t lpa;
