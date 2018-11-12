@@ -12,8 +12,6 @@
 #include "../../bench/bench.h"
 #include "../blockmanager/BM.h"
 
-#include <unistd.h>
-
 #if 0
 typedef struct block_params{
 	request *parents;
@@ -92,14 +90,12 @@ inline int32_t LBA_TO_PSA(block_table* BT, uint32_t LBA) {
 
 /* Internal Function declaration */
 value_set* SRAM_load(block_sram* sram_table, int32_t ppa, int idx);
-void SRAM_unload(block_sram* sram_table, int32_t ppa, int idx, request* req1);
-//void SRAM_unload(block_sram* sram_table, int32_t ppa, int idx);
+void SRAM_unload(block_sram* sram_table, int32_t ppa, int idx);
 void SRAM_unload_target(block_sram* sram_table, uint32_t i, uint32_t new_PPA_zero, algo_req* my_req);
 algo_req* assign_pseudo_req(uint8_t type, value_set *temp_v, request *req);
 
 void block_GC();
-void GC_moving(request **const req_set, algo_req* my_req, uint32_t LBA, uint32_t offset, uint32_t old_PBA, uint32_t old_PPA);
-//void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offset, uint32_t old_PBA, uint32_t old_PPA);
+void GC_moving(request *const req, algo_req* my_req, uint32_t LBA, uint32_t offset, uint32_t old_PBA, uint32_t old_PPA);
 int8_t block_CheckLastOffset(uint32_t LBA, uint32_t offset);
 
 /* Macros */
@@ -131,9 +127,6 @@ void* block_algo_end_req(algo_req* input);
 
 void wb_full(void);
 void __block_set(request *const req);
-void __merge_sort(request** wb, int size);
-#define WB_SIZE 1024
+#define WB_SIZE 1024*1024
 #define RPP 2	// Requests Per Page. Now, only support 2(8KB page = 4K+4K requests)
-
-//#define WB_DEBUG
 #endif // _BLOCK_H_

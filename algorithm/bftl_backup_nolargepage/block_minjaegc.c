@@ -1,6 +1,6 @@
 #include "block.h"
 
-void GC_moving(request **const req_set, algo_req* my_req, 
+void GC_moving(request *const req, algo_req* my_req, 
     uint32_t LBA, uint32_t offset, uint32_t old_PBA, uint32_t old_PPA)
 {
 	uint32_t old_PPA_zero;
@@ -8,39 +8,23 @@ void GC_moving(request **const req_set, algo_req* my_req,
 	uint32_t numValid;
 	uint32_t new_PBA;
 	uint32_t new_PPA_zero;
-	uint32_t key_offset;
 	value_set** temp_set;
 	block_sram* sram_table;
-	segment_table* seg_;
 
 	old_PPA_zero = old_PBA * ppb_;
-	//printf("GC_moving start!\n");
+	printf("GC_moving start!\n");
     
-	//printf("GC_moving start!\n");
     if (!(BT[LBA].alloc_block = BM_Dequeue(bQueue))) {
         block_GC();
         BT[LBA].alloc_block = BM_Dequeue(bQueue);
-		if (!BT[LBA].alloc_block) {
-			while(1) {
-				printf("Dequeue.. No return!!!\n");
-			}
-		}
     }
-	printf("BT[%d].%d\n", LBA, BT[LBA].PBA);
-	printf("BT[%d].alloc_block = %x\n", LBA, BT[LBA].alloc_block);
-	printf("BT[%d].alloc_block->PBA = %d\n", LBA, BT[LBA].alloc_block->PBA);
     BT[LBA].PBA = BT[LBA].alloc_block->PBA; // new PBA
 	new_PBA = BT[LBA].PBA;
 	PSA = LBA_TO_PSA(BT, LBA);
 	new_PPA_zero = new_PBA * ppb_;
-	seg_ = &ST[BT[LBA].PBA/bps_];
-	if (!seg_->segblock.hn_ptr)
-		seg_->segblock.hn_ptr = BM_Heap_Insert(bHeap, &seg_->segblock);
-#if 0
     if (ST[PSA].segblock.hn_ptr == NULL) {
         ST[PSA].segblock.hn_ptr = BM_Heap_Insert(bHeap, &ST[PSA].segblock);
     }
-#endif
     
     numLoaded = 0;
     numValid = 0;
@@ -54,62 +38,54 @@ void GC_moving(request **const req_set, algo_req* my_req,
 	}
 
 	// SRAM_load
-	int offcase = 0;
 	for (int i=0; i<ppb_; ++i) {
-		if (i == (int32_t)offset) {
-			sram_table[numValid].SRAM_PTR = (PTR)malloc(PAGESIZE);
-			sram_table[numValid].SRAM_OOB.LPA = LBA * ppb_ + offset;
-			numValid++;
-			offcase = 1;
-		}
-		else if (BM_IsValidPage(BM, old_PPA_zero + i)) {
-			temp_set[numValid] = SRAM_load(sram_table, i + old_PPA_zero, numValid);
-			numValid++;
+		if (BM_IsValidPage(BM, old_PPA_zero+i)) {
+			if (i != (int32_t)offset) {
+				numValid++; // The name is numValid, but it excludes the target offset.
+				temp_set[i] = SRAM_load(sram_table, i, old_PPA_zero);
+			}
 		}
 	}
-	if (offcase == 0)
-		while(1) printf("off??");
-	
+	// Here, start
 	// Waiting Loading by Polling
-	//printf("numLoaded: %d, numValid: %d\n", numLoaded, numValid);
-	while (numLoaded != numValid - 1) {}
-	//printf("numLoaded: %d, numValid: %d\n", numLoaded, numValid);
+	while (numLoaded != numValid) {}
 
 	// memcpy values from value_set
-	for (int i=0; i<(int32_t)numValid; ++i) {
-		if (!temp_set[i]) {
-			if (req_set[1]) {
-				memcpy(sram_table[i].SRAM_PTR, req_set[0]->value->value, PAGESIZE/2);
-				memcpy(sram_table[i].SRAM_PTR + PAGESIZE/2, req_set[1]->value->value, PAGESIZE/2);
-			} else {
-				memcpy(sram_table[i].SRAM_PTR, req_set[0]->value->value, PAGESIZE);
+	for (int i=0; i<ppb_; ++i) {
+		if (BM_IsValidPage(BM, old_PPA_zero+i)) {
+			if (i != (int32_t)offset) {
+				memcpy(sram_table[i].SRAM_PTR, temp_set[i]->value, PAGESIZE);
+				inf_free_valueset(temp_set[i], FS_MALLOC_R);
 			}
-			
-		}
-		else {
-			memcpy(sram_table[i].SRAM_PTR, temp_set[i]->value, PAGESIZE);
-			inf_free_valueset(temp_set[i], FS_MALLOC_R);
 		}
 	}
+	//sram_value[offset] = (PTR)malloc(PAGESIZE);
+	sram_table[offset].SRAM_PTR = (PTR)malloc(PAGESIZE);
+	//memcpy(sram_value[offset], req->value->value, PAGESIZE);
+	memcpy(sram_table[offset].SRAM_PTR, req->value->value, PAGESIZE);
 
 	// SRAM_unload
-	for (int i=0; i<(int32_t)numValid; ++i) {
-		key_offset = sram_table[i].SRAM_OOB.LPA % ppb_;
-		SRAM_unload(sram_table, key_offset + new_PPA_zero, i, req_set[1]);
-	}
+	for (int i=0; i<ppb_; ++i) {
+		//BM_InvalidatePage(BM, old_PPA_zero + i);
+		if (sram_table[i].SRAM_PTR) {
+			if (i != (int32_t)offset)
+				SRAM_unload(sram_table, i, new_PPA_zero);
+			else 
+				SRAM_unload_target(sram_table, i, new_PPA_zero, my_req);
 
+			//BM_ValidatePage(BM, new_PPA_zero + i);
+		}
+	}
 	free(temp_set);
 	free(sram_table);
 
 	/* Trim the block of old PPA */
 	// NO. Just invalidate the 'Block'
 	BM_InitializeBlock(BM, old_PBA); // bitmap 0, invalid 0
-	//ST[PSA].segblock.Invalid++; // now, PSA == new_PBA/bps_
-	ST[old_PBA/bps_].segblock.Invalid++;
+	ST[PSA].segblock.Invalid++;
 
 	//__block.li->trim_block(old_PPA_zero, false);
 	//BM_Enqueue(bQueue, &BM->barray[PBA]); // Invalidate만 한 셈이니 Free Queue에 넣으면 안된다
-	//printf("GC_moving end!\n");
 }
 
 
@@ -129,13 +105,8 @@ void block_GC()
 	uint32_t key_offset;
 	uint32_t temp_PBA;
 	uint32_t PSA;
-	segment_table* seg_;
 
-	numGC++;
-	if ((numGC == 1) || !(numGC % 30)) {
-		printf("GC start!\n");
-		printf("numGC: %d\n", numGC);
-	}
+	printf("block_GC start!\n");
 	uint32_t victimSeg_PBA;
     victimBlock = BM_Heap_Get_Max(bHeap);
 	victimSeg = &ST[victimBlock->PBA]; // 사실 여기서 victimBlock의 역할은 끝. 
@@ -144,14 +115,18 @@ void block_GC()
 	// *victimBlock actually means victimSeg->segblock
 	old_PPA_zero = victimBlock->PBA * pps_; // 'PPA' of victim segment
 
-	//while (1)
-		//printf("GC!");
+	while (1)
+		printf("GC!");
 	while (victimSeg_PBA != (uint32_t)victimBlock->PBA)
 		printf("NONONO!");
 	
+    // Fill bQueue with Reserved Segment
+	// Segment에서 Block*에 접근해야 하므로 blockmap 사용해야..
+    for (int i=0; i<bps_; i++) {
+        BM_Enqueue(bQueue, reservedSeg->blockmap[i]);
+    }
 
 	if (victimBlock->Invalid == bps_) { // victim segment의 모든 block이 invalid인 경우, valid page들을 옮길 필요 없이 바로 trim하고 끝내면 된다.
-		printf("victimBlock pages are all invalid!\n");
 		all_block_invalid = 1;
 		//victimBlock->Invalid = 0;
 		__block.li->trim_block(old_PPA_zero, false);
@@ -163,24 +138,13 @@ void block_GC()
 			BM_InitializeBlock(BM, reservedSeg->blockmap[i]->PBA);
 		return ;
 	}
-	else if (victimBlock->Invalid == 0) { // all pages are valid
-		printf("All pages are valid. There are no extra pages\n");
-		exit(1);
-	}
-
-    // Fill bQueue with Reserved Segment
-	// Segment에서 Block*에 접근해야 하므로 blockmap 사용해야..
-    for (int i=0; i<bps_; i++) {
-        BM_Enqueue(bQueue, reservedSeg->blockmap[i]);
-    }
 
 	// victim segment 중 valid page만 옮기자. 옮기는 목적지는 Dequeue해서 바로바로 얻어내고.
 	numLoaded = 0;
 	numValid = 0;
 
-	sram_table = (block_sram*)malloc(sizeof(block_sram) * pps_);
 	temp_set = (value_set**)malloc(sizeof(value_set*)*pps_);
-
+	sram_table = (block_sram*)malloc(sizeof(block_sram) * pps_);
 	for (int i=0; i<pps_; ++i) {
 		sram_table[i].SRAM_OOB.LPA = NIL;
 		sram_table[i].SRAM_PTR= NULL;
@@ -190,9 +154,8 @@ void block_GC()
 	// SRAM_load
 	for (int i=0; i<pps_; ++i) {
 		if (BM_IsValidPage(BM, old_PPA_zero+i)) {
-			temp_set[numValid] = SRAM_load(sram_table, i + old_PPA_zero, numValid);
-			//temp_set[i] = SRAM_load(sram_table, i, old_PPA_zero, numValid);
-			numValid++;
+			numValid++; // The name is numValid, but it excludes the target offset.
+			temp_set[i] = SRAM_load(sram_table, i, old_PPA_zero);
 		}
 	}
 	// Here, start
@@ -200,18 +163,6 @@ void block_GC()
 	// 안하면 연산이 얼마나 더 늘어날까?
 	// Waiting Loading by Polling
 	while (numLoaded != numValid) {}
-
-	for (int i=0; i<(int32_t)numValid; ++i) {
-		memcpy(sram_table[i].SRAM_PTR, temp_set[i]->value, PAGESIZE);
-		key_LBA = sram_table[i].SRAM_OOB.LPA / ppb_;
-		if (BT[key_LBA].PBA != NIL) {
-			temp_PBA = BT[key_LBA].PBA;
-			BT[key_LBA].PBA = NIL;
-			BM_InitializeBlock(BM, temp_PBA);
-		}
-		inf_free_valueset(temp_set[i], FS_MALLOC_R);
-	}
-	/*
 
 	// memcpy values from value_set
 	for (int i=0; i<pps_; ++i) {
@@ -230,7 +181,6 @@ void block_GC()
 			BM_InitializeBlock(BM, temp_PBA);
 		}
 	}
-	*/
 
 #if 0
 	// Initialize old blocks in Victim Segment
@@ -241,26 +191,6 @@ void block_GC()
 	}
 #endif
 
-	// SRAM_unload
-	for (int i=0; i<(int32_t)numValid; ++i) {
-		key_LBA = sram_table[i].SRAM_OOB.LPA / ppb_;
-		key_offset = sram_table[i].SRAM_OOB.LPA % ppb_;
-		if (BT[key_LBA].PBA == NIL) {
-			BT[key_LBA].alloc_block = BM_Dequeue(bQueue);
-			BT[key_LBA].PBA = BT[key_LBA].alloc_block->PBA;
-			seg_ = &ST[BT[key_LBA].PBA/bps_];
-			if (!seg_->segblock.hn_ptr)
-				seg_->segblock.hn_ptr = BM_Heap_Insert(bHeap, &seg_->segblock);
-#if 0
-			PSA = LBA_TO_PSA(BT, key_LBA);
-			if (ST[PSA].segblock.hn_ptr == NULL) {
-				ST[PSA].segblock.hn_ptr = BM_Heap_Insert(bHeap, &ST[PSA].segblock);
-			}
-#endif
-		}
-		SRAM_unload(sram_table, key_offset + BT[key_LBA].PBA * ppb_, i, NULL); // req1이 있는 지 알아야 하지 않을까?
-	}
-	/*	
 	// SRAM_unload
 	for (int i=0; i<pps_; ++i) {
 		if (sram_table[i].SRAM_PTR) {
@@ -278,7 +208,6 @@ void block_GC()
 			SRAM_unload(sram_table, i, BT[key_LBA].PBA * ppb_);
 		}
 	}
-	*/
 
 	free(temp_set);
 	free(sram_table);
@@ -309,3 +238,95 @@ void block_GC()
 #endif
 }
 
+//incomplete version
+#if 0
+void block_GC(){
+	uint8_t all;
+	int32_t t_offset;
+	int32_t t_lba;
+	int32_t t_pba;
+	int32_t old_ppa;
+	int valid_page_num;
+	Block* victim;
+	seg_status* seg_victim;
+	seg_status *seg_;
+	value_set **temp_set;
+	block_sram *d_sram;
+
+	all = 0;
+	victim = BM_Heap_Get_Max(b_heap);
+	seg_victim = &SS[victim->PBA];
+	seg_victim->seg.hn_ptr = NULL;
+	if(victim->Invalid == bps_){ // every page is invalid.
+		all = 1;
+	}
+	else if(victim->Invalid == 0){// ssd all valid.
+		printf("full!!!\n");
+		exit(1);
+	}
+
+	old_ppa = seg_victim->seg.PBA * pps_;
+	for(int i = 0; i < bps_; i++){
+		BM_Enqueue(free_b, reserved->block[i]);
+	}
+	reserved = seg_victim;
+	if(all){
+		seg_victim->seg.Invalid = 0;
+		__block.li->trim_block(old_ppa, false);
+		return ;
+	}
+	valid_page_num = 0;
+	numLoaded = 0;
+	d_sram = (block_sram*)malloc(sizeof(block_sram) * pps_);
+	temp_set = (value_set**)malloc(sizeof(value_set*) * pps_);
+
+	for(int i = 0; i < ppb_; i++){
+		d_sram[i].PTR_RAM = NULL;
+		d_sram[i].OOB_RAM.lpa = -1;
+		temp_set[i] = NULL;
+	}
+
+	/* read valid pages in block */
+	for(int i = 0; i < pps_; i++){
+		if(BM_IsValidPage(BM, old_ppa + i)){
+			temp_set[valid_page_num] = SRAM_load(d_sram, old_ppa + i, valid_page_num);
+			valid_page_num++;
+		}
+	}
+
+	while (numLoaded != valid_page_num) {}
+
+	for(int i = 0; i < valid_page_num; i++){
+		memcpy(d_sram[i].PTR_RAM, temp_set[i]->value, PAGESIZE);
+		t_lba = d_sram[i].OOB_RAM.lpa / ppb_;
+		if((t_pba = BS[t_lba].pba) != -1){
+			BS[t_lba].pba = -1;
+			BM_InitializeBlock(BM, t_pba);
+		}
+		inf_free_valueset(temp_set[i], FS_MALLOC_R);
+	}
+
+	for(int i = 0; i < valid_page_num; i++){
+		t_lba = d_sram[i].OOB_RAM.lpa / ppb_;
+		t_offset = d_sram[i].OOB_RAM.lpa % ppb_;
+		if(BS[t_lba].pba == -1){
+			BS[t_lba].alloc_block = BM_Dequeue(free_b);
+			BS[t_lba].pba = BS[t_lba].alloc_block->PBA;
+			seg_ = &SS[BS[t_lba].pba/bps_];
+			if(!seg_->seg.hn_ptr){
+				seg_->seg.hn_ptr = BM_Heap_Insert(b_heap, &seg_->seg);
+			}
+		}
+		SRAM_unload(d_sram, BS[t_lba].pba * ppb_ + t_offset, i);
+	}
+
+	free(temp_set);
+	free(d_sram);
+
+	seg_victim->seg.Invalid = 0;
+
+	/* Trim block */
+	__block.li->trim_block(old_ppa, false);
+	return ;
+}
+#endif

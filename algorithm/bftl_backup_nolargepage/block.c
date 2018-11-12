@@ -45,18 +45,13 @@ struct algorithm __block={
 uint32_t block_create (lower_info* li,algorithm *algo){
 	printf("block_create start!\n");
 	algo->li=li;
-	nop_ = _NOP;
+	nop_ = _NOP * RPP;
 	nob_ = _NOB;
 	nos_ = _NOS;
 	ppb_ = _PPB;
 	pps_ = _PPS;
 	bps_ = BPS;
-
-	nob_ *= RPP;
-	bps_ *= RPP;
-	//BM = BM_Init(nob_, ppb_/RPP, 1, 1); // 1 FreeQueue
-	//BM = BM_Init(nob_, ppb_, 1, 1); // 1 FreeQueue
-	BM = BM_Init(nob_/RPP, ppb_, 1, 1); // 1 FreeQueue
+	BM = BM_Init(nob_, ppb_, 1, 1); // 1 FreeQueue
 
 	BT = (block_table*)malloc(sizeof(block_table) * nob_);
 	ST = (segment_table*)malloc(sizeof(segment_table) * nos_);
@@ -150,8 +145,6 @@ uint32_t block_get(request *const req){
 	uint8_t offset_req;
 	//algo_req* my_req;
 
-	uint32_t req_lpa = req->key;
-
 	bench_algo_start(req);
 
 	// First, check the write buffer and if the req exists, hand over it
@@ -160,7 +153,7 @@ uint32_t block_get(request *const req){
 			//printf("i: %d\n", i);
 			//printf("wb[%d]->key: %d\n", i, wb[i]->key);
 			//printf("req->key: %d\n", req->key);
-			if (wb[i]->key == req_lpa) {
+			if (wb[i]->key == req->key) {
 				bench_algo_end(req);
 				printf("wb_get hit!\n");
 				wb_hit++;
@@ -184,7 +177,7 @@ uint32_t block_get(request *const req){
 	offset = req->key % ppb_;
 	PBA = BT[LBA].PBA;
 	PPA = PBA * ppb_ + offset;
-	//offset_req = BT[LBA].req_offset[offset];
+	offset_req = BT[LBA].req_offset[offset];
 
 	if (!BM_IsValidPage(BM, PPA)) {
 		bench_algo_end(req);
@@ -207,7 +200,7 @@ uint32_t block_set(request *const req){
 	wb[fill++] = req;
 	wb_empty = 0;
 	sem_post(&mutex);
-	//printf("req: 0x%x\n", req);
+	printf("req: 0x%x\n", req);
 	//printf("block_set start!\n");
 
 	if (fill == WB_SIZE) {
@@ -217,9 +210,8 @@ uint32_t block_set(request *const req){
 }
 	
 
-//void __block_set_double(request** req_set){
+void __block_set_double(request** req_set){
 
-#if 0
 void __block_set_internal(request *const req){
 	uint32_t LBA;
 	uint32_t offset;
@@ -265,37 +257,24 @@ void __block_set_internal(request *const req){
 
 	//return 0;
 }
-#endif
 void __block_set(request **req_set){
-//void __block_set(request *req){
 	uint32_t LBA;
-	uint32_t offset, offset2;
+	uint32_t offset;
 	uint32_t PBA;
-	uint32_t PPA, PPA2;
+	uint32_t PPA;
 	uint32_t PSA;
-	int8_t compact = 0;
 	//algo_req* my_req;
 	segment_table* seg_;
 
-	if (req_set[1])
-		compact = 1;
-
-	//bench_algo_start(req);
-	bench_algo_start(req_set[0]);
-	if (compact)
-		bench_algo_start(req_set[1]);
+	bench_algo_start(req);
 
 	/* Request production */
 	//my_req = (algo_req*)malloc(sizeof(algo_req));
 	//my_req->parents = req;
 	//my_req->end_req = block_end_req;
 
-	LBA = req_set[0]->key / ppb_;
-	offset = req_set[0]->key % ppb_;
-	if (compact) {
-		offset2 = req_set[1]->key % ppb_; // == offset+1
-	}
-
+	LBA = req->key / ppb_;
+	offset =req->key % ppb_;
 
 	if (BT[LBA].PBA == NIL)
 	{
@@ -317,36 +296,22 @@ void __block_set(request **req_set){
 	}
 	PBA = BT[LBA].PBA;
 	PPA = PBA * ppb_ + offset;
-	PPA2= PBA * ppb_ + offset2; // == PPA+1;
-	// bftl과 BM이 보는 ppb가 다른데, PPA가 제대로 될 까? 
-	// BM에서 PPA를 어떻게 처리하는 지 보자. 될거같은데? 흠..
 	if (!block_CheckLastOffset(LBA, offset) || BM_IsValidPage(BM, PPA)) {
 		// Bad ASC order or Page Collision occurs
 		//GC_moving(req, my_req, LBA, offset, PBA, PPA);
-		GC_moving(req_set, NULL, LBA, offset, PBA, PPA);
-		bench_algo_end(req_set[0]);
-		if (compact) bench_algo_end(req_set[1]);
-		req_set[0]->end_req(req_set[0]);
-		if (compact) req_set[1]->end_req(req_set[1]);
+		GC_moving(req, NULL, LBA, offset, PBA, PPA);
+		bench_algo_end(req);
+		req->end_req(req);
 	}
 	else {
 		// case: We can write the page directly
 		BM_ValidatePage(BM, PPA);
-		OOB[PPA].LPA = req_set[0]->key; // save LPA
+		OOB[PPA].LPA = req->key; // save LPA
 		BT[LBA].lastoffset = offset;
-		bench_algo_end(req_set[0]);
-		if (compact) {
-			BM_ValidatePage(BM, PPA2); // == PPA+1
-			OOB[PPA2].LPA = req_set[1]->key; // save LPA
-			bench_algo_end(req_set[1]);
-			memcpy(req_set[0]->value->value + (PAGESIZE/2), req_set[1]->value->value, PAGESIZE/2); // add value of req1 to value of req0
-		}
-		__block.li->push_data(PPA, PAGESIZE, req_set[0]->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req_set[0])); // 처리한 request 개수는 2개로 세어줘야 할 텐데.. 어떻게?
+		bench_algo_end(req);
+		__block.li->push_data(PPA, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
 	}
 
-	//if (compact) {
-		//req_set[1]->end_req(req_set[1]); //// 여기서 rand test 터진다.. 11.06
-	//}
 	//return 0;
 }
 uint32_t block_remove(request *const req){
@@ -408,175 +373,20 @@ void wb_full(void)
 	// 2. flush buffer entries.. with compaction for large page support
 
 	// for now, let's implement buffer flush without compaction
-#ifdef WB_DEBUG
-	printf("wb_full start!\n");
-#endif
-#if 0
+	//printf("wb_full start!\n");
 	for (int i=0; i<WB_SIZE; ++i) {
 		__block_set(wb[i]);
 		wb[i] = NULL;
 		wb_empty = 1;
 	}
-#endif
-	// 1. sort
-	__merge_sort(wb, WB_SIZE);
-#if 0
-	for (int i=0; i<100; i++)
-		printf("wb(1~10): %x, key: %d\n", wb[i], wb[i]->key);
 
-	__merge_sort(wb, WB_SIZE);
-	printf("After merge,\n");
-
-	for (int i=0; i<100; i++)
-		printf("wb(1~10): %x, key: %d\n", wb[i], wb[i]->key);
-
-	exit(0);
-#endif
-	int count = 0;
-
-	// 2. clustering with compaction
-	for (int i=0; i<WB_SIZE- 1; ++i) {
-		// agressively, set req_set[0]
-		req_set[0] = wb[i];
-
-		// lba check
-		if (wb[i]->key/ppb_ == wb[i+1]->key/ppb_) {
-#ifdef WB_DEBUG
-			printf("lba check pass\t");
-#endif
-			// offset check
-			if ((wb[i]->key % ppb_)/2 == (wb[i+1]->key % ppb_)/2) {
-#ifdef WB_DEBUG
-				printf("offset check pass\t");
-#endif
-				// same lpa check
-				if (wb[i]->key == wb[i+1]->key) {
-#ifdef WB_DEBUG
-					printf("ignore old request for %x(%d), new request %x(%d)\n", wb[i], wb[i]->key, wb[i+1], wb[i+1]->key);
-#endif
-					continue;
-				} else {
-					// this code is so dirty.. but work
-#ifdef WB_DEBUG
-					printf("samelpa check pass. all pass\n");
-#endif
-					for (int k=1; i+1+k <WB_SIZE; k++) {
-						if (wb[i+1]->key != wb[i+1+k]->key)
-							break;
-						else 
-							count++;
-					}
-					req_set[1] = wb[i+1+count];
-					i += 1+count;
-					assign_pseudo_req(DATA_W, NULL, req_set[1]);
-					//req_set[1]->end_req = block_end_req;
-					//req_set[1]->end_req(req_set[1]);
-
-					// 여기에 request 하나 끝났다고 해줘야..
-					//__block.li->push_data(0, PAGESIZE, req_set[1]->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req_set[1])); // 처리한 request 개수는 2개로 세어줘야 할 텐데.. 어떻게?
-		//__block.li->push_data(PPA, PAGESIZE, req_set[0]->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req_set[0])); // 처리한 request 개수는 2개로 세어줘야 할 텐데.. 어떻게?
-				}
-			}
-			else {
-#ifdef WB_DEBUG
-				printf("offset check fail. no compaction\n");
-#endif
-				for (int j=1; j<RPP; ++j)
-					req_set[j] = NULL;
-			}
-
-		} else { // no compaction
-			//req_set[0] = wb[i];
-#ifdef WB_DEBUG
-			printf("lba check fail. no compaction\n");
-#endif
-			for (int j=1; j<RPP; ++j)
-				req_set[j] = NULL;
-		}
-#ifdef WB_DEBUG
-		printf("req0: %x(%d)\t", req_set[0], req_set[0]->key);
-		if (req_set[1])
-			printf("req1: %x(%d)\n", req_set[1], req_set[1]->key);
-		else
-			//printf("req1: %x(NULL)\n", req_set[1]);
-			printf("req1: %x(%d)\n", wb[i+1], wb[i+1]->key);
-#endif
-		//printf("req0: %x(%d), req1: %x(%d)\n", req_set[0], req_set[0]->key, req_set[1], req_set[1]->key);
-		__block_set(req_set);
-
-	}
-	wb_empty = 1;
-	for (int i=0; i<WB_SIZE; ++i)
-		wb[i] = NULL;
-
-	//exit(0);
-	
-	/*
-	문제!! 0, 1, 1, 1, 2, 2. 이렇게 된 건 어떻게 처리?
-		차라리 처음에 바로 심화된 same lpa check를 하는 게 낫지 않을까? 
-		check 한번 하고, 두번째거와 세번째것도 check하는 식으로.. 다른 게 나올 때까지.
-		근데 보통의 경우에는 overhead가 클 텐데..
-		1, 1이면 기존 테스트로도 걸러진다. 0, 1, 1이면 이게 compaction 되는 경우에만 그 다음것도 검사하면 되지 않을까?
-		즉, all pass인 경우에는 2번째것과 그 이후것을 비교. 다른 게 나올때까지 계속 뒤로 가서.. 그걸로 req_set[1]을 채우고
-		그에 맞게 i도 ++해주기. 
-		그리고, compaction 성공했으면 i++ 해주어야.. 원래도.
-	*/
-
-
-
-
-#if 0
 	// 여기서 두개씩 합쳐서 set으로 넣어야겠네.
 	for (int i=0; i<WB_SIZE/RPP; ++i) {
 		for (int j=0; j<RPP; ++j) {
 			req_set[j] = wb[i*RPP + j];
 		}
-		//__block_set(req_set);
+		__block_set(req_set);
 	}
-#endif
-	
-	// compaction해야 한다.
-	// 1. old request 버리기
-	// 2. clustering
-	// clustering과 같이 진행되야 할 것 같다.
-
-	/* 어떻게 clustering 할까?
-	   일단 sorting이 필요할 것 같다.
-	   아니, 애초에 buffer에 하나씩 넣을 때마다 table에 buffer의 내용물을 모두
-	   저장해 놓으면.. full에서 꺼낼 때.. 아니 처음에 넣을 때 바로바로 짝꿍이
-	   있는지 파악할 수 있을 것이다.
-	   그런데 buffer table이 가능한가? lpa 만큼 table이 있어야 할 것 같은데.
-	   lpa를 index로 하지 말고, 그냥 넣는 순서대로 저장해놓고.. 근데 그렇게 하면 
-	   buffer 크기 1024 기준으로 하나 합치려고 최대 1024짜리를 search해야 한다.
-	   lpa에 대한 Hash table로 만드는 게 가장 합리적인 것 같다. 
-	   처음에 넣을 때, 일단 lpa/ppb로 lba를 구하고, 음.. 애초에 lba가 같은 것들
-	   끼리 묶어서? 근데 그래도 block 개수만큼 table이 생긴다. 
-	   hash로 한다고 해도.. lpa의 범위 자체가 nop만큼 크기 때문에 hash table을 
-	   엄청 크게 만들 게 아니라면 collision이 너무 많이 생겨있다. 그건 별로
-	   좋지 못하다.
-	   그나마 가능한 게 lba 기준으로 묶어서 저장해놓고 그 안에서 되는 것들만 
-	   체크해놔서 묶거나, 혹은 그냥 2개씩 내려보낼 때마다 일일이 buffer 전체를
-	   search해서 짝꿍이 있는지 검색하는 것. buffer를 struct로 해서 
-	   그냥 request array가 아니라 request, lba, offset/2를 저장하게 함으로써
-	   lba가 같고 offset/2가 같은지 하나씩 검사하면서 찾기. 단순한 O(n^2) 형태로
-	   구현이 가능할 것. 이게 가장 현실성있어 보인다. 
-
-	   아니면, sort한 다음, entry마다 그 '다음 번째 entry'가 자신과 짝꿍인지 검사
-	   하는 형태로 하는 것. 그 다음 번째 entry가 자신과 lba와 offset/2가 같은 지
-	   검사하게 된다면, 실질적으로 짝꿍을 찾는 과정은 overhead가 적을 것이다.
-	   그렇다면, full 상태에서 buffer의 모든 entry들을 sorting한 뒤 짝꿍을 
-	   순차적으로 찾는 이 방식으로 하자.
-	   sorting은 어떻게? 꽉 찼을 때만 sort 상태가 필요하고 그 상태에서는 buffer를
-	   완전히 비우므로, 굳이 tree로 유지하고 있을 필요는 없을 것이다.
-	   따라서, request들을 그 lpa 기준으로 quick sort로 정렬하는 것이 좋을 것이다.
-
-	   방법 1. full에서 stable sort를 한번 해서 flush하기. 이 방법은 write 자체는
-	   잘 처리하지만, read할 때마다 buffer를 O(n)만큼 linear search해야 한다.
-	   방법 2. buffer 자체를 skip list로 관리하기. sorting에 필요한 총 overhead는
-	   방법 1보다 좀 더 크겠지만, 이 경우 read할 때 하는 search가 O(logn)이 되기 
-	   때문에 read hit까지 고려하면 이 편이 더 낫다. 구현은 더 복잡.
-	 */
-
 }
 
 

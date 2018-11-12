@@ -28,47 +28,13 @@ value_set* SRAM_load(block_sram* sram_table, int32_t ppa, int idx){
 	return temp_value_set;
 }
 
-void SRAM_unload(block_sram* sram_table, int32_t ppa, int idx, request* req1){
+void SRAM_unload(block_sram* sram_table, int32_t ppa, int idx){
 	value_set *temp_value_set;
 	temp_value_set = inf_get_valueset(sram_table[idx].SRAM_PTR, FS_MALLOC_W, PAGESIZE);
 	__block.li->push_data(ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(GC_W, temp_value_set, NULL)); // ppa means new_PPA
 	OOB[ppa] = sram_table[idx].SRAM_OOB;
-	if (req1)
-		OOB[ppa+1] = sram_table[idx].SRAM_OOB;
 	BM_ValidatePage(BM, ppa);
 	free(sram_table[idx].SRAM_PTR);
-}
-
-void __merge_sort(request** wb, int size)
-{
-	int i, j, k;
-	int c = size / 2;
-	request** sorted;
-
-	sorted = (request**)malloc(sizeof(request*)*size);
-	memset(sorted, 0, sizeof(request*)*size);
-	//for (i=0; i<size; i++)
-		//sorted[i] = wb[i];
-
-	if (size < 2)
-		return;
-
-	__merge_sort(wb, c);
-	__merge_sort(&wb[c], size - c);
-
-	for (i=0, j=c, k=0; i<c && j<size;) {
-		if (wb[i]->key < wb[j]->key)
-			sorted[k] = wb[i++];
-		else
-			sorted[k] = wb[j++];
-		k++;
-	}
-	while (i < c) sorted[k++] = wb[i++];
-	while (j < size) sorted[k++] = wb[j++];
-
-	for (i=0; i<size; i++) wb[i] = sorted[i];
-
-	//free(sorted);
 }
 
 #if 0

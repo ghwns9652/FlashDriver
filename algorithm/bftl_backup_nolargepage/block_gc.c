@@ -1,6 +1,6 @@
 #include "block.h"
 
-void GC_moving(request **const req_set, algo_req* my_req, 
+void GC_moving(request *const req, algo_req* my_req, 
     uint32_t LBA, uint32_t offset, uint32_t old_PBA, uint32_t old_PPA)
 {
 	uint32_t old_PPA_zero;
@@ -26,9 +26,6 @@ void GC_moving(request **const req_set, algo_req* my_req,
 			}
 		}
     }
-	printf("BT[%d].%d\n", LBA, BT[LBA].PBA);
-	printf("BT[%d].alloc_block = %x\n", LBA, BT[LBA].alloc_block);
-	printf("BT[%d].alloc_block->PBA = %d\n", LBA, BT[LBA].alloc_block->PBA);
     BT[LBA].PBA = BT[LBA].alloc_block->PBA; // new PBA
 	new_PBA = BT[LBA].PBA;
 	PSA = LBA_TO_PSA(BT, LBA);
@@ -77,15 +74,8 @@ void GC_moving(request **const req_set, algo_req* my_req,
 
 	// memcpy values from value_set
 	for (int i=0; i<(int32_t)numValid; ++i) {
-		if (!temp_set[i]) {
-			if (req_set[1]) {
-				memcpy(sram_table[i].SRAM_PTR, req_set[0]->value->value, PAGESIZE/2);
-				memcpy(sram_table[i].SRAM_PTR + PAGESIZE/2, req_set[1]->value->value, PAGESIZE/2);
-			} else {
-				memcpy(sram_table[i].SRAM_PTR, req_set[0]->value->value, PAGESIZE);
-			}
-			
-		}
+		if (!temp_set[i])
+			memcpy(sram_table[i].SRAM_PTR, req->value->value, PAGESIZE);
 		else {
 			memcpy(sram_table[i].SRAM_PTR, temp_set[i]->value, PAGESIZE);
 			inf_free_valueset(temp_set[i], FS_MALLOC_R);
@@ -95,7 +85,7 @@ void GC_moving(request **const req_set, algo_req* my_req,
 	// SRAM_unload
 	for (int i=0; i<(int32_t)numValid; ++i) {
 		key_offset = sram_table[i].SRAM_OOB.LPA % ppb_;
-		SRAM_unload(sram_table, key_offset + new_PPA_zero, i, req_set[1]);
+		SRAM_unload(sram_table, key_offset + new_PPA_zero, i);
 	}
 
 	free(temp_set);
@@ -258,7 +248,7 @@ void block_GC()
 			}
 #endif
 		}
-		SRAM_unload(sram_table, key_offset + BT[key_LBA].PBA * ppb_, i, NULL); // req1이 있는 지 알아야 하지 않을까?
+		SRAM_unload(sram_table, key_offset + BT[key_LBA].PBA * ppb_, i);
 	}
 	/*	
 	// SRAM_unload
