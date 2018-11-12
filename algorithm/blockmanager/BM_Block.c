@@ -10,7 +10,7 @@ int32_t numBITMAPB; // number of Bytes(elements) in each bitmap
 BM_T* BM_Init(int h_count, int q_count)
 {
 	numBlock = _NOS;
-	PagePerBlock = _PPS;
+	PagePerBlock = _PPS*ALGO_SEGNUM;
 	numBITMAPB = (PagePerBlock % numBits_ValidP > 0) + (PagePerBlock/numBits_ValidP);
 
 	BM_T* res = (BM_T*)malloc(sizeof(BM_T));

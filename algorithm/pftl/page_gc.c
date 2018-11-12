@@ -58,7 +58,7 @@ int32_t pbase_garbage_collection(){
 	
 	for(int i=0;i<valid_page_num;i++){ // copy data to memory and free dma valueset
 		memcpy(d_sram[i].PTR_RAM, temp_set[i]->value, PAGESIZE);
-		inf_free_valueset(temp_set[i], FS_MALLOC_R); //미리 value_set을 free시켜서 불필요한 value_set 낭비 줄임
+		inf_free_valueset(temp_set[i], FS_MALLOC_R); //free value_set to reduce expanse of value_set.
 	}
 
 	for(int i=0;i<valid_page_num;i++){ // write page into new block

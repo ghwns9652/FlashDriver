@@ -22,6 +22,10 @@
 #define ALGO_BUFSIZE 4
 #define ALGO_CACHESIZE 4
 #define ALGO_QUEUESIZE 4
+#define ALGO_SEGSIZE (8192/ALGO_SEGNUM)
+
+#define LARGE_PAGE 1
+
 typedef struct mapping_table{
 	int32_t ppa;
 } TABLE;
