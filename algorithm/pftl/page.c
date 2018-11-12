@@ -22,8 +22,8 @@ Block *reserved;    //reserved.
 
 //buffering & caching.
 w_buff *page_wbuff;
-r_cache *page_rcache;
-
+struct timeval flush_flag_start;
+struct timeval flush_flag_end;
 //queueing.
 pthread_t pbase_main_thread;
 sem_t empty;
@@ -95,6 +95,7 @@ void pbase_destroy(lower_info* li, algorithm *algo){
 	 * frees allocated mem.
 	 * destroys blockmanager.
 	 */
+
 	printf("gc count: %d\n", gc_count);
 	end_flag = 1;
 	pthread_join(pbase_main_thread,NULL);
@@ -141,10 +142,10 @@ void *pbase_end_req(algo_req* input){
 	return NULL;
 }
 uint32_t pbase_get(request* const req){
-	printf("get called.\n");
+//	printf("get called.\n");
 	sem_wait(&empty);
 	in++;
-	in %= 4;
+	in %= ALGO_QUEUESIZE;
 	page_queue[in].req = req;
 	page_queue[in].rw = 0;
 	sem_post(&full);
@@ -153,7 +154,7 @@ uint32_t pbase_get(request* const req){
 
 uint32_t pbase_set(request* const req){
 //	sleep(1);
-	printf("set called.\n");
+//	printf("set called.\n");
 	sem_wait(&empty);
 	in++;
 	in %= ALGO_QUEUESIZE;
@@ -213,6 +214,7 @@ uint32_t pbase_get_fromqueue(request* const req){
 
 	if(ppa == -1){
 		bench_algo_end(req);
+//		printf("not mapped..!\n");
 		req->type = FS_NOTFOUND_T;
 		req->end_req(req);
 		return 1;
@@ -237,6 +239,7 @@ uint32_t pbase_set_fromqueue(request* const req){
 		page_wbuff[buff_count].req = req;
 		page_wbuff[buff_count].lpa = req->key;
 		buff_count++;
+		gettimeofday(&flush_flag_start,NULL);
 	}
 	//!write buffering.
 

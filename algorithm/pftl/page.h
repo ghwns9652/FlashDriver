@@ -70,7 +70,9 @@ extern uint8_t *VBM;	   //valid bitmap.
 extern P_OOB *page_OOB;	   // Page level OOB.
 
 extern w_buff *page_wbuff;
-//extern r_cache *page_rcache;
+extern struct timeval flush_flag_start;
+extern struct timeval flush_flag_end;
+//extern r_cache *
 
 extern BM_T *BM;
 extern Block *reserved;
