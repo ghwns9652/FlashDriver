@@ -270,7 +270,8 @@ uint32_t pbase_set_fromqueue(request* const req){
 				if(_offset != 0){//merge datum on 0-offset request.
 					lppa = ppa / ALGO_SEGNUM;
 					offset = ppa % ALGO_SEGNUM;
-					memcpy(&(page_wbuff[i-_offset].req->value->value[_offset*ALGO_SEGSIZE])							 ,page_wbuff[i].req->value->value,ALGO_SEGSIZE);
+					memcpy(&(page_wbuff[i-_offset].req->value->value[_offset*ALGO_SEGSIZE])				
+							,page_wbuff[i].req->value->value,ALGO_SEGSIZE);
 					iter_req->end_req(iter_req);
 					if(_offset == ALGO_SEGNUM - 1){//last component will push data into dev.
 						algo_pbase.li->push_data(lppa,PAGESIZE,
@@ -278,11 +279,13 @@ uint32_t pbase_set_fromqueue(request* const req){
 								assign_pseudo_req(DATA_W,NULL,page_wbuff[i-_offset].req));
 					}
 				}
-			}
-			else{
+			}//!large_page logic.
+
+			else{//non large_page case
 				algo_pbase.li->push_data(lppa, PAGESIZE, iter_req->value, ASYNC, 
 										 assign_pseudo_req(DATA_W, NULL, iter_req));
-			}
+			//lppa==ppa
+			}//!non large_page case
 
 			if(page_TABLE[lpa].ppa != -1){//already mapped case.(update)
 				BM_InvalidatePage(BM,page_TABLE[lpa].ppa);
