@@ -28,6 +28,11 @@ extern struct algorithm algo_lsm;
 #ifdef bdbm_drv
 extern struct lower_info memio_info;
 #endif
+
+#ifdef spdk
+extern struct lower_info spdk_info;
+#endif 
+
 MeasureTime mt;
 master_processor mp;
 
@@ -292,6 +297,9 @@ void inf_init(){
 #endif
 #ifdef bdbm_drv
 	mp.li=&memio_info;
+#endif
+#ifdef spdk
+	mp.li=&spdk_info;
 #endif
 
 #ifdef normal

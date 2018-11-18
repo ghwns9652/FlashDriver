@@ -1,8 +1,8 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=bdbm_drv
-TARGET_ALGO=Lsmtree
+TARGET_LOWER=spdk
+TARGET_ALGO=dftl
 PWD=$(pwd)
 
 COMMONFLAGS=\
@@ -77,9 +77,33 @@ ifeq ($(TARGET_LOWER),bdbm_drv)
 	ARCH +=./object/libmemio.a
 endif
 
+ifeq ($(TARGET_LOWER),spdk)
+	ARCH +=\
+		   lower/spdk/spdk/build/lib/libspdk_nvme.a\
+		   lower/spdk/spdk/build/lib/libspdk_log.a\
+		   lower/spdk/spdk/build/lib/libspdk_env_dpdk.a\
+		   lower/spdk/spdk/dpdk/build/lib/librte_eal.a\
+		   lower/spdk/spdk/build/lib/libspdk_util.a\
+		   lower/spdk/spdk/dpdk/build/lib/librte_mempool.a\
+		   lower/spdk/spdk/dpdk/build/lib/librte_ring.a\
+		   lower/spdk/spdk/dpdk/build/lib/librte_bus_pci.a\
+		   lower/spdk/spdk/dpdk/build/lib/librte_pci.a\
+		   lower/spdk/spdk/dpdk/build/lib/librte_kvargs.a\
+
+endif
+
 LIBS +=\
 		-lpthread\
 		-lm\
+
+ifeq ($(TARGET_LOWER),spdk)
+	LIBS += -ldl
+	LIBS += -lnuma
+	LIBS += -luuid
+endif
+
+INC +=\
+		-I$(CURDIR)/lower/spdk/spdk/include\
 
 all: simulator
 
@@ -96,7 +120,7 @@ debug_simulator: ./interface/main.c libsimulator_d.a
 	$(CC) $(CFLAGS) -DDEBUG -o $@ $^ $(LIBS)
 
 simulator: ./interface/main.c libsimulator.a
-	$(CC) $(CFLAGS) -o $@ $^ $(ARCH) $(LIBS)
+	$(CC) $(CFLAGS) $(INC) -o $@ $^ $(ARCH) $(LIBS)
 
 duma_simulator: ./interface/main.c libsimulator.a
 	$(CC) $(CFLAGS) -o $@ $^ -lduma $(ARCH) $(LIBS)
