@@ -17,7 +17,7 @@ int32_t pbase_garbage_collection(){
 	all = 0;
 	gc_count++;
 	victim = BM_Heap_Get_Max(b_heap);
-	if(victim->Invalid == _g_ppb){ // every page is invalid.
+	if(victim->Invalid == _g_ppb * ALGO_SEGNUM){ // every page is invalid.
 		all = 1;
 	}
 	else if(victim->Invalid == 0){// ssd all valid.
@@ -38,11 +38,14 @@ int32_t pbase_garbage_collection(){
 	valid_page_num = 0;
 	gc_load = 0;
 	d_sram = (SRAM*)malloc(sizeof(SRAM) * _g_ppb);
+    for(int i=0; i<_g_ppb;i++)
+        d_sram[i].OOB_RAM = (P_OOB*)malloc(sizeof(P_OOB)*ALGO_SEGNUM);
 	temp_set = (value_set**)malloc(sizeof(value_set*) * _g_ppb);
 
 	for(int i=0;i<_g_ppb;i++){
 		d_sram[i].PTR_RAM = NULL;
-		d_sram[i].OOB_RAM.lpa = -1;
+        for (int j=0;j<ALGO_SEGNUM;j++)
+		    d_sram[i].OOB_RAM[j].lpa = -1;
 	}
 
 #ifdef LARGEPAGE
@@ -67,41 +70,64 @@ int32_t pbase_garbage_collection(){
 	BM_InitializeBlock(BM, victim->PBA);
 	
 	while(gc_load != valid_page_num){} // polling for reading all mapping data
-	
+	for(int i=0;i<valid_page_num;i++){// copy datas into memory.
+        memcpy(d_sram[i].PTR_RAM, temp_set[i]->value, PAGESIZE);
+        inf_free_valueset(temp_set[i],FS_MALLOC_R);
+    }
+    
+    /*!!data loading is done!!*/
+    printf("data loading done.\n");
+
 #ifdef LARGEPAGE
-	char gc_buffer[PAGESIZE];
+    SRAM gcbuf_SRAM;
+    gcbuf_SRAM.PTR_RAM = (PTR)malloc(PAGESIZE);
+    gcbuf_SRAM.OOB_RAM = (P_OOB*)malloc(sizeof(P_OOB)*ALGO_SEGNUM);
 	int8_t gcbuf_full = 0;
 	int8_t gcbuf_slot = 0;
 	int32_t offset = 0;
+    //printf("data unloading init done\n");
 	for(int i=0;i<_g_ppb * ALGO_SEGNUM;i++){//search through all SEGMENTS.
 		if(BM_IsValidPage(BM,old_block + i)){
-			memcpy(dest,src,SEGSIZE);
+            int dest = gcbuf_slot*ALGO_SEGSIZE;
+            int src = i/ALGO_SEGNUM;
+            int src_offset = i % ALGO_SEGNUM;
+			memcpy(&(gcbuf_SRAM.PTR_RAM[dest]),
+                   &(d_sram[src].PTR_RAM[src_offset*ALGO_SEGSIZE]),
+                   ALGO_SEGSIZE);
+
 			BM_ValidatePage(BM,new_block+i);
 			gcbuf_slot++;
 			
 			if(gcbuf_slot == ALGO_SEGNUM){//gcbuf full!!
-				SRAM_unload(gc_buffer,new_block+offset,0);
+				SRAM_unload(&gcbuf_SRAM,new_block+offset,0);
+                for(int i=0;i<ALGO_SEGNUM;i++)
+                    BM_ValidatePage(BM,new_block+offset*i);
+                offset++;
 				gcbuf_slot = 0;
-				memset(gc_buffer,0,PAGESIZE);
-			}
-		}
-		if((i % ALGO_SEGNUM) == ALGO_SEGNUM-1){
-			int a = i / ALGO_SEGNUM;
-			inf_free_valueset(temp_set[a],FS_MALLOC_R;
-		}
+                //gcbuf_sram reset.
+				memset(gcbuf_SRAM.PTR_RAM,0,PAGESIZE);
+                for(int i=0;i<ALGO_SEGNUM;i++)
+                    gcbuf_SRAM.OOB_RAM[i].lpa = -1;
+                //!gcbuf_sram reset
+			}//!gcbuf full
+		}//!valid page logic
+        if(gcbuf_slot != 0){//some leftovers.
+            SRAM_unload(&gcbuf_SRAM,new_block+offset,0);
+            for(int i=1;i<gcbuf_slot;i++)
+                BM_ValidatePage(BM,new_block+offset*i);
+            offset++;
+        }
+        //free(gcbuf_SRAM.OOB_RAM);
+        //free(gcbuf_SRAM.PTR_RAM);
 	}
 
 #else
-	for(int i=0;i<valid_page_num;i++){ // copy data to memory and free dma valueset
-		memcpy(d_sram[i].PTR_RAM, temp_set[i]->value, PAGESIZE);
-		inf_free_valueset(temp_set[i], FS_MALLOC_R); //free value_set to reduce expanse of value_set.
-	}
-
 	for(int i=0;i<valid_page_num;i++){ // write page into new block
 		SRAM_unload(d_sram, new_block + i, i);
+        free(d_sram[i].OOB_RAM);
+        free(d_sram[i].PTR_RAM);
 		BM_ValidatePage(BM,new_block+i);
 	}
-
 #endif
 
 	free(temp_set);
@@ -110,5 +136,9 @@ int32_t pbase_garbage_collection(){
 	/* Trim block */
 	algo_pbase.li->trim_block(old_block, false);
 
+#ifdef LARGEPAGE
+    return new_block + offset;
+#else
 	return new_block + valid_page_num;
+#endif
 }

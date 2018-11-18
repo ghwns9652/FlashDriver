@@ -25,6 +25,7 @@
 #define ALGO_SEGSIZE (8192/ALGO_SEGNUM)
 
 #define LARGE_PAGE 1
+#define LARGEPAGE
 
 typedef struct mapping_table{
 	int32_t ppa;
@@ -35,7 +36,7 @@ typedef struct page_OOB{
 } P_OOB;
 
 typedef struct SRAM{
-	P_OOB OOB_RAM;
+	P_OOB* OOB_RAM;
 	PTR PTR_RAM;
 } SRAM;
 
