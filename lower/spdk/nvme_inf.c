@@ -10,13 +10,13 @@ bool stopflag;
 lower_info spdk_info={
 	.create=spdk_create,
 	.destroy=spdk_destroy,
-//#if (ASYNC==1)
-//	.push_data=spdk_make_push,
-//	.pull_data=spdk_make_pull,
-//#elif (ASYNC==0)
+#if (ASYNC==1)
+	.push_data=spdk_make_push,
+	.pull_data=spdk_make_pull,
+#elif (ASYNC==0)
 	.push_data=spdk_push_data,
 	.pull_data=spdk_pull_data,
-//#endif
+#endif
 	.device_badblock_checker=NULL,
 	.trim_block=spdk_trim_block,
 	.refresh=spdk_refresh,
@@ -25,7 +25,6 @@ lower_info spdk_info={
 	.lower_free=spdk_lower_free
 };
 
-/*
 void* l_main(void *__input){
 	void *_inf_req;
 	spdk_request *inf_req;
@@ -54,8 +53,8 @@ void* l_main(void *__input){
 	}
 	return NULL;
 }
-*/
 
+/*
 void* check_io(void *__input){
 	struct ns_entry* ns_entry = g_namespaces;
 
@@ -66,6 +65,7 @@ void* check_io(void *__input){
 	pthread_exit(NULL);
 	return NULL;
 }
+*/
 
 uint32_t spdk_create(lower_info *li){
 	int rc;
@@ -117,10 +117,10 @@ uint32_t spdk_create(lower_info *li){
 	pthread_mutex_init(&spdk_info.lower_lock,NULL);
 	measure_init(&li->writeTime);
 	measure_init(&li->readTime);
-//#if (ASYNC==1)
-//	q_init(&s_q, QSIZE);
-	pthread_create(&t_id,NULL,&check_io,NULL);
-//#endif
+#if (ASYNC==1)
+	q_init(&s_q, QSIZE);
+	pthread_create(&t_id,NULL,&l_main,NULL);
+#endif
 
 	return 0;
 }
@@ -423,13 +423,23 @@ void* spdk_make_trim(KEYT PPA, bool async)
 void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo_req *const req)
 {
 	int rc;
+	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
+	//submit I/O request
 	rc = spdk_nvme_ns_cmd_read(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
 	if (rc != 0) {
 		fprintf(stderr, "read I/O failed\n");
 		exit(1);
 	}
+
+	//polling
+	do{
+		complete = spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+	}while(complete<1);
+
+	//while(!spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
+	//	; 
 
 	return NULL;
 }
@@ -437,13 +447,22 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo_req *const req)
 {
 	int rc;
+	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
+	//submit I/O request
 	rc = spdk_nvme_ns_cmd_write(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
 	if (rc != 0) {
 		fprintf(stderr, "write I/O failed\n");
 		exit(1);
 	}
+
+	//polling
+	do{
+		complete = spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+	}while(complete<1);
+	//while(spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
+	//	; 
 
 	return NULL;
 }
@@ -451,7 +470,6 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 static void io_complete(void *arg, const struct spdk_nvme_cpl *completion)
 {
 	struct algo_req *req = (struct algo_req*)arg;
-	//printf("IO completed!\n");
 	req->end_req(req);
 }
 
