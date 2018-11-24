@@ -29,7 +29,7 @@ extern struct algorithm algo_lsm;
 extern struct lower_info memio_info;
 #endif
 
-#ifdef spdk
+#if defined(spdk_nvme) || defined(spdk_ocssd)
 extern struct lower_info spdk_info;
 #endif 
 
@@ -298,7 +298,7 @@ void inf_init(){
 #ifdef bdbm_drv
 	mp.li=&memio_info;
 #endif
-#ifdef spdk
+#if defined(spdk_nvme) || defined(spdk_ocssd)
 	mp.li=&spdk_info;
 #endif
 

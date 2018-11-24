@@ -88,6 +88,7 @@ struct lower_info {
 	MeasureTime writeTime;
 	MeasureTime readTime;
 
+	uint32_t NOS;
 	uint32_t NOB;
 	uint32_t NOP;
 	uint32_t SOK;

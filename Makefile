@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=spdk
+TARGET_LOWER=spdk_ocssd
 TARGET_ALGO=dftl
 PWD=$(pwd)
 
@@ -49,9 +49,9 @@ CFLAGS +=\
 		 -D$(TARGET_LOWER)\
 		 -D$(TARGET_ALGO)\
 		 -D$(TARGET_INF)\
-		 -D_BSD_SOURCE\
--DBENCH\
--DCDF\
+		 -D_DEFAULT_SOURCE \
+		 -DBENCH\
+		 -DCDF\
 
 SRCS +=\
 	./interface/queue.c\
@@ -77,18 +77,18 @@ ifeq ($(TARGET_LOWER),bdbm_drv)
 	ARCH +=./object/libmemio.a
 endif
 
-ifeq ($(TARGET_LOWER),spdk)
+ifeq ($(TARGET_LOWER),$(filter $(TARGET_LOWER),spdk_nvme spdk_ocssd))
 	ARCH +=\
-		   lower/spdk/spdk/build/lib/libspdk_nvme.a\
-		   lower/spdk/spdk/build/lib/libspdk_log.a\
-		   lower/spdk/spdk/build/lib/libspdk_env_dpdk.a\
-		   lower/spdk/spdk/dpdk/build/lib/librte_eal.a\
-		   lower/spdk/spdk/build/lib/libspdk_util.a\
-		   lower/spdk/spdk/dpdk/build/lib/librte_mempool.a\
-		   lower/spdk/spdk/dpdk/build/lib/librte_ring.a\
-		   lower/spdk/spdk/dpdk/build/lib/librte_bus_pci.a\
-		   lower/spdk/spdk/dpdk/build/lib/librte_pci.a\
-		   lower/spdk/spdk/dpdk/build/lib/librte_kvargs.a\
+		   spdk/build/lib/libspdk_nvme.a\
+		   spdk/build/lib/libspdk_log.a\
+		   spdk/build/lib/libspdk_env_dpdk.a\
+		   spdk/dpdk/build/lib/librte_eal.a\
+		   spdk/build/lib/libspdk_util.a\
+		   spdk/dpdk/build/lib/librte_mempool.a\
+		   spdk/dpdk/build/lib/librte_ring.a\
+		   spdk/dpdk/build/lib/librte_bus_pci.a\
+		   spdk/dpdk/build/lib/librte_pci.a\
+		   spdk/dpdk/build/lib/librte_kvargs.a\
 
 endif
 
@@ -96,14 +96,14 @@ LIBS +=\
 		-lpthread\
 		-lm\
 
-ifeq ($(TARGET_LOWER),spdk)
+ifeq ($(TARGET_LOWER),$(filter $(TARGET_LOWER),spdk_nvme spdk_ocssd))
 	LIBS += -ldl
 	LIBS += -lnuma
 	LIBS += -luuid
 endif
 
 INC +=\
-		-I$(CURDIR)/lower/spdk/spdk/include\
+		-I $(CURDIR)/spdk/include \
 
 all: simulator
 

@@ -4,8 +4,6 @@ SRCS +=\
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
 
-INC=-I$(CURDIR)/spdk/include
-
 TARGETOBJ:=\
 	$(addprefix ../../object/,$(OBJS))\
 #$(patsubst %.c,%.o,$(SRCS))\
