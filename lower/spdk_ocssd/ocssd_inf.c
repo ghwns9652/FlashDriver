@@ -77,7 +77,7 @@ static void ocssd_print_geometry(struct spdk_ocssd_geometry_data *geo) {
 	printf("Num of Groups:         %d\n", geo->num_grp);
 	printf("Num of Parallel Units: %d (per group)\n", geo->num_pu);
 	printf("Num of Chunks:         %d (per PU)\n", geo->num_chk);
-	printf("Chunk Size:            %d\n\n", geo->clba);
+	printf("Chunk Size:            %d pages\n\n", geo->clba);
 }
 
 static void
@@ -224,7 +224,7 @@ uint32_t spdk_create(lower_info *li){
 	li->PPS = geo->num_pu * geo->clba; // clba: page per block(chunk)
 	li->NOP = li->NOS * li->PPS;
 	li->SOP = 4096;
-	li->TS  = li->NOP * li->SOP;
+	li->TS  = (uint64_t)li->NOP * li->SOP;
 	//li->SOB = geo->num_pu * geo->clba * li->SOP
 	li->SOK = sizeof(KEYT);
 	li->write_op=li->read_op=li->trim_op=0;
@@ -233,6 +233,7 @@ uint32_t spdk_create(lower_info *li){
 	printf("Pages:        %u\n", li->NOP);
 	printf("Segments:     %u\n", li->NOS);
 	printf("Page per seg: %u\n", li->PPS);
+	printf("Pagesize:     %u\n", li->SOP);
 	printf("Total size:   %lu\n\n", li->TS);
 
 	stopflag = false;
@@ -550,8 +551,19 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
+	uint64_t *lba = (uint64_t *)malloc(sizeof(uint64_t));
+	// PPA -> RPA
+	*lba = PPA;
+
+
+
 	//submit I/O request
-	rc = spdk_nvme_ns_cmd_read(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
+	//rc = spdk_nvme_ns_cmd_read(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
+	rc = spdk_nvme_ocssd_ns_cmd_vector_read(ns_entry->ns,
+						ns_entry->qpair,
+						value->value,
+						lba, 1,
+						io_complete, req, 0);
 	if (rc != 0) {
 		fprintf(stderr, "read I/O failed\n");
 		exit(1);
@@ -565,6 +577,8 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	//while(!spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
 	//	; 
 
+	free(lba);
+
 	return NULL;
 }
 
@@ -574,8 +588,16 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
+	uint64_t *lba = (uint64_t *)malloc(sizeof(uint64_t));
+	*lba = PPA;
+
 	//submit I/O request
-	rc = spdk_nvme_ns_cmd_write(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
+	//rc = spdk_nvme_ns_cmd_write(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
+	rc = spdk_nvme_ocssd_ns_cmd_vector_write(ns_entry->ns,
+						 ns_entry->qpair,
+						 value->value,
+						 lba, 1,
+						 io_complete, req, 0);
 	if (rc != 0) {
 		fprintf(stderr, "write I/O failed\n");
 		exit(1);
@@ -587,6 +609,8 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	}while(complete<1);
 	//while(spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
 	//	; 
+
+	free(lba);
 
 	return NULL;
 }
