@@ -337,6 +337,10 @@ bool inf_make_req(const FSTYPE type, const KEYT key,value_set* value)
 	else{
 		req->value=inf_get_valueset(value->value,req->type,value->length);
 	}
+	/*SPDK TEST*/
+	if(type==FS_SET_T){
+		*((int*)(req->value->value))=req->key;
+	}
 
 	req->end_req=inf_end_req;
 	req->isAsync=ASYNC;
@@ -420,6 +424,7 @@ bool inf_end_req( request * const req){
 	}
 	if(req->value){
 		if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+			printf("%d\n", *((int*)(req->value->value)));
 			inf_free_valueset(req->value, FS_MALLOC_R);
 		}
 		else if(req->type==FS_SET_T){

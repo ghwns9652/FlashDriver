@@ -14,7 +14,7 @@ int F_malloc(void **ptr, int size,int rw){
 #ifdef bdbm_drv
 	dmatag=memio_info.lower_alloc(rw,(char**)ptr);
 #elif defined(spdk)
-	dmatag=spdk_info.lower_alloc(1, (char**)ptr);
+	dmatag=spdk_info.lower_alloc(rw, (char**)ptr);
 #else
 	(*ptr)=malloc(size);
 #endif	
@@ -31,7 +31,7 @@ void F_free(void *ptr,int tag,int rw){
 #ifdef bdbm_drv
 	memio_info.lower_free(rw,tag);
 #elif defined(spdk)
-	spdk_info.lower_free(1, tag);
+	spdk_info.lower_free(rw, tag);
 #else 
 	free(ptr);
 #endif
