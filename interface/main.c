@@ -91,7 +91,7 @@ int main(int argc,char* argv[]){
 	//bench_add(MIXED,0,RANGE-(4*_PPS),RANGE-(4*_PPS));
 	bench_add(SEQSET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE/2,RANGE);
-	bench_add(MIXED,0,RANGE,RANGE);
+	bench_add(SEQGET,0,RANGE,RANGE);
 //	bench_add(RANDRW,0,RANGE,2*RANGE);
 //	bench_add(RANDSET,0,15*1024,15*1024);
 //	bench_add(RANDGET,0,15*1024,15*1024);
