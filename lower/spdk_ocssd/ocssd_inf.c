@@ -2,10 +2,13 @@
 
 static struct ctrlr_entry *g_controllers = NULL;
 static struct ns_entry *g_namespaces = NULL;
+static struct ocssd_base *g_ocssd_base = NULL;
 
 queue *s_q;
 pthread_t t_id;
 bool stopflag;
+
+uint8_t gpb, bkb, blb, lpb;
 
 lower_info spdk_info={
 	.create=spdk_create,
@@ -183,7 +186,6 @@ error_geo_free:
 uint32_t spdk_create(lower_info *li){
 	int rc;
 	struct spdk_env_opts opts;
-	struct ocssd_base *ocssd_base;
 	struct spdk_ocssd_geometry_data *geo;
 
 	spdk_env_opts_init(&opts);
@@ -210,15 +212,15 @@ uint32_t spdk_create(lower_info *li){
 	}
 
 	/** Get OCSSD base */
-	ocssd_base = spdk_ocssd_base_init();
-	if (ocssd_base == NULL) {
+	g_ocssd_base = spdk_ocssd_base_init();
+	if (g_ocssd_base == NULL) {
 		SPDK_ERRLOG("[FlashSim] spdk_ocssd_base_init() failed\n");
 		spdk_destroy(li);
 		return 1;
 	}
 
 	/** Set system variables */
-	geo = ocssd_base->ocssd.geo;
+	geo = g_ocssd_base->ocssd.geo;
 
 	li->NOS = geo->num_grp * geo->num_chk;
 	li->PPS = geo->num_pu * geo->clba; // clba: page per block(chunk)
@@ -228,6 +230,13 @@ uint32_t spdk_create(lower_info *li){
 	//li->SOB = geo->num_pu * geo->clba * li->SOP
 	li->SOK = sizeof(KEYT);
 	li->write_op=li->read_op=li->trim_op=0;
+
+	/* set encode variables */
+
+	lpb = 12;
+	blb = lpb + 7;
+	bkb = blb + 3;
+	gpb = bkb + 1;
 
 	puts("[FlashSimultor spec]");
 	printf("Pages:        %u\n", li->NOP);
@@ -477,6 +486,23 @@ void spdk_lower_free(int type, int tag){
 	//printf("tag %d freed\n", tag);
 }
 
+void raw_trans_layer(KEYT PPA, uint64_t *LBA){
+	struct spdk_ocssd_geometry_data *geo;
+	struct spdk_ocssd_chunk_information *tbl;
+
+	geo = g_ocssd_base->ocssd.geo;
+	tbl = g_ocssd_base->ocssd.tbl;
+
+	// ??? how to get parallel status
+
+	*LBA = PPA;
+	*LBA |= (0x03 << lpb); // chuck
+	*LBA |= (0x02 << blb); // parallel unit
+	*LBA |= (0x01 << bkb); // group
+
+	return ;
+}
+
 void* spdk_make_pull(KEYT PPA, uint32_t size, value_set *value, bool async, algo_req *const req)
 {
 	bool flag = false;
@@ -551,11 +577,9 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
-	uint64_t *lba = (uint64_t *)malloc(sizeof(uint64_t));
-	// PPA -> RPA
-	*lba = PPA;
-
-
+	uint64_t *lba;
+	//??????lba = spdk_dma_malloc(sizeof(uint64_t), 0, );
+	raw_trans_layer(PPA, lba);
 
 	//submit I/O request
 	//rc = spdk_nvme_ns_cmd_read(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
@@ -589,7 +613,7 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	struct ns_entry *ns_entry = g_namespaces;
 
 	uint64_t *lba = (uint64_t *)malloc(sizeof(uint64_t));
-	*lba = PPA;
+	raw_trans_layer(PPA, lba);
 
 	//submit I/O request
 	//rc = spdk_nvme_ns_cmd_write(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
@@ -623,7 +647,7 @@ static void io_complete(void *arg, const struct spdk_nvme_cpl *completion)
 
 void* spdk_trim_block(KEYT PPA, bool async){
 	uint64_t *lba_list = (uint64_t *)malloc(sizeof(uint64_t));
-	*lba_list = PPA;
+	raw_trans_layer(PPA, lba_list);
 
 	//spdk_nvme_ocssd_ns_cmd_vector_reset(ns_entry->ns, ns_entry->qpair, lba_list, 1, chunk_info, cb_fn, cb_arg);
 	return NULL;
