@@ -269,13 +269,6 @@ uint32_t spdk_create(lower_info *li){
 	printf("Pagesize:     %u\n", li->SOP);
 	printf("Total size:   %lu\n\n", li->TS);
 
-	puts("bits");
-	printf("grp:        %u\n", gpb);
-	printf("pu:     %u\n", bkb);
-	printf("chk: %u\n", blb);
-	printf("clba:     %u\n", lpb);
-
-
 	stopflag = false;
 
 	/** Initialize OCSSD interface */
@@ -520,10 +513,8 @@ void spdk_lower_free(int type, int tag){
 void raw_trans_layer(KEYT PPA, uint64_t *LBA){
 	uint32_t ch, pu, chk, lb;
 	struct spdk_ocssd_geometry_data *geo;
-	struct spdk_ocssd_chunk_information *tbl;
 
 	geo = g_ocssd_base->ocssd.geo;
-	tbl = g_ocssd_base->ocssd.tbl;
 
 	ch = PPA % geo->num_grp;
 	pu = (PPA / geo->num_grp) % geo->num_pu;
