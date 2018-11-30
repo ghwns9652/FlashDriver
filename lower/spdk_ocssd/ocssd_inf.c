@@ -527,7 +527,7 @@ void raw_trans_layer(KEYT PPA, uint64_t *LBA){
 
 	ch = PPA % geo->num_grp;
 	pu = (PPA / geo->num_grp) % geo->num_pu;
-	chk = (PPA / geo->num_grp * geo->num_p * geo->clba);
+	chk = (PPA / geo->num_grp * geo->num_pu * geo->clba);
 	lb = (PPA / (geo->num_grp * geo->num_pu)) % geo->clba;
 
 	*LBA = lb;
@@ -612,15 +612,15 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
-	uint64_t *lba = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
-	raw_trans_layer(PPA, lba);
+	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
+	raw_trans_layer(PPA, lba_list);
 
 	//submit I/O request
 	//rc = spdk_nvme_ns_cmd_read(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
 	rc = spdk_nvme_ocssd_ns_cmd_vector_read(ns_entry->ns,
 						ns_entry->qpair,
 						value->value,
-						lba, 1,
+						lba_list, 1,
 						io_complete, req, 0);
 	if (rc != 0) {
 		fprintf(stderr, "read I/O failed\n");
@@ -635,7 +635,7 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	//while(!spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
 	//	; 
 
-	spdk_dma_free(lba);
+	spdk_dma_free(lba_list);
 
 	return NULL;
 }
@@ -646,15 +646,15 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
-	uint64_t *lba = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
-	raw_trans_layer(PPA, lba);
+	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
+	raw_trans_layer(PPA, lba_list);
 
 	//submit I/O request
 	//rc = spdk_nvme_ns_cmd_write(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
 	rc = spdk_nvme_ocssd_ns_cmd_vector_write(ns_entry->ns,
 						 ns_entry->qpair,
 						 value->value,
-						 lba, 1,
+						 lba_list, 1,
 						 io_complete, req, 0);
 	if (rc != 0) {
 		fprintf(stderr, "write I/O failed\n");
@@ -668,7 +668,7 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	//while(spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
 	//	; 
 
-	spdk_dma_free(lba);
+	spdk_dma_free(lba_list);
 
 	return NULL;
 }
@@ -685,7 +685,7 @@ void* spdk_trim_block(KEYT PPA, bool async){
 
 	//spdk_nvme_ocssd_ns_cmd_vector_reset(ns_entry->ns, ns_entry->qpair, lba_list, 1, chunk_info, cb_fn, cb_arg);
 
-	spdk_dma_free(lba);
+	spdk_dma_free(lba_list);
 	return NULL;
 }
 
