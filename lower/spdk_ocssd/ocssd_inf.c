@@ -185,6 +185,7 @@ error_geo_free:
 
 uint32_t spdk_create(lower_info *li){
 	int rc;
+	int amt, cnt;
 	struct spdk_env_opts opts;
 	struct spdk_ocssd_geometry_data *geo;
 
@@ -233,10 +234,33 @@ uint32_t spdk_create(lower_info *li){
 
 	/* set encode variables */
 
-	lpb = 12;
-	blb = lpb + 7;
-	bkb = blb + 3;
-	gpb = bkb + 1;
+	cnt = 0;
+	amt = geo->clba;
+	while((amt >>= 1) != 0){
+		cnt++;
+	}
+	lpb = cnt;
+
+	cnt = 0;
+	amt = geo->num_chk;
+	while((amt >>= 1) != 0){
+		cnt++;
+	}
+	blb = cnt;
+	
+	cnt = 0;
+	amt = geo->num_pu;
+	while((amt >>= 1) != 0){
+		cnt++;
+	}
+	bkb = cnt;
+	
+	cnt = 0;
+	amt = geo->num_grp;
+	while((amt >>= 1) != 0){
+		cnt++;
+	}
+	gpb = cnt;
 
 	puts("[FlashSimultor spec]");
 	printf("Pages:        %u\n", li->NOP);
@@ -244,6 +268,13 @@ uint32_t spdk_create(lower_info *li){
 	printf("Page per seg: %u\n", li->PPS);
 	printf("Pagesize:     %u\n", li->SOP);
 	printf("Total size:   %lu\n\n", li->TS);
+
+	puts("bits");
+	printf("grp:        %u\n", gpb);
+	printf("pu:     %u\n", bkb);
+	printf("chk: %u\n", blb);
+	printf("clba:     %u\n", lpb);
+
 
 	stopflag = false;
 
@@ -487,18 +518,22 @@ void spdk_lower_free(int type, int tag){
 }
 
 void raw_trans_layer(KEYT PPA, uint64_t *LBA){
+	uint32_t ch, pu, chk, lb;
 	struct spdk_ocssd_geometry_data *geo;
 	struct spdk_ocssd_chunk_information *tbl;
 
 	geo = g_ocssd_base->ocssd.geo;
 	tbl = g_ocssd_base->ocssd.tbl;
 
-	// ??? how to get parallel status
+	ch = PPA % geo->num_grp;
+	pu = (PPA / geo->num_grp) % geo->num_pu;
+	chk = (PPA / geo->num_grp * geo->num_p * geo->clba);
+	lb = (PPA / (geo->num_grp * geo->num_pu)) % geo->clba;
 
-	*LBA = PPA;
-	*LBA |= (0x03 << lpb); // chuck
-	*LBA |= (0x02 << blb); // parallel unit
-	*LBA |= (0x01 << bkb); // group
+	*LBA = lb;
+	*LBA |= (chk << lpb); // chuck
+	*LBA |= (pu << (blb + lpb)); // parallel unit
+	*LBA |= (ch << (bkb + blb + lpb)); // group
 
 	return ;
 }
@@ -577,8 +612,7 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
-	uint64_t *lba;
-	//??????lba = spdk_dma_malloc(sizeof(uint64_t), 0, );
+	uint64_t *lba = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
 	raw_trans_layer(PPA, lba);
 
 	//submit I/O request
@@ -601,7 +635,7 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	//while(!spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
 	//	; 
 
-	free(lba);
+	spdk_dma_free(lba);
 
 	return NULL;
 }
@@ -612,7 +646,7 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
-	uint64_t *lba = (uint64_t *)malloc(sizeof(uint64_t));
+	uint64_t *lba = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
 	raw_trans_layer(PPA, lba);
 
 	//submit I/O request
@@ -634,7 +668,7 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	//while(spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
 	//	; 
 
-	free(lba);
+	spdk_dma_free(lba);
 
 	return NULL;
 }
@@ -646,10 +680,12 @@ static void io_complete(void *arg, const struct spdk_nvme_cpl *completion)
 }
 
 void* spdk_trim_block(KEYT PPA, bool async){
-	uint64_t *lba_list = (uint64_t *)malloc(sizeof(uint64_t));
+	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
 	raw_trans_layer(PPA, lba_list);
 
 	//spdk_nvme_ocssd_ns_cmd_vector_reset(ns_entry->ns, ns_entry->qpair, lba_list, 1, chunk_info, cb_fn, cb_arg);
+
+	spdk_dma_free(lba);
 	return NULL;
 }
 
