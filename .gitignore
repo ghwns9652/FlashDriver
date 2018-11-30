@@ -7,6 +7,7 @@ data/
 object/
 test_file/
 data/
+spdk/
 tags
 *log
 .
