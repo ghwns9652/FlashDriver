@@ -61,9 +61,9 @@ int32_t	w_poll;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// initialize all value by using macro.
-	num_page = _NOP;
-	num_block = _NOS;
-	p_p_b = _PPS;
+	num_page = li->NOP;
+	num_block = li->NOS;
+	p_p_b = li->PPS;
 	num_tblock = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 2;
 	num_tpage = num_tblock * p_p_b;
 	num_dblock = num_block - num_tblock - 2;
@@ -328,6 +328,7 @@ uint32_t __demand_set(request *const req){
 			}
 			ppa = dp_alloc();
 			my_req = assign_pseudo_req(DATA_W, temp->value, NULL);
+			printf("ppa:%lu\n", ppa);
 			__demand.li->push_data(ppa, PAGESIZE, temp->value, ASYNC, my_req); // Write actual data in ppa
 			temp->value = NULL;
 			// if there is previous data with same lpa, then invalidate it
@@ -379,6 +380,7 @@ uint32_t __demand_set(request *const req){
 	ppa = dp_alloc();
 	my_req = assign_pseudo_req(DATA_W, NULL, req);
 	bench_algo_end(req);
+	//printf("ppa:%d\n", ppa);
 	__demand.li->push_data(ppa, PAGESIZE, req->value, ASYNC, my_req); // Write actual data in ppa
 	if(p_table[P_IDX].ppa != -1){ // if there is previous data with same lpa, then invalidate it
 		BM_InvalidatePage(bm, p_table[P_IDX].ppa);

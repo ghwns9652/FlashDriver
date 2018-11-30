@@ -424,7 +424,7 @@ bool inf_end_req( request * const req){
 	}
 	if(req->value){
 		if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
-			printf("%d\n", *((int*)(req->value->value)));
+			//printf("%d\n", *((int*)(req->value->value)));
 			inf_free_valueset(req->value, FS_MALLOC_R);
 		}
 		else if(req->type==FS_SET_T){

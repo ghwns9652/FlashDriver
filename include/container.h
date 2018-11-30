@@ -98,6 +98,8 @@ struct lower_info {
 	uint32_t PPS;
 	uint64_t TS;
 	//anything
+
+	void *ocssd_base;
 };
 
 struct algorithm{

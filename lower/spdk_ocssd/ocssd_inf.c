@@ -63,14 +63,18 @@ void* l_main(void *__input){
 	return NULL;
 }
 
-static void ocssd_raw_cb(void *arg, const struct spdk_nvme_cpl *cpl) {
+static void 
+ocssd_raw_cb(void *arg, const struct spdk_nvme_cpl *cpl)
+{
 	struct cb_arg *cb = (struct cb_arg *)arg;
 
 	cb->cpl  = *cpl;
 	cb->done = true;
 }
 
-static void ocssd_print_geometry(struct spdk_ocssd_geometry_data *geo) {
+static void
+ocssd_print_geometry(struct spdk_ocssd_geometry_data *geo)
+{
 	puts("\n[OCSSD GEOMETRY INFO]");
 	printf("OCSSD v%d.%d\n", geo->mjr, geo->mnr);
 	printf("Minimum / Optimal WriteSize: %dK / %dK\n", geo->ws_min, geo->ws_opt);
@@ -133,6 +137,7 @@ spdk_ocssd_base_init()
 		SPDK_ERRLOG("[FlashSim] Geometry failed\n");
 		goto error_geo_free;
 	}
+
 	ocssd_print_geometry(geo);
 
 	/** Get Chunk info from OCSSD */
@@ -180,6 +185,97 @@ error_geo_free:
 	return NULL;
 }
 
+static bool ocssd_inf_init() {
+	struct ns_entry *ns_entry = g_namespaces;
+	struct spdk_nvme_buffer *ptr;
+	char *buffer;
+
+	ns_entry->qpair = spdk_nvme_ctrlr_alloc_io_qpair(ns_entry->ctrlr, NULL, 0);
+	if (ns_entry->qpair == NULL){
+		printf("ERROR: spdk_nvme_ctrlr_alloc_io_qpair() failed\n");
+		return false;
+	}
+	ns_entry->usable = QSIZE;
+
+	/* device buffer memory version */
+#if 0
+	ns_entry.using_cmb_io = 1;
+	ns_entry.buf = spdk_nvme_ctrlr_alloc_cmb_io_buffer(ns_entry->ctrlr, PAGESIZE);
+	if (ns_entry.buf == NULL) {
+		ns_entry.using_cmb_io = 0;
+		ns_entry.buf = spdk_zmalloc(PAGESIZE, PAGESIZE, NULL, SPDK_ENV_SOCKET_ID_ANY, SPDK_MALLOC_DMA);
+	}
+#endif
+	/* system buffer memory version */
+	ns_entry->bufarr = (struct spdk_nvme_buffer*)malloc(sizeof(struct spdk_nvme_buffer) * QSIZE);
+	ns_entry->using_cmb_io = 0;
+	/* align designate continuous spaces in memory ??? */
+	buffer = (char*)spdk_zmalloc(QSIZE * PAGESIZE, PAGESIZE, NULL, SPDK_ENV_SOCKET_ID_ANY, SPDK_MALLOC_DMA);
+	ptr = ns_entry->bufarr;
+	for(int i = 0; i < QSIZE; i++){
+		*ptr = (struct spdk_nvme_buffer){buffer, 0}; //{buf, busy}
+		buffer += PAGESIZE;
+		ptr++;
+	}
+
+	if (ns_entry->bufarr == NULL) {
+		printf("ERROR: write buffer allocation failed\n");
+		return false;
+	}
+	if (ns_entry->using_cmb_io) {
+		printf("INFO: using controller memory buffer for IO\n");
+	} else {
+		printf("INFO: using host memory buffer for IO\n");
+	}
+	printf("INFO: %u sized buffer allocated\n", ns_entry->usable);
+	return true;
+}
+
+static int
+ocssd_reset(struct ocssd_base *ocssd_base) {
+	struct ns_entry *ns_entry = g_namespaces;
+	struct spdk_ocssd_geometry_data *geo = ocssd_base->ocssd.geo;
+	struct spdk_ocssd_chunk_information *tbl = ocssd_base->ocssd.tbl;
+	
+	int rc;
+        uint64_t *lba;
+
+	for (uint32_t i = 0; i < geo->num_grp * geo->num_pu * geo->num_chk; i++) {
+		if (!tbl[i].wp) continue;
+
+		lba = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
+		if (!lba) {
+			SPDK_ERRLOG("[FlashSim] Cannot alloc lba\n");
+			return 1;
+		}
+		*lba = tbl[i].slba;
+
+		cb.done = false;
+		rc = spdk_nvme_ocssd_ns_cmd_vector_reset(ns_entry->ns, ns_entry->qpair,
+							 lba, 1, &tbl[i],
+							 ocssd_raw_cb, &cb);
+		if (rc) {
+			SPDK_ERRLOG("[FlashSim] Cannot submit reset command\n");
+			spdk_dma_free(lba);
+			return 1;
+		}
+		while (!cb.done) {
+			spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+		}
+		if (spdk_nvme_cpl_is_error(&cb.cpl)) {
+			SPDK_ERRLOG("[FlashSim] Reset failed\n");
+			spdk_dma_free(lba);
+			return 1;
+		}
+		spdk_dma_free(lba);
+	}
+
+	puts("-- AFTER RESET --");
+	ocssd_print_chunkinfo(geo, tbl);
+
+	return 0;
+}
+
 uint32_t spdk_create(lower_info *li){
 	int rc;
 	struct spdk_env_opts opts;
@@ -210,14 +306,15 @@ uint32_t spdk_create(lower_info *li){
 	}
 
 	/** Get OCSSD base */
-	ocssd_base = spdk_ocssd_base_init();
-	if (ocssd_base == NULL) {
+	li->ocssd_base = (void *)spdk_ocssd_base_init();
+	if (li->ocssd_base == NULL) {
 		SPDK_ERRLOG("[FlashSim] spdk_ocssd_base_init() failed\n");
 		spdk_destroy(li);
 		return 1;
 	}
 
 	/** Set system variables */
+	ocssd_base = (struct ocssd_base *)li->ocssd_base;
 	geo = ocssd_base->ocssd.geo;
 
 	li->NOS = geo->num_grp * geo->num_chk;
@@ -255,53 +352,16 @@ uint32_t spdk_create(lower_info *li){
 	pthread_create(&t_id,NULL,&l_main,NULL);
 #endif
 
-	return 0;
-}
-
-static bool ocssd_inf_init() {
-	struct ns_entry *ns_entry = g_namespaces;
-	struct spdk_nvme_buffer *ptr;
-	char *buffer;
-
-	ns_entry->qpair = spdk_nvme_ctrlr_alloc_io_qpair(ns_entry->ctrlr, NULL, 0);
-	if (ns_entry->qpair == NULL){
-		printf("ERROR: spdk_nvme_ctrlr_alloc_io_qpair() failed\n");
-		return false;
-	}
-	ns_entry->usable = QSIZE;
-	
-	/* device buffer memory version */
-#if 0
-	ns_entry.using_cmb_io = 1;
-	ns_entry.buf = spdk_nvme_ctrlr_alloc_cmb_io_buffer(ns_entry->ctrlr, PAGESIZE);
-	if (ns_entry.buf == NULL) {
-		ns_entry.using_cmb_io = 0;
-		ns_entry.buf = spdk_zmalloc(PAGESIZE, PAGESIZE, NULL, SPDK_ENV_SOCKET_ID_ANY, SPDK_MALLOC_DMA);
+#if RESET
+	printf("\nResetting all chunks\n");
+	rc = ocssd_reset((struct ocssd_base *)li->ocssd_base);	
+	if (rc) {
+		SPDK_ERRLOG("[FlashSim] OCSSD initial reset failed\n");
+		return 1;
 	}
 #endif
-	/* system buffer memory version */
-	ns_entry->bufarr = (struct spdk_nvme_buffer*)malloc(sizeof(struct spdk_nvme_buffer) * QSIZE);
-	ns_entry->using_cmb_io = 0;
-	/* align designate continuous spaces in memory ??? */
-	buffer = (char*)spdk_zmalloc(QSIZE * PAGESIZE, PAGESIZE, NULL, SPDK_ENV_SOCKET_ID_ANY, SPDK_MALLOC_DMA);
-	ptr = ns_entry->bufarr;
-	for(int i = 0; i < QSIZE; i++){
-		*ptr = (struct spdk_nvme_buffer){buffer, 0}; //{buf, busy}
-		buffer += PAGESIZE;
-		ptr++;
-	}
 
-	if (ns_entry->bufarr == NULL) {
-		printf("ERROR: write buffer allocation failed\n");
-		return false;
-	}
-	if (ns_entry->using_cmb_io) {
-		printf("INFO: using controller memory buffer for IO\n");
-	} else {
-		printf("INFO: using host memory buffer for IO\n");
-	}
-	printf("INFO: %u sized buffer allocated\n", ns_entry->usable);
-	return true;
+	return 0;
 }
 
 static bool
@@ -551,33 +611,38 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
-	uint64_t *lba = (uint64_t *)malloc(sizeof(uint64_t));
-	// PPA -> RPA
-	*lba = PPA;
+	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
+	if (!lba_list) {
+		SPDK_ERRLOG("[FlashSim] Cannot alloc lba_list\n");
+		return NULL;
+	}
+	lba_list[0] = PPA;
 
+	//printf("Read req ( LBA : %lu )\n", lba_list[0]);
 
-
-	//submit I/O request
-	//rc = spdk_nvme_ns_cmd_read(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
+	cb.done = false;
 	rc = spdk_nvme_ocssd_ns_cmd_vector_read(ns_entry->ns,
 						ns_entry->qpair,
 						value->value,
-						lba, 1,
-						io_complete, req, 0);
-	if (rc != 0) {
-		fprintf(stderr, "read I/O failed\n");
-		exit(1);
+						lba_list, 1,
+						ocssd_raw_cb, &cb, 0);
+	if (rc) {
+		SPDK_ERRLOG("[FlashSim] Cannot submit read command\n");
+		spdk_dma_free(lba_list);
+		return NULL;
+	}
+	while (!cb.done) {
+		spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+	}
+	if (spdk_nvme_cpl_is_error((struct spdk_ocssd_vector_cpl *)&cb.cpl)){
+		SPDK_ERRLOG("[FlashSim] Read failed\n");
+		spdk_dma_free(lba_list);
+		return NULL;
 	}
 
-	//polling
-	do{
-		complete = spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
-	}while(complete<1);
+	spdk_dma_free(lba_list);
 
-	//while(!spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
-	//	; 
-
-	free(lba);
+	req->end_req(req);
 
 	return NULL;
 }
@@ -588,29 +653,49 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
 
-	uint64_t *lba = (uint64_t *)malloc(sizeof(uint64_t));
-	*lba = PPA;
+	char *buf;	
 
-	//submit I/O request
-	//rc = spdk_nvme_ns_cmd_write(ns_entry->ns, ns_entry->qpair, value->value, PPA, 1, io_complete, req, 0);
-	rc = spdk_nvme_ocssd_ns_cmd_vector_write(ns_entry->ns,
-						 ns_entry->qpair,
-						 value->value,
-						 lba, 1,
-						 io_complete, req, 0);
-	if (rc != 0) {
-		fprintf(stderr, "write I/O failed\n");
-		exit(1);
+	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
+	if (!lba_list) {
+		SPDK_ERRLOG("[FlashSim] Cannot alloc lba_list\n");
+		return NULL;
+	}
+	lba_list[0] = PPA;
+
+	//printf("Write req ( LBA : %lu )\n", lba_list[0]);
+
+	buf = (char *)spdk_dma_zmalloc(4096, 4096, NULL);
+	if (!buf) {
+		SPDK_ERRLOG("FlashSim] Cannot alloc buf");
+		return NULL;
 	}
 
-	//polling
-	do{
-		complete = spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
-	}while(complete<1);
-	//while(spdk_nvme_qpair_process_completions(ns_entry->qpair, 0)) //0 for unlimited max completion
-	//	; 
+	cb.done = false;
+	rc = spdk_nvme_ocssd_ns_cmd_vector_write(ns_entry->ns,
+						 ns_entry->qpair,
+						 buf,
+						 lba_list, 1,
+						 ocssd_raw_cb, &cb, 0);
+	if (rc) {
+		SPDK_ERRLOG("[FlashSim] Cannot submit write command\n");
+		spdk_dma_free(lba_list);
+		return NULL;
+	}
+	while (!cb.done) {
+		spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+	}
+	if (spdk_nvme_cpl_is_error(&cb.cpl)){
+		SPDK_ERRLOG("[FlashSim] Write failed\n");
+		spdk_dma_free(lba_list);
+		return NULL;
+	}
 
-	free(lba);
+	memcpy(value->value, buf, 4096);
+
+	spdk_dma_free(lba_list);
+	spdk_dma_free(buf);
+
+	req->end_req(req);
 
 	return NULL;
 }
@@ -622,10 +707,40 @@ static void io_complete(void *arg, const struct spdk_nvme_cpl *completion)
 }
 
 void* spdk_trim_block(KEYT PPA, bool async){
-	uint64_t *lba_list = (uint64_t *)malloc(sizeof(uint64_t));
-	*lba_list = PPA;
+	int rc;
+	int complete;
 
-	//spdk_nvme_ocssd_ns_cmd_vector_reset(ns_entry->ns, ns_entry->qpair, lba_list, 1, chunk_info, cb_fn, cb_arg);
+	struct ns_entry *ns_entry = g_namespaces;
+	struct ocssd_base *ocssd_base = (struct ocssd_base *)spdk_info.ocssd_base;
+	struct spdk_ocssd_geometry_data *geo = ocssd_base->ocssd.geo;
+	struct spdk_ocssd_chunk_information *tbl = ocssd_base->ocssd.tbl;
+
+	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t) * geo->num_grp * geo->num_pu, 4096, NULL);
+
+	for (int i = 0; i < geo->num_grp * geo->num_pu; i++) {
+		// TODO: lba_list[i] <- spread chunk ppa
+
+		cb.done = false;
+		rc = spdk_nvme_ocssd_ns_cmd_vector_reset(ns_entry->ns, ns_entry->qpair,
+							 lba_list, 1, &tbl[i], // TODO: chunk info
+							 ocssd_raw_cb, &cb);
+		if (rc) {
+			SPDK_ERRLOG("[FlashSim] Cannot submit reset command\n");
+			spdk_dma_free(lba_list);
+			return NULL;
+		}
+		while (!cb.done) {
+			spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+		}
+		if (spdk_nvme_cpl_is_error((struct spdk_ocssd_vector_cpl *)&cb.cpl)) {
+			SPDK_ERRLOG("[FlashSim] Reset failed\n");
+			spdk_dma_free(lba_list);
+			return NULL;
+		}
+	}
+
+	spdk_dma_free(lba_list);
+
 	return NULL;
 }
 
@@ -637,70 +752,3 @@ void spdk_stop(void){
 	return;
 }
 
-/*
-struct hello_world_sequence {
-	struct ns_entry	*ns_entry;
-	char		*buf;
-	unsigned        using_cmb_io;
-	int		is_completed;
-};
-*/
-
-/*(
-static void
-read_complete(void *arg, const struct spdk_nvme_cpl *completion)
-{
-	struct hello_world_sequence *sequence = arg;
-	printf("%s", sequence->buf);
-	spdk_free(sequence->buf);
-	sequence->is_completed = 1;
-}
-*/
-
-/*
-static void
-write_complete(void *arg, const struct spdk_nvme_cpl *completion)
-{
-	struct hello_world_sequence	*sequence = arg;
-	struct ns_entry			*ns_entry = sequence->ns_entry;
-	int				rc;
-
-	if (sequence->using_cmb_io) {
-		spdk_nvme_ctrlr_free_cmb_io_buffer(ns_entry->ctrlr, sequence->buf, PAGESIZE);
-	} else {
-		spdk_free(sequence->buf);
-	}
-	sequence->buf = spdk_zmalloc(PAGESIZE, PAGESIZE, NULL, SPDK_ENV_SOCKET_ID_ANY, SPDK_MALLOC_DMA);
-
-	rc = spdk_nvme_ns_cmd_read(ns_entry->ns, ns_entry->qpair, sequence->buf,
-				   0, 
-				   1,
-				   read_complete, (void *)sequence, 0);
-	if (rc != 0) {
-		fprintf(stderr, "starting read I/O failed\n");
-		exit(1);
-	}
-}
-*/
-
-/*
-static void
-cleanup(void)
-{
-	struct ns_entry *ns_entry = g_namespaces;
-	struct ctrlr_entry *ctrlr_entry = g_controllers;
-
-	while (ns_entry) {
-		struct ns_entry *next = ns_entry->next;
-		free(ns_entry);
-		ns_entry = next;
-	}
-
-	while (ctrlr_entry) {
-		struct ctrlr_entry *next = ctrlr_entry->next;
-		spdk_nvme_detach(ctrlr_entry->ctrlr);
-		free(ctrlr_entry);
-		ctrlr_entry = next;
-	}
-}
-*/

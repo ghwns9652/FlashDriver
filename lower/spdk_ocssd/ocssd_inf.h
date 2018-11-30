@@ -19,6 +19,8 @@
 #define FS_LOWER_R 2
 #define FS_LOWER_E 3
 
+#define RESET 1
+
 struct ctrlr_entry {
 	struct spdk_nvme_ctrlr	*ctrlr;
 	struct ctrlr_entry	*next;
@@ -55,6 +57,7 @@ struct spdk_ocssd {
 	struct spdk_ocssd_chunk_information *tbl;
 	struct spdk_nvme_ctrlr *ctrlr;
 };
+
 
 /* Methods */
 uint32_t spdk_create(lower_info*);
