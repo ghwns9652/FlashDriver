@@ -19,6 +19,8 @@
 #define FS_LOWER_R 2
 #define FS_LOWER_E 3
 
+#define RESET 1
+
 struct ctrlr_entry {
 	struct spdk_nvme_ctrlr	*ctrlr;
 	struct ctrlr_entry	*next;
@@ -56,6 +58,7 @@ struct spdk_ocssd {
 	struct spdk_nvme_ctrlr *ctrlr;
 };
 
+
 /* Methods */
 uint32_t spdk_create(lower_info*);
 void* spdk_destroy(lower_info*);
@@ -78,6 +81,5 @@ static void attach_cb(void *, const struct spdk_nvme_transport_id *, struct spdk
 static void register_ns(struct spdk_nvme_ctrlr *, struct spdk_nvme_ns *);
 static void free_qpair(struct ns_entry *);
 static void free_buffer(struct ns_entry *);
-static void io_complete(void *, const struct spdk_nvme_cpl *);
 
 #endif

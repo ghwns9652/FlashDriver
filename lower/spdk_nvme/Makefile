@@ -30,7 +30,7 @@ all: $(TARGETOBJ) #libspdk.a
 	$(CC) $(CFLAGS_LOWER) $(TARGET_CC) -c $< -o $@
 
 ../../object/%.o: %.c
-	$(CC) $(CFLAGS_LOWER) $(TARGET_CC) $(INC) -c $< -o $@
+	$(CC) $(CFLAGS_LOWER) $(TARGET_CC) $(INC) -c $< -o $@ -lasm
 
 
 clean : 

@@ -5,7 +5,7 @@
 #ifdef bdbm_drv
 extern lower_info memio_info;
 #endif
-#ifdef spdk
+#if defined(spdk_nvme) || defined(spdk_ocssd)
 extern lower_info spdk_info;
 #endif
 
@@ -13,8 +13,8 @@ int F_malloc(void **ptr, int size,int rw){
 	int dmatag=0;
 #ifdef bdbm_drv
 	dmatag=memio_info.lower_alloc(rw,(char**)ptr);
-#elif defined(spdk)
-	dmatag=spdk_info.lower_alloc(1, (char**)ptr);
+#elif defined(spdk_nvme) || defined(spdk_ocssd)
+	dmatag=spdk_info.lower_alloc(rw, (char**)ptr);
 #else
 	(*ptr)=malloc(size);
 #endif	
@@ -30,8 +30,8 @@ void F_free(void *ptr,int tag,int rw){
 	}
 #ifdef bdbm_drv
 	memio_info.lower_free(rw,tag);
-#elif defined(spdk)
-	spdk_info.lower_free(1, tag);
+#elif defined(spdk_nvme) || defined(spdk_ocssd)
+	spdk_info.lower_free(rw, tag);
 #else 
 	free(ptr);
 #endif
