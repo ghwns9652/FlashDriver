@@ -61,10 +61,10 @@ struct spdk_ocssd {
 
 /* Methods */
 uint32_t spdk_create(lower_info*);
-void* spdk_destroy(lower_info*);
-void* spdk_make_pull(KEYT, uint32_t, value_set *, bool, algo_req *const);
-void* spdk_make_push(KEYT, uint32_t, value_set *, bool, algo_req *const);
-void* spdk_make_trim(KEYT, bool);
+void    *spdk_destroy(lower_info*);
+void    *spdk_make_pull(KEYT, uint32_t, value_set *, bool, algo_req *const);
+void    *spdk_make_push(KEYT, uint32_t, value_set *, bool, algo_req *const);
+void    *spdk_make_trim(KEYT, bool);
 void* spdk_pull_data(KEYT, uint32_t, value_set *, bool, algo_req *const);
 void* spdk_push_data(KEYT, uint32_t, value_set *, bool, algo_req *const);
 void* spdk_trim_block(KEYT, bool);
@@ -73,14 +73,7 @@ void spdk_stop(void);
 int spdk_lower_alloc(int, char**);
 void spdk_lower_free(int, int);
 
-
+/* polling thread ? */
 void* l_main(void*);
-static bool ocssd_inf_init(void);
-static bool probe_cb(void *, const struct spdk_nvme_transport_id *, struct spdk_nvme_ctrlr_opts *);
-static void attach_cb(void *, const struct spdk_nvme_transport_id *, struct spdk_nvme_ctrlr *, const struct spdk_nvme_ctrlr_opts *);
-static void register_ns(struct spdk_nvme_ctrlr *, struct spdk_nvme_ns *);
-static void free_qpair(struct ns_entry *);
-static void free_buffer(struct ns_entry *);
-static void io_complete(void *, const struct spdk_nvme_cpl *);
 
 #endif

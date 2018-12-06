@@ -10,13 +10,8 @@ bool stopflag;
 lower_info spdk_info={
 	.create=spdk_create,
 	.destroy=spdk_destroy,
-#if (ASYNC==1)
-	.push_data=spdk_make_push,
-	.pull_data=spdk_make_pull,
-#elif (ASYNC==0)
 	.push_data=spdk_push_data,
 	.pull_data=spdk_pull_data,
-#endif
 	.device_badblock_checker=NULL,
 	.trim_block=spdk_trim_block,
 	.refresh=spdk_refresh,
@@ -27,41 +22,19 @@ lower_info spdk_info={
 
 struct ocssd_base {
 	struct spdk_ocssd ocssd;
+
+	uint32_t nr_submit;
+};
+
+struct io_arg {
+	uint64_t *lba_list;
+	algo_req *req;
 };
 
 struct cb_arg {
 	bool done;
 	struct spdk_nvme_cpl cpl; // NVMe completion queue entry
 } cb;
-
-void* l_main(void *__input){
-	void *_inf_req;
-	spdk_request *inf_req;
-
-	while(1){
-		if(stopflag){
-			pthread_exit(NULL);
-			break;
-		}
-		if(!(_inf_req=q_dequeue(s_q))){
-			continue;
-		}
-		inf_req=(spdk_request*)_inf_req;
-		switch(inf_req->type){
-			case FS_LOWER_W:
-				spdk_push_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, (algo_req*)(inf_req->upper_req));
-				break;
-			case FS_LOWER_R:
-				spdk_pull_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, (algo_req*)(inf_req->upper_req));
-				break;
-			case FS_LOWER_E:
-				spdk_trim_block(inf_req->key, inf_req->isAsync);
-				break;
-		}
-		free(inf_req);
-	}
-	return NULL;
-}
 
 static void 
 ocssd_raw_cb(void *arg, const struct spdk_nvme_cpl *cpl)
@@ -77,7 +50,7 @@ ocssd_print_geometry(struct spdk_ocssd_geometry_data *geo)
 {
 	puts("\n[OCSSD GEOMETRY INFO]");
 	printf("OCSSD v%d.%d\n", geo->mjr, geo->mnr);
-	printf("Minimum / Optimal WriteSize: %dK / %dK\n", geo->ws_min, geo->ws_opt);
+	printf("Minimum / Optimal WriteSize: %d / %d\n", geo->ws_min, geo->ws_opt);
 	printf("Num of Groups:         %d\n", geo->num_grp);
 	printf("Num of Parallel Units: %d (per group)\n", geo->num_pu);
 	printf("Num of Chunks:         %d (per PU)\n", geo->num_chk);
@@ -174,6 +147,7 @@ spdk_ocssd_base_init()
 	ocssd->geo = geo;
 	ocssd->tbl = tbl;
 	ocssd->ctrlr = ctrlr;
+	ocssd_base->nr_submit = 0;
 
 	return ocssd_base;
 
@@ -276,6 +250,95 @@ ocssd_reset(struct ocssd_base *ocssd_base) {
 	return 0;
 }
 
+static bool
+probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
+	 struct spdk_nvme_ctrlr_opts *opts)
+{
+	printf("Attaching to %s\n", trid->traddr);
+
+	return true;
+}
+
+static void
+register_ns(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_ns *ns)
+{
+	struct ns_entry *entry;
+	const struct spdk_nvme_ctrlr_data *cdata;
+
+	/*
+	 * spdk_nvme_ctrlr is the logical abstraction in SPDK for an NVMe
+	 *  controller.  During initialization, the IDENTIFY data for the
+	 *  controller is read using an NVMe admin command, and that data
+	 *  can be retrieved using spdk_nvme_ctrlr_get_data() to get
+	 *  detailed information on the controller.  Refer to the NVMe
+	 *  specification for more details on IDENTIFY for NVMe controllers.
+	 */
+	cdata = spdk_nvme_ctrlr_get_data(ctrlr);
+
+	if (!spdk_nvme_ns_is_active(ns)) {
+		printf("Controller %-20.20s (%-20.20s): Skipping inactive NS %u\n",
+		       cdata->mn, cdata->sn,
+		       spdk_nvme_ns_get_id(ns));
+		return;
+	}
+
+	entry = (struct ns_entry*)malloc(sizeof(struct ns_entry));
+	if (entry == NULL) {
+		perror("ns_entry malloc");
+		exit(1);
+	}
+
+	entry->ctrlr = ctrlr;
+	entry->ns = ns;
+	entry->next = g_namespaces;
+	g_namespaces = entry;
+
+	printf("  Namespace ID: %d size: %juGB\n", spdk_nvme_ns_get_id(ns),
+	       spdk_nvme_ns_get_size(ns) / 1000000000);
+}
+
+static void
+attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
+	  struct spdk_nvme_ctrlr *ctrlr, const struct spdk_nvme_ctrlr_opts *opts)
+{
+	int nsid, num_ns;
+	struct ctrlr_entry *entry;
+	struct spdk_nvme_ns *ns;
+	const struct spdk_nvme_ctrlr_data *cdata = spdk_nvme_ctrlr_get_data(ctrlr);
+
+	entry = (struct ctrlr_entry*)malloc(sizeof(struct ctrlr_entry));
+	if (entry == NULL) {
+		perror("ctrlr_entry malloc");
+		exit(1);
+	}
+
+	printf("Attached to %s\n", trid->traddr);
+
+	snprintf(entry->name, sizeof(entry->name), "%-20.20s (%-20.20s)", cdata->mn, cdata->sn);
+
+	entry->ctrlr = ctrlr;
+	entry->next = g_controllers;
+	g_controllers = entry;
+
+	/*
+	 * Each controller has one or more namespaces.  An NVMe namespace is basically
+	 *  equivalent to a SCSI LUN.  The controller's IDENTIFY data tells us how
+	 *  many namespaces exist on the controller.  For Intel(R) P3X00 controllers,
+	 *  it will just be one namespace.
+	 *
+	 * Note that in NVMe, namespace IDs start at 1, not 0.
+	 */
+	num_ns = spdk_nvme_ctrlr_get_num_ns(ctrlr);
+	printf("Using controller %s with %d namespaces.\n", entry->name, num_ns);
+	for (nsid = 1; nsid <= num_ns; nsid++) {
+		ns = spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
+		if (ns == NULL) {
+			continue;
+		}
+		register_ns(ctrlr, ns);
+	}
+}
+
 uint32_t spdk_create(lower_info *li){
 	int rc;
 	struct spdk_env_opts opts;
@@ -348,6 +411,7 @@ uint32_t spdk_create(lower_info *li){
 	measure_init(&li->writeTime);
 	measure_init(&li->readTime);
 #if (ASYNC==1)
+	puts("l_main start");
 	q_init(&s_q, QSIZE);
 	pthread_create(&t_id,NULL,&l_main,NULL);
 #endif
@@ -364,93 +428,30 @@ uint32_t spdk_create(lower_info *li){
 	return 0;
 }
 
-static bool
-probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
-	 struct spdk_nvme_ctrlr_opts *opts)
+static void
+free_qpair(struct ns_entry *ns_entry)
 {
-	printf("Attaching to %s\n", trid->traddr);
+	spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
 
-	return true;
+	spdk_nvme_ctrlr_free_io_qpair(ns_entry->qpair);
+
+	return;
 }
 
 static void
-attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
-	  struct spdk_nvme_ctrlr *ctrlr, const struct spdk_nvme_ctrlr_opts *opts)
+free_buffer(struct ns_entry *ns_entry)
 {
-	int nsid, num_ns;
-	struct ctrlr_entry *entry;
-	struct spdk_nvme_ns *ns;
-	const struct spdk_nvme_ctrlr_data *cdata = spdk_nvme_ctrlr_get_data(ctrlr);
-
-	entry = (struct ctrlr_entry*)malloc(sizeof(struct ctrlr_entry));
-	if (entry == NULL) {
-		perror("ctrlr_entry malloc");
-		exit(1);
-	}
-
-	printf("Attached to %s\n", trid->traddr);
-
-	snprintf(entry->name, sizeof(entry->name), "%-20.20s (%-20.20s)", cdata->mn, cdata->sn);
-
-	entry->ctrlr = ctrlr;
-	entry->next = g_controllers;
-	g_controllers = entry;
-
-	/*
-	 * Each controller has one or more namespaces.  An NVMe namespace is basically
-	 *  equivalent to a SCSI LUN.  The controller's IDENTIFY data tells us how
-	 *  many namespaces exist on the controller.  For Intel(R) P3X00 controllers,
-	 *  it will just be one namespace.
-	 *
-	 * Note that in NVMe, namespace IDs start at 1, not 0.
-	 */
-	num_ns = spdk_nvme_ctrlr_get_num_ns(ctrlr);
-	printf("Using controller %s with %d namespaces.\n", entry->name, num_ns);
-	for (nsid = 1; nsid <= num_ns; nsid++) {
-		ns = spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
-		if (ns == NULL) {
-			continue;
-		}
-		register_ns(ctrlr, ns);
-	}
-}
-
-static void
-register_ns(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_ns *ns)
-{
-	struct ns_entry *entry;
-	const struct spdk_nvme_ctrlr_data *cdata;
-
-	/*
-	 * spdk_nvme_ctrlr is the logical abstraction in SPDK for an NVMe
-	 *  controller.  During initialization, the IDENTIFY data for the
-	 *  controller is read using an NVMe admin command, and that data
-	 *  can be retrieved using spdk_nvme_ctrlr_get_data() to get
-	 *  detailed information on the controller.  Refer to the NVMe
-	 *  specification for more details on IDENTIFY for NVMe controllers.
-	 */
-	cdata = spdk_nvme_ctrlr_get_data(ctrlr);
-
-	if (!spdk_nvme_ns_is_active(ns)) {
-		printf("Controller %-20.20s (%-20.20s): Skipping inactive NS %u\n",
-		       cdata->mn, cdata->sn,
-		       spdk_nvme_ns_get_id(ns));
+	if(!ns_entry->bufarr) {
 		return;
 	}
 
-	entry = (struct ns_entry*)malloc(sizeof(struct ns_entry));
-	if (entry == NULL) {
-		perror("ns_entry malloc");
-		exit(1);
+	if(ns_entry->using_cmb_io){
+		spdk_nvme_ctrlr_free_cmb_io_buffer(ns_entry->ctrlr, ns_entry->bufarr->buf, PAGESIZE);
+	} else {
+		spdk_free(ns_entry->bufarr->buf);
 	}
-
-	entry->ctrlr = ctrlr;
-	entry->ns = ns;
-	entry->next = g_namespaces;
-	g_namespaces = entry;
-
-	printf("  Namespace ID: %d size: %juGB\n", spdk_nvme_ns_get_id(ns),
-	       spdk_nvme_ns_get_size(ns) / 1000000000);
+	free(ns_entry->bufarr);
+	return;
 }
 
 void* spdk_destroy(lower_info *li){
@@ -477,34 +478,6 @@ void* spdk_destroy(lower_info *li){
 	return NULL;
 }
 
-static void
-free_qpair(struct ns_entry *ns_entry)
-{
-	//while(!ns_entry->is_completed){
-	spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
-	//}
-
-	spdk_nvme_ctrlr_free_io_qpair(ns_entry->qpair);
-
-	return;
-}
-
-static void
-free_buffer(struct ns_entry *ns_entry)
-{
-	if(!ns_entry->bufarr) {
-		return;
-	}
-
-	if(ns_entry->using_cmb_io){
-		spdk_nvme_ctrlr_free_cmb_io_buffer(ns_entry->ctrlr, ns_entry->bufarr->buf, PAGESIZE);
-	} else {
-		spdk_free(ns_entry->bufarr->buf);
-	}
-	free(ns_entry->bufarr);
-	return;
-}
-
 int spdk_lower_alloc(int type, char** v_ptr){
 	struct ns_entry *ns_entry = g_namespaces;
 	struct spdk_nvme_buffer *ptr = ns_entry->bufarr;
@@ -519,7 +492,6 @@ int spdk_lower_alloc(int type, char** v_ptr){
 			if(!ptr->busy) {
 				*v_ptr=ptr->buf;
 				ptr->busy=1;
-				//printf("%d allocated\n", i);
 				return i;
 			}
 			ptr++;
@@ -534,7 +506,6 @@ void spdk_lower_free(int type, int tag){
 	struct spdk_nvme_buffer *ptr = ns_entry->bufarr;
 
 	(ptr+tag)->busy = 0;
-	//printf("tag %d freed\n", tag);
 }
 
 void* spdk_make_pull(KEYT PPA, uint32_t size, value_set *value, bool async, algo_req *const req)
@@ -605,11 +576,32 @@ void* spdk_make_trim(KEYT PPA, bool async)
 	return NULL;
 }
 
+static void
+ocssd_io_done(void *arg, const struct spdk_nvme_cpl *cpl) {
+	struct io_arg *io = (struct io_arg *)arg;
+	struct ns_entry *ns_entry = g_namespaces;
+	struct ocssd_base *ocssd_base = (struct ocssd_base *)spdk_info.ocssd_base;
+
+	cb.done = true;
+
+	if (spdk_nvme_cpl_is_error(cpl)) {
+		SPDK_ERRLOG("[FlashSim] IO completion failed\n");
+		spdk_dma_free(io->lba_list);
+		exit(1);
+	}
+
+	spdk_dma_free(io->lba_list);
+	io->req->end_req(io->req);
+	spdk_dma_free(io);
+}
+
 void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo_req *const req)
 {
 	int rc;
-	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
+	struct ocssd_base *ocssd_base = (struct ocssd_base *)spdk_info.ocssd_base;
+	
+	struct io_arg *io;
 
 	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
 	if (!lba_list) {
@@ -618,31 +610,33 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	}
 	lba_list[0] = PPA;
 
-	//printf("Read req ( LBA : %lu )\n", lba_list[0]);
+	io = (struct io_arg *)spdk_dma_zmalloc(sizeof(struct io_arg), 4096, NULL);
+	if (!io) {
+		SPDK_ERRLOG("[FlashSim] Cannot alloc io\n");
+		spdk_dma_free(lba_list);
+		return NULL;
+	}
+	io->lba_list = lba_list;
+	io->req = req;
 
 	cb.done = false;
 	rc = spdk_nvme_ocssd_ns_cmd_vector_read(ns_entry->ns,
 						ns_entry->qpair,
 						value->value,
 						lba_list, 1,
-						ocssd_raw_cb, &cb, 0);
+						ocssd_io_done, io, 0);
 	if (rc) {
 		SPDK_ERRLOG("[FlashSim] Cannot submit read command\n");
 		spdk_dma_free(lba_list);
 		return NULL;
 	}
-	while (!cb.done) {
-		spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
-	}
-	if (spdk_nvme_cpl_is_error((struct spdk_ocssd_vector_cpl *)&cb.cpl)){
-		SPDK_ERRLOG("[FlashSim] Read failed\n");
-		spdk_dma_free(lba_list);
-		return NULL;
-	}
 
-	spdk_dma_free(lba_list);
-
-	req->end_req(req);
+	if (!async) {
+		while (!cb.done) {
+			spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+		}
+	}
+	//spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
 
 	return NULL;
 }
@@ -650,10 +644,10 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo_req *const req)
 {
 	int rc;
-	int complete;
 	struct ns_entry *ns_entry = g_namespaces;
+	struct ocssd_base *ocssd_base = (struct ocssd_base *)spdk_info.ocssd_base;
 
-	char *buf;	
+	struct io_arg *io;
 
 	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t), 4096, NULL);
 	if (!lba_list) {
@@ -662,53 +656,39 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 	}
 	lba_list[0] = PPA;
 
-	//printf("Write req ( LBA : %lu )\n", lba_list[0]);
-
-	buf = (char *)spdk_dma_zmalloc(4096, 4096, NULL);
-	if (!buf) {
-		SPDK_ERRLOG("FlashSim] Cannot alloc buf");
+	io = (struct io_arg *)spdk_dma_zmalloc(sizeof(struct io_arg), 4096, NULL);
+	if (!io) {
+		SPDK_ERRLOG("[FlashSim] Cannot alloc io\n");
+		spdk_dma_free(lba_list);
 		return NULL;
 	}
+	io->lba_list = lba_list;
+	io->req = req;
 
 	cb.done = false;
 	rc = spdk_nvme_ocssd_ns_cmd_vector_write(ns_entry->ns,
 						 ns_entry->qpair,
-						 buf,
+						 value->value,
 						 lba_list, 1,
-						 ocssd_raw_cb, &cb, 0);
+						 ocssd_io_done, io, 0);
 	if (rc) {
 		SPDK_ERRLOG("[FlashSim] Cannot submit write command\n");
 		spdk_dma_free(lba_list);
 		return NULL;
 	}
-	while (!cb.done) {
-		spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+
+	if (!async) {
+		while (!cb.done) {
+			spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+		}
 	}
-	if (spdk_nvme_cpl_is_error(&cb.cpl)){
-		SPDK_ERRLOG("[FlashSim] Write failed\n");
-		spdk_dma_free(lba_list);
-		return NULL;
-	}
-
-	memcpy(value->value, buf, 4096);
-
-	spdk_dma_free(lba_list);
-	spdk_dma_free(buf);
-
-	req->end_req(req);
+	//spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
 
 	return NULL;
 }
 
-static void io_complete(void *arg, const struct spdk_nvme_cpl *completion)
-{
-	struct algo_req *req = (struct algo_req*)arg;
-	req->end_req(req);
-}
-
 void* spdk_trim_block(KEYT PPA, bool async){
 	int rc;
-	int complete;
 
 	struct ns_entry *ns_entry = g_namespaces;
 	struct ocssd_base *ocssd_base = (struct ocssd_base *)spdk_info.ocssd_base;
@@ -750,5 +730,41 @@ void* spdk_refresh(lower_info* li){
 
 void spdk_stop(void){
 	return;
+}
+
+void* l_main(void *__input){
+	struct ns_entry *ns_entry = g_namespaces;
+	while (!stopflag) {
+		//sleep(1);
+		spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+	}
+	pthread_exit(NULL);
+	/*
+	void *_inf_req;
+	spdk_request *inf_req;
+
+	while(1){
+		if(stopflag){
+			pthread_exit(NULL);
+			break;
+		}
+		if(!(_inf_req=q_dequeue(s_q))){
+			continue;
+		}
+		inf_req=(spdk_request*)_inf_req;
+		switch(inf_req->type){
+			case FS_LOWER_W:
+				spdk_push_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, (algo_req*)(inf_req->upper_req));
+				break;
+			case FS_LOWER_R:
+				spdk_pull_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, (algo_req*)(inf_req->upper_req));
+				break;
+			case FS_LOWER_E:
+				spdk_trim_block(inf_req->key, inf_req->isAsync);
+				break;
+		}
+		free(inf_req);
+	}
+	return NULL; */
 }
 
