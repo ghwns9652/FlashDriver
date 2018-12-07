@@ -3,8 +3,6 @@
 static struct ctrlr_entry *g_controllers = NULL;
 static struct ns_entry *g_namespaces = NULL;
 
-queue *s_q;
-pthread_t t_id;
 bool stopflag;
 
 lower_info spdk_info={
@@ -74,12 +72,12 @@ ocssd_print_chunkinfo(struct spdk_ocssd_geometry_data *geo,
 static struct ocssd_base *
 spdk_ocssd_base_init()
 {
-	struct ocssd_base *ocssd_base;
 	int rc;
 
 	struct ns_entry *ns_entry = g_namespaces;
 	struct spdk_nvme_ctrlr *ctrlr = ns_entry->ctrlr;
 
+	struct ocssd_base *ocssd_base;
 	struct spdk_ocssd *ocssd;
 	struct spdk_ocssd_geometry_data *geo;
 	struct spdk_ocssd_chunk_information *tbl;
@@ -385,7 +383,6 @@ uint32_t spdk_create(lower_info *li){
 	li->NOP = li->NOS * li->PPS;
 	li->SOP = 4096;
 	li->TS  = (uint64_t)li->NOP * li->SOP;
-	//li->SOB = geo->num_pu * geo->clba * li->SOP
 	li->SOK = sizeof(KEYT);
 	li->write_op=li->read_op=li->trim_op=0;
 
@@ -411,19 +408,27 @@ uint32_t spdk_create(lower_info *li){
 	measure_init(&li->writeTime);
 	measure_init(&li->readTime);
 #if (ASYNC==1)
-	puts("l_main start");
-	q_init(&s_q, QSIZE);
-	pthread_create(&t_id,NULL,&l_main,NULL);
+	SPDK_ENV_FOREACH_CORE(i) {
+		worker = calloc(1, sizeof(*worker));
+		if (worker == NULL) {
+			SPDK_ERRLOG("[FlashSim] Unable to alloc worker\n");
+			spdk_destroy(li);
+			return 1;
+		}
+		worker->lcore = i;
+		worker->next = g_workers;
+		g_workers = worker;
+		g_num_workers++;
+	}
+	// TODO: spdk_env_thread_launch_pinned()
 #endif
 
-#if RESET
 	printf("\nResetting all chunks\n");
 	rc = ocssd_reset((struct ocssd_base *)li->ocssd_base);	
 	if (rc) {
 		SPDK_ERRLOG("[FlashSim] OCSSD initial reset failed\n");
 		return 1;
 	}
-#endif
 
 	return 0;
 }
@@ -506,74 +511,6 @@ void spdk_lower_free(int type, int tag){
 	struct spdk_nvme_buffer *ptr = ns_entry->bufarr;
 
 	(ptr+tag)->busy = 0;
-}
-
-void* spdk_make_pull(KEYT PPA, uint32_t size, value_set *value, bool async, algo_req *const req)
-{
-	bool flag = false;
-	spdk_request *s_req = (spdk_request*)malloc(sizeof(spdk_request));
-	s_req->type=FS_LOWER_R;
-	s_req->key=PPA;
-	s_req->size=size;
-	s_req->value=value;
-	s_req->isAsync=async;
-	s_req->upper_req=(void*)req;
-
-	while(!flag){
-		if(q_enqueue((void*)s_req,s_q)){
-			flag=true;
-			break;
-		}
-		else{
-			flag=false;
-			continue;
-		}
-	}
-	return NULL;
-}
-
-void* spdk_make_push(KEYT PPA, uint32_t size, value_set *value, bool async, algo_req *const req)
-{
-	bool flag=false;
-	spdk_request *s_req=(spdk_request*)malloc(sizeof(spdk_request));
-	s_req->type=FS_LOWER_W;
-	s_req->key=PPA;
-	s_req->size=size;
-	s_req->value=value;
-	s_req->isAsync=async;
-	s_req->upper_req=(void*)req;
-
-	while(!flag){
-		if(q_enqueue((void*)s_req,s_q)){
-			flag=true;
-			break;
-		}
-		else{
-			flag=false;
-			continue;
-		}
-	}
-	return NULL;
-}
-
-void* spdk_make_trim(KEYT PPA, bool async)
-{
-	bool flag=false;
-	spdk_request *s_req=(spdk_request*)malloc(sizeof(spdk_request));
-	s_req->key=PPA;
-	s_req->isAsync=async;
-
-	while(!flag){
-		if(q_enqueue((void*)s_req,s_q)){
-			flag=true;
-			break;
-		}
-		else{
-			flag=false;
-			continue;
-		}
-	}
-	return NULL;
 }
 
 static void
@@ -732,39 +669,9 @@ void spdk_stop(void){
 	return;
 }
 
-void* l_main(void *__input){
-	struct ns_entry *ns_entry = g_namespaces;
-	while (!stopflag) {
-		//sleep(1);
-		spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
-	}
-	pthread_exit(NULL);
-	/*
-	void *_inf_req;
-	spdk_request *inf_req;
-
-	while(1){
-		if(stopflag){
-			pthread_exit(NULL);
-			break;
-		}
-		if(!(_inf_req=q_dequeue(s_q))){
-			continue;
-		}
-		inf_req=(spdk_request*)_inf_req;
-		switch(inf_req->type){
-			case FS_LOWER_W:
-				spdk_push_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, (algo_req*)(inf_req->upper_req));
-				break;
-			case FS_LOWER_R:
-				spdk_pull_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, (algo_req*)(inf_req->upper_req));
-				break;
-			case FS_LOWER_E:
-				spdk_trim_block(inf_req->key, inf_req->isAsync);
-				break;
-		}
-		free(inf_req);
-	}
-	return NULL; */
+static int
+poller_main(void *arg)
+{
+	return 0;
 }
 
