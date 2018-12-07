@@ -4,8 +4,12 @@ static struct ctrlr_entry *g_controllers = NULL;
 static struct ns_entry *g_namespaces = NULL;
 
 bool stopflag;
+uint32_t nr_submit;
 
 uint8_t ch_bits, pu_bits, ck_bits, lb_bits;
+
+pthread_mutex_t allocator_lock;
+pthread_mutex_t count_lock;
 
 lower_info spdk_info={
 	.create=spdk_create,
@@ -23,7 +27,6 @@ lower_info spdk_info={
 struct ocssd_base {
 	struct spdk_ocssd ocssd;
 
-	uint32_t nr_submit;
 };
 
 struct io_arg {
@@ -35,6 +38,8 @@ struct cb_arg {
 	bool done;
 	struct spdk_nvme_cpl cpl; // NVMe completion queue entry
 } cb;
+
+static int poller_main(void *arg);
 
 static void 
 ocssd_raw_cb(void *arg, const struct spdk_nvme_cpl *cpl)
@@ -63,7 +68,7 @@ ocssd_print_chunkinfo(struct spdk_ocssd_geometry_data *geo,
 {
 	puts("[OCSSD CHUNK INFO]");
 	puts("[idx]\t[state]\t[type]\t[wli]\t[sLBA]\t[blks]\t[wr_ptr]");
-	for (uint32_t i = 0; i < geo->num_grp * geo->num_pu * geo->num_chk; i++) { //+= geo->num_chk) {
+	for (uint32_t i = 0; i < geo->num_grp * geo->num_pu * geo->num_chk; i += geo->num_chk) {
 		printf("%d\t%x\t%x\t%d\t%lu\t%lu\t%lu\n",
 			i, *((uint8_t *)&tbl[i].cs), *((uint8_t *)&tbl[i].ct), 
 			tbl[i].wli, tbl[i].slba, tbl[i].cnlb, tbl[i].wp);
@@ -147,7 +152,6 @@ spdk_ocssd_base_init()
 	ocssd->geo = geo;
 	ocssd->tbl = tbl;
 	ocssd->ctrlr = ctrlr;
-	ocssd_base->nr_submit = 0;
 
 	return ocssd_base;
 
@@ -345,10 +349,12 @@ uint32_t spdk_create(lower_info *li){
 	struct spdk_env_opts opts;
 	struct ocssd_base *ocssd_base;
 	struct spdk_ocssd_geometry_data *geo;
+	uint32_t master_core;
 
 	spdk_env_opts_init(&opts);
 	opts.name = "FlashSimulator";
 	opts.shm_id = 0;
+	opts.core_mask = "0x03";
 
 	if (spdk_env_init(&opts) < 0) {
 		SPDK_ERRLOG("[FlashSim] Unable to initialize SPDK env\n");
@@ -389,8 +395,16 @@ uint32_t spdk_create(lower_info *li){
 	li->SOK = sizeof(KEYT);
 	li->write_op=li->read_op=li->trim_op=0;
 
-	/* set encode variables */
+	puts("[FlashSimultor spec]");
+	printf("Pages:        %u\n", li->NOP);
+	printf("Segments:     %u\n", li->NOS);
+	printf("Page per seg: %u\n", li->PPS);
+	printf("Pagesize:     %u\n", li->SOP);
+	printf("Total size:   %lu\n\n", li->TS);
 
+	stopflag = false;
+
+	/** Set encode variables */
 	cnt = 0;
 	amt = geo->clba;
 	while((amt >>= 1) != 0){
@@ -419,15 +433,6 @@ uint32_t spdk_create(lower_info *li){
 	}
 	ch_bits = cnt;
 
-	puts("[FlashSimultor spec]");
-	printf("Pages:        %u\n", li->NOP);
-	printf("Segments:     %u\n", li->NOS);
-	printf("Page per seg: %u\n", li->PPS);
-	printf("Pagesize:     %u\n", li->SOP);
-	printf("Total size:   %lu\n\n", li->TS);
-
-	stopflag = false;
-
 	/** Initialize OCSSD interface */
 	printf("Initializing OCSSD Interface\n");
 	if(!ocssd_inf_init()) {
@@ -437,23 +442,14 @@ uint32_t spdk_create(lower_info *li){
 	}
 	printf("Initialization complete.\n");
 
+	pthread_mutex_init(&count_lock, NULL);
+	pthread_mutex_init(&allocator_lock, NULL);
 	pthread_mutex_init(&spdk_info.lower_lock,NULL);
 	measure_init(&li->writeTime);
 	measure_init(&li->readTime);
 #if (ASYNC==1)
-	SPDK_ENV_FOREACH_CORE(i) {
-		worker = calloc(1, sizeof(*worker));
-		if (worker == NULL) {
-			SPDK_ERRLOG("[FlashSim] Unable to alloc worker\n");
-			spdk_destroy(li);
-			return 1;
-		}
-		worker->lcore = i;
-		worker->next = g_workers;
-		g_workers = worker;
-		g_num_workers++;
-	}
-	// TODO: spdk_env_thread_launch_pinned()
+	master_core = spdk_env_get_current_core();
+	spdk_env_thread_launch_pinned(master_core+1, poller_main, NULL);
 #endif
 
 	printf("\nResetting all chunks\n");
@@ -528,8 +524,10 @@ int spdk_lower_alloc(int type, char** v_ptr){
 	while(1){
 		for(int i=0; i<QSIZE; i++){
 			if(!ptr->busy) {
+				pthread_mutex_lock(&allocator_lock);
 				*v_ptr=ptr->buf;
 				ptr->busy=1;
+				pthread_mutex_unlock(&allocator_lock);
 				return i;
 			}
 			ptr++;
@@ -543,7 +541,9 @@ void spdk_lower_free(int type, int tag){
 	struct ns_entry *ns_entry = g_namespaces;
 	struct spdk_nvme_buffer *ptr = ns_entry->bufarr;
 
+	pthread_mutex_lock(&allocator_lock);
 	(ptr+tag)->busy = 0;
+	pthread_mutex_unlock(&allocator_lock);
 }
 
 void raw_trans_layer(KEYT PPA, uint64_t *LBA){
@@ -598,10 +598,15 @@ void raw_trans_layer_trim(KEYT PPA, uint64_t *LBA){
 static void
 ocssd_io_done(void *arg, const struct spdk_nvme_cpl *cpl) {
 	struct io_arg *io = (struct io_arg *)arg;
-	struct ns_entry *ns_entry = g_namespaces;
-	struct ocssd_base *ocssd_base = (struct ocssd_base *)spdk_info.ocssd_base;
+	uint64_t *lba_list = io->lba_list;
+	algo_req *req = io->req;
+
+	printf("[%d completed]\n", lba_list[0]);
 
 	cb.done = true;
+	pthread_mutex_lock(&count_lock);
+	nr_submit--;
+	pthread_mutex_unlock(&count_lock);
 
 	if (spdk_nvme_cpl_is_error(cpl)) {
 		SPDK_ERRLOG("[FlashSim] IO completion failed\n");
@@ -609,8 +614,9 @@ ocssd_io_done(void *arg, const struct spdk_nvme_cpl *cpl) {
 		exit(1);
 	}
 
-	spdk_dma_free(io->lba_list);
-	io->req->end_req(io->req);
+	req->end_req(req);
+
+	spdk_dma_free(lba_list);
 	spdk_dma_free(io);
 }
 
@@ -651,11 +657,16 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 		return NULL;
 	}
 
+	pthread_mutex_lock(&count_lock);
+	nr_submit++;
+	pthread_mutex_unlock(&count_lock);
+
 	if (!async) {
 		while (!cb.done) {
 			spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
 		}
 	}
+	//spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
 
 	return NULL;
 }
@@ -674,6 +685,7 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 		return NULL;
 	}
 	raw_trans_layer(PPA, lba_list);
+	printf("%d %d pushed\n", PPA, lba_list[0]);
 
 	io = (struct io_arg *)spdk_dma_zmalloc(sizeof(struct io_arg), 4096, NULL);
 	if (!io) {
@@ -695,6 +707,10 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 		spdk_dma_free(lba_list);
 		return NULL;
 	}
+
+	pthread_mutex_lock(&count_lock);
+	nr_submit++;
+	pthread_mutex_unlock(&count_lock);
 
 	if (!async) {
 		while (!cb.done) {
@@ -760,6 +776,16 @@ void spdk_stop(void){
 static int
 poller_main(void *arg)
 {
+	struct ns_entry *ns_entry = g_namespaces;
+	puts("poller started");
+	while (!stopflag) {
+		if (nr_submit) {
+			spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+		} else {
+			usleep(1000);
+		}
+	}
+	
 	return 0;
 }
 
