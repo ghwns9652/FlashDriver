@@ -5,6 +5,8 @@ static struct ns_entry *g_namespaces = NULL;
 
 bool stopflag;
 
+uint8_t ch_bits, pu_bits, ck_bits, lb_bits;
+
 lower_info spdk_info={
 	.create=spdk_create,
 	.destroy=spdk_destroy,
@@ -61,7 +63,7 @@ ocssd_print_chunkinfo(struct spdk_ocssd_geometry_data *geo,
 {
 	puts("[OCSSD CHUNK INFO]");
 	puts("[idx]\t[state]\t[type]\t[wli]\t[sLBA]\t[blks]\t[wr_ptr]");
-	for (uint32_t i = 0; i < geo->num_grp * geo->num_pu * geo->num_chk; i += geo->num_chk) {
+	for (uint32_t i = 0; i < geo->num_grp * geo->num_pu * geo->num_chk; i++) { //+= geo->num_chk) {
 		printf("%d\t%x\t%x\t%d\t%lu\t%lu\t%lu\n",
 			i, *((uint8_t *)&tbl[i].cs), *((uint8_t *)&tbl[i].ct), 
 			tbl[i].wli, tbl[i].slba, tbl[i].cnlb, tbl[i].wp);
@@ -339,6 +341,7 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 
 uint32_t spdk_create(lower_info *li){
 	int rc;
+	int amt, cnt;
 	struct spdk_env_opts opts;
 	struct ocssd_base *ocssd_base;
 	struct spdk_ocssd_geometry_data *geo;
@@ -385,6 +388,36 @@ uint32_t spdk_create(lower_info *li){
 	li->TS  = (uint64_t)li->NOP * li->SOP;
 	li->SOK = sizeof(KEYT);
 	li->write_op=li->read_op=li->trim_op=0;
+
+	/* set encode variables */
+
+	cnt = 0;
+	amt = geo->clba;
+	while((amt >>= 1) != 0){
+		cnt++;
+	}
+	lb_bits = cnt;
+
+	cnt = 0;
+	amt = geo->num_chk;
+	while((amt >>= 1) != 0){
+		cnt++;
+	}
+	ck_bits = cnt;
+	
+	cnt = 0;
+	amt = geo->num_pu;
+	while((amt >>= 1) != 0){
+		cnt++;
+	}
+	pu_bits = cnt;
+	
+	cnt = 0;
+	amt = geo->num_grp;
+	while((amt >>= 1) != 0){
+		cnt++;
+	}
+	ch_bits = cnt;
 
 	puts("[FlashSimultor spec]");
 	printf("Pages:        %u\n", li->NOP);
@@ -513,6 +546,55 @@ void spdk_lower_free(int type, int tag){
 	(ptr+tag)->busy = 0;
 }
 
+void raw_trans_layer(KEYT PPA, uint64_t *LBA){
+	uint32_t ch, pu, ck, lb;
+	struct spdk_ocssd_geometry_data *geo;
+
+	geo = ((struct ocssd_base*)spdk_info.ocssd_base)->ocssd.geo;
+
+	ch = PPA % geo->num_grp;
+	pu = (PPA / geo->num_grp) % geo->num_pu;
+	ck = PPA / (geo->num_grp * geo->num_pu * geo->clba);
+	lb = (PPA / (geo->num_grp * geo->num_pu)) % geo->clba;
+
+	//printf("ch: %u, pu: %u, ck: %u, lb: %u\n", ch, pu, ck, lb);
+
+	*LBA = lb;
+	*LBA |= (ck << lb_bits); // chuck
+	*LBA |= (pu << (ck_bits + lb_bits)); // parallel unit
+	*LBA |= (ch << (pu_bits + ck_bits + lb_bits)); // group
+
+	return ;
+}
+
+void raw_trans_layer_trim(KEYT PPA, uint64_t *LBA){
+	int i;
+	uint32_t ch, pu, ck, lb;
+	uint64_t temp;
+	struct spdk_ocssd_geometry_data *geo;
+
+	geo = ((struct ocssd_base*)spdk_info.ocssd_base)->ocssd.geo;
+
+	ch = PPA % geo->num_grp;
+	pu = (PPA / geo->num_grp) % geo->num_pu;
+	ck = PPA / (geo->num_grp * geo->num_pu * geo->clba);
+	lb = (PPA / (geo->num_grp * geo->num_pu)) % geo->clba;
+
+	//printf("ch: %u, pu: %u, ck: %u, lb: %u\n", ch, pu, ck, lb);
+
+	temp = lb;
+	temp |= (ck << lb_bits); // chuck
+	temp |= (pu << (ck_bits + lb_bits)); // parallel unit
+	temp |= (ch << (pu_bits + ck_bits + lb_bits)); // group
+
+	for(i = 0; i < geo->num_grp * geo->num_pu; i++){
+		LBA[i] = temp;
+		temp += geo->num_chk * geo->clba;
+	}
+
+	return ;
+}
+
 static void
 ocssd_io_done(void *arg, const struct spdk_nvme_cpl *cpl) {
 	struct io_arg *io = (struct io_arg *)arg;
@@ -545,7 +627,8 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 		SPDK_ERRLOG("[FlashSim] Cannot alloc lba_list\n");
 		return NULL;
 	}
-	lba_list[0] = PPA;
+
+	raw_trans_layer(PPA, lba_list);
 
 	io = (struct io_arg *)spdk_dma_zmalloc(sizeof(struct io_arg), 4096, NULL);
 	if (!io) {
@@ -573,7 +656,6 @@ void* spdk_pull_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 			spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
 		}
 	}
-	//spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
 
 	return NULL;
 }
@@ -591,7 +673,7 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 		SPDK_ERRLOG("[FlashSim] Cannot alloc lba_list\n");
 		return NULL;
 	}
-	lba_list[0] = PPA;
+	raw_trans_layer(PPA, lba_list);
 
 	io = (struct io_arg *)spdk_dma_zmalloc(sizeof(struct io_arg), 4096, NULL);
 	if (!io) {
@@ -626,6 +708,7 @@ void* spdk_push_data(KEYT PPA, uint32_t size, value_set *value, bool async, algo
 
 void* spdk_trim_block(KEYT PPA, bool async){
 	int rc;
+	uint32_t ck_idx;
 
 	struct ns_entry *ns_entry = g_namespaces;
 	struct ocssd_base *ocssd_base = (struct ocssd_base *)spdk_info.ocssd_base;
@@ -633,19 +716,23 @@ void* spdk_trim_block(KEYT PPA, bool async){
 	struct spdk_ocssd_chunk_information *tbl = ocssd_base->ocssd.tbl;
 
 	uint64_t *lba_list = (uint64_t *)spdk_dma_zmalloc(sizeof(uint64_t) * geo->num_grp * geo->num_pu, 4096, NULL);
+	raw_trans_layer_trim(PPA, lba_list);
+
+	ck_idx = PPA / (geo->num_grp * geo->num_pu * geo->clba);
 
 	for (int i = 0; i < geo->num_grp * geo->num_pu; i++) {
-		// TODO: lba_list[i] <- spread chunk ppa
+		/* TODO: Implement Async for trim */
 
 		cb.done = false;
 		rc = spdk_nvme_ocssd_ns_cmd_vector_reset(ns_entry->ns, ns_entry->qpair,
-							 lba_list, 1, &tbl[i], // TODO: chunk info
+							 &lba_list[i], 1, &tbl[ck_idx],
 							 ocssd_raw_cb, &cb);
 		if (rc) {
 			SPDK_ERRLOG("[FlashSim] Cannot submit reset command\n");
 			spdk_dma_free(lba_list);
 			return NULL;
 		}
+
 		while (!cb.done) {
 			spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
 		}
@@ -654,6 +741,7 @@ void* spdk_trim_block(KEYT PPA, bool async){
 			spdk_dma_free(lba_list);
 			return NULL;
 		}
+		ck_idx += geo->num_chk;
 	}
 
 	spdk_dma_free(lba_list);

@@ -11,6 +11,7 @@ int32_t tpage_GC(){
 	value_set **temp_set;
 	D_SRAM *d_sram; // SRAM for contain block data temporarily
 
+	printf("trans page GC\n");
 	/* Load valid pages to SRAM */
 	all = 0;
 	tgc_count++;
@@ -109,6 +110,7 @@ int32_t dpage_GC(){
 	value_set *temp_value_set;
 	value_set **temp_set;
 
+	printf("data page GC\n");
 	/* Load valid pages to SRAM */
 	all = 0;
 	dgc_count++;

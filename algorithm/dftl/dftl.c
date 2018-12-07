@@ -61,19 +61,22 @@ int32_t	w_poll;
 
 uint32_t demand_create(lower_info *li, algorithm *algo){
 	// initialize all value by using macro.
-	num_page = li->NOP;
-	num_block = li->NOS;
-	p_p_b = li->PPS;
+	//num_page = li->NOP;
+	//num_block = li->NOS;
+	//p_p_b = li->PPS;
+	num_page = _NOP;
+	num_block = _NOS;
+	p_p_b = _PPS;
 	num_tblock = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 2;
 	num_tpage = num_tblock * p_p_b;
 	num_dblock = num_block - num_tblock - 2;
 	num_dpage = num_dblock * p_p_b;
 	max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 	// you can control amount of max number of ram reside cache entry
-	num_max_cache = max_cache_entry;
+	//num_max_cache = max_cache_entry;
 	//num_max_cache = max_cache_entry / 2 == 0 ? 1 : max_cache_entry / 2;
 	//num_max_cache = 1;
-	//num_max_cache = max_cache_entry/4;
+	num_max_cache = max_cache_entry/4;
 
 	printf("!!! print info !!!\n");
 	printf("Async status: %d\n", ASYNC);
