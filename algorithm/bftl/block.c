@@ -22,6 +22,9 @@ int fill;
 int wb_empty;
 int wb_hit;
 
+int numREP;
+int numNIL;
+int numIVP;
 
 uint32_t numLoaded;
 int32_t nop_;
@@ -30,8 +33,10 @@ int32_t nos_;
 int32_t ppb_;
 int32_t pps_;
 int32_t bps_;
+int32_t bps__;
 
 int numGC;
+int numCompact;
 
 struct algorithm __block={
 	.create=block_create,
@@ -42,6 +47,7 @@ struct algorithm __block={
 };
 
 
+#define SMALLB
 uint32_t block_create (lower_info* li,algorithm *algo){
 	printf("block_create start!\n");
 	algo->li=li;
@@ -52,11 +58,27 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 	pps_ = _PPS;
 	bps_ = BPS;
 
+#ifdef NOB_MODE
 	nob_ *= RPP;
 	bps_ *= RPP;
+	//bps__ = bps_ * RPP;
 	//BM = BM_Init(nob_, ppb_/RPP, 1, 1); // 1 FreeQueue
-	//BM = BM_Init(nob_, ppb_, 1, 1); // 1 FreeQueue
-	BM = BM_Init(nob_/RPP, ppb_, 1, 1); // 1 FreeQueue
+	BM = BM_Init(nob_, ppb_, 1, 1); // 1 FreeQueue
+	//BM = BM_Init(nob_/RPP, ppb_, 1, 1); // 1 FreeQueue
+#endif
+#ifdef PPB_MODE
+	ppb_ *= RPP;
+	bps_ /= RPP;
+	nob_ /= RPP;
+	
+	BM = BM_Init(nob_, ppb_, 1, 1);
+#endif
+#ifdef SMALLB
+	ppb_ /= 2;
+	nob_ *= 2;
+	bps_ *= 2;
+	BM = BM_Init(nob_, ppb_, 1, 1);
+#endif
 
 	BT = (block_table*)malloc(sizeof(block_table) * nob_);
 	ST = (segment_table*)malloc(sizeof(segment_table) * nos_);
@@ -81,6 +103,7 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 	}
 	for (int i=0; i<nop_; ++i) {
 		OOB[i].LPA = NIL;
+		OOB[i].LPA2 = NIL;
 	}
 	
 
@@ -126,6 +149,7 @@ uint32_t block_create (lower_info* li,algorithm *algo){
 
 	sem_init(&mutex, 0, 1);
 
+	wb_empty = 1;
 	return 0;
 }
 void block_destroy (lower_info* li, algorithm *algo){
@@ -137,6 +161,7 @@ void block_destroy (lower_info* li, algorithm *algo){
 
 	printf("block_destroy() called.. Total number of GC: %d\n", numGC);
 	printf("wb_hit: %d\n", wb_hit);
+	printf("numCompact: %d\n", numCompact);
 
 	BM_Free(BM);
 	free(wb);
@@ -156,7 +181,8 @@ uint32_t block_get(request *const req){
 
 	// First, check the write buffer and if the req exists, hand over it
 	if (!wb_empty) {
-		for (int i=WB_SIZE-1; i>=0; --i) {
+		//for (int i=WB_SIZE-1; i>=0; --i) {
+		for (int i=fill-1; i>=0; --i) {
 			//printf("i: %d\n", i);
 			//printf("wb[%d]->key: %d\n", i, wb[i]->key);
 			//printf("req->key: %d\n", req->key);
@@ -165,6 +191,7 @@ uint32_t block_get(request *const req){
 				printf("wb_get hit!\n");
 				wb_hit++;
 				memcpy(req->value->value, wb[i]->value->value, PAGESIZE);
+				req->end_req(req);
 				return 2;
 			}
 		}
@@ -180,24 +207,49 @@ uint32_t block_get(request *const req){
 	//my_req->parents = req;
 	//my_req->end_req=block_end_req;
 
-	LBA = req->key / ppb_;
-	offset = req->key % ppb_;
+	LBA = req->key / (ppb_*2);
+	offset = req->key % (ppb_*2); // now, LPA offset
+	if (BT[LBA].PBA >= nob_) {
+		printf("error!! BlockTable is wrong. LBA: %d, PBA: %d\n", LBA, BT[LBA].PBA);
+		exit(0);
+	}
 	PBA = BT[LBA].PBA;
-	PPA = PBA * ppb_ + offset;
+	PPA = PBA * ppb_ + offset/2;
 	//offset_req = BT[LBA].req_offset[offset];
 
-	if (!BM_IsValidPage(BM, PPA)) {
+	printf("Before IsValidPage, LPA: %d, LBA: %d, PBA: %d, PPA: %d\n", req->key, LBA, PBA, PPA);
+	if (((int32_t)PBA == NIL) || !BM_IsValidPage(BM, PPA)) {
+		// Randrw에서 이게 발생하면 안 된다. LBA->PBA의 mapping table이 제대로 만들어지지 못했다.
 		bench_algo_end(req);
 		printf("\nRead Empty Page..\n");
+		numREP++;
+		if ((int32_t)PBA==NIL) numNIL++;
+		else if (!BM_IsValidPage(BM,PPA)) numIVP++;
 		req->type = FS_NOTFOUND_T;
 		req->end_req(req);
+		while(1) {;}
+		exit(5);
 		return 1;
 	}
 
 	bench_algo_end(req);
 	//__block.li->pull_data(PPA, PAGESIZE, req->value, ASYNC, my_req);
 	__block.li->pull_data(PPA, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+	// pull_data를 하면 req->value->value가 x가 아니다.. 애초에 처음부터 그러는 걸 보니 기본적인 set 자체가 이루어지고 있지 않는 듯하다.
+
 	// pull에서 어떻게 하지? physical page의 해당 ppa에 대하여, offset_req번째 구획에서의 데이터만 req->value에 넣어야 하는데..
+	//printf("req->value->value: %x\n", req->value->value);
+	//printf("req->value->value: %c\n", *(req->value->value));
+	char* first;
+	char* second;
+	//memcpy(first, req->value->value, PAGESIZE/2);
+	//memcpy(second, req->value->value + PAGESIZE/2, PAGESIZE/2);
+	first = req->value->value;
+	//second = first + PAGESIZE/2;
+	second = first + (1<<12);
+	//printf("fisrt: %c, second: %c\n", *first, *second);
+	//printf("fisrt: %c\n", *first);
+	//printf("second: %c\n", *second);
 
 	return 0;
 }
@@ -214,6 +266,8 @@ uint32_t block_set(request *const req){
 		wb_full();
 		fill = 0;
 	}
+	// wb 덜 남았을 때도 처리할 수 있게.. 그리고 내려오는 request 자체가 WB_SIZE보다 적을 때도 고려해야..
+	return 0;
 }
 	
 
@@ -290,10 +344,14 @@ void __block_set(request **req_set){
 	//my_req->parents = req;
 	//my_req->end_req = block_end_req;
 
-	LBA = req_set[0]->key / ppb_;
-	offset = req_set[0]->key % ppb_;
+	LBA = req_set[0]->key / (ppb_*2);
+	offset = req_set[0]->key % (ppb_*2);
 	if (compact) {
-		offset2 = req_set[1]->key % ppb_; // == offset+1
+		offset2 = req_set[1]->key % (ppb_*2); // == offset+1
+		if (offset2 != offset+1) {
+			printf("offset2 is wrong! offset: %d, offset2: %d\n", offset, offset2);
+			exit(1);
+		}
 	}
 
 
@@ -315,11 +373,19 @@ void __block_set(request **req_set){
 		}
 #endif
 	}
+	offset /= 2; // offset should be ppa offset
+	if (compact) offset2 /= 2;
+	// offset도 LPA용과 PPA용을 구분해서 변수를 두는 게 낫을듯. ppb도.
+
 	PBA = BT[LBA].PBA;
 	PPA = PBA * ppb_ + offset;
-	PPA2= PBA * ppb_ + offset2; // == PPA+1;
+	if (compact) PPA2= PBA * ppb_ + offset2; // == PPA+1; // PPA와 PPA2는 동일해야 하므로 사실 이건 쓰지 못할 거 같다.
 	// bftl과 BM이 보는 ppb가 다른데, PPA가 제대로 될 까? 
-	// BM에서 PPA를 어떻게 처리하는 지 보자. 될거같은데? 흠..
+	// BM에서 PPA를 어떻게 처리하는 지 보자.
+#if 1
+	printf("BT[%d].PBA = %d\n", LBA, PBA);
+	printf("PPA: %d\n", PPA);
+#endif
 	if (!block_CheckLastOffset(LBA, offset) || BM_IsValidPage(BM, PPA)) {
 		// Bad ASC order or Page Collision occurs
 		//GC_moving(req, my_req, LBA, offset, PBA, PPA);
@@ -327,7 +393,7 @@ void __block_set(request **req_set){
 		bench_algo_end(req_set[0]);
 		if (compact) bench_algo_end(req_set[1]);
 		req_set[0]->end_req(req_set[0]);
-		if (compact) req_set[1]->end_req(req_set[1]);
+		//if (compact) req_set[1]->end_req(req_set[1]);
 	}
 	else {
 		// case: We can write the page directly
@@ -336,17 +402,60 @@ void __block_set(request **req_set){
 		BT[LBA].lastoffset = offset;
 		bench_algo_end(req_set[0]);
 		if (compact) {
-			BM_ValidatePage(BM, PPA2); // == PPA+1
-			OOB[PPA2].LPA = req_set[1]->key; // save LPA
-			bench_algo_end(req_set[1]);
-			memcpy(req_set[0]->value->value + (PAGESIZE/2), req_set[1]->value->value, PAGESIZE/2); // add value of req1 to value of req0
+			//BM_ValidatePage(BM, PPA2); // == PPA+1
+			//OOB[PPA2].LPA = req_set[1]->key; // save LPA
+			OOB[PPA].LPA2 = req_set[1]->key;
+			bench_algo_end(req_set[1]); // 이거 12월 전에는 주석처리였다
+			//memcpy(req_set[0]->value->value + (PAGESIZE/2), req_set[1]->value->value, PAGESIZE/2); // add value of req1 to value of req0
+			memcpy((req_set[0]->value->value) + (1<<12), req_set[1]->value->value, (1<<12)); // add value of req1 to value of req0
+			printf("breakpoint 확인용\n");
+			printf("req_set[0]->value->value: %x(%c)\n", req_set[0]->value->value, *(req_set[0]->value->value));
+			printf("req_set[0]->value->value + (1<<12): %x(%c)\n", req_set[0]->value->value + (1<<12), *(req_set[0]->value->value + (1<<12)));
+			printf("req_set[0]->value->value + (1<<13)-1: %x(%c)\n", req_set[0]->value->value + (1<<13)-1, *(req_set[0]->value->value + (1<<13)-1));
+			printf("req_set[0]->value->value + (1<<13): %x(%c)\n", req_set[0]->value->value + (1<<13), *(req_set[0]->value->value+ (1<<13)));
+			// (12.7) 이 memcpy 이후 req_set[0]->value->value가 'x'가 아니게 된 것을 확인하였음
+			// req_set[0] + (1<<13)보다 req_set[1]이 조금 더 커서, req_set[0] + (1<<12)에서 1<<12만큼 memcpy하다보면 금방 req_set[1]이랑 겹친다. memcpy는 겹치면 안 되기에 문제가 생기는 것 같다. 아니 안겹치지 않나?
 		}
 		__block.li->push_data(PPA, PAGESIZE, req_set[0]->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req_set[0])); // 처리한 request 개수는 2개로 세어줘야 할 텐데.. 어떻게?
+		sleep(5);
+		// 이 push_data에서 PAGESIZE만큼 하니까 바롱 위세ㅓ 한 req_set[1] memcpy가 덮여씌워지지 않을까?
+		// push 직전에 req_set[0] 안에다가 아예 req_set[1] 내용을 덮어씌우고 나서 push에서 req_set[0]을 그냥 쓰는거니까 이건 문제가 아닐 것 같다.
+		// push 이후에 req_set[0]->value->value가 이상하게 바뀌는 것 같기도 하다.
+		// 위의 memcpy 문제가 아니라 push_data 문제인 것 같다. push_data 직후에 req_set[0]->value->value가 이상하게 바뀌어버린다. 아 근데 생각해보면 애초에 device에 적고 나서 request는 end_req 해버릴테니까 사라지는 게 당연한거긴 하다. 흠..
+		// end_req가 있긴 할텐데 사라지는 게 맞나? pull이라면 req로 가져오는건데 사라지면 안되는 거 아닌가? 애초에 pull은 어디로 가져오는 거지? req->value로 PPA에 해당하는 내용물을 read해서 받아오는 게 맞다. end_req와는 별개일 것. 
+		// gdb로 보니, push 이후 req_set[0]->value는 그대로지만 req_set[0]->value->value는 확 변한다. req_set[0]->value->value를 read()해서 device 안에 넣는 건 맞지만..
+		// push는 변해도 큰 문제는 없겠지만, pull에서도 변한다면 문제가 있다고 할 수 있다. 애초에 bench에서 pull로 꺼낸 걸 확인하는 게 있나? 
 	}
+	// test용 pull
+	value_set** temp_set;
+	block_sram* sram_table;
+	temp_set = (value_set**)malloc(sizeof(value_set*) * ppb_);
+	sram_table = (block_sram*)malloc(sizeof(block_sram) * ppb_);
+	
+	for (int i=0; i<ppb_; ++i) {
+		sram_table[i].SRAM_OOB.LPA = NIL;
+		sram_table[i].SRAM_OOB.LPA2 = NIL;
+		sram_table[i].SRAM_PTR= NULL;
+		temp_set[i] = NULL;
+	}
+	temp_set[0] = SRAM_load(sram_table, PPA, 0);
+	printf("temp_set[0]->value: %c\n", temp_set[0]->value);
+	memcpy(sram_table[0].SRAM_PTR, temp_set[0]->value, PAGESIZE);
+	inf_free_valueset(temp_set[0], FS_MALLOC_R);
+	printf("sram_table[0]->SRAM_PTR: %c\n", sram_table[0].SRAM_PTR);
+	sleep(5);
+	printf("after)sram_table[0]->SRAM_PTR: %c\n", sram_table[0].SRAM_PTR);
+	// SRAM_load의 결과도 이상한 거 보니, 애초에 push 자체가 제대로 안 됐다.
+	// push 사용법이 맞는지부터 다시 봐야겠다.
+	
+	value_set* test_set;
+	test_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+	__block.li->pull_data(PPA, PAGESIZE, test_set, 1, assign_pseudo_req(GC_R, NULL, NULL)); // pull in gc is ALWAYS async
+	printf("after)test_set->SRAM_PTR: %c\n", test_set->value);
 
-	//if (compact) {
-		//req_set[1]->end_req(req_set[1]); //// 여기서 rand test 터진다.. 11.06
-	//}
+	if (compact) {
+		req_set[1]->end_req(req_set[1]); //// 여기서 rand test 터진다.. 11.06
+	}
 	//return 0;
 }
 uint32_t block_remove(request *const req){
@@ -469,6 +578,8 @@ void wb_full(void)
 					req_set[1] = wb[i+1+count];
 					i += 1+count;
 					assign_pseudo_req(DATA_W, NULL, req_set[1]);
+
+					numCompact++;
 					//req_set[1]->end_req = block_end_req;
 					//req_set[1]->end_req(req_set[1]);
 

@@ -23,6 +23,7 @@ value_set* SRAM_load(block_sram* sram_table, int32_t ppa, int idx){
 	value_set *temp_value_set;
 	temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 	__block.li->pull_data(ppa, PAGESIZE, temp_value_set, 1, assign_pseudo_req(GC_R, NULL, NULL)); // pull in gc is ALWAYS async
+	sleep(5);
 	sram_table[idx].SRAM_PTR = (PTR)malloc(PAGESIZE);
 	sram_table[idx].SRAM_OOB = OOB[ppa];
 	return temp_value_set;
@@ -33,8 +34,12 @@ void SRAM_unload(block_sram* sram_table, int32_t ppa, int idx, request* req1){
 	temp_value_set = inf_get_valueset(sram_table[idx].SRAM_PTR, FS_MALLOC_W, PAGESIZE);
 	__block.li->push_data(ppa, PAGESIZE, temp_value_set, ASYNC, assign_pseudo_req(GC_W, temp_value_set, NULL)); // ppa means new_PPA
 	OOB[ppa] = sram_table[idx].SRAM_OOB;
-	if (req1)
+#if 0
+	if (req1) {
 		OOB[ppa+1] = sram_table[idx].SRAM_OOB;
+		//BM_ValidatePage(BM, ppa+1);
+	}
+#endif
 	BM_ValidatePage(BM, ppa);
 	free(sram_table[idx].SRAM_PTR);
 }

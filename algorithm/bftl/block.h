@@ -51,6 +51,7 @@ typedef struct {
 	
 typedef struct {
 	uint32_t LPA;
+	uint32_t LPA2;
 } block_OOB;
 
 typedef struct {

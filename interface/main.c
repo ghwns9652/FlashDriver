@@ -66,7 +66,7 @@ int main(){/*
 	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	int a=128L*K, b=128L*K;
+	int a=256L*K, b=256L*K;
 	bench_add(SEQSET,0,a,a-1048);
 	bench_add(SEQGET,0,a,a-1048);
 	//bench_add(SEQSET,0,1L*M,2L*M);
@@ -79,9 +79,16 @@ int main(){/*
 	bench_init(2);
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
-	bench_add(SEQSET,0,RANGE,RANGE*1);
-	bench_add(SEQGET,0,RANGE,RANGE*1);
+#define GC0
+#ifdef GC0
+	bench_add(SEQSET,0,RANGE/200,RANGE/400);
+	bench_add(SEQGET,0,RANGE/200,RANGE/400);
 #endif
+#ifdef GC1
+	bench_add(SEQSET,0,RANGE*0.7,RANGE*0.8);
+	bench_add(SEQGET,0,RANGE*0.7,RANGE*0.8);
+#endif
+#endif // !SEQ2
 #ifdef RAND
 	bench_init(1);
 	char t_value[PAGESIZE];
@@ -89,7 +96,15 @@ int main(){/*
 	//bench_add(RANDSET,0,1*1024,1*1024);
 	//bench_add(RANDGET,0,1*1024,1*1024);
 	//bench_add(RANDRW,0,16*1024,32*1024);
-	bench_add(RANDRW,0,RANGE,RANGE/100);
+	bench_add(RANDRW,0,RANGE,RANGE/200);
+	//bench_add(RANDSET,0,RANGE,RANGE/128);
+	//bench_add(RANDGET,0,RANGE,RANGE/128);
+#endif
+#ifdef MIX
+	bench_init(1);
+	char t_value[PAGESIZE];
+	memset(t_value,'x',PAGESIZE);
+	bench_add(MIXED,0,RANGE, RANGE/128);
 #endif
 
 	/*
