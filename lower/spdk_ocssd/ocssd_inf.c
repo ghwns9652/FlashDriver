@@ -220,13 +220,13 @@ select_nvme_dev(){
 	printf("Please Input list number:\n");
 	while (1) {
 		if (!scanf("%d", &cmd)) {
-			printf("Invalid Command\n");
+			printf("Invalid Command: input number\n");
 			while (getchar() != '\n');
 			continue;
 		}
 
 		if(cmd < 1){
-			printf("Invalid Command\n");
+			printf("Invalid Command: larger than 0\n");
 			while (getchar() != '\n');
 			continue;
 		}
@@ -235,7 +235,7 @@ select_nvme_dev(){
 		for(i = 1; i < cmd; i++){
 			iter2 = iter2->next;
 			if(iter2 == NULL){
-				printf("Invalid Command\n");
+				printf("Invalid Command: too much\n");
 				while (getchar() != '\n');
 				continue;
 			}	
