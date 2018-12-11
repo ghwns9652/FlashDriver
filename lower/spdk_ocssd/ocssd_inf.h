@@ -23,6 +23,7 @@
 
 struct ctrlr_entry {
 	struct spdk_nvme_ctrlr	*ctrlr;
+	struct spdk_pci_addr pci_addr;
 	struct ctrlr_entry	*next;
 	char			name[1024];
 };

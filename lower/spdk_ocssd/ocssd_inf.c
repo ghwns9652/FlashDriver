@@ -9,6 +9,9 @@ bool stopflag;
 
 uint8_t ch_bits, pu_bits, ck_bits, lb_bits;
 
+#define foreach_ctrlr(iter) \
+	for (iter = g_controllers; iter->next != NULL; iter = iter->next)
+
 lower_info spdk_info={
 	.create=spdk_create,
 	.destroy=spdk_destroy,
@@ -187,6 +190,94 @@ error_geo_free:
 	return NULL;
 }
 
+static void
+display_controller(struct ctrlr_entry *dev){
+	const struct spdk_nvme_ctrlr_data *cdata;
+
+	cdata = spdk_nvme_ctrlr_get_data(dev->ctrlr);
+
+	printf("%04x:%02x:%02x.%02x ",
+			dev->pci_addr.domain, dev->pci_addr.bus, dev->pci_addr.dev, dev->pci_addr.func);
+	printf("%-40.40s %-20.20s ",
+			cdata->mn, cdata->sn);
+	printf("%5d ", cdata->cntlid);
+	printf("\n");
+	return ;
+}
+
+static void
+select_nvme_dev(){
+	struct ctrlr_entry *iter, *temp_ctrl;
+	struct ns_entry *iter2, temp_ns;
+	int i = 1;
+	int cmd;
+	//list nvme modules and select here
+	foreach_ctrlr(iter) {
+		printf("[%d]\n", i++);
+		display_controller(iter);
+	}
+
+	printf("Please Input list number:\n");
+	while (1) {
+		if (!scanf("%d", &cmd)) {
+			printf("Invalid Command\n");
+			while (getchar() != '\n');
+			continue;
+		}
+
+		if(cmd < 1){
+			printf("Invalid Command\n");
+			while (getchar() != '\n');
+			continue;
+		}
+
+		iter2 = g_namespaces;
+		for(i = 1; i < cmd; i++){
+			iter2 = iter2->next;
+			if(iter2 == NULL){
+				printf("Invalid Command\n");
+				while (getchar() != '\n');
+				continue;
+			}	
+		}
+		break;
+	}
+	temp_ns = iter2;
+	foreach_ctrlr(iter) {
+		if(iter->ctrlr == temp_ns->ctrlr){
+			temp_ctrl = iter;
+			break;
+		}
+	}
+
+	iter = g_controllers;
+	iter2 = g_namespaces;
+
+	while (iter) {
+		struct ctrlr_entry *next = iter->next;
+		if(iter != temp_ctrl){
+			spdk_nvme_detach(iter->ctrlr);
+			free(iter);
+		}
+		iter = next;
+	}	
+
+	while (iter2) {
+		struct ns_entry *next = iter2->next;
+		if(iter2 != temp_ns){
+			free(iter2);
+		}
+		iter2 = next;
+	}
+
+	g_controllers = temp_ctrl;
+	g_namespaces = temp_ns;
+	g_controllers->next = NULL;
+	g_namespaces->next = NULL;
+
+	return ;
+}
+
 static bool ocssd_inf_init() {
 	struct ns_entry *ns_entry = g_namespaces;
 	struct spdk_nvme_buffer *ptr;
@@ -308,6 +399,8 @@ uint32_t spdk_create(lower_info *li){
 		return 1;
 	}
 
+	select_nvme_dev();
+
 	/** Get OCSSD base */
 	li->ocssd_base = (void *)spdk_ocssd_base_init();
 	if (li->ocssd_base == NULL) {
@@ -420,6 +513,8 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		perror("ctrlr_entry malloc");
 		exit(1);
 	}
+
+	spdk_pci_addr_parse(&entry->pci_addr, trid->traddr);
 
 	printf("Attached to %s\n", trid->traddr);
 
