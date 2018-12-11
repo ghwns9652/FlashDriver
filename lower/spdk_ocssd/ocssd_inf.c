@@ -208,7 +208,7 @@ display_controller(struct ctrlr_entry *dev){
 static void
 select_nvme_dev(){
 	struct ctrlr_entry *iter, *temp_ctrl;
-	struct ns_entry *iter2, temp_ns;
+	struct ns_entry *iter2, *temp_ns;
 	int i = 1;
 	int cmd;
 	//list nvme modules and select here
