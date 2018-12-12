@@ -9,9 +9,6 @@ bool stopflag;
 
 uint8_t ch_bits, pu_bits, ck_bits, lb_bits;
 
-#define foreach_ctrlr(iter) \
-	for (iter = g_controllers; iter->next != NULL; iter = iter->next)
-
 lower_info spdk_info={
 	.create=spdk_create,
 	.destroy=spdk_destroy,
@@ -211,8 +208,8 @@ select_nvme_dev(){
 	struct ns_entry *iter2, *temp_ns;
 	int i = 1;
 	int cmd;
-	//list nvme modules and select here
-	foreach_ctrlr(iter) {
+
+	for (iter = g_controllers; iter != NULL; iter = iter->next){
 		printf("[%d]\n", i++);
 		display_controller(iter);
 	}
@@ -243,7 +240,7 @@ select_nvme_dev(){
 		break;
 	}
 	temp_ns = iter2;
-	foreach_ctrlr(iter) {
+	for (iter = g_controllers; iter != NULL; iter = iter->next){
 		if(iter->ctrlr == temp_ns->ctrlr){
 			temp_ctrl = iter;
 			break;
