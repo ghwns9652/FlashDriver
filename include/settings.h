@@ -42,8 +42,6 @@
 
 #define RANGE (100*(M/PAGESIZE)*1024L*(0.80))
 
-
-
 #define FSTYPE uint8_t
 #define KEYT uint32_t
 #define BLOCKT uint32_t
