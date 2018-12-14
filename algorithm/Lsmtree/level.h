@@ -16,6 +16,19 @@
 
 typedef struct skiplist skiplist;
 
+#ifdef KOOFS
+typedef struct vsizekeymap{
+	char *representative;
+	char **map;
+}vsizekeymap;
+
+typedef struct keyset{
+	vsizekeymap vskmap;
+	char *lpa;
+	KEYT ppa;
+}keyset;
+#else
+#endif
 typedef struct keyset{
 	KEYT lpa;
 	KEYT ppa;
