@@ -18,6 +18,18 @@
 struct level;
 typedef struct htable htable;
 #endif
+
+#ifdef KOOFS
+typedef struct snode{ //skiplist's node
+	char *key;
+	KEYT ppa;
+	KEYT level;
+	value_set* value;
+	bool isvalid;
+    bool is_updated;
+	struct snode **list;
+}snode;
+#else
 typedef struct snode{ //skiplist's node
 	KEYT key;
 	KEYT ppa;
@@ -27,6 +39,7 @@ typedef struct snode{ //skiplist's node
     bool is_updated;
 	struct snode **list;
 }snode;
+#endif
 
 #ifdef Lsmtree
 typedef struct length_bucket{
@@ -63,7 +76,11 @@ snode *skiplist_insert_wP(skiplist*,KEYT,KEYT,bool);//with ppa;
 snode *skiplist_insert_existIgnore(skiplist *, KEYT,KEYT,bool); //insert skiplist, if key exists, input data be ignored
 value_set **skiplist_make_valueset(skiplist*,struct level *from);
 skiplist *skiplist_cut(skiplist*,KEYT size,KEYT limit, htable *,float fpr);
+#ifdef KOOFS
+snode *skiplist_general_insert(skiplist*,KEYT,void *,void (*overlap)(void*), int (*overlap)(char*, char*));
+#else
 snode *skiplist_general_insert(skiplist*,KEYT,void *,void (*overlap)(void*));
+#endif
 #endif
 snode *skiplist_at(skiplist *,int idx);
 int skiplist_delete(skiplist*,KEYT); //delete by key, return 0:normal -1:empty -2:no key

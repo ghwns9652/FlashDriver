@@ -17,6 +17,22 @@ extern OOBT *oob;
 extern lsmtree LSM;
 #endif
 
+#ifdef KOOFS
+skiplist *skiplist_init(){
+	skiplist *point=(skiplist*)malloc(sizeof(skiplist));
+	point->level=1;
+	point->header=(snode*)malloc(sizeof(snode));
+	point->header->list=(snode**)malloc(sizeof(snode*)*(MAX_L+1));
+	for(int i=0; i<MAX_L; i++) point->header->list[i]=point->header;
+	point->header->key=NULL;
+	//point->header->key=UINT_MAX;
+	point->header->value=NULL;
+	point->start=UINT_MAX;
+	point->end=0;
+	point->size=0;
+	return point;
+}
+#else
 skiplist *skiplist_init(){
 	skiplist *point=(skiplist*)malloc(sizeof(skiplist));
 	point->level=1;
@@ -30,6 +46,7 @@ skiplist *skiplist_init(){
 	point->size=0;
 	return point;
 }
+#endif
 
 snode *skiplist_find(skiplist *list, KEYT key){
 	if(!list) return NULL;
@@ -264,6 +281,68 @@ snode *skiplist_general_insert(skiplist *list,KEYT key,void* value,void (*overla
 	return x;
 
 }
+#ifdef KOOFS
+snode *skiplist_general_insert(skiplist *list,char* key,void* value,void (*overlap)(void*), int (*compare)(char*, char*)){
+	snode *update[MAX_L+1];
+	snode *x=list->header;
+	
+	for(int i=list->level; i>=1; i--){
+		while(compare(x->list[i]->key, key) < 0)
+			x=x->list[i];
+		update[i]=x;
+		/*
+		while(x->list[i]->key<key)
+			x=x->list[i];
+		update[i]=x;
+		*/
+	}
+	x=x->list[1];
+
+	if(key<list->start) list->start=key;
+	if(key>list->end) list->end=key;
+	
+	run_t *t_r=(run_t*)value;
+	//printf("input value:%p %d~%d\n",value,t_r->key,t_r->end);
+	if(key==x->key){
+		//printf("key:%d(%p->%p)",key,x->value,value);
+		//DEBUG_LOG("general");
+		if(overlap)
+			overlap((void*)x->value);
+		x->value=(value_set*)value;
+		t_r->run_data=(void*)x;
+		return x;
+	}
+	else{
+		int level=getLevel();
+		if(level>list->level){
+			for(int i=list->level+1; i<=level; i++){
+				update[i]=list->header;
+			}
+			list->level=level;
+		}
+
+		x=(snode*)malloc(sizeof(snode));
+		x->list=(snode**)malloc(sizeof(snode*)*(level+1));
+// koofs
+		x->key = strdup(key);
+		//x->key=(char*)malloc(strlen(key));
+		//memcpy(x->key, key, strlen(key));
+		//x->key=key; 
+		x->ppa=UINT_MAX;
+		x->value=(value_set*)value;
+		t_r->run_data=(void*)x;
+// koofs
+		for(int i=1; i<=level; i++){
+			x->list[i]=update[i]->list[i];
+			update[i]->list[i]=x;
+		}
+		x->level=level;
+		list->size++;
+	}
+	return x;
+
+}
+#endif
 #endif
 snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	snode *update[MAX_L+1];
@@ -490,7 +569,33 @@ void skiplist_dump(skiplist * list){
 	}
 	free(iter);
 }
+#ifdef KOOFS
+void skiplist_clear(skiplist *list){
+	snode *now=list->header->list[1];
+	snode *next=now->list[1];
+	while(now!=list->header){
+		if(now->value){
+			inf_free_valueset(now->value,FS_MALLOC_W);//not only length<PAGESIZE also length==PAGESIZE, just free req from inf
+		}
 
+		free(now->list);
+		/*
+		if(now->req){
+			free(now->req->params);
+			free(now->req);
+		}*/
+		free(now->key);
+		free(now);
+		now=next;
+		next=now->list[1];
+	}
+	list->size=0;
+	list->level=0;
+	for(int i=0; i<MAX_L; i++) list->header->list[i]=list->header;
+	list->header->key=INT_MAX;
+
+}
+#else
 void skiplist_clear(skiplist *list){
 	snode *now=list->header->list[1];
 	snode *next=now->list[1];
@@ -515,6 +620,7 @@ void skiplist_clear(skiplist *list){
 	list->header->key=INT_MAX;
 
 }
+#endif
 skiplist *skiplist_copy(skiplist* src){
 	skiplist* des=skiplist_init();
 	snode *now=src->header->list[1];
