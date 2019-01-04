@@ -229,58 +229,6 @@ snode *skiplist_insert_existIgnore(skiplist *list,KEYT key,KEYT ppa,bool deletef
 	return x;
 }
 
-snode *skiplist_general_insert(skiplist *list,KEYT key,void* value,void (*overlap)(void*)){
-	snode *update[MAX_L+1];
-	snode *x=list->header;
-	
-	for(int i=list->level; i>=1; i--){
-		while(x->list[i]->key<key)
-			x=x->list[i];
-		update[i]=x;
-	}
-	x=x->list[1];
-
-	if(key<list->start) list->start=key;
-	if(key>list->end) list->end=key;
-	
-	run_t *t_r=(run_t*)value;
-	//printf("input value:%p %d~%d\n",value,t_r->key,t_r->end);
-	if(key==x->key){
-		//printf("key:%d(%p->%p)",key,x->value,value);
-		//DEBUG_LOG("general");
-		if(overlap)
-			overlap((void*)x->value);
-		x->value=(value_set*)value;
-		t_r->run_data=(void*)x;
-		return x;
-	}
-	else{
-		int level=getLevel();
-		if(level>list->level){
-			for(int i=list->level+1; i<=level; i++){
-				update[i]=list->header;
-			}
-			list->level=level;
-		}
-
-		x=(snode*)malloc(sizeof(snode));
-		x->list=(snode**)malloc(sizeof(snode*)*(level+1));
-
-		x->key=key;
-		x->ppa=UINT_MAX;
-		x->value=(value_set*)value;
-		t_r->run_data=(void*)x;
-
-		for(int i=1; i<=level; i++){
-			x->list[i]=update[i]->list[i];
-			update[i]->list[i]=x;
-		}
-		x->level=level;
-		list->size++;
-	}
-	return x;
-
-}
 #ifdef KOOFS
 snode *skiplist_general_insert(skiplist *list,char* key,void* value,void (*overlap)(void*), int (*compare)(char*, char*)){
 	snode *update[MAX_L+1];
@@ -342,8 +290,61 @@ snode *skiplist_general_insert(skiplist *list,char* key,void* value,void (*overl
 	return x;
 
 }
-#endif
-#endif
+#else
+snode *skiplist_general_insert(skiplist *list,KEYT key,void* value,void (*overlap)(void*)){
+	snode *update[MAX_L+1];
+	snode *x=list->header;
+	
+	for(int i=list->level; i>=1; i--){
+		while(x->list[i]->key<key)
+			x=x->list[i];
+		update[i]=x;
+	}
+	x=x->list[1];
+
+	if(key<list->start) list->start=key;
+	if(key>list->end) list->end=key;
+	
+	run_t *t_r=(run_t*)value;
+	//printf("input value:%p %d~%d\n",value,t_r->key,t_r->end);
+	if(key==x->key){
+		//printf("key:%d(%p->%p)",key,x->value,value);
+		//DEBUG_LOG("general");
+		if(overlap)
+			overlap((void*)x->value);
+		x->value=(value_set*)value;
+		t_r->run_data=(void*)x;
+		return x;
+	}
+	else{
+		int level=getLevel();
+		if(level>list->level){
+			for(int i=list->level+1; i<=level; i++){
+				update[i]=list->header;
+			}
+			list->level=level;
+		}
+
+		x=(snode*)malloc(sizeof(snode));
+		x->list=(snode**)malloc(sizeof(snode*)*(level+1));
+
+		x->key=key;
+		x->ppa=UINT_MAX;
+		x->value=(value_set*)value;
+		t_r->run_data=(void*)x;
+
+		for(int i=1; i<=level; i++){
+			x->list[i]=update[i]->list[i];
+			update[i]->list[i]=x;
+		}
+		x->level=level;
+		list->size++;
+	}
+	return x;
+
+}
+#endif // KOOFS
+#endif // Lsmtree
 snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	snode *update[MAX_L+1];
 	snode *x=list->header;
@@ -592,7 +593,7 @@ void skiplist_clear(skiplist *list){
 	list->size=0;
 	list->level=0;
 	for(int i=0; i<MAX_L; i++) list->header->list[i]=list->header;
-	list->header->key=INT_MAX;
+	list->header->key=NULL;
 
 }
 #else

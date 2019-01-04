@@ -17,22 +17,17 @@
 typedef struct skiplist skiplist;
 
 #ifdef KOOFS
-typedef struct vsizekeymap{
-	char *representative;
-	char **map;
-}vsizekeymap;
-
 typedef struct keyset{
-	vsizekeymap vskmap;
-	char *lpa;
+	char *addr
 	KEYT ppa;
+	uint8_t size;
 }keyset;
 #else
-#endif
 typedef struct keyset{
 	KEYT lpa;
 	KEYT ppa;
 }keyset;
+#endif
 
 typedef struct htable{
 	keyset *sets;
@@ -42,7 +37,6 @@ typedef struct htable{
 	//1, valueset from W
 	//2, valueset from R
 }htable;
-
 
 typedef struct htable_t{
 	keyset sets[PAGESIZE/KEYSETSIZE];
