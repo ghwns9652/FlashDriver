@@ -8,6 +8,7 @@ object/
 test_file/
 data/
 spdk/
+vs_code/
 tags
 *log
 .

@@ -163,6 +163,94 @@ error_geo_free:
 	return NULL;
 }
 
+static void
+display_controller(struct ctrlr_entry *dev){
+	const struct spdk_nvme_ctrlr_data *cdata;
+
+	cdata = spdk_nvme_ctrlr_get_data(dev->ctrlr);
+
+	printf("%04x:%02x:%02x.%02x ",
+			dev->pci_addr.domain, dev->pci_addr.bus, dev->pci_addr.dev, dev->pci_addr.func);
+	printf("%-40.40s %-20.20s ",
+			cdata->mn, cdata->sn);
+	printf("%5d ", cdata->cntlid);
+	printf("\n");
+	return ;
+}
+
+static void
+select_nvme_dev(){
+	struct ctrlr_entry *iter, *temp_ctrl;
+	struct ns_entry *iter2, *temp_ns;
+	int i = 1;
+	int cmd;
+
+	for (iter = g_controllers; iter != NULL; iter = iter->next){
+		printf("[%d]\n", i++);
+		display_controller(iter);
+	}
+
+	printf("Please Input list number:\n");
+	while (1) {
+		if (!scanf("%d", &cmd)) {
+			printf("Invalid Command: input number\n");
+			while (getchar() != '\n');
+			continue;
+		}
+
+		if(cmd < 1){
+			printf("Invalid Command: larger than 0\n");
+			while (getchar() != '\n');
+			continue;
+		}
+
+		iter2 = g_namespaces;
+		for(i = 1; i < cmd; i++){
+			iter2 = iter2->next;
+			if(iter2 == NULL){
+				printf("Invalid Command: too much\n");
+				while (getchar() != '\n');
+				continue;
+			}	
+		}
+		break;
+	}
+	temp_ns = iter2;
+	for (iter = g_controllers; iter != NULL; iter = iter->next){
+		if(iter->ctrlr == temp_ns->ctrlr){
+			temp_ctrl = iter;
+			break;
+		}
+	}
+
+	iter = g_controllers;
+	iter2 = g_namespaces;
+
+	while (iter) {
+		struct ctrlr_entry *next = iter->next;
+		if(iter != temp_ctrl){
+			spdk_nvme_detach(iter->ctrlr);
+			free(iter);
+		}
+		iter = next;
+	}	
+
+	while (iter2) {
+		struct ns_entry *next = iter2->next;
+		if(iter2 != temp_ns){
+			free(iter2);
+		}
+		iter2 = next;
+	}
+
+	g_controllers = temp_ctrl;
+	g_namespaces = temp_ns;
+	g_controllers->next = NULL;
+	g_namespaces->next = NULL;
+
+	return ;
+}
+
 static bool ocssd_inf_init() {
 	struct ns_entry *ns_entry = g_namespaces;
 	struct spdk_nvme_buffer *ptr;
@@ -375,6 +463,8 @@ uint32_t spdk_create(lower_info *li){
 		return 1;
 	}
 
+	select_nvme_dev();
+
 	/** Get OCSSD base */
 	li->ocssd_base = (void *)spdk_ocssd_base_init();
 	if (li->ocssd_base == NULL) {
@@ -466,6 +556,22 @@ static void
 free_qpair(struct ns_entry *ns_entry)
 {
 	spdk_nvme_qpair_process_completions(ns_entry->qpair, 0);
+	int nsid, num_ns;
+	struct ctrlr_entry *entry;
+	struct spdk_nvme_ns *ns;
+	const struct spdk_nvme_ctrlr_data *cdata = spdk_nvme_ctrlr_get_data(ctrlr);
+
+	entry = (struct ctrlr_entry*)malloc(sizeof(struct ctrlr_entry));
+	if (entry == NULL) {
+perror("ctrlr_entry malloc");
+		exit(1);
+	}
+
+	spdk_pci_addr_parse(&entry->pci_addr, trid->traddr);
+
+	printf("Attached to %s\n", trid->traddr);
+
+	snprintf(entry->name, sizeof(entry->name), "%-20.20s (%-20.20s)", cdata->mn, cdata->sn);
 
 	spdk_nvme_ctrlr_free_io_qpair(ns_entry->qpair);
 
