@@ -470,6 +470,24 @@ bool inf_make_req_special(const FSTYPE type, const KEYT key, char* value, int le
 	return true;
 }
 
+bool inf_make_req_with_arg(const FSTYPE type, const KEYT key, char *value, int len, void *(*end_req)(void*), void *arg) {
+	request *req=inf_get_req_instance(type,key,value,len,0,false);
+	req->special_func=end_req;
+
+	cl_grap(flying);
+
+#ifdef CDF
+	req->isstart=false;
+	measure_init(&req->latency_checker);
+	measure_start(&req->latency_checker);
+#endif
+
+    req->arg = arg;
+
+	assign_req(req);
+	return true;
+}
+
 //static int end_req_num=0;
 bool inf_end_req( request * const req){
 	if(req->type==FS_RMW_T){

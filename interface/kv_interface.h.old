@@ -1,0 +1,64 @@
+#ifndef __KV_INTERFACE_H__
+#define __KV_INTERFACE_H__
+
+
+/*
+ * KV Stoage Device level APIs
+ */
+kvs_result kvs_open_device(const char *URI, kvs_device_handle *dev_hd);
+kvs_result kvs_close_device(kvs_device_handle dev_hd);
+kvs_result kvs_get_device(kvs_device_handle dev_hd, kvs_device *dev_info);
+
+kvs_result kvs_get_device_capacity(kvs_device_handle dev_hd, int64_t *dev_capacity);
+kvs_result kvs_get_device_utilization(kvs_device_handle dev_hd, int32_t *dev_utilization);
+kvs_result kvs_get_min_key_length(kvs_device_handle dev_hd, int32_t *min_key_length);
+kvs_result kvs_get_max_key_length(kvs_device_handle dev_hd, int32_t *max_key_length);
+kvs_result kvs_get_min_value_length(kvs_device_handle dev_hd, int32_t *min_value_length);
+kvs_result kvs_get_max_value_length(kvs_device_handle dev_hd, int32_t *max_value_length);
+kvs_result kvs_get_optimal_value_length(kvs_device_handle dev_hd, int32_t *opt_value_length);
+
+kvs_result kvs_create_key_space(kvs_device_handle dev_hd,
+								const char *name,
+								uint64_t sz_4kb,
+								const kvs_option_key_space opt);
+
+kvs_result kvs_delete_key_space(kvs_device_handle dev_hd,
+								const char *key_space_name);
+
+kvs_result kvs_list_key_spaces(	kvs_device_handle dev_hd,
+								uint32_t index,
+								uint32_t buffet_size,
+								kvs_key_space_name *names,
+								uint32_t *ks_cnt);
+
+/*
+ * KV Storage Key Space-level APIs
+ */
+kvs_result kvs_open_key_space(	kvs_device_handle dev_hd,
+								const char *name,
+								kvs_key_space_handle *ks_hd);
+
+kvs_result kvs_close_key_space(kvs_key_space_handle ks_hd);
+
+kvs_result kvs_get_key_space_info(kvs_key_space_handle ks_hd, kvs_key_space *ks);
+
+
+
+kvs_result kvs_get_kvp_info(kvs_key_space_handle ks_hd,
+							const kvs_key *key,
+							kvs_kvp_info *info);
+
+kvs_result kvs_retrieve_kvp(kvs_key_space_handle ks_hd,
+							const kvs_key *key,
+							const kvs_option_retrieve *opt,
+							kvs_value *value);
+
+kvs_result kvs_retrieve_kvp_async(	kvs_key_space_handle ks_hd,
+									const kvs_key *key,
+									const kvs_option_retrieve *opt,
+									kvs_value *value,
+									kvs_postprocess_function post_fn);
+
+// TODO
+
+#endif

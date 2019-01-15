@@ -51,6 +51,7 @@ struct request {
 	void *params;
 	void *__hash_node;
 	pthread_mutex_t async_mutex;
+    void *arg;
 
 	int mark;
 
