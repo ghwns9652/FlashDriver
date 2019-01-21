@@ -2,7 +2,7 @@ export CC=g++
 
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
-TARGET_ALGO=Lsmtree
+TARGET_ALGO=sw_pftl
 
 PPWD=$(pwd)
 
@@ -100,7 +100,7 @@ endif
 LIBS +=\
 		-lpthread\
 		-lm\
-		-laio\
+-laio\
 -ljemalloc\
 
 all: simulator
