@@ -22,6 +22,7 @@ extern struct algorithm __normal;
 extern struct algorithm __badblock;
 extern struct algorithm __demand;
 extern struct algorithm algo_pbase;
+extern struct algorithm algo_pftl;
 #ifdef Lsmtree
 extern struct algorithm algo_lsm;
 #endif
@@ -345,6 +346,8 @@ void *p_main(void *__input){
 		mp.algo=&__demand;
 #elif defined(Lsmtree)
 		mp.algo=&algo_lsm;
+#elif defined(sw_pftl)
+		mp.algo=&algo_pftl;
 #elif defined(badblock)
 		mp.algo=&__badblock;
 #endif
