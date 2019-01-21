@@ -7,6 +7,7 @@
 #define PRINTPER 1
 #define ALGOTYPE 10
 #define LOWERTYPE 10
+#define BENCHNUM 16
 
 #ifdef CDF
 #define TIMESLOT 10 //micro sec
@@ -17,6 +18,7 @@ typedef struct{
 	FSTYPE type;
 	KEYT key;
 	V_PTR value;
+	uint32_t range;
 	uint32_t length;
 	int mark;
 }bench_value;
@@ -79,7 +81,7 @@ typedef struct{
 	uint32_t error_cnt;
 }master;
 
-void bench_init(int);
+void bench_init();
 void bench_add(bench_type type,KEYT start, KEYT end,uint64_t number);
 bench_value* get_bench();
 void bench_refresh(bench_type, KEYT start, KEYT end, uint64_t number);
