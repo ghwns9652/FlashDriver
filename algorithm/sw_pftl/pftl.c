@@ -3,17 +3,17 @@
 #include <stdio.h>
 #include <limits.h>
 #include "pftl.h"
+#include "heap.h"
 #include "../../bench/bench.h"
 
 #define LOWERTYPE 10
-#define _RNOP (_NOP-_PPB)
 
 extern MeasureTime mt;
 struct algorithm algo_pftl={
 	.create=pftl_create,
 	.destroy=pftl_destroy,
-	.get=pftl_get,
-	.set=pftl_set,
+	.read=pftl_read,
+	.write=pftl_write,
 	.remove=pftl_remove
 };
 
@@ -24,7 +24,7 @@ char temp[PAGESIZE];
 bool is_full;
 int table[_NOP];	// use lpa as index, use 1 block as log block
 int garbage[_NOP];	// sequentially save garbage ppa
-uint16_t garbage_cnt[_NOS];	// count garbage pages in each block
+uint16_t garbage_cnt[_NOS];	// count garbage pages in each block (block == segment)
 
 void pftl_cdf_print(){
 	int a = 0;
@@ -34,19 +34,16 @@ void pftl_cdf_print(){
 		}
 	}
 }
-uint32_t pftl_create(lower_info* li,algorithm *algo){
+uint32_t pftl_create(lower_info *li,algorithm *algo){
 	algo->li=li;
 	memset(temp,'x',PAGESIZE);
 	memset(table, -1, sizeof(table));
 	memset(garbage, -1, sizeof(garbage));
 	for(int i=0; i<LOWERTYPE; i++){
-		_cdf[i].min=UINT_MAX);
+		_cdf[i].min=UINT_MAX;
 	}
-	printf("_RNOP: %d\n", _RNOP);
-	printf("_NOP: %d\n", _NOP);
-	printf("_NOB: %d\n", _NOB);
-	printf("RANGE: %d\n", RANGE);
-	printf("sizeof KEYT: %d\n", sizeof(KEYT));
+	printf("_NOP: %ld\n", _NOP);
+	printf("_NOB: %ld\n", _NOB);
 
 	return 1;
 }
@@ -58,7 +55,7 @@ void pftl_destroy(lower_info* li, algorithm *algo){
 uint32_t ppa;
 int g_cnt;
 uint8_t logb_no=63;		// log block's number
-uint32_t pftl_get(request *const req){		// read, key: lba
+uint32_t pftl_read(request *const req){		// read, key: lba
 	bench_algo_start(req);
 	normal_params* params=(normal_params*)malloc(sizeof(normal_params));
 	params->test=-1;
@@ -71,10 +68,10 @@ uint32_t pftl_get(request *const req){		// read, key: lba
 	my_req->ppa=table[req->key];
 
 	bench_algo_end(req);
-	algo_pftl.li->pull_data(my_req->ppa,PAGESIZE,req->value,req->isAsync,my_req);
+	algo_pftl.li->read(my_req->ppa,PAGESIZE,req->value,req->isAsync,my_req);
 	return 1;
 }
-uint32_t pftl_set(request *const req){		// write
+uint32_t pftl_write(request *const req){		// write
 	bench_algo_start(req);
 	normal_params* params=(normal_params*)malloc(sizeof(normal_params));
 	params->test=-1;
@@ -101,7 +98,7 @@ uint32_t pftl_set(request *const req){		// write
 	my_req->ppa = table[req->key];
 
 	bench_algo_end(req);
-	algo_pftl.li->push_data(my_req->ppa,PAGESIZE,req->value,req->isAsync,my_req);
+	algo_pftl.li->write(my_req->ppa,PAGESIZE,req->value,req->isAsync,my_req);
 	return 0;
 }
 uint32_t pftl_remove(request *const req){

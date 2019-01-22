@@ -13,7 +13,7 @@ typedef struct normal_cdf_struct{
 
 uint32_t pftl_create (lower_info*, algorithm *);
 void pftl_destroy (lower_info*,  algorithm *);
-uint32_t pftl_get(request *const);
-uint32_t pftl_set(request *const);
+uint32_t pftl_read(request *const);
+uint32_t pftl_write(request *const);
 uint32_t pftl_remove(request *const);
 void *pftl_end_req(algo_req*);
