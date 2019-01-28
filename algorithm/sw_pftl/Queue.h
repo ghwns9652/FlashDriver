@@ -1,6 +1,8 @@
+#ifndef QUEUE_H
+#define QUEUE_H
 #include <stdbool.h>
+#include "../../include/settings.h"
 
-// TODO: initialize size, front, rear
 typedef struct Queue {
 	int size;
 	int front;
@@ -11,4 +13,5 @@ typedef struct Queue {
 bool is_empty(Queue *queue);
 void enqueue(Queue *queue, int num);
 bool dequeue(Queue *queue);
-int front();
+int front(Queue *queue);
+#endif
