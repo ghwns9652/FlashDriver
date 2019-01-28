@@ -1,8 +1,8 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix_memory
-TARGET_ALGO=Lsmtree
+TARGET_LOWER=posix
+TARGET_ALGO=seul
 
 PPWD=$(pwd)
 
@@ -79,7 +79,6 @@ SRCS +=\
 	./include/utils/cond_lock.c\
 	./include/data_struct/hash.c\
 	./include/data_struct/list.c\
-	./include/data_struct/redblack.c\
 	./bench/measurement.c\
 	./bench/bench.c\
 	./include/utils/thpool.c\
@@ -102,9 +101,9 @@ LIBS +=\
 		-lpthread\
 		-lm\
 		-laio\
--ljemalloc\
+#-ljemalloc\
 
-all: range_driver
+all: driver
 
 DEBUG: debug_simulator
 
@@ -119,7 +118,7 @@ driver: ./interface/main.c libsimulator.a
 range_driver: ./interface/range_test_main.c libsimulator.a
 	$(CC) $(CFLAGS) -o $@ $^ $(ARCH) $(LIBS)
 
-duma_simulator: ./interface/main.c libsimulator.a
+duma_driver: ./interface/main.c libsimulator.a
 	$(CC) $(CFLAGS) -o $@ $^ -lduma $(ARCH) $(LIBS)
 	
 

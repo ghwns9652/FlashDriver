@@ -6,7 +6,8 @@
 #define FULLMAPNUM  1024
 
 #define RAF 0.01
-#define LEVELN 1
+#define LEVELN 3
+
 
 #if LEVELN!=1
 //#define BLOOM
@@ -46,6 +47,8 @@
 #define HEADERSEG 8
 #define BLOCKSEG (1)
 #define DATASEG (_NOS-(HEADERSEG+1)-1)
+
+#define MAXITER 16
 
 //#define SNU_TEST
 #define SPINLOCK
