@@ -1,3 +1,3 @@
 #include "pftl.h"
 
-KEYT gc(int const*, );
+int garbage_collection(int );

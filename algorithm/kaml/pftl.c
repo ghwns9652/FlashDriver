@@ -5,6 +5,7 @@
 #include "pftl.h"
 #include "heap.h"
 #include "Queue.h"
+#include "gc.h"
 #include "../../bench/bench.h"
 
 #define LOWERTYPE 10
@@ -23,9 +24,11 @@ n_cdf _cdf[LOWERTYPE];
 char temp[PAGESIZE];
 
 bool is_full;
-uint8_t garbage_table[_NOP/8];	// sequentially save garbage PPA
-int mapping_table[_NOP];	// use LPA as index, use 1 block as log block
+extern uint8_t garbage_table[_NOP/8];	// valid bitmap
 int OOB[_NOP];
+int mapping_table[_NOP];	// use LPA as index, use 1 block as log block
+int gc_read_cnt;
+int gc_target_cnt;
 Block garbage_cnt[_NOS];	// count garbage pages in each block(=segment)
 Block trash;
 Heap heap;
@@ -42,6 +45,7 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 	queue.rear = 0;
 	memset(temp,'x',PAGESIZE);
 	memset(mapping_table, -1, sizeof(mapping_table));
+	memset(garbage_table, 0, sizeof(garbage_table));
 	for(int i = 0; i < LOWERTYPE; i++) {
 		_cdf[i].min = UINT_MAX;
 	}
@@ -56,7 +60,6 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 	heap.arr[0].block->num = -1;
 	printf("_NOP: %ld\n", _NOP);
 	printf("_NOS: %ld\n", _NOS);
-	printf("_PPS: %ld\n", _PPS);
 
 	return 1;
 }
@@ -66,9 +69,9 @@ void pftl_destroy(lower_info* li, algorithm *algo) {
 }
 
 uint32_t ppa = 0;
-int g_cnt = 0;
-int log_seg_num = _NOS - 1;		// log block's number
-static int reserv_ppa_start = _NOP - _PPS;
+int g_cnt;
+int logb_no = _NOS-1;
+static int reserv_ppa_start = (_NOP - _PPS);
 int erase_seg_num;
 
 uint32_t pftl_read(request *const req) {
@@ -99,8 +102,10 @@ uint32_t pftl_write(request *const req) {
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
 
-	// initial write
-	if(!is_full) {
+	reserv_seg_num = ((_NOP - _PPS) / _PPS); 
+	int reserv_ppa = (_NOP - _PPS);
+
+	if(!is_full) {		// First write on ppa
 		ppa = front(&queue);
 		mapping_table[req->key] = ppa;
 		OOB[ppa] = req->key;
@@ -108,8 +113,8 @@ uint32_t pftl_write(request *const req) {
 		
 		// overwrite
 		if(mapping_table[req->key] != -1) {
-			garbage_table[ppa/8] |= (1<<(ppa % 8));
-			garbage_cnt[ppa/_PPS].cnt++;
+			garbage_table[ppa/8] |= (1<<(ppa % 8)); // 1: invalid 0: valid
+			garbage_cnt[ppa/_PPS].cnt++;	//garbage count in block
 		}
 
 		if(garbage_cnt[ppa/_PPS].num == -1) {
@@ -122,11 +127,11 @@ uint32_t pftl_write(request *const req) {
 			is_full = true;
 		}
 	}
-	else if(is_full) {	//After GC()
-		construct_heap(&heap);
-		int max = delete_heap(&heap);
-		erase_seg_num = garbage_collection(reserv_ppa_start, max);
-		reserv_ppa_start = erase_seg_num;
+	else if(is_full) {	//if queue is not empty
+		construct_heap(&heap);		// sort(find segment number that has biggest invalid count)
+		int max = delete_heap(&heap);  // max is segment number to erase
+		reserv_ppa_start = garbage_collection(reserv_ppa_start, max);	
+	
 		int reserv_ppa_end = ((reserv_ppa_start / _PPS) + 1) * _PPS;
 		
 		for(int i = reserv_ppa_start; i < reserv_ppa_end; i++) {
@@ -142,28 +147,33 @@ uint32_t pftl_write(request *const req) {
 	return 0;
 }
 uint32_t pftl_remove(request *const req) {
-//	algo_pftl.li->trim_block(req->key, NULL);
-	mapping_table[req->key] = -1;	//garbage data -> -1
+	algo_pftl.li->trim_block(req->key, NULL);
+//	table[req->key] = -1;	//dead data -> -1, set it's dead data
 	return 1;
 }
 void *pftl_end_req(algo_req* input) {
-	normal_params* params = (normal_params*)input->params;
-	request *res = input->parents;
-	res->end_req(res);
+	//bool check=false;
+	//int cnt=0;
 
-	switch(params->type) {
-		case DATA_R:
-			if(res) {
+	normal_params *params = (normal_params*)input->params;
+	request *res = input->parents;
+	//res->end_req(res);
+	
+	switch(params->type){
+		case DATA_R : 
+		case DATA_W:
+			if(res){
 				res->end_req(res);
 			}
 			break;
-		case DATA_W:
-			if(res) {
-				res->end_req(res);
-			}
+		case GC_R : 
+			gc_target_cnt++;
+			break;
+		case GC_W : 
+			
 			break;
 	}
-	
+
 	free(params);
 	free(input);
 	return NULL;
