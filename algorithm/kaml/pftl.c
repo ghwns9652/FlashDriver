@@ -25,6 +25,7 @@ char temp[PAGESIZE];
 bool is_full;
 uint8_t garbage_table[_NOP/8];	// sequentially save garbage PPA
 int mapping_table[_NOP];	// use LPA as index, use 1 block as log block
+int OOB[_NOP];
 Block garbage_cnt[_NOS];	// count garbage pages in each block(=segment)
 Block trash;
 Heap heap;
@@ -47,7 +48,7 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 	for(int i = 0; i < _NOS; i++) {
 		garbage_cnt[i].num = -1;
 	}
-	for(int i = 0; i < _NOP; i++) {
+	for(int i = 0; i < _NOP - _PPS; i++) {
 		enqueue(&queue, i);
 	}
 	heap.arr[0].block = &trash;
@@ -66,9 +67,9 @@ void pftl_destroy(lower_info* li, algorithm *algo) {
 
 uint32_t ppa = 0;
 int g_cnt = 0;
-uint8_t logb_no = 63;		// log block's number
-int seg_num;
-int page_num;
+int log_seg_num = _NOS - 1;		// log block's number
+static int reserv_ppa_start = _NOP - _PPS;
+int erase_seg_num;
 
 uint32_t pftl_read(request *const req) {
 	bench_algo_start(req);
@@ -100,21 +101,21 @@ uint32_t pftl_write(request *const req) {
 
 	// initial write
 	if(!is_full) {
+		ppa = front(&queue);
+		mapping_table[req->key] = ppa;
+		OOB[ppa] = req->key;
+		dequeue(&queue);
+		
 		// overwrite
 		if(mapping_table[req->key] != -1) {
-			seg_num = (mapping_table[req->key] / _PPS);
-			page_num = (mapping_table[req->key] % _PPS);
-			garbage_table[seg_num] |= (1 << page_num);
-			garbage_cnt[seg_num].cnt++;	//garbage count in block
+			garbage_table[ppa/8] |= (1<<(ppa % 8));
+			garbage_cnt[ppa/_PPS].cnt++;
 		}
-		
-		int next = front(&queue);
-		mapping_table[req->key] = next;
-		dequeue(&queue);
-		if(garbage_cnt[next/_PPS].num == -1) {
-			garbage_cnt[next/_PPS].num = next/_PPS;
-			garbage_cnt[next/_PPS].cnt = 0;
-			insert_heap(&heap, &garbage_cnt[next/_PPS]);
+
+		if(garbage_cnt[ppa/_PPS].num == -1) {
+			garbage_cnt[ppa/_PPS].num = ppa/_PPS;
+			garbage_cnt[ppa/_PPS].cnt = 0;
+			insert_heap(&heap, &garbage_cnt[ppa/_PPS]);
 		}
 
 		if((is_empty(&queue)) && (!is_full)) {	// page over
@@ -124,6 +125,14 @@ uint32_t pftl_write(request *const req) {
 	else if(is_full) {	//After GC()
 		construct_heap(&heap);
 		int max = delete_heap(&heap);
+		erase_seg_num = garbage_collection(reserv_ppa_start, max);
+		reserv_ppa_start = erase_seg_num;
+		int reserv_ppa_end = ((reserv_ppa_start / _PPS) + 1) * _PPS;
+		
+		for(int i = reserv_ppa_start; i < reserv_ppa_end; i++) {
+			enqueue(&queue, i);
+		}
+		is_full = false;
 		printf("[AT PFTL] max: %d\n", max);
 	}
 
@@ -139,11 +148,22 @@ uint32_t pftl_remove(request *const req) {
 }
 void *pftl_end_req(algo_req* input) {
 	normal_params* params = (normal_params*)input->params;
-	//bool check=false;
-	//int cnt=0;
 	request *res = input->parents;
 	res->end_req(res);
 
+	switch(params->type) {
+		case DATA_R:
+			if(res) {
+				res->end_req(res);
+			}
+			break;
+		case DATA_W:
+			if(res) {
+				res->end_req(res);
+			}
+			break;
+	}
+	
 	free(params);
 	free(input);
 	return NULL;
