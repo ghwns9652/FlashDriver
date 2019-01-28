@@ -352,9 +352,7 @@ void inf_init(){
 	mp.li=&aio_info;
 #endif
 
-#ifdef normal
-	mp.algo=&__normal;
-#elif defined(pftl)
+#if defined(pftl)
 	mp.algo=&algo_pbase;
 #elif defined(dftl) || defined(ctoc) || defined(dftl_test) || defined(ctoc_batch)
 	mp.algo=&__demand;
@@ -362,6 +360,8 @@ void inf_init(){
 	mp.algo=&algo_lsm;
 #elif defined(badblock)
 	mp.algo=&__badblock;
+#else
+	mp.algo=&__normal;
 #endif
 
 	mp.li->create(mp.li);

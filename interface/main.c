@@ -36,13 +36,13 @@ int main(int argc,char* argv[]){
 	inf_init();
 	bench_init();
 	char t_value[PAGESIZE];
-	memset(t_value,'x',PAGESIZE);
+	memset(t_value,0,PAGESIZE);
 
-	bench_add(SEQSET,0,RANGE,RANGE);
+	bench_add(RANDRW,0,RANGE,RANGE/2);
 //	bench_add(RANDSET,0,RANGE,RANGE/2);
 //	bench_add(RANDGET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE/2,RANGE);
-	bench_add(SEQGET,0,RANGE,RANGE);
+//	bench_add(SEQGET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE,RANGE);
 //	bench_add(MIXED,0,RANGE,RANGE);
 //	bench_add(SEQLATENCY,0,RANGE,RANGE);
@@ -79,7 +79,7 @@ int main(int argc,char* argv[]){
 	while((value=get_bench())){
 		temp.length=value->length;
 		if(value->type==FS_SET_T){
-			memcpy(&temp.value[0],&value->key,sizeof(value->key));
+			//memcpy(&temp.value[0],&value->key,sizeof(value->key));
 		}
 
 		inf_make_req(value->type,value->key,temp.value ,value->length,value->mark);
