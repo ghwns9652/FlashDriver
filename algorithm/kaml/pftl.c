@@ -24,7 +24,7 @@ n_cdf _cdf[LOWERTYPE];
 char temp[PAGESIZE];
 
 bool is_full;
-extern uint8_t garbage_table[_NOP/8];	// valid bitmap
+uint8_t garbage_table[_NOP/8];	// valid bitmap
 int OOB[_NOP];
 int mapping_table[_NOP];	// use LPA as index, use 1 block as log block
 int gc_read_cnt;
