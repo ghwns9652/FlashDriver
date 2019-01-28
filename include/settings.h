@@ -57,13 +57,17 @@
 
 #define FSTYPE uint8_t
 #ifdef KVSSD
+#define KEYFORMAT(input) input.len,input.keya
+//printf("%.*s",KEYFORMAT(KEYT))
+//KEYT a
+//printf("key:%.*s\n",KEYFORMAT(a))
 typedef struct str_key{
 	uint8_t len;
 	char *key;
 }str_key;
 
 	#define KEYT str_key
-static inline int KEYCMP(KEYT a,KEYT b){
+static inline int KEYCMP(KEYT a,KEYT b){ //a>b return + //a<b return - //a==b reutnr 0
 	if(!a.len && !b.len) return 0;
 	else if(a.len==0) return -1;
 	else if(b.len==0) return 1;
