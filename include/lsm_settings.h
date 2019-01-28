@@ -6,7 +6,8 @@
 #define FULLMAPNUM  1024
 
 #define RAF 0.01
-#define LEVELN 1
+#define LEVELN 3
+
 
 #if LEVELN!=1
 //#define BLOOM
@@ -35,6 +36,7 @@
 #define FQSIZE 2
 #define RQSIZE 1024
 #define WRITEWAIT
+#define MAXKEYSIZE 255
 //#define STREAMCOMP
 //#define NOGC
 //#define COSTBENEFIT
@@ -43,9 +45,11 @@
 #define EPC 100000 //size factor have to be multiple of SIZEFACTOR
 
 /*block,header,data area variable*/
-#define HEADERSEG 8
+#define HEADERSEG 2
 #define BLOCKSEG (1)
 #define DATASEG (_NOS-(HEADERSEG+1)-1)
+
+#define MAXITER 16
 
 //#define SNU_TEST
 #define SPINLOCK
