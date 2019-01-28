@@ -29,11 +29,8 @@ char temp[PAGESIZE];
 int find_key,miss_key;
 //int number_of_get_req;
 int max_try=0;
-int update=0;
-int write = 0;
-
-
 void normal_cdf_print(){
+
 }
 uint32_t normal_create (lower_info* li,algorithm *algo){
 	algo->li=li;
@@ -45,9 +42,7 @@ uint32_t normal_create (lower_info* li,algorithm *algo){
 }
 void normal_destroy (lower_info* li, algorithm *algo){
 	normal_cdf_print();
-//	printf("%d,%d\n(find_key,miss_key)%d\n(max_try)%d,%d(update, write)\n",find_key,miss_key,max_try,update,write);
-
-	printf("%d,%d\n(find_key,miss_key)%d\n(max_try)\n",find_key,miss_key,max_try);
+	printf("%d,%d\n%d(find_key,miss_key,max_try)\n",find_key,miss_key,max_try);
 	return;
 }
 
@@ -113,7 +108,6 @@ uint32_t normal_set(request *const req){
 	int hash_key = hash(req->key) + cnt*cnt + cnt;
 	hash_key %= _NOP;
 
-	uint32_t temp;
 	switch (params->finding){
 		case 3:		//change ppa
 		case 0:
@@ -121,19 +115,16 @@ uint32_t normal_set(request *const req){
 			__normal.li->read(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
 			break;
 		case 2:		//change ppa and write
-//			update++;
 		case 1:		//write
-//			write++;
 			memcpy(req->value->value,&req->key,sizeof(req->key));
 			my_req->type=DATAW;
 			__normal.li->write(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
 			break;
 
 	}
-	// 	memcp(req->value->value,&req->key,sizeof(req->key));
+	//	memcp(req->value->value,&req->key,sizeof(req->key));
 	normal_cnt++;
 	return 0;
-
 }
 uint32_t normal_remove(request *const req){
 	__normal.li->trim_block(req->key,NULL);
