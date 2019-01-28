@@ -34,8 +34,8 @@ int delete_heap(Heap *heap) {
 	int max;
 	int ret = heap->arr[1].block->num;
 	swap(heap, 1, heap->size);
-	heap->arr[heap->size].block->ptr = NULL;
-	heap->arr[heap->size].block = NULL;
+	heap->arr[heap->size].block->num = -1;
+	heap->arr[heap->size].block->cnt = 0;
 	heap->size--;
 	
 	while(child <= heap->size) {
