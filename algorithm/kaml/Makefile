@@ -2,6 +2,7 @@ SRCS +=\
 	   pftl.c\
 	   heap.c\
 	   Queue.c\
+	   gc.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
