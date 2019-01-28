@@ -1,3 +1,6 @@
+#ifndef PFTL_H
+#define PFTL_H
+
 #include "../../include/container.h"
 
 #define DATA_R 0
@@ -23,3 +26,4 @@ uint32_t pftl_read(request *const);
 uint32_t pftl_write(request *const);
 uint32_t pftl_remove(request *const);
 void *pftl_end_req(algo_req*);
+#endif

@@ -102,7 +102,7 @@ uint32_t pftl_write(request *const req) {
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
 
-	reserv_seg_num = ((_NOP - _PPS) / _PPS); 
+//	reserv_seg_num = ((_NOP - _PPS) / _PPS); 
 	int reserv_ppa = (_NOP - _PPS);
 
 	if(!is_full) {		// First write on ppa
@@ -159,7 +159,7 @@ void *pftl_end_req(algo_req* input) {
 	request *res = input->parents;
 	//res->end_req(res);
 	
-	switch(params->type){
+	switch(input->type){
 		case DATA_R : 
 		case DATA_W:
 			if(res){

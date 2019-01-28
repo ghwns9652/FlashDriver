@@ -1,12 +1,6 @@
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <limits.h>
 #include "gc.h"
-#include "pftl.h"
-#include "heap.h"
-#include "queue.h" 
-#include "../../bench/bench.h"
 
 extern int OOB[_NOP];
 extern int mapping_table[_NOP];	// use LPA as index, use 1 block as log block
