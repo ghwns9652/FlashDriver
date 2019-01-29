@@ -16,23 +16,27 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 {
 	//erase_seg_num = delete_heap(&heap);
 	int invalid_cnt = 0;
-	
+	printf("[AT GC]---------------------------------\n");
+	printf("[AT GC]---------------------------------\n");
 	gc_read_cnt=0;
 	gc_target_cnt=0;
 	
 	int start_page_num = erase_seg_num * _PPS;
 	int end_page_num = (erase_seg_num+1) * _PPS;
 	uint8_t bit_compare;
-	
+
+	printf("lkasdjfl;akjdfl;kasjdlf;kjasl;dfjl;aksjdflkajsld;fjla;sdj;ljaksd;flj\n");	
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 	//my_req->parents = req;
 	//my_req->end_req = pftl_end_req;
 	//my_req->type = DATAW;
 	//my_req->params = (void*)params;
-
-
+	
+	printf("[AT GC] value_set front\n");
 	/*            valid check & copy                */
 	value_set *value=inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+
+	printf("[AT GC] after value_Set\n");
 	for(int i=start_page_num; i<end_page_num; i++){ 	//valid checking
 		if (garbage_table[i/8] & (1<<i%8)) {  // 1: invalid
 			invalid_cnt++; 
@@ -69,6 +73,7 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 	// return update reserv segment number
 	log_seg_num = start_page_num / _PPS;
 
+	printf("[AT GC] END OF GC\n");
 	return reserv_ppa_start;	
 }
 

@@ -24,7 +24,7 @@ n_cdf _cdf[LOWERTYPE];
 char temp[PAGESIZE];
 
 bool is_full;
-int log_seg_num;	// reserve segment number
+int log_seg_num = _NOS - 1;	// reserve segment number
 uint8_t garbage_table[_NOP/8];	// valid bitmap
 int OOB[_NOP];
 int mapping_table[_NOP];	// use LPA as index, use 1 block as log block
@@ -34,7 +34,6 @@ Block garbage_cnt[_NOS];	// count garbage pages in each block(=segment)
 Block trash;
 Heap heap;
 Queue queue;
-int *point_heap[_NOS];	// point to each heap element
 
 void pftl_cdf_print() {
 }
@@ -71,9 +70,9 @@ void pftl_destroy(lower_info* li, algorithm *algo) {
 
 uint32_t ppa = 0;
 int g_cnt;
-int logb_no = _NOS-1;
 static int reserv_ppa_start = (_NOP - _PPS);
 int erase_seg_num;
+
 
 uint32_t pftl_read(request *const req) {
 	bench_algo_start(req);
@@ -104,19 +103,22 @@ uint32_t pftl_write(request *const req) {
 	my_req->params = (void*)params;
 
 //	reserv_seg_num = ((_NOP - _PPS) / _PPS); 
-	int reserv_ppa = (_NOP - _PPS);
 
 	if(!is_full) {		// First write on ppa
 		ppa = front(&queue);
-		mapping_table[req->key] = ppa;
-		OOB[ppa] = req->key;
-		dequeue(&queue);
-		
+		bool tt = dequeue(&queue);
+
+//		printf("[AT PFTL] ppa: %d\n", ppa);
+//		printf("[AT PFTL] ppa/_PPS: %d\n", ppa/_PPS);
+//		printf("[AT PFTL] req->key: %d\n", req->key);
+//		printf("[AT PFTL] heap size: %d\n", heap.size);
 		// overwrite
 		if(mapping_table[req->key] != -1) {
 			garbage_table[ppa/8] |= (1<<(ppa % 8)); // 1: invalid 0: valid
 			garbage_cnt[ppa/_PPS].cnt++;	//garbage count in block
 		}
+		mapping_table[req->key] = ppa;
+		OOB[ppa] = req->key;
 
 		if(garbage_cnt[ppa/_PPS].num == -1) {
 			garbage_cnt[ppa/_PPS].num = ppa/_PPS;
@@ -131,15 +133,14 @@ uint32_t pftl_write(request *const req) {
 	else if(is_full) {	//if queue is not empty
 		construct_heap(&heap);		// sort(find segment number that has biggest invalid count)
 		int max = delete_heap(&heap);  // max is segment number to erase
-		reserv_ppa_start = garbage_collection(reserv_ppa_start, max);	
+		reserv_ppa_start = garbage_collection(log_seg_num*_PPS, max);	
 	
 		int reserv_ppa_end = ((reserv_ppa_start / _PPS) + 1) * _PPS;
-		
 		for(int i = reserv_ppa_start; i < reserv_ppa_end; i++) {
 			enqueue(&queue, i);
 		}
 		is_full = false;
-		printf("[AT PFTL] max: %d\n", max);
+//		printf("[AT PFTL] max: %d\n", max);
 	}
 
 	my_req->ppa = mapping_table[req->key];
@@ -161,16 +162,18 @@ void *pftl_end_req(algo_req* input) {
 	//res->end_req(res);
 	
 	switch(input->type){
-		case DATA_R : 
-		case DATA_W:
+		case DATAR: 
+		case DATAW:
 			if(res){
+//				printf("[END REQ] end_req\n");
 				res->end_req(res);
+//				printf("[END REQ] end_req_end\n");
 			}
 			break;
-		case GC_R : 
+		case GC_R: 
 			gc_target_cnt++;
 			break;
-		case GC_W : 
+		case GC_W: 
 			
 			break;
 	}
