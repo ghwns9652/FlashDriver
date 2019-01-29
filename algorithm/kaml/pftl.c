@@ -33,16 +33,16 @@ int gc_target_cnt;
 Block garbage_cnt[_NOS];	// count garbage pages in each block(=segment)
 Block trash;
 Heap heap;
-Queue queue;
+Queue ppa_queue;
 
 void pftl_cdf_print() {
 }
 uint32_t pftl_create(lower_info *li,algorithm *algo) {
 	algo->li=li;
 	heap.size = 0;
-	queue.size = 0;
-	queue.front = 0;
-	queue.rear = 0;
+	ppa_queue.size = 0;
+	ppa_queue.front = 0;
+	ppa_queue.rear = 0;
 	memset(temp,'x',PAGESIZE);
 	memset(mapping_table, -1, sizeof(mapping_table));
 	memset(garbage_table, 0, sizeof(garbage_table));
@@ -53,7 +53,7 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 		garbage_cnt[i].num = -1;
 	}
 	for(int i = 0; i < _NOP - _PPS; i++) {
-		enqueue(&queue, i);
+		enqueue(&ppa_queue, i);
 	}
 	heap.arr[0].block = &trash;
 	heap.arr[0].block->cnt = -1;
@@ -105,13 +105,14 @@ uint32_t pftl_write(request *const req) {
 //	reserv_seg_num = ((_NOP - _PPS) / _PPS); 
 
 	if(!is_full) {		// First write on ppa
-		ppa = front(&queue);
-		bool tt = dequeue(&queue);
+		ppa = front(&ppa_queue);
+		bool tt = dequeue(&ppa_queue);
 
 //		printf("[AT PFTL] ppa: %d\n", ppa);
 //		printf("[AT PFTL] ppa/_PPS: %d\n", ppa/_PPS);
 //		printf("[AT PFTL] req->key: %d\n", req->key);
 //		printf("[AT PFTL] heap size: %d\n", heap.size);
+
 		// overwrite
 		if(mapping_table[req->key] != -1) {
 			garbage_table[ppa/8] |= (1<<(ppa % 8)); // 1: invalid 0: valid
@@ -126,18 +127,18 @@ uint32_t pftl_write(request *const req) {
 			insert_heap(&heap, &garbage_cnt[ppa/_PPS]);
 		}
 
-		if((is_empty(&queue)) && (!is_full)) {	// page over
+		if((is_empty(&ppa_queue)) && (!is_full)) {	// page over
 			is_full = true;
 		}
 	}
 	else if(is_full) {	//if queue is not empty
 		construct_heap(&heap);		// sort(find segment number that has biggest invalid count)
 		int max = delete_heap(&heap);  // max is segment number to erase
-		reserv_ppa_start = garbage_collection(log_seg_num*_PPS, max);	
-	
+		reserv_ppa_start = garbage_collection(log_seg_num*_PPS, max);
 		int reserv_ppa_end = ((reserv_ppa_start / _PPS) + 1) * _PPS;
+
 		for(int i = reserv_ppa_start; i < reserv_ppa_end; i++) {
-			enqueue(&queue, i);
+			enqueue(&ppa_queue, i);
 		}
 		is_full = false;
 //		printf("[AT PFTL] max: %d\n", max);
@@ -159,7 +160,7 @@ void *pftl_end_req(algo_req* input) {
 
 	normal_params *params = (normal_params*)input->params;
 	request *res = input->parents;
-	//res->end_req(res);
+//	value_set *temp_set = params->value;
 	
 	switch(input->type){
 		case DATAR: 
@@ -174,7 +175,8 @@ void *pftl_end_req(algo_req* input) {
 			gc_target_cnt++;
 			break;
 		case GC_W: 
-			
+		// TODO: free
+		//	inf_free_valueset(temp_set, FS_MALLOC_R);
 			break;
 	}
 
