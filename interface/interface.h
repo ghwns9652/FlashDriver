@@ -17,11 +17,11 @@ bool inf_make_req_special(const FSTYPE type, KEYT key, char* value, int len,KEYT
 bool inf_make_req_fromApp(char type, KEYT key,KEYT offset,KEYT len,PTR value,void *req, void*(end_func)(void*));
 
 bool inf_iter_create(KEYT start,bool (*added_end)(struct request *const));
-bool inf_iter_next(KEYT iter_id,KEYT length, char **values,bool (*added_end)(struct request *const));
+bool inf_iter_next(KEYT iter_id,KEYT length, char **values,bool (*added_end)(struct request *const),bool withvalue);
 bool inf_iter_release(KEYT iter_id, bool (*added_end)(struct request *const));
 
 
-bool inf_make_multi_req(char type, KEYT key,KEYT *keys,char **values,uint32_t lengths,bool (*added_end)(struct request *const));
+bool inf_make_multi_req(char type, KEYT key,KEYT *keys,uint32_t iter_id,char **values,uint32_t lengths,bool (*added_end)(struct request *const));
 
 bool inf_end_req(request*const);
 bool inf_assign_try(request *req);
