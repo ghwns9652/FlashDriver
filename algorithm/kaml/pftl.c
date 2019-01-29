@@ -75,6 +75,7 @@ int erase_seg_num;
 
 
 uint32_t pftl_read(request *const req) {
+//	printf("read key: %d\n", req->key);
 	bench_algo_start(req);
 	normal_params* params = (normal_params*)malloc(sizeof(normal_params));
 	params->test = -1;
@@ -102,16 +103,9 @@ uint32_t pftl_write(request *const req) {
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
 
-//	reserv_seg_num = ((_NOP - _PPS) / _PPS); 
-
 	if(!is_full) {		// First write on ppa
 		ppa = front(&ppa_queue);
 		bool tt = dequeue(&ppa_queue);
-
-//		printf("[AT PFTL] ppa: %d\n", ppa);
-//		printf("[AT PFTL] ppa/_PPS: %d\n", ppa/_PPS);
-//		printf("[AT PFTL] req->key: %d\n", req->key);
-//		printf("[AT PFTL] heap size: %d\n", heap.size);
 
 		// overwrite
 		if(mapping_table[req->key] != -1) {
@@ -119,7 +113,7 @@ uint32_t pftl_write(request *const req) {
 			garbage_cnt[ppa/_PPS].cnt++;	//garbage count in block
 		}
 		mapping_table[req->key] = ppa;
-		OOB[ppa] = req->key;
+		OOB[ppa] = req->key;	// update unused OOB
 
 		if(garbage_cnt[ppa/_PPS].num == -1) {
 			garbage_cnt[ppa/_PPS].num = ppa/_PPS;
@@ -141,7 +135,6 @@ uint32_t pftl_write(request *const req) {
 			enqueue(&ppa_queue, i);
 		}
 		is_full = false;
-//		printf("[AT PFTL] max: %d\n", max);
 	}
 
 	my_req->ppa = mapping_table[req->key];
@@ -155,12 +148,8 @@ uint32_t pftl_remove(request *const req) {
 	return 1;
 }
 void *pftl_end_req(algo_req* input) {
-	//bool check=false;
-	//int cnt=0;
-
 	normal_params *params = (normal_params*)input->params;
 	request *res = input->parents;
-//	value_set *temp_set = params->value;
 	
 	switch(input->type){
 		case DATAR: 
@@ -170,17 +159,19 @@ void *pftl_end_req(algo_req* input) {
 				res->end_req(res);
 //				printf("[END REQ] end_req_end\n");
 			}
+			free(params);
 			break;
 		case GC_R: 
+			printf("end request GC_R\n");
 			gc_target_cnt++;
 			break;
 		case GC_W: 
-		// TODO: free
-		//	inf_free_valueset(temp_set, FS_MALLOC_R);
+			printf("end request GC_W\n");
+			printf("res->value: %x\n", res->value);
+			inf_free_valueset(res->value, FS_MALLOC_W);
 			break;
 	}
-
-	free(params);
 	free(input);
+	
 	return NULL;
 }

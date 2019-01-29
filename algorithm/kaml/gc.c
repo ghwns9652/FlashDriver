@@ -23,17 +23,9 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 	int start_page_num = erase_seg_num * _PPS;
 	int end_page_num = (erase_seg_num+1) * _PPS;
 	uint8_t bit_compare;
-
 	
-	printf("[AT GC] value_set front\n");
-	/*            valid check & copy                */
-	value_set *value=inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-
-	printf("[AT GC] after value_set\n");
 	for(uint32_t i = start_page_num; i < end_page_num; i++){ 	//valid checking
-		printf("start loop! i: %d\n", i);
-		algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-		
+		value_set *value_w;	
 		if (garbage_table[i/8] & (1 << (i % 8))) {  // 1: invalid
 			invalid_cnt++; 
 			if(invalid_cnt == _PPS) {	// all page is invalid
@@ -42,25 +34,32 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			}
 		}
 		else {//copy on reserved segment	// 0: valid
+			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
+			value_set *value_r = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+
 			mapping_table[OOB[i]] = reserv_ppa_start;	// mapping_table update
 			OOB[reserv_ppa_start] = OOB[i];			// OOB update
-			garbage_table[i/8] |= (1<<(i % 8));
+			garbage_table[i/8] &= ~(1<<(i % 8));
+
 			//GC_R
 			my_req->type = GC_R;
 			gc_read_cnt++;
-			algo_pftl.li->read(i, PAGESIZE, value, 1, my_req);
+			algo_pftl.li->read(i, PAGESIZE, value_r, 1, my_req);
 			
 			//waiting for gc_read
-			printf("before general writing\n");
 			gc_general_waiting();
-			printf("after general writing\n");
 			
 			//GC_W
+			my_req = (algo_req *)malloc(sizeof(algo_req));
 			my_req->type = GC_W;
 			
-			printf("before write\n");
-			algo_pftl.li->write(reserv_ppa_start, PAGESIZE, value, 1, my_req);
-			printf("after write\n");
+			printf("[IN GC] value_r: %x\n", value_r);
+			printf("[IN GC] value_r->value: %s\n", value_r->value);
+			value_w = inf_get_valueset(value_r->value, FS_MALLOC_W, PAGESIZE);
+			printf("[IN GC] value_w->value: %s\n", value_w->value);
+
+			inf_free_valueset(value_r, FS_MALLOC_R);
+			algo_pftl.li->write(reserv_ppa_start, PAGESIZE, value_w, 1, my_req);
 			
 			//increase reserved ppa number
 			reserv_ppa_start++;
