@@ -10,6 +10,7 @@
 #include "../bench/bench.h"
 #include "interface.h"
 #include "../algorithm/Lsmtree/lsmtree.h"
+#include "../include/utils/kvssd.h"
 extern int req_cnt_test;
 extern uint64_t dm_intr_cnt;
 extern int LOCALITY;
@@ -36,13 +37,13 @@ int main(int argc,char* argv[]){
 	inf_init();
 	bench_init();
 	char t_value[PAGESIZE];
-	memset(t_value,0,PAGESIZE);
+	memset(t_value,'x',PAGESIZE);
 
-	bench_add(RANDRW,0,RANGE,RANGE/2);
+	bench_add(SEQSET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE,RANGE/2);
 //	bench_add(RANDGET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE/2,RANGE);
-//	bench_add(SEQGET,0,RANGE,RANGE);
+	bench_add(SEQGET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE,RANGE);
 //	bench_add(MIXED,0,RANGE,RANGE);
 //	bench_add(SEQLATENCY,0,RANGE,RANGE);
@@ -78,8 +79,11 @@ int main(int argc,char* argv[]){
 	bool tflag=false;
 	while((value=get_bench())){
 		temp.length=value->length;
+#ifdef KVSSD
+		//printf("value:%s\n",kvssd_tostring(value->key));
+#endif
 		if(value->type==FS_SET_T){
-			//memcpy(&temp.value[0],&value->key,sizeof(value->key));
+			memcpy(&temp.value[0],&value->key,sizeof(value->key));
 		}
 
 		inf_make_req(value->type,value->key,temp.value ,value->length,value->mark);
@@ -89,12 +93,15 @@ int main(int argc,char* argv[]){
 
 
 		if(_master->m[_master->n_num].type<=SEQRW) continue;
+		
+#ifndef KVSSD
 		if(value->key<RANGE*TARGETRATIO){
 			locality_check++;
 		}
 		else{
 			locality_check2++;
 		}
+#endif
 	}
 
 	if(req_cnt_test==cnt){
