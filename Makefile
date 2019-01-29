@@ -101,7 +101,7 @@ LIBS +=\
 		-lpthread\
 		-lm\
 -laio\
--ljemalloc\
+#-ljemalloc\
 
 all: driver
 
