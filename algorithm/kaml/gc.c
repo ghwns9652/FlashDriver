@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "gc.h"
 
+extern struct algorithm algo_pftl;
+extern value_set *inf_get_valueset(PTR, int, uint32_t length);
 extern int OOB[_NOP];
 extern int mapping_table[_NOP];	// use LPA as index, use 1 block as log block
 extern uint8_t garbage_table[_NOP/8];
@@ -23,19 +25,19 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 	uint8_t bit_compare;
 	
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-	my_req->parents = req;
-	my_req->end_req = pftl_end_req;
+	//my_req->parents = req;
+	//my_req->end_req = pftl_end_req;
 	//my_req->type = DATAW;
-	my_req->params = (void*)params;
+	//my_req->params = (void*)params;
 
 
 	/*            valid check & copy                */
 	value_set *value=inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 	for(int i=start_page_num; i<end_page_num; i++){ 	//valid checking
 		if (garbage_table[i/8] & (1<<i%8)) {  // 1: invalid
-			invalid_cnt++ 
+			invalid_cnt++; 
 			if(invalid_cnt == _PPS){	// all page is invalid
-				algo_pftl.li->trim(start_page_num, ASYNC);  //delete all segment
+				algo_pftl.li->trim_block(start_page_num, ASYNC);  //delete all segment
 				return start_page_num; 
 			}
 		}
@@ -62,7 +64,7 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 	}
 	
 	/*      delete old segment	*/
-	algo_pftl.li->trim(start_page_num, ASYNC);
+	algo_pftl.li->trim_block(start_page_num, ASYNC);
 	
 	// return update reserv segment number
 	log_seg_num = start_page_num / _PPS;
