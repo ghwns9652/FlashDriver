@@ -46,6 +46,7 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 	memset(temp,'x',PAGESIZE);
 	memset(mapping_table, -1, sizeof(mapping_table));
 	memset(garbage_table, 0, sizeof(garbage_table));
+	memset(OOB, -1, sizeof(OOB));
 	for(int i = 0; i < LOWERTYPE; i++) {
 		_cdf[i].min = UINT_MAX;
 	}
@@ -102,15 +103,19 @@ uint32_t pftl_write(request *const req) {
 	bench_algo_end(req);
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
+	
+	printf("[PFTL] LBA: %d\n", req->key);
+//	strcpy(req->value->value, "abc");
 
 	if(!is_full) {		// First write on ppa
 		ppa = front(&ppa_queue);
-		bool tt = dequeue(&ppa_queue);
+		bool dequeue_res = dequeue(&ppa_queue);
 
 		// overwrite
 		if(mapping_table[req->key] != -1) {
-			garbage_table[ppa/8] |= (1<<(ppa % 8)); // 1: invalid 0: valid
-			garbage_cnt[ppa/_PPS].cnt++;	//garbage count in block
+			garbage_table[mapping_table[req->key]/8] |= (1<<(mapping_table[req->key] % 8)); // 1: invalid 0: valid
+			garbage_cnt[mapping_table[req->key]/_PPS].cnt++;	//garbage count in block
+			OOB[mapping_table[req->key]] = -1;
 		}
 		mapping_table[req->key] = ppa;
 		OOB[ppa] = req->key;	// update unused OOB
@@ -162,12 +167,14 @@ void *pftl_end_req(algo_req* input) {
 			free(params);
 			break;
 		case GC_R: 
-			printf("end request GC_R\n");
+			printf("[PFTL_END_REQ]end request GC_R\n");
+		//	inf_free_valueset(res->value, FS_MALLOC_R);
 			gc_target_cnt++;
 			break;
 		case GC_W: 
-			printf("end request GC_W\n");
-			printf("res->value: %x\n", res->value);
+			printf("[PFTL_END_REQ]end request GC_W\n");
+			printf("[PFTL_END_REQ]res->value: %x\n", res->value);
+		//	printf("[PFTL_END_REQ]res->value->value: %s\n", res->value->value);
 			inf_free_valueset(res->value, FS_MALLOC_W);
 			break;
 	}
