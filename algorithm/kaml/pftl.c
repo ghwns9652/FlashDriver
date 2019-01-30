@@ -115,6 +115,9 @@ uint32_t pftl_write(request *const req) {
 			garbage_cnt[mapping_table[req->key]/_PPS].cnt++;	//garbage count in block
 			OOB[mapping_table[req->key]] = -1;
 		}
+		else {
+			garbage_table[ppa/8] &= ~(1 << (ppa % 8));
+		}
 		mapping_table[req->key] = ppa;
 		OOB[ppa] = req->key;	// update unused OOB
 
@@ -127,6 +130,9 @@ uint32_t pftl_write(request *const req) {
 		if((is_empty(&ppa_queue)) && (!is_full)) {	// page over
 			is_full = true;
 		}
+
+		my_req->ppa = mapping_table[req->key];
+		algo_pftl.li->write(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
 	}
 	else if(is_full) {	//if queue is not empty
 		construct_heap(&heap);		// sort(find segment number that has biggest invalid count)
@@ -140,8 +146,6 @@ uint32_t pftl_write(request *const req) {
 		is_full = false;
 	}
 
-	my_req->ppa = mapping_table[req->key];
-	algo_pftl.li->write(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
 
 	return 0;
 }
@@ -153,6 +157,7 @@ uint32_t pftl_remove(request *const req) {
 void *pftl_end_req(algo_req* input) {
 	normal_params *params = (normal_params*)input->params;
 	request *res = input->parents;
+	value_set* value;
 	
 	switch(input->type){
 		case DATAR: 
@@ -168,10 +173,11 @@ void *pftl_end_req(algo_req* input) {
 			gc_target_cnt++;
 			break;
 		case GCDW: 
-			printf("[PFTL_END_REQ]end request GC_W\n");
-			printf("[PFTL_END_REQ]res->value: %x\n", res->value);
+		//	printf("[PFTL_END_REQ]end request GC_W\n");
+			//printf("[PFTL_END_REQ]res->value: %x\n", res->value);
 		//	printf("[PFTL_END_REQ]res->value->value: %s\n", res->value->value);
-			inf_free_valueset(res->value, FS_MALLOC_W);
+			value = (value_set *)input->params;
+			inf_free_valueset(value, FS_MALLOC_W);
 			break;
 	}
 	free(input);

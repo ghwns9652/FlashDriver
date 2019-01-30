@@ -27,6 +27,8 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 		bit_compare = garbage_table[i/8];
 
 		if (bit_compare & (1 << (i % 8))) {  // 1: invalid
+//			printf("[AT GC] invalid ppa: %d\n", i);
+//			printf("[AT GC] bitmap: %d\n", bit_compare);
 			invalid_cnt++; 
 			if(invalid_cnt == _PPS) {	// all page is invalid
 
@@ -36,6 +38,7 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			garbage_table[i/8] &= ~(1 << (i % 8));
 		}
 		else {//copy on reserved segment	// 0: valid
+//			printf("[AT GC] valid ppa: %d\n", i);
 			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			value_set *value_r = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 
@@ -46,7 +49,9 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 
 			//GCDR
 			my_req->type = GCDR;
+			my_req->end_req = pftl_end_req;
 			gc_read_cnt++;
+
 			algo_pftl.li->read(i, PAGESIZE, value_r, 1, my_req);
 			
 			//waiting for gc_read
@@ -55,12 +60,13 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			//GCDW
 			my_req = (algo_req *)malloc(sizeof(algo_req));
 			my_req->type = GCDW;
+			my_req->end_req = pftl_end_req;
 			
-			printf("[IN GC] value_r: %x\n", value_r);
-			printf("[IN GC] value_r->value: %s\n", value_r->value);
 			value_w = inf_get_valueset(value_r->value, FS_MALLOC_W, PAGESIZE);
 
 			inf_free_valueset(value_r, FS_MALLOC_R);
+
+			my_req->params = (void *)value_w;
 			algo_pftl.li->write(reserv_ppa_start, PAGESIZE, value_w, 1, my_req);
 		//	inf_free_valueset(value_w, FS_MALLOC_W);
 			
@@ -69,18 +75,19 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 		}
 	}
 	
-	printf("before trim\n");
+//	printf("before trim\n");
 	/*      delete old segment	*/
 	algo_pftl.li->trim_block(start_page_num, ASYNC);
-	printf("after trim\n");
+//	printf("after trim\n");
 	
 	// return update reserv segment number
 	log_seg_num = start_page_num / _PPS;
 
 	for(int i = start_page_num; i < end_page_num; i++){
 		garbage_table[i/8] &= ~(1 << (i % 8));
+//		mapping_table[OOB[i]] = -1;
 	}
-	printf("[AT GC] END OF GC\n");
+//	printf("[AT GC] END OF GC\n");
 
 	return reserv_ppa_start;
 }
