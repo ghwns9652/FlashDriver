@@ -15,6 +15,7 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
+			-fsanitize=address\
 #			-O2\
 #			-DWRITESYNC\
 
