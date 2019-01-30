@@ -10,7 +10,7 @@ bool is_empty(Queue *queue) {
 void enqueue(Queue *queue, int num) {
 	queue->size++;
 	queue->arr[queue->rear] = num;
-	queue->rear = (queue->rear + 1) % (queue->size);
+	queue->rear = (queue->rear + 1) % (_NOP);
 }
 
 bool dequeue(Queue *queue) {
@@ -18,7 +18,7 @@ bool dequeue(Queue *queue) {
 		return false;
 	}
 
-	queue->front = (queue->front + 1) % (queue->size);
+	queue->front = (queue->front + 1) % (_NOP);
 	queue->size--;
 	return true;
 }
