@@ -104,8 +104,6 @@ uint32_t pftl_write(request *const req) {
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
 	
-	printf("[PFTL] LBA: %d\n", req->key);
-//	strcpy(req->value->value, "abc");
 
 	if(!is_full) {		// First write on ppa
 		ppa = front(&ppa_queue);
@@ -166,12 +164,10 @@ void *pftl_end_req(algo_req* input) {
 			}
 			free(params);
 			break;
-		case GC_R: 
-			printf("[PFTL_END_REQ]end request GC_R\n");
-		//	inf_free_valueset(res->value, FS_MALLOC_R);
+		case GCDR: 
 			gc_target_cnt++;
 			break;
-		case GC_W: 
+		case GCDW: 
 			printf("[PFTL_END_REQ]end request GC_W\n");
 			printf("[PFTL_END_REQ]res->value: %x\n", res->value);
 		//	printf("[PFTL_END_REQ]res->value->value: %s\n", res->value->value);

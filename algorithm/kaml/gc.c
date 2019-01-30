@@ -24,18 +24,16 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 	
 	for(uint32_t i = start_page_num; i < end_page_num; i++){ 	//valid checking
 		value_set *value_w;
+		bit_compare = garbage_table[i/8];
 
-		if (garbage_table[i/8] & (1 << (i % 8))) {  // 1: invalid
+		if (bit_compare & (1 << (i % 8))) {  // 1: invalid
 			invalid_cnt++; 
 			if(invalid_cnt == _PPS) {	// all page is invalid
-
-				for(int i=start_page_num; i<start_page_num+_PPS; i++){
-					garbage_table[i/8] &= ~(1 << (i % 8));
-				}
 
 				algo_pftl.li->trim_block(start_page_num, ASYNC);  //delete all segment
 				return start_page_num; 
 			}
+			garbage_table[i/8] &= ~(1 << (i % 8));
 		}
 		else {//copy on reserved segment	// 0: valid
 			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
@@ -46,22 +44,21 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			OOB[i] = -1;
 			garbage_table[reserv_ppa_start/8] &= ~(1 << (reserv_ppa_start % 8));
 
-			//GC_R
-			my_req->type = GC_R;
+			//GCDR
+			my_req->type = GCDR;
 			gc_read_cnt++;
 			algo_pftl.li->read(i, PAGESIZE, value_r, 1, my_req);
 			
 			//waiting for gc_read
 			gc_general_waiting();
 			
-			//GC_W
+			//GCDW
 			my_req = (algo_req *)malloc(sizeof(algo_req));
-			my_req->type = GC_W;
+			my_req->type = GCDW;
 			
 			printf("[IN GC] value_r: %x\n", value_r);
 			printf("[IN GC] value_r->value: %s\n", value_r->value);
 			value_w = inf_get_valueset(value_r->value, FS_MALLOC_W, PAGESIZE);
-		//	printf("[IN GC] value_w->value: %s\n", value_w->value);
 
 			inf_free_valueset(value_r, FS_MALLOC_R);
 			algo_pftl.li->write(reserv_ppa_start, PAGESIZE, value_w, 1, my_req);
