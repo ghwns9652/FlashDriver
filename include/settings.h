@@ -57,7 +57,7 @@
 
 #define FSTYPE uint8_t
 #ifdef KVSSD
-#define KEYFORMAT(input) input.len,input.keya
+#define KEYFORMAT(input) input.len,input.key
 //printf("%.*s",KEYFORMAT(KEYT))
 //KEYT a
 //printf("key:%.*s\n",KEYFORMAT(a))

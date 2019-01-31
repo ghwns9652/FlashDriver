@@ -1,5 +1,6 @@
 SRCS +=\
 	   normal.c\
+	   sha256.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\

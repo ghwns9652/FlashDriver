@@ -79,6 +79,7 @@ int main(int argc,char* argv[]){
 	bool tflag=false;
 	while((value=get_bench())){
 		temp.length=value->length;
+ //       printf("%.*s\n",KEYFORMAT(value->key));
 #ifdef KVSSD
 		//printf("value:%s\n",kvssd_tostring(value->key));
 #endif

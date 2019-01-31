@@ -1,9 +1,8 @@
 #include "../../include/container.h"
 typedef struct normal_params{
-	//request *parents;
-	//int test;
 	int cnt;
 	int finding; //0:initial try, 1:no key, 2:same key 3:different key
+    int temp;
 }normal_params;
 
 typedef struct normal_cdf_struct{
@@ -19,4 +18,6 @@ uint32_t normal_get(request *const);
 uint32_t normal_set(request *const);
 uint32_t normal_remove(request *const);
 void *normal_end_req(algo_req*);
-int hash(int);
+
+
+uint32_t hashing_key(char*,uint8_t);
