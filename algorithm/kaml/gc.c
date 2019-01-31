@@ -14,7 +14,6 @@ extern int gc_target_cnt;
 int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 {
 	int invalid_cnt = 0;
-	printf("[AT GC]---------------------------------\n");
 	gc_read_cnt=0;
 	gc_target_cnt=0;
 	
@@ -75,19 +74,18 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 		}
 	}
 	
-//	printf("before trim\n");
 	/*      delete old segment	*/
 	algo_pftl.li->trim_block(start_page_num, ASYNC);
-//	printf("after trim\n");
 	
 	// return update reserv segment number
 	log_seg_num = start_page_num / _PPS;
 
-	for(int i = start_page_num; i < end_page_num; i++){
+	for(int i = start_page_num; i < end_page_num; i++) {
 		garbage_table[i/8] &= ~(1 << (i % 8));
-//		mapping_table[OOB[i]] = -1;
+		if(OOB[i] != -1) {
+			mapping_table[OOB[i]] = -1;
+		}
 	}
-//	printf("[AT GC] END OF GC\n");
 
 	return reserv_ppa_start;
 }
