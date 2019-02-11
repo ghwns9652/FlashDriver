@@ -37,8 +37,9 @@ int main(int argc,char* argv[]){
 	bench_init();
 	char t_value[PAGESIZE];
 
-	bench_add(RANDSET,0,RANGE,RANGE*3);
-//	bench_add(RANDSET,0,RANGE,RANGE/2);
+//	bench_add(RANDRW,0,RANGE,RANGE*4);
+	bench_add(SEQSET,0,RANGE,RANGE*5);
+//	bench_add(RANDGET,0,RANGE,RANGE*5);
 //	bench_add(RANDGET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE/2,RANGE);
 //	bench_add(SEQGET,0,RANGE,RANGE);
