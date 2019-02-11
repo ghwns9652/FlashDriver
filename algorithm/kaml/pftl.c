@@ -72,7 +72,7 @@ int erase_seg_num;
 uint32_t pftl_read(request *const req) {
 	bench_algo_start(req);
 	normal_params* params = (normal_params*)malloc(sizeof(normal_params));
-	params->test = -1;
+//	params->test = -1;
 
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
@@ -88,7 +88,7 @@ uint32_t pftl_read(request *const req) {
 uint32_t pftl_write(request *const req) {
 	bench_algo_start(req);
 	normal_params* params = (normal_params*)malloc(sizeof(normal_params));
-	params->test = -1;
+//	params->test = -1;
 
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
