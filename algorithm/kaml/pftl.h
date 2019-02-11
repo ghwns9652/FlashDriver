@@ -3,9 +3,6 @@
 
 #include "../../include/container.h"
 
-#define GC_R   102
-#define GC_W   103
-
 typedef struct normal_params{
 	request *parents;
 	int test;

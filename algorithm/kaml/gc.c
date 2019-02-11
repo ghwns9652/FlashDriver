@@ -51,7 +51,7 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			my_req->end_req = pftl_end_req;
 			gc_read_cnt++;
 
-			algo_pftl.li->read(i, PAGESIZE, value_r, 1, my_req);
+			algo_pftl.li->read(i, PAGESIZE, value_r, ASYNC, my_req);
 			
 			//waiting for gc_read
 			gc_general_waiting();
@@ -66,8 +66,7 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			inf_free_valueset(value_r, FS_MALLOC_R);
 
 			my_req->params = (void *)value_w;
-			algo_pftl.li->write(reserv_ppa_start, PAGESIZE, value_w, 1, my_req);
-		//	inf_free_valueset(value_w, FS_MALLOC_W);
+			algo_pftl.li->write(reserv_ppa_start, PAGESIZE, value_w, ASYNC, my_req);
 			
 			//increase reserved ppa number
 			reserv_ppa_start++;

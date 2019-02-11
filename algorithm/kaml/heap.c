@@ -14,8 +14,8 @@ void insert_heap(Heap *heap, Block *elem) {
 	int i = ++(heap->size);
 	heap->arr[i].block = elem;
 	elem->ptr = &(heap->arr[i]);
-	printf("[AT INSERT] heap size: %d\n", heap->size);
-	printf("[AT INSERT] elem num: %d\n", elem->num);
+//	printf("[AT INSERT] heap size: %d\n", heap->size);
+//	printf("[AT INSERT] elem num: %d\n", elem->num);
 
 	while(i >= 1) {
 		if((heap->arr[i].block->cnt > heap->arr[i/2].block->cnt) && (heap->arr[i/2].block->cnt != -1)) {
@@ -25,7 +25,7 @@ void insert_heap(Heap *heap, Block *elem) {
 		}
 		break;
 	}
-	printf("[AT INSERT] end insert!\n");
+//	printf("[AT INSERT] end insert!\n");
 }
 
 int delete_heap(Heap *heap) {
@@ -87,10 +87,10 @@ void sift_down(Heap *heap, int parent, int last) {
 }
 
 void construct_heap(Heap *heap) {
-	printf("[CONSTRUCT] start\n");
+//	printf("[CONSTRUCT] start\n");
 	int parent = (heap->size / 2);
 	while(parent > 0) {
 		sift_down(heap, parent--, heap->size);
 	}
-	printf("[CONSTRUCT] end\n");
+//	printf("[CONSTRUCT] end\n");
 }
