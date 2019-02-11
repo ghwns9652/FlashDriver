@@ -6,6 +6,7 @@
 #include "sha256.h"
 #include "../../interface/interface.h"
 #include "../../bench/bench.h"
+#include "./pftl.h"
 
 #define LOWERTYPE 10
 
@@ -31,6 +32,7 @@ char temp[PAGESIZE];
 int find_key,miss_key;
 //int number_of_get_req;
 int max_try=0;
+
 static int collision;
 static int _write;
 static int update;
@@ -113,8 +115,10 @@ uint32_t normal_get(request *const req){
     //int hash_key = hash(req->key) + cnt*cnt + cnt;
     uint32_t hash_key = hashing_key(req->key.key,req->key.len) + cnt*cnt + cnt;
     hash_key %= _NOP;
-
-    __normal.li->read(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
+    
+    req-> hash_key = hash_key;
+    //__normal.li->read(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
+    pftl_read(req);
     normal_cnt++;	
     return 1;	
 }
@@ -141,6 +145,7 @@ uint32_t normal_set(request *const req){
     int cnt= params->cnt;
     uint32_t hash_key = hashing_key(req->key.key,req->key.len) + cnt*cnt + cnt;
     hash_key %= _NOP;
+    req-> hash_key = hash_key;
     //printf("%d\n",hash_key);
     //	uint32_t temp;
     //memset(req->value->value, 0, req->value->length);
@@ -150,6 +155,7 @@ uint32_t normal_set(request *const req){
             collision++;        //change ppa
         case 0:
             my_req->type=DATAR;
+            pftl_read(req);
             __normal.li->read(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
             break;
         case 2:		//change ppa and write
@@ -161,7 +167,8 @@ uint32_t normal_set(request *const req){
             memcpy(&(req->value->value[1]), req->key.key, req->key.len);
             //printf("1 %s %.*s\n",&(req->value->value[1]),KEYFORMAT(req->key));
             my_req->type=DATAW;
-            __normal.li->write(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
+            //__normal.li->write(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
+            pftl_write(req);
             break;
 
     }

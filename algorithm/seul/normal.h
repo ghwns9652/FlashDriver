@@ -5,12 +5,12 @@ typedef struct normal_params{
     int temp;
 }normal_params;
 
-typedef struct normal_cdf_struct{
-	uint64_t total_micro;
-	uint64_t cnt;
-	uint64_t max;
-	uint64_t min;
-}n_cdf;
+//typedef struct normal_cdf_struct{
+//	uint64_t total_micro;
+//	uint64_t cnt;
+//	uint64_t max;
+//	uint64_t min;
+//}n_cdf;
 
 uint32_t normal_create (lower_info*, algorithm *);
 void normal_destroy (lower_info*,  algorithm *);
