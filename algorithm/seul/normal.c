@@ -115,7 +115,7 @@ uint32_t normal_get(request *const req){
     //int hash_key = hash(req->key) + cnt*cnt + cnt;
     uint32_t hash_key = hashing_key(req->key.key,req->key.len) + cnt*cnt + cnt;
     hash_key %= _NOP;
-    
+
     req-> hash_key = hash_key;
     //__normal.li->read(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
     pftl_read(req);
@@ -146,31 +146,31 @@ uint32_t normal_set(request *const req){
     uint32_t hash_key = hashing_key(req->key.key,req->key.len) + cnt*cnt + cnt;
     hash_key %= _NOP;
     req-> hash_key = hash_key;
-    //printf("%d\n",hash_key);
-    //	uint32_t temp;
-    //memset(req->value->value, 0, req->value->length);
-	//printf("%d\n", params->finding);
-    switch (params->finding){
-        case 3:
-            collision++;        //change ppa
-        case 0:
-            my_req->type=DATAR;
-            pftl_read(req);
-            __normal.li->read(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
-            break;
-        case 2:		//change ppa and write
-            update++;
-        case 1:		//write
-            _write++;
-            //memcpy(req->value->value,&req->key.key,sizeof(req->key.key));
-            memcpy(req->value->value, &req->key.len, sizeof(req->key.len));
-            memcpy(&(req->value->value[1]), req->key.key, req->key.len);
-            //printf("1 %s %.*s\n",&(req->value->value[1]),KEYFORMAT(req->key));
-            my_req->type=DATAW;
-            //__normal.li->write(hash_key,PAGESIZE,req->value,req->isAsync,my_req);
-            pftl_write(req);
-            break;
+    if(!exist(hash_key)){
+        _write++;
+        memcpy(req->value->value, &req->key.len, sizeof(req->key.len));
+        memcpy(&(req->value->value[1]), req->key.key, req->key.len);
+        my_req->type=DATAW;
+        pftl_write(req);
+    }else{
+        switch (params->finding){
+            case 3:
+                collision++;        //change ppa
+            case 0:
+                my_req->type=DATAR;
+                pftl_read(req);
+                break;
+            case 2:		//change ppa and write
+                update++;
+//            case 1:		//write
+                _write++;
+                memcpy(req->value->value, &req->key.len, sizeof(req->key.len));
+                memcpy(&(req->value->value[1]), req->key.key, req->key.len);
+                my_req->type=DATAW;
+                pftl_write(req);
+                break;
 
+        }
     }
     normal_cnt++;
     return 0;
@@ -222,25 +222,15 @@ void *normal_end_req(algo_req* input){
     }else if(input->type==DATAR){		//set,read
         read_for_write++;
         KEYT temp_key;
-        // printf("%d,%d(len, length)\n",res->value->len,res->value->length);
-            //printf("data: ");
-        //for(int i=0; i<8192; i++) {
-            //printf("%d ", res->value->value[i]);
-        //}
-            //printf("\n");
         temp_key.len = *((uint8_t*)res->value->value);
         temp_key.key = (char*)malloc(temp_key.len);
-            //printf("len: %d\n", temp_key.len);
-//        printf("tmp len %d %d\n", res->value->value[0],temp_key.len);
         memcpy(temp_key.key,(res->value->value+1),temp_key.len);
-
-        //for(int i=0; i<temp_key.len; i++) {
-            //printf("key %d \n", temp_key.key[i]);
-        //}
-        //printf("%s,%s\n",res->key.key,temp_key.key);
+        /*  
         if(temp_key.len==0){	//not found
             params->finding = 1;
-        }else if (KEYCMP(res->key,temp_key)==0){
+        
+        }else*/
+        if (KEYCMP(res->key,temp_key)==0){
             params->finding = 2;
         }else{
             params->finding = 3;
