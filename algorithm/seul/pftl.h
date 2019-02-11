@@ -21,4 +21,5 @@ uint32_t pftl_read(request *const);
 uint32_t pftl_write(request *const);
 uint32_t pftl_remove(request *const);
 void *pftl_end_req(algo_req*);
+bool exist(uint32_t);
 #endif

@@ -33,6 +33,7 @@ Block trash;
 Heap heap;
 Queue ppa_queue;
 
+
 void pftl_cdf_print() {
 }
 uint32_t pftl_create(lower_info *li,algorithm *algo) {
@@ -63,6 +64,13 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 }
 void pftl_destroy(lower_info* li, algorithm *algo) {
 	return;
+}
+
+bool exist(uint32_t hash_key) {
+	if(mapping_table[hash_key] == -1) {
+		return false;
+	}
+	return true;
 }
 
 uint32_t ppa = 0;
