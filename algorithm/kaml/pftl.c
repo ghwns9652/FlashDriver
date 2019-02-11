@@ -21,8 +21,6 @@ struct algorithm algo_pftl = {
 
 n_cdf _cdf[LOWERTYPE];
 
-char temp[PAGESIZE];
-
 bool is_full;
 int log_seg_num = _NOS - 1;	// reserve segment number
 uint8_t garbage_table[_NOP/8];	// valid bitmap
@@ -43,7 +41,6 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 	ppa_queue.size = 0;
 	ppa_queue.front = 0;
 	ppa_queue.rear = 0;
-	memset(temp,'x',PAGESIZE);
 	memset(mapping_table, -1, sizeof(mapping_table));
 	memset(garbage_table, 0, sizeof(garbage_table));
 	memset(OOB, -1, sizeof(OOB));
@@ -65,18 +62,14 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 	return 1;
 }
 void pftl_destroy(lower_info* li, algorithm *algo) {
-	pftl_cdf_print();
 	return;
 }
 
 uint32_t ppa = 0;
-int g_cnt;
 static int reserv_ppa_start = (_NOP - _PPS);
 int erase_seg_num;
 
-
 uint32_t pftl_read(request *const req) {
-//	printf("read key: %d\n", req->key);
 	bench_algo_start(req);
 	normal_params* params = (normal_params*)malloc(sizeof(normal_params));
 	params->test = -1;
@@ -100,41 +93,11 @@ uint32_t pftl_write(request *const req) {
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = req;
 	my_req->end_req = pftl_end_req;
-	bench_algo_end(req);
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
-	
+	bench_algo_end(req);
 
-	if(!is_full) {		// First write on ppa
-		ppa = front(&ppa_queue);
-		bool dequeue_res = dequeue(&ppa_queue);
-
-		// overwrite
-		if(mapping_table[req->key] != -1) {
-			garbage_table[mapping_table[req->key]/8] |= (1<<(mapping_table[req->key] % 8)); // 1: invalid 0: valid
-			garbage_cnt[mapping_table[req->key]/_PPS].cnt++;	//garbage count in block
-			OOB[mapping_table[req->key]] = -1;
-		}
-		else {
-			garbage_table[ppa/8] &= ~(1 << (ppa % 8));
-		}
-		mapping_table[req->key] = ppa;
-		OOB[ppa] = req->key;	// update unused OOB
-
-		if(garbage_cnt[ppa/_PPS].num == -1) {
-			garbage_cnt[ppa/_PPS].num = ppa/_PPS;
-			garbage_cnt[ppa/_PPS].cnt = 0;
-			insert_heap(&heap, &garbage_cnt[ppa/_PPS]);
-		}
-
-		if((is_empty(&ppa_queue)) && (!is_full)) {	// page over
-			is_full = true;
-		}
-
-		my_req->ppa = mapping_table[req->key];
-		algo_pftl.li->write(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
-	}
-	else if(is_full) {	//if queue is not empty
+	if(is_full) {
 		construct_heap(&heap);		// sort(find segment number that has biggest invalid count)
 		int max = delete_heap(&heap);  // max is segment number to erase
 		reserv_ppa_start = garbage_collection(log_seg_num*_PPS, max);
@@ -143,9 +106,37 @@ uint32_t pftl_write(request *const req) {
 		for(int i = reserv_ppa_start; i < reserv_ppa_end; i++) {
 			enqueue(&ppa_queue, i);
 		}
+
 		is_full = false;
 	}
 
+	ppa = front(&ppa_queue);
+	bool dequeue_res = dequeue(&ppa_queue);
+
+	// overwrite
+	if(mapping_table[req->key] != -1) {
+		garbage_table[mapping_table[req->key]/8] |= (1 << (mapping_table[req->key] % 8)); // 1: invalid 0: valid
+		garbage_cnt[mapping_table[req->key]/_PPS].cnt++;	//garbage count in block
+		OOB[mapping_table[req->key]] = -1;
+	}
+	else {
+		garbage_table[ppa/8] &= ~(1 << (ppa % 8));
+	}
+	mapping_table[req->key] = ppa;
+	OOB[ppa] = req->key;	// update unused OOB
+
+	if(garbage_cnt[ppa/_PPS].num == -1) {
+		garbage_cnt[ppa/_PPS].num = ppa/_PPS;
+		garbage_cnt[ppa/_PPS].cnt = 0;
+		insert_heap(&heap, &garbage_cnt[ppa/_PPS]);
+	}
+
+	if((is_empty(&ppa_queue)) && (!is_full)) {	// page over
+		is_full = true;
+	}
+
+	my_req->ppa = mapping_table[req->key];
+	algo_pftl.li->write(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
 
 	return 0;
 }
@@ -162,20 +153,13 @@ void *pftl_end_req(algo_req* input) {
 	switch(input->type){
 		case DATAR: 
 		case DATAW:
-			if(res){
-//				printf("[END REQ] end_req\n");
-				res->end_req(res);
-//				printf("[END REQ] end_req_end\n");
-			}
+			res->end_req(res);
 			free(params);
 			break;
 		case GCDR: 
 			gc_target_cnt++;
 			break;
 		case GCDW: 
-		//	printf("[PFTL_END_REQ]end request GC_W\n");
-			//printf("[PFTL_END_REQ]res->value: %x\n", res->value);
-		//	printf("[PFTL_END_REQ]res->value->value: %s\n", res->value->value);
 			value = (value_set *)input->params;
 			inf_free_valueset(value, FS_MALLOC_W);
 			break;
