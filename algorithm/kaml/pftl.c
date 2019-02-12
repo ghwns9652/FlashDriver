@@ -47,9 +47,6 @@ uint32_t pftl_create(lower_info *li,algorithm *algo) {
 	memset(mapping_table, -1, sizeof(mapping_table));
 	memset(garbage_table, 0, sizeof(garbage_table));
 	memset(OOB, -1, sizeof(OOB));
-	for(int i = 0; i < LOWERTYPE; i++) {
-		_cdf[i].min = UINT_MAX;
-	}
 	for(int i = 0; i < _NOS; i++) {
 		garbage_cnt[i].num = -1;
 	}
@@ -86,7 +83,7 @@ uint32_t pftl_read(hash_req *const req) {
 	algo_params* params = (algo_params*)malloc(sizeof(algo_params));
 
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-//	my_req->parents = req;
+	my_req->parents = NULL;
 	params->parents = req;
 	my_req->end_req = pftl_end_req;
 	my_req->params = (void*)params;
@@ -104,7 +101,7 @@ uint32_t pftl_write(hash_req *const req) {
 	algo_params *params = (algo_params*)malloc(sizeof(algo_params));
 
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-//	my_req->parents = req;
+	my_req->parents = NULL;
 	params->parents = req;
 	my_req->end_req = pftl_end_req;
 	my_req->type = DATAW;

@@ -58,11 +58,6 @@ void normal_destroy (lower_info* li, algorithm *algo){
 }
 
 int normal_cnt;
-/*
-   int hash(int key){
-   return key%(_NOP/2);
-   }
-   */
 
 uint32_t hashing_key(char* key,uint8_t len) {
     char* string;
@@ -130,7 +125,7 @@ uint32_t normal_set(request *const req){
     req->type=FS_SET_T;
 
     normal_params *params;
-    if(req->params==NULL){	
+    if(req->params==NULL){
         params=(normal_params*)malloc(sizeof(normal_params));
         params->cnt=0;
         params->finding=0;
