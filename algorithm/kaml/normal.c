@@ -34,6 +34,7 @@ int find_key,miss_key;
 int max_try=0;
 
 static int collision;
+static int collision_req;
 static int _write;
 static int update;
 static int read_for_write;
@@ -53,6 +54,7 @@ uint32_t normal_create (lower_info* li,algorithm *algo){
 }
 void normal_destroy (lower_info* li, algorithm *algo){
     normal_cdf_print();
+    printf("%d (collision_req)\n",collision_req);
     printf("%d,%d(find_key,miss_key)\n%d(max_try)\n%d, %d(write,update)\n%d(collision)\n%d(read for write)\n%d(else_find_key)\n%d(collision request)",find_key,miss_key,max_try,_write,update,collision,read_for_write,else_find_key,total);
     return;
 }
@@ -150,7 +152,7 @@ uint32_t normal_set(request *const req){
     }else{
         switch (params->finding){
             case 3:
-                collision++;        //change ppa
+                //collision++;        //change ppa
             case 0:
                 my_req->type=DATAR;
                 pftl_read(my_req);
@@ -186,6 +188,7 @@ void *normal_end_req(hash_req* input){
     request *res=input->parents;
     normal_params *params;
     params=(normal_params*)res->params;
+    int temp_cnt=0;
     if (res->type==FS_GET_T){
         KEYT temp_key;
         //printf("%d,%d(len, length)\n",res->value->len,res->value->length);
@@ -198,6 +201,7 @@ void *normal_end_req(hash_req* input){
                 total++;
             }
             free(input);
+	    temp_cnt=params->cnt;
             free(params);
         }else{
             params->temp=1;
@@ -239,7 +243,13 @@ void *normal_end_req(hash_req* input){
         if(max_try<params->cnt)
             max_try=params->cnt;
         free(input);
+	temp_cnt=params->cnt;
         free(params);
+    }
+    if(temp_cnt>1){
+    	//collision+=temp_cnt;
+	collision_req++;
+	collision+=temp_cnt-1;
     }
     res->end_req(res);
     return NULL;

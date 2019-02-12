@@ -102,7 +102,6 @@ uint32_t pftl_write(hash_req *const req) {
 
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 	my_req->parents = NULL;
-	params->parents = req;
 	my_req->end_req = pftl_end_req;
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
@@ -120,6 +119,7 @@ uint32_t pftl_write(hash_req *const req) {
 
 		is_full = false;
 	}
+	params->parents = req;
 
 	ppa = front(&ppa_queue);
 	bool dequeue_res = dequeue(&ppa_queue);
@@ -159,22 +159,25 @@ uint32_t pftl_remove(hash_req *const req) {
 void *pftl_end_req(algo_req* input) {
 	algo_params *params = (algo_params*)input->params;
 //	request *res = input->parents;
-	hash_req *res = params->parents;
 	value_set* value;
 	
 	switch(input->type){
 		case DATAR: 
-		case DATAW:
+		case DATAW: {
+			hash_req *res = params->parents;
 			res->end_req(res);
 			free(params);
 			break;
-		case GCDR: 
+		}
+		case GCDR: {
 			gc_target_cnt++;
 			break;
-		case GCDW: 
+		}
+		case GCDW: {
 			value = params->value;
 			inf_free_valueset(value, FS_MALLOC_W);
 			break;
+		}
 	}
 	free(input);
 	

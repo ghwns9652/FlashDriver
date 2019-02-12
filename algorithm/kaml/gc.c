@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "gc.h"
+#include "normal.h"
 
 extern struct algorithm algo_kaml;
 extern int OOB[_NOP];
@@ -26,8 +27,6 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 		bit_compare = garbage_table[i/8];
 
 		if (bit_compare & (1 << (i % 8))) {  // 1: invalid
-//			printf("[AT GC] invalid ppa: %d\n", i);
-//			printf("[AT GC] bitmap: %d\n", bit_compare);
 			invalid_cnt++; 
 			if(invalid_cnt == _PPS) {	// all page is invalid
 
@@ -58,8 +57,10 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			
 			//GCDW
 			my_req = (algo_req *)malloc(sizeof(algo_req));
+			algo_params *params = (algo_params *)malloc(sizeof(algo_params));
 			my_req->type = GCDW;
 			my_req->end_req = pftl_end_req;
+			my_req->params = (void*)params;
 			
 			value_w = inf_get_valueset(value_r->value, FS_MALLOC_W, PAGESIZE);
 
