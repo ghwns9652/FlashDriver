@@ -2,7 +2,7 @@ export CC=g++
 
 TARGET_INF=interface
 TARGET_LOWER=posix
-TARGET_ALGO=seul
+TARGET_ALGO=kaml
 
 PPWD=$(pwd)
 

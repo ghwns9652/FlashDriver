@@ -11,7 +11,7 @@
 #define LOWERTYPE 10
 
 extern MeasureTime mt;
-extern struct algorithm __normal; 
+extern struct algorithm algo_kaml; 
 /*
 struct algorithm algo_pftl = {
 	.create = pftl_create,
@@ -79,8 +79,8 @@ uint32_t ppa = 0;
 static int reserv_ppa_start = (_NOP - _PPS);
 int erase_seg_num;
 
-uint32_t pftl_read(request *const req) {
-	bench_algo_start(req);
+uint32_t pftl_read(hash_req *const req) {
+	bench_algo_start(req->parents);
 	pftl_params* params = (pftl_params*)malloc(sizeof(pftl_params));
 	params->test = -1;
 
@@ -91,12 +91,12 @@ uint32_t pftl_read(request *const req) {
 	my_req->type = DATAR;
 	my_req->ppa = mapping_table[req->hash_key];
 
-	bench_algo_end(req);
-	__normal.li->read(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
+	bench_algo_end(req->parents);
+	algo_kaml.li->read(my_req->ppa, PAGESIZE, req->parents->value, req->parents->isAsync, my_req);
 	return 1;
 }
-uint32_t pftl_write(request *const req) {
-	bench_algo_start(req);
+uint32_t pftl_write(hash_req *const req) {
+	bench_algo_start(req->parents);
 	pftl_params* params = (pftl_params*)malloc(sizeof(pftl_params));
 	params->test = -1;
 
@@ -105,7 +105,7 @@ uint32_t pftl_write(request *const req) {
 	my_req->end_req = pftl_end_req;
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
-	bench_algo_end(req);
+	bench_algo_end(req->parents);
 
 	if(is_full) {
 		construct_heap(&heap);		// sort(find segment number that has biggest invalid count)
@@ -146,12 +146,12 @@ uint32_t pftl_write(request *const req) {
 	}
 
 	my_req->ppa = mapping_table[req->hash_key];
-	__normal.li->write(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
+	algo_kaml.li->write(my_req->ppa, PAGESIZE, req->parents->value, req->parents->isAsync, my_req);
 
 	return 0;
 }
-uint32_t pftl_remove(request *const req) {
-	__normal.li->trim_block(req->hash_key, NULL);
+uint32_t pftl_remove(hash_req *const req) {
+	algo_kaml.li->trim_block(req->hash_key, NULL);
 //	table[req->hash_key] = -1;	//dead data -> -1, set it's dead data
 	return 1;
 }

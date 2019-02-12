@@ -18,9 +18,9 @@ typedef struct normal_cdf_struct{
 
 uint32_t pftl_create (lower_info*, algorithm *);
 void pftl_destroy (lower_info*,  algorithm *);
-uint32_t pftl_read(request *const);
-uint32_t pftl_write(request *const);
-uint32_t pftl_remove(request *const);
+uint32_t pftl_read(hash_req *const);
+uint32_t pftl_write(hash_req *const);
+uint32_t pftl_remove(hash_req *const);
 void *pftl_end_req(algo_req*);
 bool exist(uint32_t);
 #endif

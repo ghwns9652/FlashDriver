@@ -11,7 +11,7 @@
 #define LOWERTYPE 10
 
 extern MeasureTime mt;
-struct algorithm __normal={
+struct algorithm algo_kaml={
     .create=normal_create,
     .destroy=normal_destroy,
     .read=normal_get,
@@ -184,7 +184,7 @@ uint32_t normal_remove(request *const req){
     uint32_t hash_key = hashing_key(req->key.key,req->key.len) + cnt*cnt + cnt;
     hash_key %= _NOP;
 
-    __normal.li->trim_block(hash_key,NULL);
+    algo_kaml.li->trim_block(hash_key,NULL);
     return 1;
 }
 void *normal_end_req(hash_req* input){

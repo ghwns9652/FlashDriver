@@ -72,7 +72,6 @@ struct request {
 	MeasureTime latency_poll;
 	bool isstart;
 	MeasureTime latency_checker;
-    uint32_t hash_key;
 };
 
 struct algo_req{

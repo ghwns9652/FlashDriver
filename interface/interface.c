@@ -19,6 +19,7 @@
 extern struct lower_info my_posix;
 
 extern struct algorithm __normal;
+extern struct algorithm algo_kaml;
 extern struct algorithm __badblock;
 extern struct algorithm __demand;
 extern struct algorithm algo_pbase;
@@ -376,8 +377,10 @@ void inf_init(){
 	mp.algo=&algo_lsm;
 #elif defined(badblock)
 	mp.algo=&__badblock;
+#elif defined(kaml)
+	mp.algo=&algo_kaml;
 #else
-    mp.algo=&__normal;
+	mp.algo=&__normal;
 #endif
 
 	mp.li->create(mp.li);
