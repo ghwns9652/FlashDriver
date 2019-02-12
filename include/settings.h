@@ -32,8 +32,8 @@
 
 #elif defined(SLC)
 
-#define GIGAUNIT 1L
-#define TOTALSIZE ((10L)*G)
+#define GIGAUNIT 5L
+#define TOTALSIZE ((5L)*G)
 #define REALSIZE (512L*G)
 #define DEVSIZE (64L * G)
 #define PAGESIZE (8*K)
