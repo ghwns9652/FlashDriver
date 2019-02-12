@@ -1,3 +1,5 @@
+#ifndef NORMAL_H
+#define NORMAL_H
 #include "../../include/container.h"
 typedef struct normal_params{
 	int cnt;
@@ -21,3 +23,4 @@ void *normal_end_req(algo_req*);
 
 
 uint32_t hashing_key(char*,uint8_t);
+#endif

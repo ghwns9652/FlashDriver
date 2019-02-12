@@ -11,13 +11,15 @@
 #define LOWERTYPE 10
 
 extern MeasureTime mt;
+extern struct algorithm __normal; 
+/*
 struct algorithm algo_pftl = {
 	.create = pftl_create,
 	.destroy = pftl_destroy,
 	.read = pftl_read,
 	.write = pftl_write,
 	.remove = pftl_remove
-};
+};*/
 
 extern n_cdf _cdf[LOWERTYPE];
 
@@ -90,7 +92,7 @@ uint32_t pftl_read(request *const req) {
 	my_req->ppa = mapping_table[req->hash_key];
 
 	bench_algo_end(req);
-	algo_pftl.li->read(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
+	__normal.li->read(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
 	return 1;
 }
 uint32_t pftl_write(request *const req) {
@@ -144,12 +146,12 @@ uint32_t pftl_write(request *const req) {
 	}
 
 	my_req->ppa = mapping_table[req->hash_key];
-	algo_pftl.li->write(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
+	__normal.li->write(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
 
 	return 0;
 }
 uint32_t pftl_remove(request *const req) {
-	algo_pftl.li->trim_block(req->hash_key, NULL);
+	__normal.li->trim_block(req->hash_key, NULL);
 //	table[req->hash_key] = -1;	//dead data -> -1, set it's dead data
 	return 1;
 }

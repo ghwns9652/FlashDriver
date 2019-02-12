@@ -2,6 +2,7 @@
 #define PFTL_H
 
 #include "../../include/container.h"
+#include "normal.h"
 
 typedef struct pftl_params{
 	request *parents;

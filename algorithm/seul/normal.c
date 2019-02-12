@@ -6,7 +6,7 @@
 #include "sha256.h"
 #include "../../interface/interface.h"
 #include "../../bench/bench.h"
-#include "./pftl.h"
+#include "pftl.h"
 
 #define LOWERTYPE 10
 
@@ -43,12 +43,13 @@ static int total;
 void normal_cdf_print(){
 }
 uint32_t normal_create (lower_info* li,algorithm *algo){
-    algo->li=li;
-    memset(temp,'x',PAGESIZE);
-    for(int i=0; i<LOWERTYPE; i++){
-        _cdf[i].min=UINT_MAX;
-    }
-    return 1;
+//    algo->li=li;
+	pftl_create(li, algo);
+	memset(temp,'x',PAGESIZE);
+	for(int i=0; i<LOWERTYPE; i++){
+		 _cdf[i].min=UINT_MAX;
+	}
+	return 1;
 }
 void normal_destroy (lower_info* li, algorithm *algo){
     normal_cdf_print();
