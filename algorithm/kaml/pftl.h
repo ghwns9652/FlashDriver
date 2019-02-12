@@ -1,13 +1,17 @@
 #ifndef PFTL_H
 #define PFTL_H
-
 #include "../../include/container.h"
 #include "normal.h"
 
-typedef struct pftl_params{
+typedef struct pftl_params {
 	request *parents;
 	int test;
 }pftl_params;
+
+typedef struct algo_params {
+	hash_req *parents;
+	value_set *value;
+}algo_params;
 
 typedef struct normal_cdf_struct{
 	uint64_t total_micro;

@@ -81,11 +81,13 @@ int erase_seg_num;
 
 uint32_t pftl_read(hash_req *const req) {
 	bench_algo_start(req->parents);
-	pftl_params* params = (pftl_params*)malloc(sizeof(pftl_params));
-	params->test = -1;
+//	pftl_params* params = (pftl_params*)malloc(sizeof(pftl_params));
+//	params->test = -1;
+	algo_params* params = (algo_params*)malloc(sizeof(algo_params));
 
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-	my_req->parents = req;
+//	my_req->parents = req;
+	params->parents = req;
 	my_req->end_req = pftl_end_req;
 	my_req->params = (void*)params;
 	my_req->type = DATAR;
@@ -97,11 +99,13 @@ uint32_t pftl_read(hash_req *const req) {
 }
 uint32_t pftl_write(hash_req *const req) {
 	bench_algo_start(req->parents);
-	pftl_params* params = (pftl_params*)malloc(sizeof(pftl_params));
-	params->test = -1;
+//	pftl_params* params = (pftl_params*)malloc(sizeof(pftl_params));
+//	params->test = -1;
+	algo_params *params = (algo_params*)malloc(sizeof(algo_params));
 
 	algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
-	my_req->parents = req;
+//	my_req->parents = req;
+	params->parents = req;
 	my_req->end_req = pftl_end_req;
 	my_req->type = DATAW;
 	my_req->params = (void*)params;
@@ -156,8 +160,9 @@ uint32_t pftl_remove(hash_req *const req) {
 	return 1;
 }
 void *pftl_end_req(algo_req* input) {
-	pftl_params *params = (pftl_params*)input->params;
-	request *res = input->parents;
+	algo_params *params = (algo_params*)input->params;
+//	request *res = input->parents;
+	hash_req *res = params->parents;
 	value_set* value;
 	
 	switch(input->type){
@@ -170,7 +175,7 @@ void *pftl_end_req(algo_req* input) {
 			gc_target_cnt++;
 			break;
 		case GCDW: 
-			value = (value_set *)input->params;
+			value = params->value;
 			inf_free_valueset(value, FS_MALLOC_W);
 			break;
 	}

@@ -65,7 +65,7 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 
 			inf_free_valueset(value_r, FS_MALLOC_R);
 
-			my_req->params = (void *)value_w;
+			((algo_params*)(my_req->params))->value = value_w;
 			algo_kaml.li->write(reserv_ppa_start, PAGESIZE, value_w, ASYNC, my_req);
 			
 			//increase reserved ppa number
