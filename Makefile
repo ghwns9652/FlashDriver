@@ -2,7 +2,7 @@ export CC=g++
 
 TARGET_INF=interface
 TARGET_LOWER=posix
-TARGET_ALGO=kaml
+TARGET_ALGO=sftl
 
 PPWD=$(pwd)
 
@@ -15,11 +15,7 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-<<<<<<< HEAD
-			-DKVSSD\
-=======
-			-fsanitize=address\
->>>>>>> Ksw_FTL
+#			-DKVSSD\
 #			-O2\
 #			-DWRITESYNC\
 
@@ -105,12 +101,8 @@ endif
 LIBS +=\
 		-lpthread\
 		-lm\
-<<<<<<< HEAD
 		-laio\
-=======
--laio\
->>>>>>> Ksw_FTL
-#-ljemalloc\
+		-ljemalloc\
 
 all: driver
 

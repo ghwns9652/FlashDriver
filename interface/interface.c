@@ -376,7 +376,7 @@ void inf_init(){
 	mp.algo=&__demand;
 #elif defined(Lsmtree)
 	mp.algo=&algo_lsm;
-#elif defined(kaml)
+#elif defined(sftl)
 	mp.algo=&algo_pftl;
 #elif defined(badblock)
 	mp.algo=&__badblock;
