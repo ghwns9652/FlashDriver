@@ -15,7 +15,11 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
+<<<<<<< HEAD
 			-DKVSSD\
+=======
+			-fsanitize=address\
+>>>>>>> Ksw_FTL
 #			-O2\
 #			-DWRITESYNC\
 
@@ -101,7 +105,11 @@ endif
 LIBS +=\
 		-lpthread\
 		-lm\
+<<<<<<< HEAD
 		-laio\
+=======
+-laio\
+>>>>>>> Ksw_FTL
 #-ljemalloc\
 
 all: driver
