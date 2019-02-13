@@ -71,6 +71,7 @@ int erase_seg_num;
 
 uint32_t pftl_read(request *const req) {
 	bench_algo_start(req);
+	char aa[10];
 	normal_params* params = (normal_params*)malloc(sizeof(normal_params));
 //	params->test = -1;
 
@@ -80,6 +81,7 @@ uint32_t pftl_read(request *const req) {
 	my_req->params = (void*)params;
 	my_req->type = DATAR;
 	my_req->ppa = mapping_table[req->key];
+	sprintf(aa, "%d", req->key);
 
 	bench_algo_end(req);
 	algo_pftl.li->read(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
@@ -87,6 +89,7 @@ uint32_t pftl_read(request *const req) {
 }
 uint32_t pftl_write(request *const req) {
 	bench_algo_start(req);
+	char aa[10];
 	normal_params* params = (normal_params*)malloc(sizeof(normal_params));
 //	params->test = -1;
 
@@ -136,6 +139,7 @@ uint32_t pftl_write(request *const req) {
 	}
 
 	my_req->ppa = mapping_table[req->key];
+	memcpy(req->value->value,&req->key,sizeof(req->key));
 	algo_pftl.li->write(my_req->ppa, PAGESIZE, req->value, req->isAsync, my_req);
 
 	return 0;
@@ -150,8 +154,12 @@ void *pftl_end_req(algo_req* input) {
 	request *res = input->parents;
 	value_set* value;
 	
+	uint32_t check;
 	switch(input->type){
-		case DATAR: 
+		case DATAR:
+			memcpy(&check,res->value->value,sizeof(check));	
+			if(res->key!=check)
+				printf("res:%u (%u)\n",check,res->key);
 		case DATAW:
 			res->end_req(res);
 			free(params);

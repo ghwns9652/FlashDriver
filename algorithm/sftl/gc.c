@@ -26,8 +26,6 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 		bit_compare = garbage_table[i/8];
 
 		if (bit_compare & (1 << (i % 8))) {  // 1: invalid
-//			printf("[AT GC] invalid ppa: %d\n", i);
-//			printf("[AT GC] bitmap: %d\n", bit_compare);
 			invalid_cnt++; 
 			if(invalid_cnt == _PPS) {	// all page is invalid
 
@@ -40,6 +38,10 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 //			printf("[AT GC] valid ppa: %d\n", i);
 			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			value_set *value_r = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+			int t = OOB[i];
+			char aa[10];
+			char bb[10];
+			sprintf(bb, "%d", t);
 
 			mapping_table[OOB[i]] = reserv_ppa_start;	// mapping_table update
 			OOB[reserv_ppa_start] = OOB[i];			// OOB update
@@ -52,10 +54,10 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			gc_read_cnt++;
 
 			algo_pftl.li->read(i, PAGESIZE, value_r, ASYNC, my_req);
-			
+
 			//waiting for gc_read
 			gc_general_waiting();
-			
+
 			//GCDW
 			my_req = (algo_req *)malloc(sizeof(algo_req));
 			my_req->type = GCDW;
@@ -66,8 +68,10 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			inf_free_valueset(value_r, FS_MALLOC_R);
 
 			my_req->params = (void *)value_w;
+			sprintf(aa, "%d", OOB[reserv_ppa_start]);
+			strcpy(value_w->value, aa);
 			algo_pftl.li->write(reserv_ppa_start, PAGESIZE, value_w, ASYNC, my_req);
-			
+
 			//increase reserved ppa number
 			reserv_ppa_start++;
 		}
