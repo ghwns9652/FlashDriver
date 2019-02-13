@@ -2,7 +2,7 @@ export CC=g++
 
 TARGET_INF=interface
 TARGET_LOWER=posix
-TARGET_ALGO=sftl
+TARGET_ALGO=kaml
 
 PPWD=$(pwd)
 
@@ -15,7 +15,7 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-#			-DKVSSD\
+			-DKVSSD\
 #			-O2\
 #			-DWRITESYNC\
 

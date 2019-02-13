@@ -28,7 +28,6 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 		if (bit_compare & (1 << (i % 8))) {  // 1: invalid
 			invalid_cnt++; 
 			if(invalid_cnt == _PPS) {	// all page is invalid
-
 				algo_pftl.li->trim_block(start_page_num, ASYNC);  //delete all segment
 				return start_page_num; 
 			}
@@ -38,10 +37,7 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 //			printf("[AT GC] valid ppa: %d\n", i);
 			algo_req *my_req = (algo_req*)malloc(sizeof(algo_req));
 			value_set *value_r = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-			int t = OOB[i];
-			char aa[10];
-			char bb[10];
-			sprintf(bb, "%d", t);
+//			int ch = OOB[i];
 
 			mapping_table[OOB[i]] = reserv_ppa_start;	// mapping_table update
 			OOB[reserv_ppa_start] = OOB[i];			// OOB update
@@ -68,8 +64,7 @@ int garbage_collection(int reserv_ppa_start, int erase_seg_num)
 			inf_free_valueset(value_r, FS_MALLOC_R);
 
 			my_req->params = (void *)value_w;
-			sprintf(aa, "%d", OOB[reserv_ppa_start]);
-			strcpy(value_w->value, aa);
+//			memcpy(value_w->value,&ch,sizeof(value_w));
 			algo_pftl.li->write(reserv_ppa_start, PAGESIZE, value_w, ASYNC, my_req);
 
 			//increase reserved ppa number
