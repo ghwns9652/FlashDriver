@@ -63,27 +63,26 @@ void *posix_refresh(lower_info *li){
 	return NULL;
 }
 
+void *aio_destroy(lower_info *li) {
+	for(int i = 0; i < LREQ_TYPE_NUM; i++) {
+		printf("%s %lu\n", bench_lower_type(i), li->req_type_cnt[i]);
+	}
+}
+
 void *posix_destroy(lower_info *li){
 	pthread_mutex_destroy(&my_posix.lower_lock);
 	pthread_mutex_destroy(&fd_lock);
-	printf("TRIM\t%lu\n", li->req_type_cnt[0]);
-   	printf("TR\t%lu\n", li->req_type_cnt[1]);
-    	printf("TW\t%lu\n", li->req_type_cnt[2]);
-    	printf("TGCR\t%lu\n", li->req_type_cnt[3]);
-    	printf("TGCW\t%lu\n", li->req_type_cnt[4]);
-    	printf("DR\t%lu\n", li->req_type_cnt[5]);
-    	printf("DW\t%lu\n", li->req_type_cnt[6]);
-    	printf("DGCR\t%lu\n", li->req_type_cnt[7]);
-    	printf("DGCW\t%lu\n\n", li->req_type_cnt[8]);
-
-    	printf("Total Read Traffic : %lu\n", li->req_type_cnt[1]+li->req_type_cnt[3]+li->req_type_cnt[5]+li->req_type_cnt[7]);
-    	printf("Total Write Traffic: %lu\n\n", li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]);
-    	printf("Total WAF: %.2f\n\n", (float)(li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]) / li->req_type_cnt[6]);
+	aio_destroy(li);
 	close(_fd);
 	return NULL;
 }
 
+static uint8_t convert_type(uint8_t type) {
+	return (type & (0xff));
+}
+
 void *posix_push_data(uint32_t PPA, uint32_t size, value_set* value, bool async,algo_req *const req){
+	uint8_t test_type;
 	/*
 	if(PPA>6500)
 		printf("PPA : %u\n", PPA);
@@ -97,6 +96,10 @@ void *posix_push_data(uint32_t PPA, uint32_t size, value_set* value, bool async,
 		bench_lower_start(req->parents);
 	pthread_mutex_lock(&fd_lock);
 
+	test_type = convert_type(req->type);
+	if(test_type < LREQ_TYPE_NUM) {
+		my_posix.req_type_cnt[test_type]++;
+	}
 	//if(((lsm_params*)req->params)->lsm_type!=5){
 	if(lseek64(_fd,((off64_t)my_posix.SOP)*PPA,SEEK_SET)==-1){
 		printf("lseek error in write\n");
@@ -121,6 +124,7 @@ void *posix_push_data(uint32_t PPA, uint32_t size, value_set* value, bool async,
 }
 
 void *posix_pull_data(uint32_t PPA, uint32_t size, value_set* value, bool async,algo_req *const req){	
+	uint8_t test_type;
 	/*
 	if(PPA>6500)
 		printf("PPA : %u\n", PPA);
@@ -134,6 +138,12 @@ void *posix_pull_data(uint32_t PPA, uint32_t size, value_set* value, bool async,
 		bench_lower_start(req->parents);
 
 	pthread_mutex_lock(&fd_lock);
+
+	test_type = convert_type(req->type);
+	if(test_type < LREQ_TYPE_NUM) {
+		my_posix.req_type_cnt[test_type]++;
+	}
+
 	//if(((lsm_params*)req->params)->lsm_type!=4){
 	if(lseek64(_fd,((off64_t)my_posix.SOP)*PPA,SEEK_SET)==-1){
 		printf("lseek error in read\n");
@@ -164,6 +174,8 @@ void *posix_trim_block(uint32_t PPA, bool async){
 	char *temp=(char *)malloc(my_posix.SOB);
 	memset(temp,0,my_posix.SOB);
 	pthread_mutex_lock(&fd_lock);
+	my_posix.req_type_cnt[TRIM]++;
+
 	if(lseek64(_fd,((off64_t)my_posix.SOP)*PPA,SEEK_SET)==-1){
 		printf("lseek error in trim\n");
 	}

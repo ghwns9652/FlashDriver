@@ -55,7 +55,7 @@ uint32_t normal_create (lower_info* li,algorithm *algo){
 void normal_destroy (lower_info* li, algorithm *algo){
     normal_cdf_print();
     printf("%d (collision_req)\n",collision_req);
-    printf("%d,%d(find_key,miss_key)\n%d(max_try)\n%d, %d(write,update)\n%d(collision)\n%d(read for write)\n%d(else_find_key)\n%d(collision request)",find_key,miss_key,max_try,_write,update,collision,read_for_write,else_find_key,total);
+    printf("%d,%d(find_key,miss_key)\n%d(max_try)\n%d, %d(write,update)\n%d(collision)\n%d(read for write)\n%d(else_find_key)\n%d(collision request)\n",find_key,miss_key,max_try,_write,update,collision,read_for_write,else_find_key,total);
     return;
 }
 
