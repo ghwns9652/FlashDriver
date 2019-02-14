@@ -5,7 +5,6 @@
 
 #ifndef __DEMAND_H__
 #define __DEMAND_H__
-#define A 1
 
 #include <stdio.h>
 #include <stdlib.h>
