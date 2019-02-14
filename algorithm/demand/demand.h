@@ -6,7 +6,17 @@
 #ifndef __DEMAND_H__
 #define __DEMAND_H__
 
-#include "lru.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
+#include "../../include/container.h"
+#include "../../include/setting.h"
+#include "../../include/dftl_setting.h"
+
 #include "caching.h"
 
 #define DEMAND_EXIT_SUCCESS 0
@@ -17,7 +27,6 @@ struct demand_handle {
 	// CMT
 	// 
 };
-
 /* Functions */
 
 // ++ demand.c
