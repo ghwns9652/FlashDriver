@@ -73,6 +73,10 @@ void *posix_destroy(lower_info *li){
 	pthread_mutex_destroy(&my_posix.lower_lock);
 	pthread_mutex_destroy(&fd_lock);
 	aio_destroy(li);
+	printf("Total Read Traffic : %lu\n", li->req_type_cnt[1]+li->req_type_cnt[3]+li->req_type_cnt[5]+li->req_type_cnt[7]);
+	printf("Total Write Traffic: %lu\n\n", li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]);
+	printf("Total WAF: %.2f\n\n", (float)(li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]) / li->req_type_cnt[6]);
+	
 	close(_fd);
 	return NULL;
 }
