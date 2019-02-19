@@ -60,8 +60,7 @@ typedef struct cached_table{
     int32_t num_waiting;
 
 #if S_FTL
-	int32_t *head_entries;
-	int32_t head_idx;
+	struct head_node *head;
 	bool *bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
 #endif
@@ -71,12 +70,10 @@ typedef struct cached_table{
 } C_TABLE;
 
 #if S_FTL
-struct sftl_node
+struct head_node
 {
-	int32_t *head_entries;
-	int32_t head_idx;
-	bool *bitmap;
-	bool form_check;
+	int32_t head_ppa;
+	struct head_node *next;
 };
 #endif
 
@@ -178,5 +175,14 @@ void cache_show(char* dest);
 // garbage_collection.c
 int32_t tpage_GC();
 int32_t dpage_GC();
+
+#if S_FTL
+
+void head_init();
+void head_pust(struct head_node **, int32_t);
+int32_t head_pop(struct head_node **, int32_t);
+
+#endif
+
 
 #endif

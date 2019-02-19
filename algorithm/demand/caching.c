@@ -7,7 +7,7 @@ void cache_init(struct cache_mapping_table *cmt, struct t_page * t_page)
 {
 	//CMT allocation
 	cmt = (struct cache_mapping_table *)malloc(sizeof(struct cache_mapping_table));
-	cmt->cache_total_size = NUM_T_PAGE * K;
+	cmt->cache_total_size = NUM_T_PAGE * PAGESIZE;
 	cmt->cache_free_size = cache_total_size;
 	cmt->c_page = (struct t_page **)malloc(sizeof(struct t_page *) * NUM_T_PAGE);
 	
