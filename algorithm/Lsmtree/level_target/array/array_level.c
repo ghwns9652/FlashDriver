@@ -389,7 +389,7 @@ lev_iter *array_cache_get_iter(level *lev,KEYT from, KEYT to){
 
 char *array_cache_iter_nxt(lev_iter *it){
 	c_iter *iter=(c_iter*)it->iter_data;
-	if(iter->isfinish){;
+	if(iter->isfinish || (iter->temp==iter->last)){;
 		free(iter);
 		free(it);
 		return NULL;

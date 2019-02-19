@@ -5,7 +5,7 @@
 /*lsmtree structure*/
 #define FULLMAPNUM  1024
 #ifdef KVSSD
-#define KEYBITMAP 2048
+#define KEYBITMAP 1024
 #endif
 
 #define RAF 0.01
@@ -22,7 +22,7 @@
 //#define LEVELUSINGHEAP
 //#define TIERING
 
-#define LEVELCACHING 0
+#define LEVELCACHING 1
 #define CACHINGSIZE 0.05f
 //#define LEVELEMUL 
 //#define MERGECOMPACTION 4

@@ -246,7 +246,7 @@ kmem_cache_destroy(kmem_cache_t cp) {
     @cp cache pointer
     @slab slab pointer
 */
-inline void
+void
 __slab_remove(kmem_cache_t cp, kmem_slab_t slab) {
     slab->next->prev = slab->prev;
     slab->prev->next = slab->next;
@@ -275,7 +275,7 @@ __slab_remove(kmem_cache_t cp, kmem_slab_t slab) {
     @cp cache pointer
     @slab slab pointer
 */
-inline void
+void
 __slab_move_to_front(kmem_cache_t cp, kmem_slab_t slab) {
     if (cp->slabs == slab) return;
 
@@ -303,7 +303,7 @@ __slab_move_to_front(kmem_cache_t cp, kmem_slab_t slab) {
     @cp cache pointer
     @slab slab pointer
 */
-inline void
+void
 __slab_move_to_back(kmem_cache_t cp, kmem_slab_t slab) {
     if (cp->slabs_back == slab) return;
     

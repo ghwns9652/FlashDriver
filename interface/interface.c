@@ -80,7 +80,9 @@ static void assign_req(request* req){
 
 #ifdef interface_pq
 	int write_hash_res=0;
+#ifndef KVSSD
 	void *m_req=NULL;
+#endif
 #endif
 	while(!flag){
 		for(int i=0; i<THREADSIZE; i++){
@@ -426,7 +428,7 @@ static request *inf_get_req_instance(const FSTYPE type, KEYT key, char *_value, 
 			req->value=inf_get_valueset(_value,FS_SET_T,len);
 			break;
 		case FS_GET_T:
-			req->value=inf_get_valueset(_value,FS_GET_T,len);
+			req->value=inf_get_valueset(NULL,FS_GET_T,len);
 			break;
 		case FS_MSET_T:
 			break;
@@ -508,7 +510,6 @@ bool inf_make_req_special(const FSTYPE type, const KEYT key, char* value, int le
 	return true;
 }
 
-//static int end_req_num=0;
 bool inf_end_req( request * const req){
 	if(req->type==FS_RMW_T){
 		req->type=FS_SET_T;
@@ -555,6 +556,13 @@ bool inf_end_req( request * const req){
 		req->added_end_req(req);
 	}
 
+	if(req->p_req){
+		if(req->type==FS_GET_T){
+			memcpy(req->p_value,req->value->value,PAGESIZE);
+		}
+		req->p_end_req(req->seq,req->ppa,req->p_req);
+	}
+
 	if(req->type==FS_ITER_NXT_T){
 		inf_free_valueset(req->value,FS_MALLOC_R);
 	}
@@ -577,9 +585,7 @@ bool inf_end_req( request * const req){
 	}
 	req_cnt_test++;
 
-	if(req->p_req){
-		req->p_end_req(req->seq,req->ppa,req->p_req);
-	}
+
 	
 	free(req);
 	cl_release(flying);
@@ -691,6 +697,7 @@ bool inf_make_req_apps(char type, char *keys, uint8_t key_len,char *value, int s
 	req->seq=seq;
 	req->p_req=_req;
 	req->p_end_req=end_req;
+	req->p_value=value;
 	cl_grap(flying);
 #ifdef CDF
 	req->isstart=false;
@@ -719,6 +726,7 @@ bool inf_make_mreq_apps(char type, char **keys, uint8_t *key_len, char **values,
 	req->seq=seq;
 	req->p_req=_req;
 	req->p_end_req=end_req;
+	req->p_value=(char*)values;
 #ifdef CDF
 	req->isstart=false;
 	measure_init(&req->latency_checker);

@@ -15,12 +15,12 @@ DEBUGFLAGS=\
 COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
+			-D_GNU_SOURCE\
 			-DSLC\
 			-DKVSSD\
 			-Wno-unused-but-set-variable\
-			-fsanitize=address\
+#			-O2\
 #			-DWRITESYNC\
-			-O2\
 
 COMMONFLAGS+=$(DEBUGFLAGS)\
 

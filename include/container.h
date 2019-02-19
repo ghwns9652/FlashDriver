@@ -52,6 +52,7 @@ struct request {
 	bool isAsync;
 	void *p_req;
 	void (*p_end_req)(uint32_t,uint32_t,void*);
+	char *p_value;
 	void *params;
 	void *__hash_node;
 	//pthread_mutex_t async_mutex;
