@@ -178,10 +178,9 @@ int32_t dpage_GC();
 
 #if S_FTL
 
-void head_init();
-void head_pust(struct head_node **, int32_t);
-int32_t head_pop(struct head_node **, int32_t);
-
+void head_push(struct head_node **, int32_t);
+int32_t head_free(struct head_node **);
+int32_t head_find(struct head_node **, int32_t)
 #endif
 
 
