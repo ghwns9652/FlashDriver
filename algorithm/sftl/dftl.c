@@ -230,9 +230,10 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
         CMT[i].read_hit = 0;
         CMT[i].write_hit = 0;
 #if S_FTL
-	
+	CMT[i].head = NULL;	
 	CMT[i].bitmap = (bool *)malloc(sizeof(bool) * EPP);
 	CMT[i].form_check = 0;
+	memset(CMT[i].bitmap, 0, sizeof(bool) * EPP);
 #endif
 
     }
@@ -347,8 +348,9 @@ static uint32_t demand_cache_update(request *const req, char req_t) {
             lru_update(lru, c_table->queue_ptr);
         }
 #else
-	
-        lru_update(lru, c_table->queue_ptr);
+        
+	//Add SFTL components	
+	lru_update(lru, c_table->queue_ptr);
         if (c_table->state == CLEAN) {
             clean_hit_on_read++;
         } else {
