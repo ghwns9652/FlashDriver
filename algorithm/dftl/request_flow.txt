@@ -1,0 +1,65 @@
+Data read reqeust
+
+[Clean eviction]
+data read request가 들어왔는데 cache miss
+-> mapping read를 하라는 flying request를 만들고 device로 보내놓고 리턴
+(request에 params로 flying을 보낸 놈이라고 표시, params->read=1로 세팅)
+-> device에서 mapping read를 다 했으면 end_req에서 retry 큐로 넣음
+-> data read request가 다시 algorithm으로 들어옴
+-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==1이기 때문에 read flying임을 알 수 있음
+-> mapping table 업데이트 해줌
+-> mapping table에서 해당 lpa에 해당하는 ppa 룩업해서 실제 data read를 device로 보내고 리턴
+-> device에서 data read를 다 했으면 end_req 호출
+-> interface layer에서는 하나 request가 끝났으니까 다음 request를 보냄
+
+[Dirty eviction]
+data read request가 들어왔는데 cache miss
+-> mapping write를 하라는 flying request를 만들고 device로 보내놓고 리턴
+-----------------------------------------------------------------------------------------
+-> device에서 mapping write를 다 했으면 end_req에서 retry 큐로 넣음
+-> data read request가 다시 algorithm으로 들어옴
+-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==0이기 때문에 write flying임을 알 수 있음
+-> mapping read를 하라는 flying request를 만들고 deivce로 보내놓고 리턴
+-----------------------------------------------------------------------------------------
+-> device에서 mapping read를 다 했으면 end_req에서 params->read=1로 바꾸고 retry 큐로 넣음
+-> data read request가 다시 algorithm으로 들어옴
+-> req->params != NULL 이고 params->read==1이니까 read flying
+-> mapping table 업데이트 해줌
+-> mapping table에서 해당 lpa에 해당하는 ppa 룩업해서 실제 data read를 device로 보내고 리턴
+-----------------------------------------------------------------------------------------
+-> device에서 data read를 다 했으면 end_req 호출
+-> interface layer에서는 하나 request가 끝났으니까 다음 request를 보냄
+
+
+Data write request
+[Clean eviction]
+
+Write buffer 가 full 인지 확인하고, full 이라면 buffer flush
+data write request가 들어왔을때  cache miss
+--> mapping read를 하라는 read_flying reqeust를 만들고 device로  보내놓고 return
+(requestdp params로 flying을 보낸 놈이라고 표시, params->read=1로 세팅)
+--> device에서 mapping read를 다 했으면 end_req에서 retry 큐로 넣음
+--> data write request가 다시 algorithm으로 들어옴
+--> req->params != NULL, flying을 보낸놈이고, params->read == 1이기 때문에 read_flying임을 알 수 있음
+--> mapping table 업데이트 (LRU_push, Dirty setting)
+--> write buffer insert 및 mapping table entry update
+
+[Dirty eviction]
+
+Write buffer 가 full 인지 확인하고, full 이라면 buffer flush
+data write request가 들어왔을때 cache miss
+--> mapping write를 하라는 flying request를 만들고 device로 보내놓고 return
+----------------------------------------------------------------------------------
+--> device에서 mapping write를 다 했으면 end_req에서 retry 큐로 넣음
+--> data write request가 다시 algorithm으로 들어옴
+--> req->params != NULL이고, flying request이면서, params->read == 0이기 때문에 write flying임을 알 수 있음
+--> mapping read를 하라는 flying request를 만들고 device로 보내놓고 return
+----------------------------------------------------------------------------------
+--> device에서 mapping read를 다 했으면 end_req에서 params->read == 1로 바꾸고 retry큐로 넣음
+--> data write request가 다시 algorithm으로 들어옴
+--> req->params != NULL이고, params->read == 1 이니까 read flying임을 알 수 있음
+--> mapping table update 업데이트 (LRU_push, Dirty setting)
+--> Write buffer insert 및 mapping table entry update
+
+
+

@@ -1,14 +1,26 @@
+CC = g++
+
+CFLAGS_ALGO +=\
+
 SRCS +=\
-	   tc.c\
+	   dftl.c\
+	   garbage_collection.c\
+	   dftl_utils.c\
+	   lru_list.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\
+
+OBJS+=skiplist.o
 
 TARGETOBJ:=\
 	$(addprefix ../../object/,$(OBJS))\
 
 LEAK: all
 all: $(TARGETOBJ) 
+
+../../object/skiplist.o: ../Lsmtree/skiplist.c
+	$(CC) $(CFLAGS_ALGO) -c $< -o $@
 
 libnom.a : $(TARGETOBJ)
 	$(AR) r $(@) $(TARGETOBJ)

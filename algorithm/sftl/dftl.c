@@ -55,6 +55,10 @@ int32_t num_clean; // # of clean translation page on cache
 int32_t max_clean_cache;
 int32_t max_dirty_cache;
 #endif
+#if S_FTL
+int32_t total_cache_size;
+int32_t free_cache_size;
+#endif
 
 /* GC variables */
 Block *t_reserved; // pointer of reserved block for translation gc
@@ -145,6 +149,10 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
 
     /* Cache control & Init */
+	#if S_FTL
+	total_cache_size = max_cache_entry * K;
+	free_cache_size = total_cache_size;
+	#endif
 	//num_max_cache = max_cache_entry; // max cache
     //num_max_cache = 1; // 1 cache
 	//num_max_cache = max_cache_entry / 4; // 1/4 cache
@@ -221,6 +229,13 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
         CMT[i].num_waiting = 0;
         CMT[i].read_hit = 0;
         CMT[i].write_hit = 0;
+#if S_FTL
+	CMT[i].head_entries = (int32_t *)malloc(sizeof(int32_t) * EPP);
+	CMT[i].head_idx = 0;
+	CMT[i].bitmap = (bool *)malloc(sizeof(bool) * EPP);
+	CMT[i].form_check = 0;
+#endif
+
     }
 
     for (int i = 0; i < max_cache_entry; i++) {
