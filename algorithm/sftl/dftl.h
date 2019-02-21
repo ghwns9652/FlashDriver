@@ -38,6 +38,10 @@
 #define CLEAN 0
 #define DIRTY 1
 
+#if S_FTL
+#define BITMAP_SIZE (EPP / 8) //Bitmap_size for SFTL
+#define ENTRY_SIZE 4
+#endif
 
 
 // Page table data structure
@@ -61,8 +65,10 @@ typedef struct cached_table{
 
 #if S_FTL
 	struct head_node *head;
+	int32_t b_form_size;
 	bool *bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
+
 #endif
 	uint32_t read_hit;
 	uint32_t write_hit;
@@ -178,9 +184,14 @@ int32_t dpage_GC();
 
 #if S_FTL
 
+//For head_entries management
 void head_push(struct head_node **, int32_t);
 int32_t head_free(struct head_node **);
 int32_t head_find(struct head_node **, int32_t)
+//For bitmap management
+int32_t bitmap_set(int32_t);
+int32_t bitmap_free(int32_t);
+
 #endif
 
 
