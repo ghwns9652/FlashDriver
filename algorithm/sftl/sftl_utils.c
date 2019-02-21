@@ -66,7 +66,6 @@ int32_t bitmap_set(int32_t lpa)
 
 	head_push(&c_table->head,head_ppa);
 	c_table->bitmap[0] = 1;
-	bitmap_form_size += ENTRY_SIZE;
 
 	for(int i = 1 ; i < EPP; i++)
 	{
@@ -81,10 +80,10 @@ int32_t bitmap_set(int32_t lpa)
 			head_push(&c_table->head,head_ppa);
 			c_table->bitmap[i] = 1;
 			idx = 1;
-			bitmap_form_size += ENTRY_SIZE;
 		}	
 	}
-	bitmap_form_size += BITMAP_SIZE;
+
+	bitmap_form_size = bitmap_size(lpa);
 	//Bitmap_form_size(Byte) return 
 	return bitmap_form_size;
 }
@@ -106,7 +105,21 @@ int32_t bitmap_free(int32_t lpa)
 	}
 	return 1;
 }
+int32_t bitmap_size(int32_t lpa)
+{
+	C_TABLE *c_table = &CMT[D_IDX];
+	int32_t bitmap_form_size = 0;
+	for(int i = 0 ; i < EPP; i++)
+	{
+		if(c_table->bitmap[i])
+		{
+			bitmap_form_size += ENTRY_SIZE;
+		}
+	}
+	bitmap_form_size += BITMAP_SIZE;
 
+	return bitmap_form_size;
+}
 int32_t get_mapping(int32_t lpa)
 {
 	C_TABLE *c_table = &CMT[D_IDX];
@@ -137,3 +150,32 @@ int32_t get_mapping(int32_t lpa)
 
 }
 
+int32_t cache_mapping_size(void)
+{
+	int32_t idx = max_cache_entry;
+	int32_t cache_size = 0;
+	C_TABLE *c_table = NULL;
+	D_TABLE *p_table = NULL;
+	for(int i = 0; i < idx; i++)
+	{
+		c_table = &CMT[i];
+		p_table = c_table->p_table;
+		if(p_table)
+		{
+			//This is bitmap_form
+			if(c_table->form_check)
+			{
+				cache_size += bitmap_size(i);
+			}
+			//This is In-flash form
+			else
+			{
+				cache_size += PAGESIZE;
+			}
+		}
+	}
+
+	return cache_size;
+
+
+}
