@@ -107,3 +107,33 @@ int32_t bitmap_free(int32_t lpa)
 	return 1;
 }
 
+int32_t get_mapping(int32_t lpa)
+{
+	C_TABLE *c_table = &CMT[D_IDX];
+	int32_t cnt = 0;
+	int32_t head_lpn = -1;
+	int32_t head_ppn = -1;
+	int32_t offset = 0;
+	int32_t ppa;
+
+	for(int i = P_IDX; i >= 0; i--)
+	{
+		if(c_table->bitmap[i])
+		{
+			if(head_lpn == -1)
+			{
+				head_lpn = i;
+			}
+			cnt++;
+		}
+	}
+
+	offset = idx - head_lpn;
+	if(offset < 0) -offset;
+	head_ppn = head_find(&c_table->head,cnt);
+	ppa = head_ppn + offset;
+	return ppa;
+
+
+}
+
