@@ -233,6 +233,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].head = NULL;	
 	CMT[i].bitmap = (bool *)malloc(sizeof(bool) * EPP);
 	CMT[i].form_check = 0;
+	CMT[i].b_form_size = 0;
 	memset(CMT[i].bitmap, 0, sizeof(bool) * EPP);
 #endif
 
@@ -347,9 +348,7 @@ static uint32_t demand_cache_update(request *const req, char req_t) {
         if (c_table->queue_tpr) {
             lru_update(lru, c_table->queue_ptr);
         }
-#else
-        
-	//Add SFTL components	
+#else 
 	lru_update(lru, c_table->queue_ptr);
         if (c_table->state == CLEAN) {
             clean_hit_on_read++;
@@ -705,7 +704,7 @@ static uint32_t __demand_set(request *const req){
     snode *temp;
     sk_iter *iter;
 #endif
-	static bool is_flush = false;
+    static bool is_flush = false;
 
     bench_algo_start(req);
 
@@ -762,8 +761,8 @@ static uint32_t __demand_set(request *const req){
     lpa = req->key;
     c_table = &CMT[D_IDX];
     p_table = c_table->p_table;
-
     if (req->params == NULL) {
+	//cache hit
         if (p_table) {
             cache_hit_on_write++;
             demand_cache_update(req, 'W');
