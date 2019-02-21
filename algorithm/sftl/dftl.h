@@ -191,6 +191,8 @@ int32_t head_find(struct head_node **, int32_t)
 //For bitmap management
 int32_t bitmap_set(int32_t);
 int32_t bitmap_free(int32_t);
+//To get ppa
+int32_t get_mapping(int32_t);
 
 #endif
 
