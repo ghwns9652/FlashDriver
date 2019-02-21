@@ -430,7 +430,7 @@ uint32_t lsm_set(request * const req){
 	if(LSM.memtable->size==LSM.KEYNUM)
 		return 1;
 	else*/
-		return 0;
+	return 0;
 }
 int nor;
 MeasureTime lsm_mt;
@@ -520,7 +520,7 @@ algo_req* lsm_get_req_factory(request *parents, uint8_t type){
 	lsm_req->type=type;
 	return lsm_req;
 }
-inline algo_req *lsm_get_empty_algoreq(request *parents){
+algo_req *lsm_get_empty_algoreq(request *parents){
 	algo_req *res=(algo_req *)calloc(sizeof(algo_req),1);
 	res->parents=parents;
 	return res;
@@ -542,7 +542,7 @@ int __lsm_get_sub(request *req,run_t *entry, keyset *table,skiplist *list){
 			memcpy(req->value->value,target_node->value->value,PAGESIZE);
 			bench_algo_end(req);
 			if(req->type==FS_MGET_T){
-				lsm_mget_end_req(lsm_get_empty_algoreq(req));						
+				lsm_mget_end_req(lsm_get_empty_algoreq(req));
 			}
 			else{
 				req->end_req(req);

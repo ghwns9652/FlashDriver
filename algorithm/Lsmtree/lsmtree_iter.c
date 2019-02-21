@@ -176,7 +176,7 @@ void lsm_iter_shot_readreq(run_t *r,request *req, int level, int idx){
 void lsm_iter_read_header(lsm_iter *iter, lsmtree_iter_req_param *req_param, request *req,bool ismore){
 	KEYT *end=(KEYT*)malloc(sizeof(KEYT));
 	kvssd_cpy_key(end,&req->key);
-	end->key[end->len-1]+=1;
+	end->key[end->len-2]+=1;
 	iter->last_key=end;
 
 	char *target_data;

@@ -1,7 +1,7 @@
 export CC=gcc
 
 TARGET_INF=interface
-TARGET_LOWER=linux_aio
+TARGET_LOWER=posix_memory
 TARGET_ALGO=Lsmtree
 
 PPWD=$(pwd)
@@ -19,11 +19,7 @@ COMMONFLAGS=\
 			-DSLC\
 			-DKVSSD\
 			-Wno-unused-but-set-variable\
-<<<<<<< HEAD
 #			-O2\
-=======
-			-O2\
->>>>>>> 8ce49412765d23a8d2c8b00260631fe1ec69d0bf
 #			-DWRITESYNC\
 
 COMMONFLAGS+=$(DEBUGFLAGS)\
