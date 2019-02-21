@@ -428,8 +428,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     req->params = (void *)checker;
 
     if (req_t == 'R') {
-		cache_miss_on_read++;
-
+	cache_miss_on_read++;
         req->type_ftl += 2;
 #if C_CACHE
         if (num_clean == max_clean_cache) {

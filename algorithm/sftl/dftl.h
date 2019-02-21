@@ -41,6 +41,8 @@
 #if S_FTL
 #define BITMAP_SIZE (EPP / 8) //Bitmap_size for SFTL
 #define ENTRY_SIZE 4
+
+
 #endif
 
 
@@ -191,8 +193,12 @@ int32_t head_find(struct head_node **, int32_t)
 //For bitmap management
 int32_t bitmap_set(int32_t);
 int32_t bitmap_free(int32_t);
+int32_t bitmap_size(int32_t);
 //To get ppa
 int32_t get_mapping(int32_t);
+
+//Memory size calculation
+int32_t cache_mapping_size(void);
 
 #endif
 
