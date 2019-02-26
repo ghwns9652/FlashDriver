@@ -18,7 +18,7 @@
 #endif
 #include "../blockmanager/BM.h"
 #include "lru_list.h"
-
+#define A 1
 #define TYPE uint8_t
 #define DATA_R DATAR
 #define DATA_W DATAW
