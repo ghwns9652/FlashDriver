@@ -53,7 +53,7 @@ int32_t head_find(struct head_node **head, int32_t cnt)
         return ppa;
 }
 
-int32_t bitmap_set(int32_t lpa)
+int32_t sftl_bitmap_set(int32_t lpa)
 {
 	C_TABLE *c_table = &CMT[D_IDX];
 	D_TABLE *p_table = c_table->p_table;
@@ -83,19 +83,20 @@ int32_t bitmap_set(int32_t lpa)
 		}	
 	}
 
-	bitmap_form_size = bitmap_size(lpa);
+	bitmap_form_size = sftl_bitmap_size(lpa);
 	//Bitmap_form_size(Byte) return 
 	return bitmap_form_size;
 }
 
-int32_t bitmap_free(int32_t lpa)
+int32_t sftl_bitmap_free(C_TABLE *evic_ptr)
 {
-	C_TABLE *c_table = &CMT[D_IDX];
+	C_TABLE *c_table = evic_ptr;
 	
 	if(head_free(&c_table->head))
 	{
 		printf("Success bitmap initialization!\n");
 		memset(c_table->bitmap,0,sizeof(bool)*EPP); //Bitmap free
+		c_table->form_check = 0;
 		c_table->b_form_size = 0;
 	}
 	else
@@ -105,7 +106,7 @@ int32_t bitmap_free(int32_t lpa)
 	}
 	return 1;
 }
-int32_t bitmap_size(int32_t lpa)
+int32_t sftl_bitmap_size(int32_t lpa)
 {
 	C_TABLE *c_table = &CMT[D_IDX];
 	int32_t bitmap_form_size = 0;
@@ -123,6 +124,7 @@ int32_t bitmap_size(int32_t lpa)
 int32_t get_mapped_ppa(int32_t lpa)
 {
 	C_TABLE *c_table = &CMT[D_IDX];
+	int32_t idx = lpa % EPP;
 	int32_t cnt = 0;
 	int32_t head_lpn = -1;
 	int32_t head_ppn = -1;
@@ -141,8 +143,8 @@ int32_t get_mapped_ppa(int32_t lpa)
 		}
 	}
 
-	offset = idx - head_lpn;
-	if(offset < 0) -offset;
+	offset = abs(idx - head_lpn);
+	printf("offset = %d\n",offset);
 	head_ppn = head_find(&c_table->head,cnt);
 	ppa = head_ppn + offset;
 	return ppa;
@@ -164,7 +166,7 @@ int32_t cache_mapping_size(void)
 			//This is bitmap_form
 			if(c_table->form_check)
 			{
-				cache_size += bitmap_size(i);
+				cache_size += sftl_bitmap_size(i);
 			}
 			//This is In-flash form
 			else

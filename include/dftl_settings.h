@@ -5,7 +5,7 @@
 #define C_CACHE 0
 
 // sftl flag
-#define S_FTL 0 
+#define S_FTL 1 
 
 // memcpy op gc flag
 #define MEMCPY_ON_GC 0

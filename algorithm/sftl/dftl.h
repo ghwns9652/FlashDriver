@@ -7,6 +7,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <math.h>
 #include "../../interface/interface.h"
 #include "../../interface/queue.h"
 #include "../../include/container.h"
@@ -40,8 +41,6 @@
 #if S_FTL
 #define BITMAP_SIZE (EPP / 8) //Bitmap_size for SFTL
 #define ENTRY_SIZE 4
-#define CHECK_SIZE PAGESIZE * 0.8
-
 #endif
 
 
@@ -189,11 +188,11 @@ int32_t dpage_GC();
 //For head_entries management
 void head_push(struct head_node **, int32_t);
 int32_t head_free(struct head_node **);
-int32_t head_find(struct head_node **, int32_t)
+int32_t head_find(struct head_node **, int32_t);
 //For bitmap management
-int32_t bitmap_set(int32_t);
-int32_t bitmap_free(int32_t);
-int32_t bitmap_size(int32_t);
+int32_t sftl_bitmap_set(int32_t);
+int32_t sftl_bitmap_free(C_TABLE *);
+int32_t sftl_bitmap_size(int32_t);
 //To get ppa
 int32_t get_mapped_ppa(int32_t);
 
