@@ -1,28 +1,27 @@
-#ifndef __LRU_H__
-#define __LRU_H__
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+/*
+ * LRU module Header File
+ */
 
-struct __node{
-	void *data;           //translation page pointer (Page unit) for DFTL, SFTL
-	struct __node *next;
-	struct __node *prev;
-}NODE;
+#ifndef __DEMAND_LRU_H__
+#define __DEMAND_LRU_H__
 
+struct lru_node {
+	void *data;
+	struct lru_node *next;
+	struct lru_node *prev;
+};
 
-typedef struct __lru{
+struct lru_list {
 	int size;
-	NODE *head;
-	NODE *tail;
-}LRU;
+	struct lru_node *head;
+	struct lru_node *tail;
+};
 
-void lru_init(LRU**);
-void lru_free(LRU*);
-NODE* lru_push(LRU*, void*);
-void* lru_pop(LRU*);
-void lru_update(LRU*, NODE*);
-void lru_delete(LRU*, NODE*);
+int lru_init(struct lru_list **);
+int lru_free(struct lru_list *);
+struct lru_node *lru_push(struct lru_list *, void *);
+void *lru_pop(struct lru_list *);
+int lru_update(struct lru_list *, struct lru_node *);
 
 #endif

@@ -1,92 +1,90 @@
-#include "lru_list.h"
 
-void lru_init(LRU** lru){
-	*lru = (LRU*)malloc(sizeof(LRU));
-	(*lru)->size=0;
-	(*lru)->head = (*lru)->tail = NULL;
-}
+/*
+ * LRU module implementation
+ */
 
-void lru_free(LRU* lru){
-	while(lru_pop(lru)){}
-	free(lru);
-}
+#include "lru.h"
+#include <stdlib.h>
 
-NODE* lru_push(LRU* lru, void* table_ptr){
-	NODE *now = (NODE*)malloc(sizeof(NODE));
-	now->DATA = table_ptr;
-	now->next = now->prev = NULL;
-	if(lru->size == 0){
-		lru->head = lru->tail = now;
+int lru_init(struct lru_list **list_ptr) {
+	struct lru_list *list = (struct lru_list *)malloc(sizeof(struct lru_list));
+	if (!list) {
+		return 1;
 	}
-	else{
-		lru->head->prev = now;
-		now->next = lru->head;
-		lru->head = now;
-	}
-	lru->size++;
-	return now;
+
+	list->size = 0;
+	list->head = NULL;
+	list->tail = NULL;
+
+	*list_ptr = list;
+
+	return 0;
 }
 
-void* lru_pop(LRU* lru){
-	if(!lru->head || lru->size == 0){
+int lru_free(struct lru_list *list) {
+	while (lru_pop(list)) { /* Until empty */ }
+	free(list);
+
+	return 0;
+}
+
+struct lru_node *lru_push(struct lru_list *list, void *data) {
+	struct lru_node *node = (struct lru_node *)malloc(sizeof(struct lru_node));
+	if (!node) {
 		return NULL;
 	}
-	NODE *now = lru->tail;
-	void *re = now->DATA;
-	lru->tail = now->prev;
-	if(lru->tail != NULL){
-		lru->tail->next = NULL;
+
+	node->data = data;
+	node->next = NULL;
+	node->prev = NULL;
+
+	if (!list->head) { // Case of initial push
+		list->head = node;
+		list->tail = node;
+	} else { // Common case
+		list->head->prev = node;
+		node->next = list->head;
+		list->head = node;
 	}
-	else{
-		lru->head = NULL;
-	}
-	lru->size--;
-	free(now);
-	return re;
+	++list->size;
+
+	return node;
 }
 
-void lru_update(LRU* lru, NODE* now){
-	if(now == NULL){
-		return ;
+void *lru_pop(struct lru_list *list) {
+	void *data;
+	struct lru_node *victim = list->tail;
+
+	if (!victim) { // Case of empty
+		return NULL;
 	}
-	if(now == lru->head){
-		return ;
+
+	if (!victim->prev) { // Case of alone
+		list->head = NULL;
+		list->tail = NULL;
+	} else { // Common case
+		list->tail = victim->prev;
+		list->tail->next = NULL;
 	}
-	if(now == lru->tail){
-		lru->tail = now->prev;
-		lru->tail->next = NULL;
-	}
-	else{
-		now->prev->next = now->next;
-		now->next->prev = now->prev;
-	}
-	now->prev = NULL;
-	lru->head->prev = now;
-	now->next = lru->head;
-	lru->head = now;
+
+	data = victim->data;
+	free(victim);
+
+	--list->size;
+
+	return data;
 }
 
-void lru_delete(LRU* lru, NODE* now){
-	if(now == NULL){
-		return ;
-	}
-	if(now == lru->head){
-		lru->head = now->next;
-		if(lru->head != NULL){
-			lru->head->prev = NULL;
-		}
-		else{
-			lru->tail = NULL;
-		}
-	}
-	else if(now == lru->tail){
-		lru->tail = now->prev;
-		lru->tail->next = NULL;
-	}
-	else{
-		now->prev->next = now->next;
-		now->next->prev = now->prev;
-	}	
-	lru->size--;
-	free(now);
+int lru_update(struct lru_list *list, struct lru_node *node) {
+
+	if (node->prev) node->prev->next = node->next;
+	if (node->next) node->next->prev = node->prev;
+
+	if (list->head) list->head->prev = node;
+	node->next = list->head;
+	node->prev = NULL;
+	list->head = node;
+
+	return 0;
 }
+
