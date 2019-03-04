@@ -120,7 +120,7 @@ int32_t bitmap_size(int32_t lpa)
 
 	return bitmap_form_size;
 }
-int32_t get_mapping(int32_t lpa)
+int32_t get_mapped_ppa(int32_t lpa)
 {
 	C_TABLE *c_table = &CMT[D_IDX];
 	int32_t cnt = 0;
@@ -146,7 +146,6 @@ int32_t get_mapping(int32_t lpa)
 	head_ppn = head_find(&c_table->head,cnt);
 	ppa = head_ppn + offset;
 	return ppa;
-
 
 }
 

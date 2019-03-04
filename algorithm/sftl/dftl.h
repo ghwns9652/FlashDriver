@@ -18,7 +18,6 @@
 #endif
 #include "../blockmanager/BM.h"
 #include "lru_list.h"
-#define A 1
 #define TYPE uint8_t
 #define DATA_R DATAR
 #define DATA_W DATAW
@@ -41,7 +40,7 @@
 #if S_FTL
 #define BITMAP_SIZE (EPP / 8) //Bitmap_size for SFTL
 #define ENTRY_SIZE 4
-
+#define CHECK_SIZE PAGESIZE * 0.8
 
 #endif
 
@@ -70,6 +69,7 @@ typedef struct cached_table{
 	int32_t b_form_size;
 	bool *bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
+	bool stick;
 
 #endif
 	uint32_t read_hit;
@@ -195,7 +195,7 @@ int32_t bitmap_set(int32_t);
 int32_t bitmap_free(int32_t);
 int32_t bitmap_size(int32_t);
 //To get ppa
-int32_t get_mapping(int32_t);
+int32_t get_mapped_ppa(int32_t);
 
 //Memory size calculation
 int32_t cache_mapping_size(void);

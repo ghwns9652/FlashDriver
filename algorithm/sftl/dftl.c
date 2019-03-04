@@ -58,6 +58,7 @@ int32_t max_dirty_cache;
 #if S_FTL
 int32_t total_cache_size;
 int32_t free_cache_size;
+int32_t check_size;
 #endif
 
 /* GC variables */
@@ -152,6 +153,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 #if S_FTL
 	total_cache_size = max_cache_entry * PAGESIZE;
 	free_cache_size = total_cache_size;
+	check_size = PAGESIZE * 0.8;
 #endif
 	//num_max_cache = max_cache_entry; // max cache
     //num_max_cache = 1; // 1 cache
@@ -234,6 +236,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].bitmap = (bool *)malloc(sizeof(bool) * EPP);
 	CMT[i].form_check = 0;
 	CMT[i].b_form_size = 0;
+	CMT[i].stic = 0;
 	memset(CMT[i].bitmap, 0, sizeof(bool) * EPP);
 #endif
 
@@ -387,6 +390,9 @@ static uint32_t demand_cache_update(request *const req, char req_t) {
             dirty_hit_on_write++;
         }
         lru_update(lru, c_table->queue_ptr);
+#if S_FTL
+	
+#endif
 #endif
     }
 
@@ -437,7 +443,8 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
             if(d_flag) req->type_ftl += 1;
             if(gc_flag) req->type_ftl += 2;
         }
-#else
+
+#else	
         if (num_caching + num_flying == num_max_cache) {
             req->type_ftl += 1;
             if (demand_eviction(req, 'R', &gc_flag, &d_flag) == 0) {
@@ -637,7 +644,18 @@ static uint32_t __demand_get(request *const req){
 
     if (req->params == NULL) {
         if (p_table) { // Cache hit
-            ppa = p_table[P_IDX].ppa;
+#if S_FTL
+	    //Bitmap form
+	    if(c_table->form_check){
+	    	ppa = get_mapped_ppa(lpa);
+	    }
+	    else{
+            	ppa = p_table[P_IDX].ppa;
+            }
+#else
+	    ppa = p_table[P_IDX].ppa;
+#endif
+	    
             if (ppa == -1) {
                 bench_algo_end(req);
                 return UINT32_MAX;
@@ -679,7 +697,17 @@ static uint32_t __demand_get(request *const req){
 
     /* Get actual data from device */
     p_table = c_table->p_table;
+#if S_FTL
+    if(c_table->form_check){
+	    ppa = get_mapped_ppa(lpa);
+    }
+    else{
+	    ppa = p_table[P_IDX].ppa;
+    }
+#else
     ppa = p_table[P_IDX].ppa;
+#endif
+
     if (ppa == -1) {
         bench_algo_end(req);
         return UINT32_MAX;
@@ -693,7 +721,7 @@ static uint32_t __demand_get(request *const req){
 
 static uint32_t __demand_set(request *const req){
     /* !!! you need to print error message and exit program, when you set more valid
-       data than number of data page !!! */
+    data than number of data page !!! */
     int32_t lpa; // Logical data page address
     int32_t ppa; // Physical data page address
     C_TABLE *c_table; // Cache mapping entry pointer
@@ -809,6 +837,19 @@ static uint32_t __demand_set(request *const req){
         BM_ValidatePage(bm, ppa);
         demand_OOB[ppa].lpa = lpa;
     }
+#if S_FTL
+    int b_check_size = bitmap_set(lpa);
+    if(b_check_size > check_size){
+	c_table->form_check = 0;
+	c_table->b_form_size = PAGESIZE;
+	free_cache_size -= c_table->b_form_size;
+    }
+    else{
+	c_table->form_check = 1;
+	c_table->b_form_size = b_check_size;
+	free_cache_size -= c_table->b_form_size;
+    }
+#endif
     req->value = NULL; // moved to 'value' field of snode
     bench_algo_end(req);
     req->end_req(req);
