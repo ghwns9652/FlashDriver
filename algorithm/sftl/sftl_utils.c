@@ -57,12 +57,14 @@ int32_t sftl_bitmap_set(int32_t lpa)
 {
 	C_TABLE *c_table = &CMT[D_IDX];
 	D_TABLE *p_table = c_table->p_table;
-	
+
 	//Push first_ppa in p_table
 	int32_t head_ppa = p_table[0].ppa;
 	int32_t idx = 1;
 	//For bitmap_form_size
 	int32_t bitmap_form_size = 0;
+
+	if(&(c_table->head) != NULL) return 0;
 
 	head_push(&c_table->head,head_ppa);
 	c_table->bitmap[0] = 1;
@@ -91,20 +93,14 @@ int32_t sftl_bitmap_set(int32_t lpa)
 int32_t sftl_bitmap_free(C_TABLE *evic_ptr)
 {
 	C_TABLE *c_table = evic_ptr;
+	head_free(&c_table->head);
+	memset(c_table->bitmap,0,sizeof(bool)*EPP); //Bitmap free
+	c_table->form_check = 0;
+	c_table->b_form_size = 0;
+	if((&c_table->head) != NULL) return 0;
 	
-	if(head_free(&c_table->head))
-	{
-		printf("Success bitmap initialization!\n");
-		memset(c_table->bitmap,0,sizeof(bool)*EPP); //Bitmap free
-		c_table->form_check = 0;
-		c_table->b_form_size = 0;
-	}
-	else
-	{
-		printf("Fail bitmap initialization!\n");
-		return 0;
-	}
 	return 1;
+	
 }
 int32_t sftl_bitmap_size(int32_t lpa)
 {

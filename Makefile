@@ -101,10 +101,10 @@ endif
 LIBS +=\
 		-lpthread\
 		-lm\
-		-laio\
+#		-laio\
 -ljemalloc\
 
-all: range_driver
+all: driver
 
 DEBUG: debug_driver
 
