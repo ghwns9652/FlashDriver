@@ -68,6 +68,7 @@ typedef struct cached_table{
 	int32_t b_form_size;
 	bool *bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
+	bool first_head_check;
 	bool stick;
 
 #endif
@@ -186,12 +187,18 @@ int32_t dpage_GC();
 #if S_FTL
 
 //For head_entries management
+int32_t head_init(struct head_node **, int32_t);
 void head_push(struct head_node **, int32_t);
+int32_t head_tail_push(struct head_node **, int32_t);
 int32_t head_free(struct head_node **);
 int32_t head_find(struct head_node **, int32_t);
+
+
 //For bitmap management
+
 int32_t sftl_bitmap_set(int32_t);
 int32_t sftl_bitmap_free(C_TABLE *);
+struct head_node* sftl_list_find(C_TABLE *, int32_t);
 int32_t sftl_bitmap_size(int32_t);
 //To get ppa
 int32_t get_mapped_ppa(int32_t);

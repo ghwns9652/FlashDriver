@@ -128,6 +128,8 @@ static void print_algo_log() {
      
 	printf(" | Total cache entries:    %d\n", max_cache_entry);
 	printf(" | Total cache size   :    %d\n", total_cache_size);
+	printf(" | Check cache size   :    %d\n", check_size);
+	printf(" | Free  chace size   :    %d\n", free_cache_size);
 #if C_CACHE
 	printf(" |  -Clean Cache entries:  %d\n", num_max_cache);
 	printf(" |  -Dirty Cache entries:  %d\n", max_clean_cache);
@@ -158,7 +160,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     /* Cache control & Init */
 #if S_FTL
 	total_cache_size = max_cache_entry * PAGESIZE;
-	free_cache_size = total_cache_size;
+	free_cache_size = total_cache_size * 0.5;
 	check_size = PAGESIZE * 0.8;
 #endif
 	//num_max_cache = max_cache_entry; // max cache
@@ -244,6 +246,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].bitmap = (bool *)malloc(sizeof(bool) * EPP);
 	CMT[i].form_check = 0;
 	CMT[i].b_form_size = 0;
+	CMT[i].first_head_check = 0;
 	CMT[i].stick = 0;
 	memset(CMT[i].bitmap, 0, sizeof(bool) * EPP);
 #endif
@@ -451,7 +454,6 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 
         return 1;
     }
-
     // Case of initial state (t_ppa == -1)
     // Read(get) method never enter here
     c_table->p_table   = mem_arr[D_IDX].mem_p;
@@ -797,17 +799,26 @@ static uint32_t __demand_set(request *const req){
         demand_OOB[ppa].lpa = lpa;
     }
     
-    b_check_size = sftl_bitmap_set(lpa);
+    sftl_bitmap_set(lpa);
+    int b_form_size = sftl_bitmap_size(lpa);
+
     free_cache_size += c_table->b_form_size;
-    if(b_check_size > check_size){
-	    c_table->b_form_size = PAGESIZE;
+
+    if(b_form_size > check_size)
+    {
 	    c_table->form_check = 0;
+	    c_table->b_form_size = PAGESIZE;
+	    
     }
-    else{
-	    c_table->b_form_size = b_check_size;
+    else
+    {
 	    c_table->form_check = 1;
+	    c_table->b_form_size = b_form_size;
     }
+
     free_cache_size -= c_table->b_form_size;
+
+
 
     req->value = NULL; // moved to 'value' field of snode
     bench_algo_end(req);
@@ -1069,7 +1080,7 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     C_TABLE   *c_table;         // Cache mapping pointer for mapping
     algo_req  *temp_req;        // pseudo request pointer
     value_set *dummy_vs;
-
+    printf("demand_eviction!!!!\n");
 
 #if S_FTL
     bool dirty_flag = 0;
