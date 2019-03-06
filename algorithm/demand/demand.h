@@ -9,11 +9,24 @@
 #include "../../include/container.h"
 #include "../../include/setting.h"
 
-#define DEMAND_EXIT_SUCCESS 0
-#define DEMAND_EXIT_FAILURE 1
+#define DEMAND_EXIT_DATAR    0
+#define DEMAND_EXIT_DATAW    1
+#define DEMAND_EXIT_MAPPINGR 2
+#define DEMAND_EXIT_MAPPINGW 3
+#define DEMAND_EXIT_NOTFOUND 4
+#define DEMAND_EXIT_WBHIT    5
+#define DEMAND_EXIT_WBFLUSH  6
+// Reserve DATAW + WBFLUSH   7 (1+6)
+
 
 /* Structures */
+struct demand_handler {
 
+};
+
+struct demand_env {
+
+};
 
 /* Functions */
 
@@ -35,7 +48,7 @@ int __demand_remove(request *const);
 
 // ++ gc.c
 int data_gc();
-int trans_gc();
+int trns_gc();
 // -- gc.c
 
 #endif

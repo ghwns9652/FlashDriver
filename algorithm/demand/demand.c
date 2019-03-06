@@ -7,7 +7,7 @@
 
 #if defined(COARSE_GRAINED)
 #include "./cache/cg_cache/cache.h"
-#elif deinfed(FINE_GRIAINED)
+#elif deinfed(FINE_GRAINED)
 #include "./cache/fg_cache/cache.h"
 #elif defined(S_FTL)
 #include "./cache/s_cache/cache.h"
@@ -23,22 +23,25 @@ algorithm algo_demand = {
     .read    = demand_read,
     .write   = demand_write,
     .remove  = demand_remove
-}
-
-extern struct cache_module *cache;
+};
 
 uint32_t demand_create(lower_info *li, algorithm *algo) {
-	int rc = __demand_create(li, algo, cache);
+	int rc = __demand_create(li, algo);
 	return 0;
 }
 
 void demand_destroy(lower_info *li, algorithm *algo) {
-	int rc = __demand_destroy(li, algo, cache);
+	int rc = __demand_destroy(li, algo);
 	return 0;
 }
 
 uint32_t demand_read(request *const req) {
 	int rc = __demand_read(req);
+
+	switch (rc) {
+
+	}
+
 	return 0;
 }
 

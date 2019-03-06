@@ -5,7 +5,8 @@ CFLAGS_ALGO +=\
 SRCS +=\
 	   demand.c\
 	   demand_internal.c\
-	   caching.c\
+	   cache.c\
+	   block.c\
 	   gc.c\
 	   lru.c
 
