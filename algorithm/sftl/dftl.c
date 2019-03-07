@@ -809,7 +809,7 @@ static uint32_t __demand_set(request *const req){
     sftl_bitmap_set(lpa);
     int b_form_size = sftl_bitmap_size(lpa);
 
-    printf("b_form_size = %d\n",b_form_size);
+    //printf("b_form_size = %d\n",b_form_size);
     free_cache_size += c_table->b_form_size;
    
     if(b_form_size > check_size)
@@ -1115,6 +1115,7 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     while((cache_ptr = (C_TABLE *)q_dequeue(sftl_q)))
     {
 	    //p_table   = cache_ptr->p_table;
+	    printf("1232\n");
 	    t_ppa     = cache_ptr->t_ppa;
 	    sftl_bitmap_free(cache_ptr);
 

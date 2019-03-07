@@ -91,15 +91,10 @@ int32_t head_list_set(int32_t lpa)
 	D_TABLE *p_table = c_table->p_table;
 	
 	//If request is first, return 0;
-	
-
 	int32_t head_ppa = p_table[0].ppa;
-	c_table->bitmap[0] = 1;
-	head_init(&c_table->head, head_ppa);
-
-
-	for(int i = 1 ; i < EPP; i++){
-		if(p_table[i].ppa == (head_ppa + idx++)){
+	int32_t idx = 1;
+	for(int i = 0 ; i < EPP; i++){
+		if(p_table[i].ppa == head_ppa + idx++){
 			c_table->bitmap[i] = 0;
 		}else{
 			head_ppa = p_table[i].ppa;
@@ -141,7 +136,6 @@ int32_t sftl_bitmap_set(int32_t lpa)
 	//If First head not exists, Make first head entry
 	if(!c_table->first_head_check){
 		c_table->first_head_check = 1;
-		c_table->bitmap[0] = 1;
 		head_init(&c_table->head, p_table[0].ppa);
 	}
 	//If offset is last, push head_ppa in list_tail
@@ -160,12 +154,13 @@ int32_t sftl_bitmap_set(int32_t lpa)
 
 		if(p_table[offset + idx].ppa != head_ppa + idx)
 		{
-			c->table->bitmap[offset+idx] = 1;
+			c_table->bitmap[offset+idx] = 1;
 			head_push(tmp, p_table[offset+idx].ppa);	
 		}
 	}
 	else
 	{
+		c_table->bitmap[offset] = 1;
 		head_push(tmp,head_ppa);
 		if(c_table->bitmap[offset+idx] == 1)
 			return 1;
