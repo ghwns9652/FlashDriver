@@ -160,7 +160,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     /* Cache control & Init */
 #if S_FTL
 	total_cache_size = max_cache_entry * PAGESIZE;
-	free_cache_size = total_cache_size * 0.5;
+	free_cache_size = PAGESIZE * 256;
 	check_size = PAGESIZE * 0.8;
 #endif
 	//num_max_cache = max_cache_entry; // max cache
@@ -245,7 +245,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].head = NULL;	
 	CMT[i].bitmap = (bool *)malloc(sizeof(bool) * EPP);
 	CMT[i].form_check = 0;
-	CMT[i].b_form_size = 0;
+	CMT[i].b_form_size = BITMAP_SIZE;
 	CMT[i].first_head_check = 0;
 	CMT[i].stick = 0;
 	memset(CMT[i].bitmap, 0, sizeof(bool) * EPP);
@@ -325,13 +325,17 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     printf("WAF: %.2f\n\n", (float)(data_r+dirty_evict_on_write)/data_r);
 
-    printf("\ntotal_cache_size : %d\n",total_cache_size);
+    int32_t cache_size = cache_mapping_size();
+    printf("\ncache_mapping_size : %d\n",cache_size);
+    
 
+    
     //printf("\nnum caching: %d\n", num_caching);
     //printf("num_flying: %d\n\n", num_flying);
 
     /* Clear modules */
     q_free(dftl_q);
+    q_free(sftl_q);
     BM_Free(bm);
 
     lru_free(lru);
@@ -537,12 +541,15 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
     }
 
     c_table->p_table = mem_arr[D_IDX].mem_p;
-    
-    b_check_size = sftl_bitmap_set(lpa);
+
+    head_list_set(lpa); 
+    b_check_size = sftl_bitmap_size(lpa);
     if(b_check_size > check_size){
-	    c_table->b_form_size = PAGESIZE;
+	c_table->form_check = 0;
+	c_table->b_form_size = PAGESIZE;	
     }else{
-	    c_table->b_form_size = b_check_size;
+	c_table->form_check = 1;
+	c_table->b_form_size = b_check_size;
     }
 
     free_cache_size -= c_table->b_form_size;
@@ -802,22 +809,19 @@ static uint32_t __demand_set(request *const req){
     sftl_bitmap_set(lpa);
     int b_form_size = sftl_bitmap_size(lpa);
 
+    printf("b_form_size = %d\n",b_form_size);
     free_cache_size += c_table->b_form_size;
-
+   
     if(b_form_size > check_size)
     {
-	    c_table->form_check = 0;
-	    c_table->b_form_size = PAGESIZE;
-	    
+	    c_table->b_form_size = PAGESIZE; 
     }
     else
     {
-	    c_table->form_check = 1;
 	    c_table->b_form_size = b_form_size;
     }
 
     free_cache_size -= c_table->b_form_size;
-
 
 
     req->value = NULL; // moved to 'value' field of snode
@@ -1087,8 +1091,8 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     lpa = req->key; 
     c_table = &CMT[D_IDX];
     b_check_size = c_table->b_form_size;
-    printf("free_cache_size : %d\n", free_cache_size);
-    printf("CMT[%d].b_form_size : %d\n",D_IDX, c_table->b_form_size);
+//    printf("free_cache_size     : %d\n", free_cache_size);
+//    printf("CMT[%d].b_form_size : %d\n",D_IDX, c_table->b_form_size);
 #endif
  
 

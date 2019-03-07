@@ -56,6 +56,11 @@ int32_t max_clean_cache;
 int32_t max_dirty_cache;
 #endif
 
+#if TP_FTL
+int32_t total_cache_size;
+int32_t free_cache_size;
+#endif
+
 /* GC variables */
 Block *t_reserved; // pointer of reserved block for translation gc
 Block *d_reserved; // pointer of reserved block for data gc
@@ -221,6 +226,11 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
         CMT[i].num_waiting = 0;
         CMT[i].read_hit = 0;
         CMT[i].write_hit = 0;
+
+	//Init for TPFTL
+	CMT[i].entry_cnt = 0;
+	lru_init(&(CMT[i]->entry_lru));
+
     }
 
     for (int i = 0; i < max_cache_entry; i++) {
@@ -325,45 +335,14 @@ static uint32_t demand_cache_update(request *const req, char req_t) {
     int32_t t_ppa = c_table->t_ppa;
 
     if (req_t == 'R') {
-#if C_CACHE
-        if (c_table->clean_ptr) {
-            lru_update(c_lru, c_table->clean_ptr);
-        }
-        if (c_table->queue_tpr) {
-            lru_update(lru, c_table->queue_ptr);
-        }
-#else
         lru_update(lru, c_table->queue_ptr);
         if (c_table->state == CLEAN) {
             clean_hit_on_read++;
         } else {
             dirty_hit_on_read++;
         }
-#endif
     } else {
-#if C_CACHE
-        if (c_table->state == CLEAN) { // Clean hit
-            c_table->state = DIRTY;
-            BM_InvalidatePage(bm, t_ppa);
-
-            // this page is dirty after hit, but still lies on clean lru
-            lru_update(c_lru, c_table->clean_ptr);
-
-            // migrate(copy) the lru element
-            if (num_caching == num_max_cache) {
-                demand_eviction(req, 'W', &gc_flag, &d_flag);
-            }
-            c_table->queue_ptr = lru_push(lru, (void *)c_table);
-            num_caching++;
-
-        } else { // Dirty hit
-            if (c_table->clean_ptr) {
-                lru_update(c_lru, c_table->clean_ptr);
-            }
-            lru_update(lru, c_table->queue_ptr);
-        }
-#else
-        if (c_table->state == CLEAN) {
+       if (c_table->state == CLEAN) {
             c_table->state = DIRTY;
             BM_InvalidatePage(bm, t_ppa);
             clean_hit_on_write++;
@@ -371,7 +350,6 @@ static uint32_t demand_cache_update(request *const req, char req_t) {
             dirty_hit_on_write++;
         }
         lru_update(lru, c_table->queue_ptr);
-#endif
     }
 
     return 0;
@@ -412,17 +390,8 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     req->params = (void *)checker;
 
     if (req_t == 'R') {
-		cache_miss_on_read++;
-
-        req->type_ftl += 2;
-#if C_CACHE
-        if (num_clean == max_clean_cache) {
-            req->type_ftl += 1;
-            demand_eviction(req, 'R', &gc_flag, &d_flag);
-            if(d_flag) req->type_ftl += 1;
-            if(gc_flag) req->type_ftl += 2;
-        }
-#else
+	    cache_miss_on_read++;
+	    req->type_ftl += 2;
         if (num_caching + num_flying == num_max_cache) {
             req->type_ftl += 1;
             if (demand_eviction(req, 'R', &gc_flag, &d_flag) == 0) {
@@ -435,10 +404,8 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
             }
             if(gc_flag) req->type_ftl += 2;
         }
-#endif
-    } else {
-		cache_miss_on_write++;
-
+    } else {	
+    	cache_miss_on_write++;
         if (num_caching + num_flying == num_max_cache) {
             if (demand_eviction(req, 'W', &gc_flag, &d_flag) == 0) {
                 c_table->flying = true;
@@ -552,11 +519,7 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
     num_caching++;
 
     if (req_t == 'R') {
-#if C_CACHE
-        c_table->clean_ptr = lru_push(c_lru, (void *)c_table);
-#else
-        c_table->queue_ptr = lru_push(lru, (void*)c_table);
-#endif
+       c_table->queue_ptr = lru_push(lru, (void*)c_table);
     } else {
         c_table->queue_ptr = lru_push(lru, (void*)c_table);
         c_table->state     = DIRTY;

@@ -192,7 +192,7 @@ void head_push(struct head_node **, int32_t);
 int32_t head_tail_push(struct head_node **, int32_t);
 int32_t head_free(struct head_node **);
 int32_t head_find(struct head_node **, int32_t);
-
+int32_t head_list_set(int32_t);
 
 //For bitmap management
 
@@ -204,7 +204,7 @@ int32_t sftl_bitmap_size(int32_t);
 int32_t get_mapped_ppa(int32_t);
 
 //Memory size calculation
-int32_t cache_mapping_size(void);
+int32_t cache_mapping_size();
 
 #endif
 

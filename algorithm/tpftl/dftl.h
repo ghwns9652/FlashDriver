@@ -56,10 +56,18 @@ typedef struct cached_table{
     bool flying;
     request **flying_arr;
     int32_t num_waiting;
+    uint32_t read_hit;
+    uint32_t write_hit;
 
-	uint32_t read_hit;
-	uint32_t write_hit;
+    int32_t entry_cnt;   // Count variable for eviction optimization
+    LRU *entry_lru;      // Entry LRU pointer for TPFTL
 } C_TABLE;
+
+struct entry_node{
+	int16_t lpa; 
+	int32_t ppa;
+	int8_t  cnt;
+};
 
 // OOB data structure
 typedef struct demand_OOB{
