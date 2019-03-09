@@ -9,7 +9,7 @@ algorithm __demand = {
     .write   = demand_set,
     .remove  = demand_remove
 };
-
+#define AAA 1
 /* Modules */
 LRU *lru;        // LRU list
 queue *dftl_q;   // Retry queue for algorithm(dftl) layer
