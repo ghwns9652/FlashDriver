@@ -101,11 +101,14 @@ typedef struct demand_params{
     value_set *value;
     dl_sync dftl_mutex;
     TYPE type;
+    KEYT seq;
 } demand_params;
 
 typedef struct read_params{
     int32_t t_ppa;
     uint8_t read;
+    int32_t m_w_cnt;
+    int32_t m_w_max;
 } read_params;
 
 typedef struct mem_table{

@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix_memory
+TARGET_LOWER=posix
 TARGET_ALGO=sftl
 
 PPWD=$(pwd)

@@ -9,7 +9,6 @@ algorithm __demand = {
     .write   = demand_set,
     .remove  = demand_remove
 };
-#define AAA 1
 /* Modules */
 LRU *lru;        // LRU list
 queue *dftl_q;   // Retry queue for algorithm(dftl) layer
@@ -412,6 +411,8 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     checker = (read_params *)malloc(sizeof(read_params));
     checker->read = 0;
     checker->t_ppa = t_ppa;
+    checker->m_w_cnt = 0;
+    checker->m_w_max = 0;
     req->params = (void *)checker;
 
     if (req_t == 'R') {
@@ -1084,6 +1085,7 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     C_TABLE   *c_table;         // Cache mapping pointer for mapping
     algo_req  *temp_req;        // pseudo request pointer
     value_set *dummy_vs;
+    read_params *res = (read_params *)req->params;
     printf("demand_eviction!!!!\n");
 
 #if S_FTL
@@ -1106,7 +1108,6 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     {
 	    evict_count++;
 	    cache_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
-	    if(cache_ptr->state == DIRTY) req->m_w_max++;
 	    free_cache_size += cache_ptr->b_form_size;
 	    q_enqueue((void *)cache_ptr, sftl_q);
 	    
@@ -1115,13 +1116,13 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     while((cache_ptr = (C_TABLE *)q_dequeue(sftl_q)))
     {
 	    //p_table   = cache_ptr->p_table;
-	    printf("1232\n");
 	    t_ppa     = cache_ptr->t_ppa;
 	    sftl_bitmap_free(cache_ptr);
 
 	    if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
 		    dirty_flag = 1;
 		    dirty_eviction++;
+		    res->m_w_max++;
 		    if (req_t == 'W') {
 			    dirty_evict_on_write++;
 		    } else {
@@ -1180,6 +1181,8 @@ void *demand_end_req(algo_req* input){
     value_set *temp_v = params->value;
     request *res = input->parents;
 
+    int32_t m_w_cnt;
+    int32_t m_w_max;
     switch(params->type){
         case DATA_R:
             data_r++; trig_data_r++;
@@ -1212,8 +1215,10 @@ void *demand_end_req(algo_req* input){
             break;
         case MAPPING_W:
 	    trans_w++;
-	    res->m_w_cnt++;
-	    if(res->m_w_cnt == res->m_w_max)
+	    m_w_cnt = ((read_params*)res->params)->m_w_cnt;
+	    m_w_max = ((read_params*)res->params)->m_w_max;
+	    m_w_cnt++;
+	    if(m_w_cnt == m_w_max)
 	    {
 		    if(!inf_assign_try(res)) {
 			    puts("not queued 2");
@@ -1221,6 +1226,8 @@ void *demand_end_req(algo_req* input){
 		    }
 		    res->m_w_cnt = res->m_w_max = 0;
 		    inf_free_valueset(temp_v, FS_MALLOC_W);
+		    ((read_params*)res->params)->m_w_cnt = 0;
+		    ((read_params*)res->params)->m_w_max = 0;
 	    }
 #if EVICT_POLL
             pthread_mutex_unlock(&params->dftl_mutex);
