@@ -242,12 +242,13 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     
     puts("");
+/*
     for (int i = 0; i < max_cache_entry; i++) {
         if (CMT[i].read_hit || CMT[i].write_hit) {
             printf("CMT[%d]: read(%u) / write(%u)\n", i, CMT[i].read_hit, CMT[i].write_hit);
         }
     }
-
+*/
 
     /* Print information */
     printf("# of gc: %d\n", tgc_count + dgc_count);
@@ -298,6 +299,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
     printf("\nnum caching: %d\n", num_caching);
     printf("num_flying: %d\n\n", num_flying);
 
+    printf("max_cache_entry = %d\n",max_cache_entry);
     /* Clear modules */
     q_free(dftl_q);
     BM_Free(bm);

@@ -1,15 +1,17 @@
 #include "dftl.h"
 
 
-int32_t head_init(struct head_node **head, int32_t ppa)
+int32_t head_init(C_TABLE *c_table, int32_t ppa)
 {
+	struct head_node **head = &c_table->head;
+	struct head_node **tail = &c_table->tail;
         struct head_node *now;
 	if((*head) == NULL)
 	{
 		now = (struct head_node *)malloc(sizeof(struct head_node));
 		now->head_ppa = ppa;
 		now->next = NULL;
-                *head = now;
+                *head = *tail = now;
 		return 1;
         }
 
@@ -29,10 +31,11 @@ void head_push(struct head_node *find_node, int32_t ppa)
 
 }
 
-int32_t head_tail_push(struct head_node **head, int32_t ppa)
+int32_t head_tail_push(C_TABLE *c_table, int32_t ppa)
 {
+	struct head_node **head = &c_table->head;
+	struct head_node **tail = &c_table->tail;
 	struct head_node *now;
-	struct head_node *tail;
 	
 	now = (struct head_node *)malloc(sizeof(struct head_node));
 	now->head_ppa = ppa;
@@ -40,22 +43,22 @@ int32_t head_tail_push(struct head_node **head, int32_t ppa)
 
 
 	if(*head == NULL){
-		*head = now;	
+		*head = *tail = now;
 		return 0;	
 	}
 	else{
-		tail = *head;
-		while(tail->next != NULL)
-			tail = tail->next;
-		tail->next = now;
+		(*tail)->next = now;
+		*tail = now;
 	}
 
 	return 1;
 
 }
 
-int32_t head_free(struct head_node **head)
+int32_t head_free(C_TABLE *evic_ptr)
 {
+	struct head_node **head = &evic_ptr->head;
+	struct head_node **tail = &evic_ptr->tail;
         struct head_node *p_node = NULL;
         if(*head == NULL)
                 return 0;
@@ -66,6 +69,7 @@ int32_t head_free(struct head_node **head)
                 (*head) = (*head)->next;
                 free(p_node);
         }
+	*tail = NULL;
 
         return 1;
 
@@ -83,7 +87,7 @@ int32_t head_find(struct head_node **head, int32_t cnt)
         return ppa;
 }
 
-int32_t head_list_set(int32_t lpa)
+int32_t head_bit_set(int32_t lpa)
 {
 	struct head_node *now;
 	struct head_node *tmp;
@@ -91,27 +95,40 @@ int32_t head_list_set(int32_t lpa)
 	D_TABLE *p_table = c_table->p_table;
 	
 	int32_t head_ppa = p_table[0].ppa;
-	int32_t idx = 1;
-	
-	for(int i = 0 ; i < EPP; i++){
+	int32_t idx = 1;	
+	int32_t b_form_size;
+	int32_t cnt = 0;
+	c_table->bitmap[0] = 1;
+	c_table->bit_cnt++;
+	for(int i = 1 ; i < EPP; i++){
 		if(p_table[i].ppa == head_ppa + idx++){
 			c_table->bitmap[i] = 0;
 		}else{
 			head_ppa = p_table[i].ppa;
 			c_table->bitmap[i] = 1;
 			idx = 1;
+			cnt++;
 		}
 	}
+	c_table->bit_cnt = cnt;
+	b_form_size = c_table->bit_cnt*ENTRY_SIZE + BITMAP_SIZE;
 
+	return b_form_size;
+
+
+	
+}
+int32_t head_list_set(int32_t lpa){
+	C_TABLE *c_table = &CMT[D_IDX];
+	D_TABLE *p_table = c_table->p_table;
+	int32_t head_ppa;
 	for(int i = 0 ; i < EPP; i++){
 		if(c_table->bitmap[i] == 1){
 			head_ppa = p_table[i].ppa;
-			head_tail_push(&c_table->head, head_ppa);	
+			head_tail_push(c_table, head_ppa);	
 		}
 	}
-	return 1;
 }
-
 struct head_node* sftl_list_find(C_TABLE *c_table, int32_t offset)
 {
 	struct head_node *now = c_table->head;
@@ -137,14 +154,14 @@ int32_t sftl_bitmap_set(int32_t lpa)
 	int32_t idx = 1;
 
 
-	tmp = sftl_list_find(c_table, offset);
 	//If mapping table access is first, Only update head_entry
 	if(c_table->first_check){
 		c_table->first_check = 0;
-		tmp->head_ppa = head_ppa;
+		c_table->head->head_ppa = head_ppa;
 		return 0;
 	}
 
+	tmp = sftl_list_find(c_table, offset);
 	if(c_table->bitmap[offset] == 1){
 		if(offset == EPP-1){
 			tmp->head_ppa = head_ppa;
@@ -156,6 +173,7 @@ int32_t sftl_bitmap_set(int32_t lpa)
 			
 			if(next_ppa != head_ppa + idx){
 				c_table->bitmap[offset+idx] = 1;
+				c_table->bit_cnt++;
 				head_push(tmp,next_ppa);
 			}
 		}		
@@ -167,18 +185,21 @@ int32_t sftl_bitmap_set(int32_t lpa)
 		if(offset == EPP-1){
 			if(head_ppa != pre_ppa + idx){
 				c_table->bitmap[offset] = 1;
+				c_table->bit_cnt++;
 				head_push(tmp, head_ppa);
 			}
 		}else{
 			next_ppa = p_table[offset+idx].ppa;
 			if(head_ppa != pre_ppa + idx){
-				c_table->bitmap[offset] = 1;
+				c_table->bitmap[offset] = 1;	
+				c_table->bit_cnt++;
 				head_push(tmp, head_ppa);
 			}
 			if(next_ppa == -1) return -1;
 			
 			if(next_ppa != head_ppa + idx){
 				c_table->bitmap[offset+idx] = 1;
+				c_table->bit_cnt++;
 				tmp = tmp->next;
 				head_push(tmp, next_ppa);
 			}
@@ -192,11 +213,9 @@ int32_t sftl_bitmap_set(int32_t lpa)
 int32_t sftl_bitmap_free(C_TABLE *evic_ptr)
 {
 	C_TABLE *c_table = evic_ptr;
-	head_free(&c_table->head);
-	memset(c_table->bitmap,0,sizeof(bool) * EPP);
+	head_free(evic_ptr);
 	c_table->form_check = 0;
 	c_table->b_form_size = 0;
-	c_table->first_check = 0;
 	return 1;
 	
 }
@@ -217,28 +236,22 @@ int32_t sftl_bitmap_size(int32_t lpa)
 int32_t get_mapped_ppa(int32_t lpa)
 {
 	C_TABLE *c_table = &CMT[D_IDX];
-	int32_t idx = lpa % EPP;
-	int32_t cnt = 0;
+	struct head_node *now = c_table->head;
+	int32_t offset = P_IDX;
 	int32_t head_lpn = -1;
 	int32_t head_ppn = -1;
-	int32_t offset = 0;
+	int32_t idx;
 	int32_t ppa;
-
-	for(int i = P_IDX; i >= 0; i--)
-	{
-		if(c_table->bitmap[i])
-		{
+	for(int i = offset ; i > 0 ; i--){
+		if(c_table->bitmap[i] == 1){
+			now = now->next;
 			if(head_lpn == -1)
-			{
 				head_lpn = i;
-			}
-			cnt++;
 		}
 	}
-
-	offset = abs(idx - head_lpn);
-	head_ppn = head_find(&c_table->head,cnt-1);
-	ppa = head_ppn + offset;
+	idx = abs(head_lpn - offset);
+	head_ppn = now->head_ppa;
+	ppa = head_ppn + idx;
 	return ppa;
 
 }

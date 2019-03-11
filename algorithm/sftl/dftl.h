@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 #include <unistd.h>
 #include <math.h>
 #include "../../interface/interface.h"
@@ -65,13 +66,13 @@ typedef struct cached_table{
 
 #if S_FTL
 	struct head_node *head;
+	struct head_node *tail;
 	int32_t b_form_size;
+	int32_t bit_cnt;
 	bool *bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
 	bool first_check;  //First == 0  , Not First == 1
 	bool stick;
-	bool c_flag;
-
 #endif
 	uint32_t read_hit;
 	uint32_t write_hit;
@@ -161,6 +162,11 @@ extern int32_t tgc_count;
 extern int32_t dgc_count;
 extern int32_t read_tgc_count;
 extern int32_t tgc_w_dgc_count;
+
+extern int32_t total_cache_size;
+extern int32_t free_cache_size;
+extern int32_t check_size;
+
 /* extern variables */
 
 // dftl.c
@@ -192,15 +198,13 @@ int32_t dpage_GC();
 #if S_FTL
 
 //For head_entries management
-int32_t head_init(struct head_node **, int32_t);
+int32_t head_init(C_TABLE *, int32_t);
 void head_push(struct head_node **, int32_t);
-int32_t head_tail_push(struct head_node **, int32_t);
-int32_t head_free(struct head_node **);
-int32_t head_find(struct head_node **, int32_t);
+int32_t head_tail_push(C_TABLE *, int32_t);
+int32_t head_free(C_TABLE *);
+int32_t head_bit_set(int32_t);
 int32_t head_list_set(int32_t);
-
 //For bitmap management
-
 int32_t sftl_bitmap_set(int32_t);
 int32_t sftl_bitmap_free(C_TABLE *);
 struct head_node* sftl_list_find(C_TABLE *, int32_t);
