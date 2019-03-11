@@ -54,11 +54,6 @@ struct request {
 	pthread_mutex_t async_mutex;
 
 	//For SFTL
-	int m_s_cnt;
-	int m_s_max;
-	int m_w_cnt;
-	int m_w_max;
-
 	int mark;
 
 /*s:for application req*/

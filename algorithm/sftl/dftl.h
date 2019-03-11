@@ -68,8 +68,9 @@ typedef struct cached_table{
 	int32_t b_form_size;
 	bool *bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
-	bool first_head_check;
+	bool first_check;  //First == 0  , Not First == 1
 	bool stick;
+	bool c_flag;
 
 #endif
 	uint32_t read_hit;
@@ -169,6 +170,7 @@ uint32_t demand_get(request *const);
 uint32_t demand_set(request *const);
 uint32_t demand_remove(request *const);
 uint32_t demand_eviction(request *const, char, bool *, bool *);
+uint32_t demand_hit_eviction(request *const, char, bool *, bool *);
 void    *demand_end_req(algo_req*);
 
 // dftl_utils.c

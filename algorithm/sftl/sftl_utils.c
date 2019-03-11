@@ -90,9 +90,9 @@ int32_t head_list_set(int32_t lpa)
 	C_TABLE *c_table = &CMT[D_IDX];
 	D_TABLE *p_table = c_table->p_table;
 	
-	//If request is first, return 0;
 	int32_t head_ppa = p_table[0].ppa;
 	int32_t idx = 1;
+	
 	for(int i = 0 ; i < EPP; i++){
 		if(p_table[i].ppa == head_ppa + idx++){
 			c_table->bitmap[i] = 0;
@@ -132,50 +132,60 @@ int32_t sftl_bitmap_set(int32_t lpa)
 	struct head_node *tmp;
 	int32_t offset = P_IDX;
 	int32_t head_ppa = p_table[offset].ppa;
+	int32_t next_ppa;
+	int32_t pre_ppa;
 	int32_t idx = 1;
-	//If First head not exists, Make first head entry
-	if(!c_table->first_head_check){
-		c_table->first_head_check = 1;
-		head_init(&c_table->head, p_table[0].ppa);
-	}
-	//If offset is last, push head_ppa in list_tail
-	if(offset == EPP-1){
-		c_table->bitmap[offset] = 1;
-		head_tail_push(&c_table->head, head_ppa);
-		return 1;
-	}
-	
+
+
 	tmp = sftl_list_find(c_table, offset);
-	//Check overwrite
-	if(c_table->bitmap[offset] == 1){
+	//If mapping table access is first, Only update head_entry
+	if(c_table->first_check){
+		c_table->first_check = 0;
 		tmp->head_ppa = head_ppa;
-		if(c_table->bitmap[offset+idx] == 1)
-			return 1;
-
-		if(p_table[offset + idx].ppa != head_ppa + idx)
-		{
-			c_table->bitmap[offset+idx] = 1;
-			head_push(tmp, p_table[offset+idx].ppa);	
-		}
-	}
-	else
-	{
-		c_table->bitmap[offset] = 1;
-		head_push(tmp,head_ppa);
-		if(c_table->bitmap[offset+idx] == 1)
-			return 1;
-		if(p_table[offset+idx].ppa != head_ppa + idx)
-		{
-			c_table->bitmap[offset+idx] = 1;
-			tmp = tmp->next;
-			head_push(tmp, p_table[offset+idx].ppa);
-		}
-
+		return 0;
 	}
 
-	return 0;
-
-
+	if(c_table->bitmap[offset] == 1){
+		if(offset == EPP-1){
+			tmp->head_ppa = head_ppa;
+			return 1;
+		}else{
+			tmp->head_ppa = head_ppa;
+			next_ppa = p_table[offset+idx].ppa;
+			if(next_ppa == -1) return -1;
+			
+			if(next_ppa != head_ppa + idx){
+				c_table->bitmap[offset+idx] = 1;
+				head_push(tmp,next_ppa);
+			}
+		}		
+	}
+	//bitmap[offset] == 0
+	//First offset never enter here
+	else{
+		pre_ppa = p_table[offset-idx].ppa;
+		if(offset == EPP-1){
+			if(head_ppa != pre_ppa + idx){
+				c_table->bitmap[offset] = 1;
+				head_push(tmp, head_ppa);
+			}
+		}else{
+			next_ppa = p_table[offset+idx].ppa;
+			if(head_ppa != pre_ppa + idx){
+				c_table->bitmap[offset] = 1;
+				head_push(tmp, head_ppa);
+			}
+			if(next_ppa == -1) return -1;
+			
+			if(next_ppa != head_ppa + idx){
+				c_table->bitmap[offset+idx] = 1;
+				tmp = tmp->next;
+				head_push(tmp, next_ppa);
+			}
+			
+		}
+	}
+	return head_ppa;		
 
 }
 
@@ -186,7 +196,7 @@ int32_t sftl_bitmap_free(C_TABLE *evic_ptr)
 	memset(c_table->bitmap,0,sizeof(bool) * EPP);
 	c_table->form_check = 0;
 	c_table->b_form_size = 0;
-	c_table->first_head_check = 0;
+	c_table->first_check = 0;
 	return 1;
 	
 }
