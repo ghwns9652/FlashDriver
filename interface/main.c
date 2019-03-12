@@ -40,8 +40,8 @@ int main(int argc,char* argv[]){
 
 	bench_add(SEQSET,0,RANGE,RANGE);
 //	bench_add(SEQSET,0,RANGE,RANGE);
-	bench_add(RANDSET,0,RANGE,RANGE);
-	bench_add(RANDSET,0,RANGE,RANGE);
+//	bench_add(RANDSET,0,RANGE,RANGE);
+//	bench_add(RANDSET,0,RANGE,RANGE);
 
 	//bench_add(RANDGET,0,RANGE/2,RANGE/2);
 //	bench_add(RANDSET,0,RANGE,RANGE);

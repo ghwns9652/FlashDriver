@@ -144,13 +144,13 @@ int32_t sftl_bitmap_set(int32_t lpa)
 	if(c_table->first_check){
 		c_table->first_check = 0;
 		c_table->head->head_ppa = head_ppa;
+		c_table->b_form_size += ENTRY_SIZE + BITMAP_SIZE;
 		return 0;
 	}
-
+	
+	free_cache_size += c_table->b_form_size;
 	tmp = sftl_list_find(c_table, offset);
 
-	if(tmp == NULL) 
-		printf("P_IDX = %d bitmap[%d] = %d\n",P_IDX,P_IDX,c_table->bitmap[P_IDX]);
 	if(c_table->bitmap[offset] == 1){
 		if(offset == EPP-1){
 			tmp->head_ppa = head_ppa;
@@ -162,7 +162,7 @@ int32_t sftl_bitmap_set(int32_t lpa)
 
 		if(next_ppa != head_ppa + idx){
 			c_table->bitmap[offset+idx] = 1;
-			c_table->bit_cnt++;
+			c_table->b_form_size += ENTRY_SIZE;
 			head_push(tmp,next_ppa);
 		}
 
@@ -174,21 +174,21 @@ int32_t sftl_bitmap_set(int32_t lpa)
 		if(offset == EPP-1){
 			if(head_ppa != pre_ppa + idx){
 				c_table->bitmap[offset] = 1;
-				c_table->bit_cnt++;
+				c_table->b_form_size += ENTRY_SIZE;
 				head_push(tmp, head_ppa);
 			}
 		}else{
 			next_ppa = p_table[offset+idx].ppa;
 			if(head_ppa != pre_ppa + idx){
 				c_table->bitmap[offset] = 1;	
-				c_table->bit_cnt++;
+				c_table->b_form_size += ENTRY_SIZE;
 				head_push(tmp, head_ppa);
 			}
 			if(next_ppa == -1) return -1;
 			
 			if(next_ppa != head_ppa + idx){
-				c_table->bitmap[offset+idx] = 1;
-				c_table->bit_cnt++;
+				c_table->bitmap[offset+idx] = 1;	
+				c_table->b_form_size += ENTRY_SIZE;
 				tmp = tmp->next;
 				head_push(tmp, next_ppa);
 			}
@@ -202,8 +202,10 @@ int32_t sftl_bitmap_set(int32_t lpa)
 int32_t sftl_bitmap_free(C_TABLE *evic_ptr)
 {
 	C_TABLE *c_table = evic_ptr;
+	head_free(c_table);	
 	memset(c_table->bitmap,0, sizeof(bool) * EPP);
-	head_free(c_table);
+	c_table->b_form_size = 0;
+	c_table->form_check = 0;
 	c_table->bit_cnt = 0;
 	return 1;
 	

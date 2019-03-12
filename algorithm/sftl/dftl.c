@@ -177,7 +177,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     //num_max_cache = 1; // 1 cache
 	//num_max_cache = max_cache_entry / 4; // 1/4 cache
     //num_max_cache = max_cache_entry / 20; // 5%
-    num_max_cache = max_cache_entry / 10; // 10%
+//    num_max_cache = max_cache_entry / 10; // 10%
     //num_max_cache = max_cache_entry / 8; // 12.5%
     //num_max_cache = max_cache_entry / 40; // 2.5%
 	//num_max_cache = max_cache_entry / 50; // 2%
@@ -577,18 +577,18 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
         return 1;
     }
 
-    //Form_size can change by GC
-    b_form_size = head_list_set(lpa);
 
-    c_table->p_table = mem_arr[D_IDX].mem_p;
+    c_table->p_table = mem_arr[D_IDX].mem_p; 
+    b_form_size = head_bit_set(lpa);
+
+    if(c_table->head != NULL)
+	    head_free(c_table);
     if(b_form_size < check_size){
 	    head_list_set(lpa);
 	    c_table->form_check = 1;
 	    c_table->b_form_size = b_form_size;
     }
     else{
-	    if(c_table->head != NULL)
-		    head_free(c_table);
 	    c_table->form_check = 0;
 	    c_table->b_form_size = PAGESIZE;
     }
@@ -848,21 +848,13 @@ static uint32_t __demand_set(request *const req){
 	//printf("P_IDX = %d bitmap[%d] = %d\n",P_IDX,P_IDX,c_table->bitmap[P_IDX]);
 	sftl_bitmap_set(lpa);
     } 
-    int b_form_size = (c_table->bit_cnt * ENTRY_SIZE) + BITMAP_SIZE;
-    free_cache_size += c_table->b_form_size;
-    if(b_form_size > check_size)
+    if(c_table->b_form_size > check_size)
     {
 	    if(c_table->head != NULL)
 		    head_free(c_table);
 	    c_table->form_check  = 0;
 	    c_table->b_form_size = PAGESIZE; 
     }
-    else
-    {
-	    c_table->form_check  = 1;
-	    c_table->b_form_size = b_form_size;
-    }
-
     free_cache_size -= c_table->b_form_size;
     if(free_cache_size < 0){
     	bool gc_flag = false;
