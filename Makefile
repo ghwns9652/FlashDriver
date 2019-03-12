@@ -15,8 +15,8 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-			-DS_FTL\
 			-O2\
+
 #			-DWRITESYNC\
 
 COMMONFLAGS+=$(DEBUGFLAGS)\

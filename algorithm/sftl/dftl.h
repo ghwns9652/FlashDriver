@@ -204,10 +204,12 @@ int32_t head_tail_push(C_TABLE *, int32_t);
 int32_t head_free(C_TABLE *);
 int32_t head_bit_set(int32_t);
 int32_t head_list_set(int32_t);
+
 //For bitmap management
 int32_t sftl_bitmap_set(int32_t);
 int32_t sftl_bitmap_free(C_TABLE *);
 struct head_node* sftl_list_find(C_TABLE *, int32_t);
+int32_t sftl_list_free(C_TABLE*, int32_t);
 int32_t sftl_bitmap_size(int32_t);
 //To get ppa
 int32_t get_mapped_ppa(int32_t);

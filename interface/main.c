@@ -38,10 +38,11 @@ int main(int argc,char* argv[]){
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
 
-	bench_add(SEQSET,0,RANGE/2,RANGE/2);
+	bench_add(SEQSET,0,RANGE,RANGE);
 //	bench_add(SEQSET,0,RANGE,RANGE);
-//	bench_add(RANDSET,0,RANGE/2,RANGE/2);
-	bench_add(RANDGET,0,RANGE/2,RANGE/2);
+	bench_add(RANDSET,0,RANGE,RANGE);
+	bench_add(RANDSET,0,RANGE,RANGE);
+
 	//bench_add(RANDGET,0,RANGE/2,RANGE/2);
 //	bench_add(RANDSET,0,RANGE,RANGE);
 //	bench_add(SEQGET,0,RANGE/2,RANGE/2);

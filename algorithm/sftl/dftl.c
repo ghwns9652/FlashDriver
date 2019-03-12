@@ -557,7 +557,7 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
     int lpa = req->key;
     C_TABLE *c_table = &CMT[D_IDX];
     int32_t t_ppa = c_table->t_ppa;
-    int32_t b_check_size;
+    int32_t b_form_size;
     read_params *params = (read_params *)req->params;
 
     value_set *dummy_vs;
@@ -574,20 +574,21 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
         bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
-	//When GC, Reset the bitmap
-//	measure_start(sftl_time); 
-	head_bit_set(lpa);
-//	measure_adding(sftl_time);
         return 1;
     }
+
+    //Form_size can change by GC
+    b_form_size = head_list_set(lpa);
+
     c_table->p_table = mem_arr[D_IDX].mem_p;
-    int32_t b_form_size = (c_table->bit_cnt * ENTRY_SIZE) + BITMAP_SIZE;
     if(b_form_size < check_size){
 	    head_list_set(lpa);
 	    c_table->form_check = 1;
 	    c_table->b_form_size = b_form_size;
     }
     else{
+	    if(c_table->head != NULL)
+		    head_free(c_table);
 	    c_table->form_check = 0;
 	    c_table->b_form_size = PAGESIZE;
     }
@@ -713,8 +714,6 @@ static uint32_t __demand_get(request *const req){
     else{
 	    ppa = p_table[P_IDX].ppa;
     }
-
-
     if (ppa == -1) {
         bench_algo_end(req);
         return UINT32_MAX;
@@ -846,12 +845,15 @@ static uint32_t __demand_set(request *const req){
     }
    
     if(c_table->form_check == 1){
+	//printf("P_IDX = %d bitmap[%d] = %d\n",P_IDX,P_IDX,c_table->bitmap[P_IDX]);
 	sftl_bitmap_set(lpa);
     } 
     int b_form_size = (c_table->bit_cnt * ENTRY_SIZE) + BITMAP_SIZE;
     free_cache_size += c_table->b_form_size;
     if(b_form_size > check_size)
     {
+	    if(c_table->head != NULL)
+		    head_free(c_table);
 	    c_table->form_check  = 0;
 	    c_table->b_form_size = PAGESIZE; 
     }

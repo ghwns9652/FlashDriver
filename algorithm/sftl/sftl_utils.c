@@ -74,19 +74,6 @@ int32_t head_free(C_TABLE *evic_ptr)
         return 1;
 
 }
-int32_t head_find(struct head_node **head, int32_t cnt)
-{
-        struct head_node *tmp = *head;
-        int32_t ppa;
-        for(int i = 0 ; i < cnt; i++)
-        {
-                tmp = tmp->next;
-        }
-
-        ppa = tmp->head_ppa;
-        return ppa;
-}
-
 int32_t head_bit_set(int32_t lpa)
 {
 	struct head_node *now;
@@ -112,7 +99,6 @@ int32_t head_bit_set(int32_t lpa)
 	}
 	c_table->bit_cnt = cnt;
 	b_form_size = c_table->bit_cnt*ENTRY_SIZE + BITMAP_SIZE;
-
 	return b_form_size;
 
 
@@ -162,21 +148,24 @@ int32_t sftl_bitmap_set(int32_t lpa)
 	}
 
 	tmp = sftl_list_find(c_table, offset);
+
+	if(tmp == NULL) 
+		printf("P_IDX = %d bitmap[%d] = %d\n",P_IDX,P_IDX,c_table->bitmap[P_IDX]);
 	if(c_table->bitmap[offset] == 1){
 		if(offset == EPP-1){
 			tmp->head_ppa = head_ppa;
 			return 1;
-		}else{
-			tmp->head_ppa = head_ppa;
-			next_ppa = p_table[offset+idx].ppa;
-			if(next_ppa == -1) return -1;
-			
-			if(next_ppa != head_ppa + idx){
-				c_table->bitmap[offset+idx] = 1;
-				c_table->bit_cnt++;
-				head_push(tmp,next_ppa);
-			}
-		}		
+		}
+		tmp->head_ppa = head_ppa;
+		next_ppa = p_table[offset+idx].ppa;
+		if(next_ppa == -1) return -1;
+
+		if(next_ppa != head_ppa + idx){
+			c_table->bitmap[offset+idx] = 1;
+			c_table->bit_cnt++;
+			head_push(tmp,next_ppa);
+		}
+
 	}
 	//bitmap[offset] == 0
 	//First offset never enter here
@@ -213,9 +202,9 @@ int32_t sftl_bitmap_set(int32_t lpa)
 int32_t sftl_bitmap_free(C_TABLE *evic_ptr)
 {
 	C_TABLE *c_table = evic_ptr;
-	head_free(evic_ptr);
-	c_table->form_check = 0;
-	c_table->b_form_size = 0;
+	memset(c_table->bitmap,0, sizeof(bool) * EPP);
+	head_free(c_table);
+	c_table->bit_cnt = 0;
 	return 1;
 	
 }
@@ -242,16 +231,22 @@ int32_t get_mapped_ppa(int32_t lpa)
 	int32_t head_ppn = -1;
 	int32_t idx;
 	int32_t ppa;
-	for(int i = offset ; i > 0 ; i--){
-		if(c_table->bitmap[i] == 1){
-			now = now->next;
-			if(head_lpn == -1)
-				head_lpn = i;
+	if(c_table->bit_cnt > 1){
+		for(int i = offset ; i > 0 ; i--){
+			if(c_table->bitmap[i] == 1){
+				now = now->next;
+				if(head_lpn == -1)
+					head_lpn = i;
+			}
 		}
+
+		idx = abs(head_lpn - offset);
+		head_ppn = now->head_ppa;
+		ppa = head_ppn + idx;
+	}else{
+		head_ppn = now->head_ppa;
+		ppa = head_ppn + offset;
 	}
-	idx = abs(head_lpn - offset);
-	head_ppn = now->head_ppa;
-	ppa = head_ppn + idx;
 	return ppa;
 
 }
