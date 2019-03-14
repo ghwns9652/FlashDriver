@@ -68,11 +68,12 @@ typedef struct cached_table{
 	struct head_node *head;
 	struct head_node *tail;
 	int32_t b_form_size;
+	int32_t flying_mapping_size;
 	int32_t bit_cnt;
 	bool *bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
 	bool first_check;  //First == 0  , Not First == 1
-	bool stick;
+	bool evic_flag;
 #endif
 	uint32_t read_hit;
 	uint32_t write_hit;
@@ -165,6 +166,9 @@ extern int32_t tgc_w_dgc_count;
 
 extern int32_t total_cache_size;
 extern int32_t free_cache_size;
+extern int32_t cache_mapping_size;
+extern int32_t over_mapping_size;
+extern int32_t flying_mapping_size;
 extern int32_t check_size;
 
 /* extern variables */
@@ -215,7 +219,7 @@ int32_t sftl_bitmap_size(int32_t);
 int32_t get_mapped_ppa(int32_t);
 
 //Memory size calculation
-int32_t cache_mapping_size();
+int32_t cache_mapped_size();
 
 #endif
 

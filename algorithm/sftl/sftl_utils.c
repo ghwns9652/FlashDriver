@@ -83,10 +83,11 @@ int32_t head_bit_set(int32_t lpa)
 	
 	int32_t head_ppa = p_table[0].ppa;
 	int32_t idx = 1;	
-	int32_t b_form_size;
+	int32_t b_form_size = 0;
 	int32_t cnt = 0;
 	c_table->bitmap[0] = 1;
 	c_table->bit_cnt++;
+	b_form_size += ENTRY_SIZE;
 	for(int i = 1 ; i < EPP; i++){
 		if(p_table[i].ppa == head_ppa + idx++){
 			c_table->bitmap[i] = 0;
@@ -94,11 +95,11 @@ int32_t head_bit_set(int32_t lpa)
 			head_ppa = p_table[i].ppa;
 			c_table->bitmap[i] = 1;
 			idx = 1;
-			cnt++;
+			c_table->bit_cnt++;
+			b_form_size += ENTRY_SIZE;
 		}
 	}
-	c_table->bit_cnt = cnt;
-	b_form_size = c_table->bit_cnt*ENTRY_SIZE + BITMAP_SIZE;
+	b_form_size += BITMAP_SIZE;
 	return b_form_size;
 
 
@@ -139,18 +140,15 @@ int32_t sftl_bitmap_set(int32_t lpa)
 	int32_t pre_ppa;
 	int32_t idx = 1;
 
-
 	//If mapping table access is first, Only update head_entry
 	if(c_table->first_check){
 		c_table->first_check = 0;
 		c_table->head->head_ppa = head_ppa;
-		c_table->b_form_size += ENTRY_SIZE + BITMAP_SIZE;
+		free_cache_size += c_table->b_form_size;
 		return 0;
 	}
-	
 	free_cache_size += c_table->b_form_size;
 	tmp = sftl_list_find(c_table, offset);
-
 	if(c_table->bitmap[offset] == 1){
 		if(offset == EPP-1){
 			tmp->head_ppa = head_ppa;
@@ -162,8 +160,10 @@ int32_t sftl_bitmap_set(int32_t lpa)
 
 		if(next_ppa != head_ppa + idx){
 			c_table->bitmap[offset+idx] = 1;
+			c_table->bit_cnt++;
 			c_table->b_form_size += ENTRY_SIZE;
 			head_push(tmp,next_ppa);
+			
 		}
 
 	}
@@ -174,20 +174,24 @@ int32_t sftl_bitmap_set(int32_t lpa)
 		if(offset == EPP-1){
 			if(head_ppa != pre_ppa + idx){
 				c_table->bitmap[offset] = 1;
+				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				head_push(tmp, head_ppa);
+
 			}
 		}else{
 			next_ppa = p_table[offset+idx].ppa;
 			if(head_ppa != pre_ppa + idx){
-				c_table->bitmap[offset] = 1;	
+				c_table->bitmap[offset] = 1;
+				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				head_push(tmp, head_ppa);
 			}
 			if(next_ppa == -1) return -1;
 			
 			if(next_ppa != head_ppa + idx){
-				c_table->bitmap[offset+idx] = 1;	
+				c_table->bitmap[offset+idx] = 1;
+				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				tmp = tmp->next;
 				head_push(tmp, next_ppa);
@@ -195,6 +199,7 @@ int32_t sftl_bitmap_set(int32_t lpa)
 			
 		}
 	}
+
 	return head_ppa;		
 
 }
@@ -203,10 +208,9 @@ int32_t sftl_bitmap_free(C_TABLE *evic_ptr)
 {
 	C_TABLE *c_table = evic_ptr;
 	head_free(c_table);	
-	memset(c_table->bitmap,0, sizeof(bool) * EPP);
-	c_table->b_form_size = 0;
-	c_table->form_check = 0;
-	c_table->bit_cnt = 0;
+	//memset(c_table->bitmap,0, sizeof(bool) * EPP);
+	//c_table->form_check = 0;
+	//c_table->bit_cnt = 0;
 	return 1;
 	
 }
@@ -253,7 +257,7 @@ int32_t get_mapped_ppa(int32_t lpa)
 
 }
 
-int32_t cache_mapping_size()
+int32_t cache_mapped_size()
 {
 	int32_t idx = max_cache_entry;
 	int32_t cache_size = 0;

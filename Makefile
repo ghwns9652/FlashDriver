@@ -9,6 +9,7 @@ PPWD=$(pwd)
 DEBUGFLAGS=\
 			-rdynamic\
 			-Wno-pointer-arith\
+			-fsanitize=address\
 #	-DBUSE_DEBUG
 
 COMMONFLAGS=\

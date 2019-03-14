@@ -62,11 +62,10 @@ int32_t max_dirty_cache;
 #if S_FTL
 int32_t total_cache_size;
 int32_t free_cache_size;
+int32_t cache_mapping_size;
+int32_t flying_mapping_size;
+int32_t over_mapping_size;
 int32_t check_size;
-double start_time;
-double end_time;
-bool    c_flag;
-int32_t read_flying_cnt;
 MeasureTime *sftl_time;
 MeasureTime *evic_time;
 #endif
@@ -256,11 +255,12 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].head = NULL;
 	CMT[i].tail = NULL;	
 	CMT[i].bitmap = (bool *)malloc(sizeof(bool) * EPP);
+	CMT[i].flying_mapping_size = 0;
 	CMT[i].form_check = 0;
 	CMT[i].b_form_size = 0;
 	CMT[i].first_check = 0;
-	CMT[i].stick = 0;
 	CMT[i].bit_cnt = 0;
+	CMT[i].evic_flag = 0;
 	memset(CMT[i].bitmap, 0, sizeof(bool) * EPP);
 #endif
 
@@ -344,10 +344,13 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     printf("WAF: %.2f\n\n", (float)(data_r+dirty_evict_on_write)/data_r);
 
-    int32_t cache_size = cache_mapping_size();
+    int32_t cache_size = cache_mapped_size();
+   
     printf("\ncache_mapping_size : %d\n",cache_size);
+    printf("free_cache_size      : %d\n",free_cache_size);
     printf("max_cache_entry      : %d\n",max_cache_entry);
-  //  printf("sftl_function_time : ");
+    
+    //  printf("sftl_function_time : ");
   //  measure_adding_print(sftl_time);
   //  printf("evic_time    : ");
   // measure_adding_print(evic_time); 
@@ -406,8 +409,10 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     C_TABLE *c_table = &CMT[D_IDX];
     int32_t t_ppa = c_table->t_ppa;
     int32_t head_ppa;
+    int32_t b_check_size;
     bool gc_flag;
     bool d_flag;
+    int32_t b_form_size = c_table->b_form_size;
 
     value_set *dummy_vs;
     algo_req *temp_req;
@@ -436,16 +441,19 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     checker->m_w_cnt = 0;
     checker->m_w_max = 0;
     req->params = (void *)checker;
+    
     if (req_t == 'R') {
 	cache_miss_on_read++;
         req->type_ftl += 2;
-	if(free_cache_size < c_table->b_form_size)
+	if(free_cache_size < b_form_size)
 	{
 		req->type_ftl += 1;
 		if(demand_eviction(req, 'R', &gc_flag, &d_flag) == 0)
 		{
 			//When write mapping in device, this area is operated
 			c_table->flying = true;
+			c_table->evic_flag = 0;
+			free_cache_size -= c_table->flying_mapping_size;
 			if(d_flag) req->type_ftl += 1;
 			if(gc_flag) req->type_ftl += 2;
 			bench_algo_end(req);
@@ -455,13 +463,14 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 
     } else {
 	cache_miss_on_write++;
-
-	if(free_cache_size < c_table->b_form_size)
+	if(free_cache_size < b_form_size)
 	{
 		if(demand_eviction(req, 'W', &gc_flag, &d_flag) == 0)
 		{
 			//When write mapping in device, this area is operated
 			c_table->flying = true;
+			c_table->evic_flag = 0;
+			free_cache_size -= c_table->flying_mapping_size;
 			if(d_flag) req->type_ftl += 1;
 			if(gc_flag) req->type_ftl += 2;
 			bench_algo_end(req);
@@ -473,7 +482,15 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     //Read mapping table
     if (t_ppa != -1) {
         c_table->flying = true;
-        dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+	if(c_table->evic_flag){
+		c_table->evic_flag = 0;
+		free_cache_size -= c_table->flying_mapping_size;
+		
+	}else{
+		c_table->flying_mapping_size = c_table->b_form_size;
+		free_cache_size -= c_table->flying_mapping_size;
+	}
+	dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
 
         bench_algo_end(req);
@@ -487,14 +504,15 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     c_table->queue_ptr = lru_push(lru, (void*)c_table);
     c_table->state     = DIRTY;
 
-   // measure_start(sftl_time);
     c_table->form_check = 1;
     c_table->bitmap[0] = 1;
     c_table->first_check = 1;
     c_table->bit_cnt++;
     head_ppa = c_table->p_table[0].ppa;
     head_init(c_table, head_ppa);
-    //measure_adding(sftl_time);
+    c_table->b_form_size = ENTRY_SIZE + BITMAP_SIZE;
+    free_cache_size -= c_table->b_form_size;
+
     return 0;
 }
 
@@ -530,6 +548,8 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
 	    c_table->bit_cnt++;
 	    head_ppa = c_table->p_table[0].ppa;
 	    head_init(c_table, head_ppa);
+	    c_table->b_form_size = ENTRY_SIZE + BITMAP_SIZE;
+	    free_cache_size -= c_table->b_form_size;
 //            measure_adding(sftl_time);
             // Register reserved requests
             for (int i = 0; i < c_table->num_waiting; i++) {
@@ -540,6 +560,8 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
             }
             c_table->num_waiting = 0;
             c_table->flying = false;
+	    free_cache_size += c_table->flying_mapping_size;
+	    c_table->flying_mapping_size = 0;
             for (int i = 0; i < waiting; i++) {
                 if (!inf_assign_try(waiting_arr[i])) {
                     puts("not queued 5");
@@ -574,25 +596,18 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
         bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
+	printf("pre_size : %d\n",c_table->b_form_size);
+	c_table->b_form_size = head_bit_set(lpa);
+	printf("next_size :%d\n",c_table->b_form_size);
         return 1;
     }
 
-
     c_table->p_table = mem_arr[D_IDX].mem_p; 
-    b_form_size = head_bit_set(lpa);
-
-    if(c_table->head != NULL)
-	    head_free(c_table);
-    if(b_form_size < check_size){
-	    head_list_set(lpa);
-	    c_table->form_check = 1;
-	    c_table->b_form_size = b_form_size;
-    }
-    else{
-	    c_table->form_check = 0;
-	    c_table->b_form_size = PAGESIZE;
+    if(c_table->b_form_size){
+    	head_list_set(lpa);
     }
     free_cache_size -= c_table->b_form_size;
+
     //printf("M_READ_BITMAP_SET_TIME : %0.5f\n",(float)(clock() - start)/CLOCKS_PER_SEC);
     if (req_t == 'R') {
         c_table->queue_ptr = lru_push(lru, (void*)c_table);
@@ -612,6 +627,8 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
     }
     c_table->num_waiting = 0;
     c_table->flying = false;
+    free_cache_size += c_table->flying_mapping_size;
+    c_table->flying_mapping_size = 0;
     for (int i = 0; i < waiting; i++) {
         if (!inf_assign_try(waiting_arr[i])) {
             puts("not queued 5");
@@ -843,9 +860,7 @@ static uint32_t __demand_set(request *const req){
         BM_ValidatePage(bm, ppa);
         demand_OOB[ppa].lpa = lpa;
     }
-   
     if(c_table->form_check == 1){
-	//printf("P_IDX = %d bitmap[%d] = %d\n",P_IDX,P_IDX,c_table->bitmap[P_IDX]);
 	sftl_bitmap_set(lpa);
     } 
     if(c_table->b_form_size > check_size)
@@ -854,16 +869,18 @@ static uint32_t __demand_set(request *const req){
 		    head_free(c_table);
 	    c_table->form_check  = 0;
 	    c_table->b_form_size = PAGESIZE; 
+
     }
     free_cache_size -= c_table->b_form_size;
-    if(free_cache_size < 0){
-    	bool gc_flag = false;
-	bool d_flag  = false;
-	demand_hit_eviction(req, 'W', &gc_flag, &d_flag);
-	if(d_flag) req->type_ftl += 1;
-	if(gc_flag) req->type_ftl += 2;
-    }
 
+    if(free_cache_size < 0){
+	printf("free_cache_size = %d\n",free_cache_size);
+	bool gc_flag = false;
+        bool d_flag  = false;
+	demand_hit_eviction(req, 'W', &gc_flag, &d_flag);
+	if(d_flag) req->type_ftl +=1;
+	if(gc_flag) req->type_ftl +=2;
+    } 
     req->value = NULL; // moved to 'value' field of snode
     bench_algo_end(req);
     req->end_req(req);
@@ -1118,7 +1135,6 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 }
 
 #else // Eviction for normal mode
-
 uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag){
     int32_t   lpa;
     int32_t   b_check_size;      // Check bitmap size for request
@@ -1131,12 +1147,12 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
    // printf("demand_eviction!!!!\n");
 
 #if S_FTL
+    C_TABLE *evic_ptr;
     bool dirty_flag = 0;
     lpa = req->key; 
     c_table = &CMT[D_IDX];
     b_check_size = c_table->b_form_size;
-//    printf("free_cache_size     : %d\n", free_cache_size);
-//    printf("CMT[%d].b_form_size : %d\n",D_IDX, c_table->b_form_size);
+    int32_t flying = 0;
 #endif
  
 
@@ -1145,14 +1161,14 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 #endif	
 
     //printf("num_caching : %d\n", num_caching);
-   /* Eviction */ 
-    while(free_cache_size < b_check_size){
+   /* Eviction */
+    while(flying < b_check_size){
 	    evict_count++;
-	    cache_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
-	    free_cache_size += cache_ptr->b_form_size;
-	    q_enqueue((void *)cache_ptr, sftl_q);
-
+	    evic_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
+	    flying += evic_ptr->b_form_size;
+	    q_enqueue((void *)evic_ptr, sftl_q);
     }
+    c_table->flying_mapping_size = flying;
     while((cache_ptr = (C_TABLE *)q_dequeue(sftl_q)))
     {
 	    //p_table   = cache_ptr->p_table;
@@ -1209,10 +1225,10 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 	    cache_ptr->queue_ptr = NULL;
 	    cache_ptr->p_table   = NULL;
     }
-    
-    if(dirty_flag == 1) 
+    c_table->evic_flag = 1;
+    if(dirty_flag == 1){
 	    return 0;
-
+    } 
     return 1;
 
 }
@@ -1227,29 +1243,24 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 //    printf("hit_demand_eviction!!!!\n");
 
 #if S_FTL
+    C_TABLE *evic_ptr;
     bool dirty_flag = 0;
     lpa = req->key;
     c_table = &CMT[D_IDX];
-    b_check_size = c_table->b_form_size;
-//    printf("free_cache_size     : %d\n", free_cache_size);
-//    printf("CMT[%d].b_form_size : %d\n",D_IDX, c_table->b_form_size);
 #endif
 
 #if EVICT_POLL
     demand_params *params;
 #endif	
-
     //printf("num_caching : %d\n", num_caching);
    /* Eviction */
-    
     while(free_cache_size < 0){
 	    evict_count++;
-	    cache_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
-	    free_cache_size += cache_ptr->b_form_size;
-	    q_enqueue((void *)cache_ptr, dirty_q);
-
+	    evic_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
+	    free_cache_size += evic_ptr->b_form_size;
+	    q_enqueue((void *)evic_ptr, dirty_q);
     }
-    
+
     while((cache_ptr = (C_TABLE *)q_dequeue(dirty_q)))
     {
 	    t_ppa     = cache_ptr->t_ppa;
@@ -1257,7 +1268,6 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 	    sftl_bitmap_free(cache_ptr);
 	 //   measure_adding(sftl_time);
 	    if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
-		    dirty_flag = 1;
 		    dirty_eviction++;
 		    if (req_t == 'W') {
 			    dirty_evict_on_write++;
@@ -1304,14 +1314,9 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 	    cache_ptr->queue_ptr = NULL;
 	    cache_ptr->p_table   = NULL;
     }
-    
-    if(dirty_flag == 1) 
-	    return 0;
-
     return 1;
 
 }
-#
 #endif
 
 void *demand_end_req(algo_req* input){
