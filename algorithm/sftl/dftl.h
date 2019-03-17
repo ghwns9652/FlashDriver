@@ -180,7 +180,7 @@ uint32_t demand_get(request *const);
 uint32_t demand_set(request *const);
 uint32_t demand_remove(request *const);
 uint32_t demand_eviction(request *const, char, bool *, bool *);
-uint32_t demand_hit_eviction(request *const, char, bool *, bool *);
+uint32_t demand_hit_eviction(request *const, char, bool *, bool *,int32_t);
 void    *demand_end_req(algo_req*);
 
 // dftl_utils.c
@@ -203,7 +203,7 @@ int32_t dpage_GC();
 
 //For head_entries management
 int32_t head_init(C_TABLE *, int32_t);
-void head_push(struct head_node **, int32_t);
+struct head_node* head_push(struct head_node **, int32_t);
 int32_t head_tail_push(C_TABLE *, int32_t);
 int32_t head_free(C_TABLE *);
 int32_t head_bit_set(int32_t);

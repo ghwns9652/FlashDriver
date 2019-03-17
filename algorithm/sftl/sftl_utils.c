@@ -3,15 +3,13 @@
 
 int32_t head_init(C_TABLE *c_table, int32_t ppa)
 {
-	struct head_node **head = &c_table->head;
-	struct head_node **tail = &c_table->tail;
         struct head_node *now;
-	if((*head) == NULL)
+	if(c_table->head == NULL)
 	{
 		now = (struct head_node *)malloc(sizeof(struct head_node));
 		now->head_ppa = ppa;
 		now->next = NULL;
-                *head = *tail = now;
+		c_table->head = c_table->tail = now;
 		return 1;
         }
 
@@ -19,7 +17,7 @@ int32_t head_init(C_TABLE *c_table, int32_t ppa)
         
 }
 
-void head_push(struct head_node *find_node, int32_t ppa)
+struct head_node* head_push(struct head_node *find_node, int32_t ppa)
 {
 	struct head_node *now;
 	now = (struct head_node *)malloc(sizeof(struct head_node));
@@ -27,28 +25,26 @@ void head_push(struct head_node *find_node, int32_t ppa)
 	now->next = find_node->next;
 	find_node->next = now;
 
-	return ;
+	return now;
 
 }
 
 int32_t head_tail_push(C_TABLE *c_table, int32_t ppa)
 {
-	struct head_node **head = &c_table->head;
-	struct head_node **tail = &c_table->tail;
 	struct head_node *now;
 	
 	now = (struct head_node *)malloc(sizeof(struct head_node));
 	now->head_ppa = ppa;
 	now->next = NULL;
+	
 
-
-	if(*head == NULL){
-		*head = *tail = now;
+	if(c_table->head == NULL){
+		c_table->head = c_table->tail = now;
 		return 0;	
 	}
 	else{
-		(*tail)->next = now;
-		*tail = now;
+		c_table->tail->next = now;
+		c_table->tail = now;
 	}
 
 	return 1;
@@ -57,19 +53,17 @@ int32_t head_tail_push(C_TABLE *c_table, int32_t ppa)
 
 int32_t head_free(C_TABLE *evic_ptr)
 {
-	struct head_node **head = &evic_ptr->head;
-	struct head_node **tail = &evic_ptr->tail;
         struct head_node *p_node = NULL;
-        if(*head == NULL)
+        if(evic_ptr->head == NULL)
                 return 0;
 
-        while((*head) != NULL)
+        while(evic_ptr->head != NULL)
         {
-                p_node = (*head);
-                (*head) = (*head)->next;
+                p_node = evic_ptr->head;
+                evic_ptr->head = evic_ptr->head->next;
                 free(p_node);
         }
-	*tail = NULL;
+	evic_ptr->tail = evic_ptr->head;
 
         return 1;
 
@@ -110,11 +104,12 @@ int32_t head_list_set(int32_t lpa){
 	D_TABLE *p_table = c_table->p_table;
 	int32_t head_ppa;
 	for(int i = 0 ; i < EPP; i++){
-		if(c_table->bitmap[i] == 1){
+		if(c_table->bitmap[i] == 1){	
 			head_ppa = p_table[i].ppa;
 			head_tail_push(c_table, head_ppa);	
 		}
 	}
+
 }
 struct head_node* sftl_list_find(C_TABLE *c_table, int32_t offset)
 {
@@ -144,10 +139,8 @@ int32_t sftl_bitmap_set(int32_t lpa)
 	if(c_table->first_check){
 		c_table->first_check = 0;
 		c_table->head->head_ppa = head_ppa;
-		free_cache_size += c_table->b_form_size;
 		return 0;
 	}
-	free_cache_size += c_table->b_form_size;
 	tmp = sftl_list_find(c_table, offset);
 	if(c_table->bitmap[offset] == 1){
 		if(offset == EPP-1){
@@ -160,7 +153,6 @@ int32_t sftl_bitmap_set(int32_t lpa)
 
 		if(next_ppa != head_ppa + idx){
 			c_table->bitmap[offset+idx] = 1;
-			c_table->bit_cnt++;
 			c_table->b_form_size += ENTRY_SIZE;
 			head_push(tmp,next_ppa);
 			
@@ -174,7 +166,6 @@ int32_t sftl_bitmap_set(int32_t lpa)
 		if(offset == EPP-1){
 			if(head_ppa != pre_ppa + idx){
 				c_table->bitmap[offset] = 1;
-				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				head_push(tmp, head_ppa);
 
@@ -183,7 +174,6 @@ int32_t sftl_bitmap_set(int32_t lpa)
 			next_ppa = p_table[offset+idx].ppa;
 			if(head_ppa != pre_ppa + idx){
 				c_table->bitmap[offset] = 1;
-				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				head_push(tmp, head_ppa);
 			}
@@ -191,7 +181,6 @@ int32_t sftl_bitmap_set(int32_t lpa)
 			
 			if(next_ppa != head_ppa + idx){
 				c_table->bitmap[offset+idx] = 1;
-				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				tmp = tmp->next;
 				head_push(tmp, next_ppa);
@@ -200,8 +189,7 @@ int32_t sftl_bitmap_set(int32_t lpa)
 		}
 	}
 
-	return head_ppa;		
-
+	return head_ppa;
 }
 
 int32_t sftl_bitmap_free(C_TABLE *evic_ptr)
@@ -271,17 +259,14 @@ int32_t cache_mapped_size()
 		if(p_table)
 		{
 			cnt++;
-			//This is bitmap_form
-			if(c_table->form_check)
-			{
-				cache_size += sftl_bitmap_size(i);
-			}
-			//This is In-flash form
-			else
-			{
-				cache_size += PAGESIZE;
-			}
+			cache_size += c_table->b_form_size;
 		}
+	}
+	
+	C_TABLE *tmp = &CMT[817];
+	while(tmp->head != NULL){
+		printf("head_ppa : %d\n",tmp->head->head_ppa);
+		tmp->head = tmp->head->next;
 	}
 	printf("num_caching : %d\n",cnt);
 	return cache_size;
