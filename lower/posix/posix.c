@@ -106,7 +106,7 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 	return NULL;
 }
 
-void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo_req *const req){	
+void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async, algo_req *const req){	
 	/*
 	if(PPA>6500)
 		printf("PPA : %u\n", PPA);

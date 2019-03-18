@@ -63,11 +63,8 @@ int32_t max_dirty_cache;
 int32_t total_cache_size;
 int32_t free_cache_size;
 int32_t cache_mapping_size;
-int32_t flying_mapping_size;
-int32_t over_mapping_size;
 int32_t check_size;
 MeasureTime *sftl_time;
-MeasureTime *evic_time;
 #endif
 
 /* GC variables */
@@ -167,9 +164,9 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	total_cache_size = max_cache_entry * PAGESIZE;
 	free_cache_size = PAGESIZE * 256;
 	check_size = PAGESIZE * 0.8;
-//	sftl_time = (MeasureTime *)malloc(sizeof(MeasureTime));
+	sftl_time = (MeasureTime *)malloc(sizeof(MeasureTime));
 //	evic_time = (MeasureTime *)malloc(sizeof(MeasureTime));
-//	measure_init(sftl_time);
+	measure_init(sftl_time);
 //	measure_init(evic_time);
 #endif
 	//num_max_cache = max_cache_entry; // max cache
@@ -346,13 +343,12 @@ void demand_destroy(lower_info *li, algorithm *algo){
     printf("WAF: %.2f\n\n", (float)(data_r+dirty_evict_on_write)/data_r);
 
     int32_t cache_size = cache_mapped_size();
-   
     printf("\ncache_mapping_size : %d\n",cache_size);
     printf("free_cache_size      : %d\n",free_cache_size);
     printf("max_cache_entry      : %d\n",max_cache_entry);
     
-    //  printf("sftl_function_time : ");
-  //  measure_adding_print(sftl_time);
+      printf("sftl_function_time : ");
+      measure_adding_print(sftl_time);
   //  printf("evic_time    : ");
   // measure_adding_print(evic_time); 
 
@@ -361,7 +357,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
     q_free(sftl_q);
     q_free(hit_q);
     BM_Free(bm);
-  //  free(sftl_time);
+    free(sftl_time);
   //  free(evic_time);
     lru_free(lru);
 #if C_CACHE
@@ -505,6 +501,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     c_table->form_check = 1;
     c_table->bitmap[0] = 1;
     c_table->first_check = 1;
+    c_table->bit_cnt++;
     head_ppa = c_table->p_table[0].ppa;
     head_init(c_table, head_ppa);
     c_table->b_form_size = ENTRY_SIZE + BITMAP_SIZE;
@@ -542,6 +539,7 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
 	    c_table->first_check = 1;
 	    c_table->form_check = 1;
 	    c_table->bitmap[0] = 1;
+	    c_table->bit_cnt++;
 	    head_ppa = c_table->p_table[0].ppa;
 	    head_init(c_table, head_ppa);
 	    c_table->b_form_size = ENTRY_SIZE + BITMAP_SIZE;
@@ -591,15 +589,19 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
         bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
-	printf("pre_size : %d\n",c_table->b_form_size);
+    	measure_start(sftl_time);
 	c_table->b_form_size = head_bit_set(lpa);
-	printf("next_size :%d\n",c_table->b_form_size);
+	 measure_adding(sftl_time);
         return 1;
     }
 
     c_table->p_table = mem_arr[D_IDX].mem_p; 
     if(c_table->form_check == 1){
-    	head_list_set(lpa);
+	 if(req_t == 'R')
+    	 	measure_start(sftl_time);
+	 head_list_set(lpa);
+	 if(req_t == 'R')
+	 	measure_adding(sftl_time);
     }
     
     free_cache_size += c_table->flying_mapping_size;
@@ -672,12 +674,12 @@ static uint32_t __demand_get(request *const req){
     t_ppa   = c_table->t_ppa;
 
     if (req->params == NULL) {
-        if (p_table) { // Cache hit	    
+        if (p_table) { // Cache hit	
             if (ppa == -1) {
                 bench_algo_end(req);
                 return UINT32_MAX;
-            }
-            cache_hit_on_read++;
+	    }
+	    cache_hit_on_read++;
             // Cache update
             demand_cache_update(req, 'R');
             req->type_ftl += 1;
@@ -713,7 +715,9 @@ static uint32_t __demand_get(request *const req){
     /* Get actual data from device */
     p_table = c_table->p_table;
     if(c_table->form_check){
+	    measure_start(sftl_time);
 	    ppa = get_mapped_ppa(lpa);
+	    measure_adding(sftl_time);
     }
     else{
 	    ppa = p_table[P_IDX].ppa;
@@ -722,8 +726,6 @@ static uint32_t __demand_get(request *const req){
         bench_algo_end(req);
         return UINT32_MAX;
      }
-
-
     bench_algo_end(req);
     // Get data in ppa
     __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
@@ -859,6 +861,7 @@ static uint32_t __demand_set(request *const req){
 	    if(c_table->head != NULL)
 		    head_free(c_table);
 	    c_table->form_check  = 0;
+	    c_table->bit_cnt = 0;
 	    c_table->b_form_size = PAGESIZE; 
 
     }
@@ -1152,7 +1155,8 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 #if EVICT_POLL
     demand_params *params;
 #endif	
-
+    if(req_t == 'R')
+	measure_start(sftl_time);
     //printf("num_caching : %d\n", num_caching);
    /* Eviction */
     while(flying < b_check_size){
@@ -1171,9 +1175,8 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     {
 	    //p_table   = cache_ptr->p_table;
 	    t_ppa     = cache_ptr->t_ppa;
-	//    measure_start(sftl_time);
+
 	    sftl_bitmap_free(cache_ptr);
-	  //  measure_adding(sftl_time);
 	    if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
 		    dirty_flag = 1;
 		    dirty_eviction++;
@@ -1222,6 +1225,8 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 	    cache_ptr->queue_ptr = NULL;
 	    cache_ptr->p_table   = NULL;
     }
+    if(req_t == 'R')
+	    measure_adding(sftl_time);
     c_table->evic_flag = 1;
     if(dirty_flag == 1){
 	    return 0;
@@ -1252,6 +1257,8 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 #endif	
     //printf("num_caching : %d\n", num_caching);
    /* Eviction */
+
+   // measure_start(sftl_time);
     while(evic_size < add_size){
 	    evict_count++;
 	    evic_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
@@ -1262,9 +1269,7 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
     while((cache_ptr = (C_TABLE *)q_dequeue(hit_q)))
     {
 	    t_ppa     = cache_ptr->t_ppa;
-	 //   measure_start(sftl_time);
 	    sftl_bitmap_free(cache_ptr);
-	 //   measure_adding(sftl_time);
 	    if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
 		    dirty_eviction++;
 		    if (req_t == 'W') {
@@ -1311,6 +1316,8 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 	    cache_ptr->queue_ptr = NULL;
 	    cache_ptr->p_table   = NULL;
     }
+
+   // measure_adding(sftl_time);
     return evic_size;
 
 }

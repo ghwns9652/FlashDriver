@@ -80,7 +80,6 @@ int32_t head_bit_set(int32_t lpa)
 	int32_t b_form_size = 0;
 	int32_t cnt = 0;
 	c_table->bitmap[0] = 1;
-	c_table->bit_cnt++;
 	b_form_size += ENTRY_SIZE;
 	for(int i = 1 ; i < EPP; i++){
 		if(p_table[i].ppa == head_ppa + idx++){
@@ -89,10 +88,11 @@ int32_t head_bit_set(int32_t lpa)
 			head_ppa = p_table[i].ppa;
 			c_table->bitmap[i] = 1;
 			idx = 1;
-			c_table->bit_cnt++;
+			cnt++;
 			b_form_size += ENTRY_SIZE;
 		}
 	}
+	c_table->bit_cnt = cnt;
 	b_form_size += BITMAP_SIZE;
 	return b_form_size;
 
@@ -153,6 +153,7 @@ int32_t sftl_bitmap_set(int32_t lpa)
 
 		if(next_ppa != head_ppa + idx){
 			c_table->bitmap[offset+idx] = 1;
+			c_table->bit_cnt++;
 			c_table->b_form_size += ENTRY_SIZE;
 			head_push(tmp,next_ppa);
 			
@@ -166,6 +167,7 @@ int32_t sftl_bitmap_set(int32_t lpa)
 		if(offset == EPP-1){
 			if(head_ppa != pre_ppa + idx){
 				c_table->bitmap[offset] = 1;
+				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				head_push(tmp, head_ppa);
 
@@ -174,6 +176,7 @@ int32_t sftl_bitmap_set(int32_t lpa)
 			next_ppa = p_table[offset+idx].ppa;
 			if(head_ppa != pre_ppa + idx){
 				c_table->bitmap[offset] = 1;
+				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				head_push(tmp, head_ppa);
 			}
@@ -181,6 +184,7 @@ int32_t sftl_bitmap_set(int32_t lpa)
 			
 			if(next_ppa != head_ppa + idx){
 				c_table->bitmap[offset+idx] = 1;
+				c_table->bit_cnt++;
 				c_table->b_form_size += ENTRY_SIZE;
 				tmp = tmp->next;
 				head_push(tmp, next_ppa);
@@ -219,6 +223,7 @@ int32_t sftl_bitmap_size(int32_t lpa)
 int32_t get_mapped_ppa(int32_t lpa)
 {
 	C_TABLE *c_table = &CMT[D_IDX];
+	D_TABLE *p_table = c_table->p_table;
 	struct head_node *now = c_table->head;
 	int32_t offset = P_IDX;
 	int32_t head_lpn = -1;
@@ -240,6 +245,7 @@ int32_t get_mapped_ppa(int32_t lpa)
 	}else{
 		head_ppn = now->head_ppa;
 		ppa = head_ppn + offset;
+	//	printf("offset = %d head_ppn = %d ppa = %d real_ppa = %d\n",offset,head_ppn,ppa,p_table[offset].ppa);
 	}
 	return ppa;
 
@@ -258,16 +264,13 @@ int32_t cache_mapped_size()
 		p_table = c_table->p_table;
 		if(p_table)
 		{
+	//		printf("c_table[%d].b_form_size = %d\n",i,c_table->b_form_size);
 			cnt++;
 			cache_size += c_table->b_form_size;
 		}
 	}
 	
 	C_TABLE *tmp = &CMT[817];
-	while(tmp->head != NULL){
-		printf("head_ppa : %d\n",tmp->head->head_ppa);
-		tmp->head = tmp->head->next;
-	}
 	printf("num_caching : %d\n",cnt);
 	return cache_size;
 
