@@ -478,12 +478,12 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     if (t_ppa != -1) {
         c_table->flying = true;
 	if(c_table->evic_flag){
-		c_table->evic_flag = 0;
-		
+		c_table->evic_flag = 0;	
 	}else{
 		c_table->flying_mapping_size = c_table->b_form_size;
 		free_cache_size -= c_table->flying_mapping_size;
-	}	
+	}
+	
 	dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
 
@@ -1366,8 +1366,7 @@ void *demand_end_req(algo_req* input){
 			    if(!inf_assign_try(res)) {
 				    puts("not queued 2");
 				    q_enqueue((void*)res, dftl_q);
-			    }
-			    
+			    }	    
 		    }
 	    }
 	    inf_free_valueset(temp_v, FS_MALLOC_W);
