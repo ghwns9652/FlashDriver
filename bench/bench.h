@@ -27,6 +27,7 @@ typedef struct{
 	KEYT start;
 	KEYT end;
 	uint64_t number;
+	int32_t seq_locality;
 	bench_type type;
 }bench_meta;
 
@@ -64,7 +65,7 @@ typedef struct{
 	uint64_t notfound;
 	uint64_t write_cnt;
 	uint64_t read_cnt;
-
+	int32_t seq_locality;
 	bench_type type;
 	MeasureTime benchTime;
 	MeasureTime benchTime2;
@@ -82,7 +83,8 @@ typedef struct{
 }master;
 
 void bench_init();
-void bench_add(bench_type type,KEYT start, KEYT end,uint64_t number);
+void bench_add(bench_type type,KEYT start, KEYT end,uint64_t number, int32_t sequentiality);
+
 bench_value* get_bench();
 void bench_refresh(bench_type, KEYT start, KEYT end, uint64_t number);
 void bench_free();

@@ -71,6 +71,7 @@ typedef struct cached_table{
 	int32_t flying_mapping_size;
 	int32_t bit_cnt;
 	bool *bitmap;
+	bool *v_bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
 	bool first_check;  //First == 0  , Not First == 1
 	bool evic_flag;
@@ -213,8 +214,9 @@ int32_t head_list_set(int32_t);
 int32_t sftl_bitmap_set(int32_t);
 int32_t sftl_bitmap_free(C_TABLE *);
 struct head_node* sftl_list_find(C_TABLE *, int32_t);
-int32_t sftl_list_free(C_TABLE*, int32_t);
+int32_t sftl_list_free(int32_t, int32_t);
 int32_t sftl_bitmap_size(int32_t);
+int32_t sftl_update_set(C_TABLE *, int32_t);
 //To get ppa
 int32_t get_mapped_ppa(int32_t);
 

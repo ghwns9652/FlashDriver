@@ -20,6 +20,7 @@ void seqset(KEYT,KEYT,monitor*);
 void seqrw(KEYT,KEYT,monitor *);
 void randget(KEYT,KEYT,monitor*);
 void randset(KEYT,KEYT,monitor*);
+void set_locality(KEYT,KEYT,monitor*);
 void randrw(KEYT,KEYT,monitor*);
 void latency(KEYT,KEYT,monitor*);
 void mixed(KEYT,KEYT,int percentage,monitor*);
@@ -96,6 +97,7 @@ void bench_make_data(){
 	_m->empty=false;
 	_m->m_num=_meta->number;
 	_m->type=_meta->type;
+	_m->seq_locality = _meta->seq_locality;
 	KEYT start=_meta->start;
 	KEYT end=_meta->end;
 
@@ -127,6 +129,9 @@ void bench_make_data(){
 		case RANDLATENCY:
 			rand_latency(start,end,50,_m);
 			break;
+		case SET_LOCALITY:
+			set_locality(start, end, _m);
+			break;
 		default:
 			printf("making data failed\n");
 			break;
@@ -137,13 +142,13 @@ void bench_make_data(){
 	MS(&_m->benchTime);
 }
 
-void bench_add(bench_type type, KEYT start, KEYT end, uint64_t number){
+void bench_add(bench_type type, KEYT start, KEYT end, uint64_t number, int32_t sequentiality){
 	static int idx=0;
 	_master->meta[idx].start=start;
 	_master->meta[idx].end=end;
 	_master->meta[idx].type=type;
 	_master->meta[idx].number=number%2?(number/2)*2:number;
-
+	_master->meta[idx].seq_locality = sequentiality;	
 	for(int j=0;j<ALGOTYPE;j++){
 		for(int k=0;k<LOWERTYPE;k++){
 			_master->datas[idx].ftl_poll[j][k].min = UINT64_MAX;
@@ -667,7 +672,24 @@ void randset(KEYT start, KEYT end, monitor *m){
 		m->write_cnt++;
 	}
 }
+void set_locality(KEYT start, KEYT end, monitor *m){
+	printf("making locality set bench: %d\n",m->seq_locality);
+	KEYT t_key;
+	KEYT idx = 0;
+	KEYT cnt;
+	for(KEYT i = 0; i < m->m_num / m->seq_locality; i++){
+		cnt = m->seq_locality;
+		t_key = start + rand()%(end-start);
+			
 
+	}
+	/*
+	for(KEYT i = 0; i < m->m_num; i++)
+	{
+		printf("m->body[%d][%d].type = %d\n",i/m->bech,i%m->bech,m->body[i/m->bech][i%m->bech].type);
+	}
+	exit(0);
+}
 void randrw(KEYT start, KEYT end, monitor *m){
 	printf("making rand Set and Get bench!\n");
 	for(KEYT i=0; i<m->m_num/2; i++){

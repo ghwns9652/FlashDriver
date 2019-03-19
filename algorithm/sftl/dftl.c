@@ -20,6 +20,7 @@ Heap *trans_b;   // (Allocated) Trans block heap
 #if S_FTL
 queue *sftl_q;
 queue *hit_q;
+queue *p_buffer;
 #endif
 
 /* Tables */
@@ -207,7 +208,6 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     q_init(&dftl_q, 1024);
 #if S_FTL
     q_init(&sftl_q, max_cache_entry);
-
     q_init(&hit_q, max_cache_entry);
 #endif
     bm = BM_Init(num_block, p_p_b, 2, 1); // 2 heaps and 1 queue
@@ -253,6 +253,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].head = NULL;
 	CMT[i].tail = NULL;	
 	CMT[i].bitmap = (bool *)malloc(sizeof(bool) * EPP);
+	CMT[i].v_bitmap = (bool *)malloc(sizeof(bool) * EPP);
 	CMT[i].flying_mapping_size = 0;
 	CMT[i].form_check = 0;
 	CMT[i].b_form_size = 0;
@@ -747,11 +748,12 @@ static uint32_t __demand_set(request *const req){
     sk_iter *iter;
 #endif
     static bool is_flush = false;
-    static int32_t num = 0;
-	req->seq = num++;
+  //  static int32_t num = 0;
+//	req->seq = num++;
     bench_algo_start(req);
     
     lpa = req->key;
+//    printf("D_IDX = %d\n",D_IDX);
     if(lpa > RANGE + 1){ // range check
         printf("range error %d\n",lpa);
         exit(3);
@@ -838,7 +840,6 @@ static uint32_t __demand_set(request *const req){
     if (write_buffer->size == ppa_idx+1) {
         ppa = ppa_prefetch[ppa_idx].ppa;
         temp->ppa = ppa;
-
         ppa_prefetch[ppa_idx++].sn = temp;
 
         // if there is previous data with same lpa, then invalidate it
