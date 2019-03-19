@@ -680,15 +680,23 @@ void set_locality(KEYT start, KEYT end, monitor *m){
 	for(KEYT i = 0; i < m->m_num / m->seq_locality; i++){
 		cnt = m->seq_locality;
 		t_key = start + rand()%(end-start);
-			
-
+		while(cnt > 0){
+			m->body[idx/m->bech][idx%m->bech].key = t_key;
+			m->body[idx/m->bech][idx%m->bech].length = PAGESIZE;
+			m->body[idx/m->bech][idx%m->bech].mark = m->mark;
+			m->body[idx/m->bech][idx%m->bech].type = FS_SET_T;
+			idx++;
+			t_key++;
+			cnt--;
+		}
 	}
-	/*
+/*	
 	for(KEYT i = 0; i < m->m_num; i++)
 	{
 		printf("m->body[%d][%d].type = %d\n",i/m->bech,i%m->bech,m->body[i/m->bech][i%m->bech].type);
 	}
 	exit(0);
+*/
 }
 void randrw(KEYT start, KEYT end, monitor *m){
 	printf("making rand Set and Get bench!\n");
