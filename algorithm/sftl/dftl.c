@@ -603,8 +603,15 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 	 head_list_set(lpa);
 	 if(req_t == 'R')
 	 	measure_adding(sftl_time);
+    }else{
+	    b_form_size = head_bit_set(lpa);
+	    if(b_form_size < check_size){
+		    head_list_set(lpa);
+		    c_table->b_form_size = b_form_size;
+		    c_table->form_check = 1;
+	    }
     }
-    
+
     free_cache_size += c_table->flying_mapping_size;
     free_cache_size -= c_table->b_form_size;
 
@@ -860,7 +867,7 @@ static uint32_t __demand_set(request *const req){
     if(c_table->b_form_size > check_size)
     {
 	    if(c_table->head != NULL)
-		    head_free(c_table);
+		    sftl_bitmap_free(c_table);
 	    c_table->form_check  = 0;
 	    c_table->bit_cnt = 0;
 	    c_table->b_form_size = PAGESIZE; 

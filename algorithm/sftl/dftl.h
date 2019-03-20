@@ -204,9 +204,9 @@ int32_t dpage_GC();
 
 //For head_entries management
 int32_t head_init(C_TABLE *, int32_t);
-struct head_node* head_push(struct head_node **, int32_t);
+struct head_node* head_push(C_TABLE*, struct head_node **, int32_t);
 int32_t head_tail_push(C_TABLE *, int32_t);
-int32_t head_free(C_TABLE *);
+struct head_node* head_free(C_TABLE *, struct head_node *);
 int32_t head_bit_set(int32_t);
 int32_t head_list_set(int32_t);
 

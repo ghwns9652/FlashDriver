@@ -686,7 +686,7 @@ void set_locality(KEYT start, KEYT end, monitor *m){
 			m->body[idx/m->bech][idx%m->bech].mark = m->mark;
 			m->body[idx/m->bech][idx%m->bech].type = FS_SET_T;
 			idx++;
-			t_key++;
+			t_key = (t_key+1) % (end-start);
 			cnt--;
 		}
 	}
