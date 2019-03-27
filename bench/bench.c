@@ -650,6 +650,17 @@ void randget(KEYT start, KEYT end,monitor *m){
 		m->body[i/m->bech][i%m->bech].mark=m->mark;
 		m->read_cnt++;
 	}
+/*
+	for(KEYT i=0; i<m->m_num; i++){
+		
+		printf("m->body[%d][%d].type = %d\n",i/m->bech,i%m->bech,m->body[i/m->bech][i%m->bech].type);
+		if(m->body[i/m->bech][i%m->bech].type == 0){
+			printf("[%d][%d]\n",i/m->bech,i%m->bech);
+			sleep(1);
+		}
+	}
+	exit(0);
+*/
 }
 
 void randset(KEYT start, KEYT end, monitor *m){
@@ -677,7 +688,11 @@ void set_locality(KEYT start, KEYT end, monitor *m){
 	KEYT t_key;
 	KEYT idx = 0;
 	KEYT cnt;
-	for(KEYT i = 0; i < m->m_num / m->seq_locality; i++){
+	KEYT adding_cnt = 0;
+	if(m->seq_locality == 16){
+		adding_cnt = 1;
+	}	
+	for(KEYT i = 0; i < (m->m_num / m->seq_locality) + adding_cnt; i++){
 		cnt = m->seq_locality;
 		t_key = start + rand()%(end-start);
 		while(cnt > 0){
@@ -690,7 +705,7 @@ void set_locality(KEYT start, KEYT end, monitor *m){
 			cnt--;
 		}
 	}
-/*	
+	/*	
 	for(KEYT i = 0; i < m->m_num; i++)
 	{
 		printf("m->body[%d][%d].type = %d\n",i/m->bech,i%m->bech,m->body[i/m->bech][i%m->bech].type);

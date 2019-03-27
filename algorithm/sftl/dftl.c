@@ -687,6 +687,15 @@ static uint32_t __demand_get(request *const req){
                 bench_algo_end(req);
                 return UINT32_MAX;
 	    }
+	    if(c_table->form_check){
+		    measure_start(sftl_time);
+		    ppa = get_mapped_ppa(lpa);
+		    measure_adding(sftl_time);
+	    }
+	    else{
+		    ppa = p_table[P_IDX].ppa;
+	    }
+
 	    cache_hit_on_read++;
             // Cache update
             demand_cache_update(req, 'R');
@@ -760,7 +769,10 @@ static uint32_t __demand_set(request *const req){
     bench_algo_start(req);
     
     lpa = req->key;
-//    printf("D_IDX = %d\n",D_IDX);
+    if(lpa == 1805458){
+    	printf("Algo LPA : %d\n",lpa);
+	exit(0);
+    }
     if(lpa > RANGE + 1){ // range check
         printf("range error %d\n",lpa);
         exit(3);

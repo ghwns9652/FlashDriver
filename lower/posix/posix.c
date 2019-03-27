@@ -87,8 +87,11 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 	if(lseek64(_fd,((off64_t)my_posix.SOP)*PPA,SEEK_SET)==-1){
 		printf("lseek error in write\n");
 	}//
+
 	if(!write(_fd,value->value,size)){
 		printf("write none!\n");
+	}else{
+	//	if(req->parents->key == 1805458){
 	}
 //	}
 	pthread_mutex_unlock(&fd_lock);
@@ -126,6 +129,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 	}
 	int res;
 	if(!(res=read(_fd,value->value,size))){
+		printf("LOWER - LPA : %d PPA: %d\n",req->parents->key, PPA);
 		printf("%d:read none!\n",res);
 	}
 	//}

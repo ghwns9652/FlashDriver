@@ -9,6 +9,33 @@
 #define LOWERTYPE 10
 #define BENCHNUM 16
 
+//RocksDB bench setting
+#define ROCKS_S_W_16   "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_s_w_16.out"
+#define ROCKS_R_W_16   "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_r_w_16.out"
+#define ROCKS_SW_RR_16 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_sw_rr_16.out"
+#define ROCKS_RW_SR_16 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_rw_sr_16.out"
+#define ROCKS_RW_RR_16 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocsk_rw_rr_16.out"
+#define ROCKS_S_W_32   "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_s_w_32.out"
+#define ROCKS_R_W_32   "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_r_w_32.out"
+#define ROCKS_SW_RR_32 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_sw_rr_32.out"
+#define ROCKS_RW_SR_32 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_rw_sr_32.out"
+#define ROCKS_RW_RR_32 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocsk_rw_rr_32.out"
+
+//TPC-C bench setting
+#define TPC_C_W_16     "/home/yumin/FlashDriver/bench/real_trace/tpc_16/tpc_write_16.out"
+#define TPC_C_BENCH_16 "/home/yumin/FlashDriver/bench/real_trace/tpc_16/tpc_bench_16.out"
+#define TPC_C_W_32     "/home/yumin/FlashDriver/bench/real_trace/tpc_32/tpc_write_32.out"
+#define TPC_C_BENCH_32 "/home/yumin/FlashDriver/bench/real_trace/tpc_32/tpc_bench_32.out"
+
+//YCSB bench setting
+#define YCSB_LOAD_16   "/home/yumin/FlashDriver/bench/real_trace/ycsb_16/ycsb_load_16a.out"
+#define YCSB_RUN_16    "/home/yumin/FlashDriver/bench/real_trace/ycsb_16/ycsb_run_16a.out"
+
+#define YCSB_LOAD_32   "/home/yumin/FlashDriver/bench/real_trace/ycsb_32/ycsb_load_32a.out"
+#define YCSB_RUN_32    "/home/yumin/FlashDriver/bench/real_trace/ycsb_32/ycsb_run_32a.out"
+
+
+
 #ifdef CDF
 #define TIMESLOT 10 //micro sec
 #endif
@@ -82,18 +109,21 @@ typedef struct{
 	uint32_t error_cnt;
 }master;
 
+
+//Real bench parsing functions
+
+
+
 void bench_init();
 void bench_add(bench_type type,KEYT start, KEYT end,uint64_t number, int32_t sequentiality);
 
 bench_value* get_bench();
 void bench_refresh(bench_type, KEYT start, KEYT end, uint64_t number);
 void bench_free();
-
 void bench_print();
 void bench_li_print(lower_info *,monitor *);
 bool bench_is_finish_n(int n);
 bool bench_is_finish();
-
 void bench_cache_hit(int mark);
 void bench_algo_start(request *const);
 void bench_algo_end(request *const);
