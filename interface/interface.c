@@ -441,6 +441,8 @@ bool inf_make_req(const FSTYPE type, const KEYT key,char* value){
 #endif
 	request *req=inf_get_req_instance(type,key,value,len,mark,false);
 	cl_grap(flying);
+	static int num = 0;
+	req->seq = num++;
 #ifdef CDF
 	req->isstart=false;
 	measure_init(&req->latency_checker);

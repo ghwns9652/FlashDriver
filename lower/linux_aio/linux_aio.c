@@ -137,8 +137,8 @@ uint32_t aio_create(lower_info *li){
 	li->all_pages_in_dev=DEVSIZE/PAGESIZE;
 
 	li->write_op=li->read_op=li->trim_op=0;
-	_fd=open("/dev/robusta",O_RDWR|O_DIRECT,0644);
-	//_fd=open64("/media/robusta/data",O_RDWR|O_CREAT|O_DIRECT,0666);
+	//_fd=open("/dev/robusta",O_RDWR|O_DIRECT,0644);
+	_fd=open64("./data/data",O_RDWR|O_CREAT|O_DIRECT,0666);
 	if(_fd==-1){
 		printf("file open error!\n");
 		exit(1);

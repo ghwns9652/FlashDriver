@@ -10,14 +10,18 @@
 #include "../include/settings.h"
 #include "../include/types.h"
 #include "../bench/bench.h"
+#include "../bench/measurement.h"
 #include "interface.h"
 
+#define LOAD_FILE ROCKS_S_W_16
+#define RUN_FILE  ROCKS_SW_RR_16
 #define BLK_NUM 16
-MeasureTime bt;
-MeasureTime st;
+MeasureTime *bt;
+MeasureTime *st;
 float total_sec;
 int write_cnt, read_cnt;
-
+int32_t total_cnt;
+/*
 void log_print(int sig){
  	if (total_sec) {
 	printf("\ntotal sec: %.2f\n", total_sec);
@@ -28,9 +32,9 @@ void log_print(int sig){
 	inf_free();
 	exit(1);
 }
-
+*/
 int main(int argc, char *argv[]) {
- 	int rw, len;
+ 	int len;
 	int8_t fs_type;
 	unsigned long long int offset;
 	FILE *fp;
@@ -39,35 +43,47 @@ int main(int argc, char *argv[]) {
 	char type[5];
 	double cal_len;
 	struct sigaction sa;
-	sa.sa_handler = log_print;
-	sigaction(SIGINT, &sa, NULL);
-
-	measure_init(&bt);
-	measure_init(&st);
+	//sa.sa_handler = log_print;
+	//sigaction(SIGINT, &sa, NULL);
+	bt = (MeasureTime *)malloc(sizeof(MeasureTime));
+	st = (MeasureTime *)malloc(sizeof(MeasureTime));
+	measure_init(bt);
+	measure_init(st);
 
 	inf_init();
 	bench_init();
 	bench_add(NOR,0,-1,-1,0);
 	char t_value[PAGESIZE];
 	memset(t_value, 'x', PAGESIZE);
-	
+	/*	
 	value_set dummy;
 	dummy.value=t_value;
 	dummy.dmatag=-1;
 	dummy.length=PAGESIZE;
-
-	fp = fopen(ROCKS_S_W_16, "r");
+	*/
+	
+	printf("%s load start!\n",LOAD_FILE);
+	fp = fopen(LOAD_FILE, "r");
 	if (fp == NULL) {
 		printf("No file\n");
 		return 1;
 	}
 
-	printf("%s load start!\n",ROCKS_S_W_16);
-	while (fscanf(fp, "%s %s %llu %lf\n", command, type, &offset, &cal_len) != EOF) {
+	while (fscanf(fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
 	 	static int cnt = 0;
+		//printf("cnt = %d\n",cnt++);
+		/*
+		if(offset == 28887332){
+			printf("%s %s %llu %lf\n",command, type, offset, cal_len);
+			sleep(1);
+		}
+		*/
 		if(command[0] == 'D'){
 			offset = offset / BLK_NUM;
 			len = ceil(cal_len / BLK_NUM);
+			if(offset + len > RANGE){
+				continue;
+			}
 			if(type[0] == 'R'){
 				fs_type = FS_GET_T;
 			}else{
@@ -76,8 +92,7 @@ int main(int argc, char *argv[]) {
 		}else{
 			continue;
 		}
-		if(offset == 1805458)
-			printf("offset = %d len = %d\n",offset,len);
+		
 		for (int i = 0; i < len; i++) {
 			inf_make_req(fs_type, offset+i, t_value, PAGESIZE, 0);
 			/*if (++cnt % 10240 == 0) {
@@ -85,24 +100,28 @@ int main(int argc, char *argv[]) {
 				printf("%d %llu %d\n", rw, offset, len);
 			}*/
 		}
+		memset(command,0,sizeof(char) * 2);
+		memset(type,0,sizeof(char)*5);
+		fflush(stdout);
 	}
-	printf("%s load complete!\n\n",ROCKS_S_W_16);
+	printf("%s load complete!\n\n",LOAD_FILE);
 	fclose(fp);
-
-	fp = fopen(ROCKS_SW_RR_16, "r");
+	printf("%s bench start!\n", RUN_FILE);
+	fp = fopen(RUN_FILE, "r");
 	if (fp == NULL) {
 		printf("No file\n");
 		return 1;
 	}
-
-	MS(&bt);
-	MS(&st);
-	printf("%s bench start!\n", ROCKS_SW_RR_16);
-	while (fscanf(fp, "%s %s %llu %lf\n", command, type, &offset, &cal_len) != EOF) {
-	 	static int cnt = 0;
+	measure_start(bt);	
+	
+	while (fscanf(fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
+	 	//static int cnt = 0;
 		if(command[0] == 'D'){
 			offset = offset / BLK_NUM;
 			len = ceil(cal_len / BLK_NUM);
+			if(offset + len > RANGE){
+				continue;
+			}
 			if(type[0] == 'R'){
 				fs_type = FS_GET_T;
 			}else{
@@ -112,10 +131,10 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 		for (int i = 0; i < len; i++) {
-			inf_make_req(fs_type, offset+i, t_value, PAGESIZE, 0);
-			if (rw == 1) {
+			inf_make_req(fs_type, offset+i, t_value, PAGESIZE, 1);
+			if (fs_type == FS_SET_T) {
 			 	write_cnt++;
-			} else if (rw == 2) {
+			} else if (fs_type == FS_GET_T) {
 			 	read_cnt++;
 			}
 
@@ -128,18 +147,25 @@ int main(int argc, char *argv[]) {
 				MS(&st);
 			}*/
 		}
+		memset(command,0,sizeof(char) * 2);
+		memset(type,0,sizeof(char)*5);
+		fflush(stdout);
+
 	}
-	MA(&bt);
-	printf("%s bench complete!\n",argv[1]);
+	measure_adding(bt);
+	printf("%s bench complete!\n",RUN_FILE);
 	fclose(fp);
 
-	total_sec = bt.adding.tv_sec + (float)bt.adding.tv_usec/1000000;
-
+	total_sec = bt->adding.tv_sec + (float)bt->adding.tv_usec/1000000;
+	total_cnt = read_cnt + write_cnt;
 	printf("--------------- summary ------------------\n");
 	printf("\ntotal sec: %.2f\n", total_sec);
+	printf("read_cnt : %d write_cnt : %d\n",read_cnt, write_cnt);
 	printf("read throughput: %.2fMB/s\n", (float)read_cnt*8192/total_sec/1000/1000);
 	printf("write throughput: %.2fMB/s\n\n", (float)write_cnt*8192/total_sec/1000/1000);
-
+	printf("total_throughput: %.2fMB/s\n",(float)total_cnt*8192/total_sec/1000/1000);
+	free(bt);
+	free(st);
 	inf_free();
 
 	return 0;

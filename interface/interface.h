@@ -4,6 +4,7 @@
 #include "../include/container.h"
 #include "threading.h"
 
+
 void inf_init();
 #ifdef USINGAPP
 bool inf_make_req(const FSTYPE,const KEYT, char *);

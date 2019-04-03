@@ -74,6 +74,7 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 	if(PPA>6500)
 		printf("PPA : %u\n", PPA);
 	*/
+	
 	if(value->dmatag==-1){
 		printf("dmatag -1 error!\n");
 		exit(1);
@@ -129,7 +130,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 	}
 	int res;
 	if(!(res=read(_fd,value->value,size))){
-		printf("LOWER - LPA : %d PPA: %d\n",req->parents->key, PPA);
+		printf("LOWER - LPA : %d PPA: %d SEQ: %d\n",req->parents->key, PPA,req->parents->seq);
 		printf("%d:read none!\n",res);
 	}
 	//}

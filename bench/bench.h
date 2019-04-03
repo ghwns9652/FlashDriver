@@ -10,16 +10,17 @@
 #define BENCHNUM 16
 
 //RocksDB bench setting
+
 #define ROCKS_S_W_16   "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_s_w_16.out"
 #define ROCKS_R_W_16   "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_r_w_16.out"
 #define ROCKS_SW_RR_16 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_sw_rr_16.out"
 #define ROCKS_RW_SR_16 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_rw_sr_16.out"
-#define ROCKS_RW_RR_16 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocsk_rw_rr_16.out"
+#define ROCKS_RW_RR_16 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_16/rocks_rw_rr_16.out"
 #define ROCKS_S_W_32   "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_s_w_32.out"
 #define ROCKS_R_W_32   "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_r_w_32.out"
 #define ROCKS_SW_RR_32 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_sw_rr_32.out"
 #define ROCKS_RW_SR_32 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_rw_sr_32.out"
-#define ROCKS_RW_RR_32 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocsk_rw_rr_32.out"
+#define ROCKS_RW_RR_32 "/home/yumin/FlashDriver/bench/real_trace/rocksdb_32/rocks_rw_rr_32.out"
 
 //TPC-C bench setting
 #define TPC_C_W_16     "/home/yumin/FlashDriver/bench/real_trace/tpc_16/tpc_write_16.out"
