@@ -38,6 +38,11 @@
 #define CLEAN 0
 #define DIRTY 1
 
+#if TPFTL
+#define ENTRY_SIZE 8 
+#define MAX_CNT    63
+#endif
+
 // Page table data structure
 typedef struct demand_mapping_table{
     int32_t ppa; //Index = lpa
@@ -64,9 +69,10 @@ typedef struct cached_table{
 } C_TABLE;
 
 struct entry_node{
-	int16_t lpa; 
+	int16_t p_index; 
 	int32_t ppa;
 	int8_t  cnt;
+	bool    state;
 };
 
 // OOB data structure
@@ -168,4 +174,10 @@ void cache_show(char* dest);
 int32_t tpage_GC();
 int32_t dpage_GC();
 
+
+//tp_utils.c
+NODE* tp_hit_check(int32_t);
+struct entry_node* tp_entry_alloc(int32_t, int32_t, char);
+struct entry_node* tp_entry_merge(int32_t);
+struct entry_node* tp_entry_split(int32_t, int32_t);
 #endif
