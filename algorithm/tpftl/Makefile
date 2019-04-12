@@ -7,6 +7,7 @@ SRCS +=\
 	   garbage_collection.c\
 	   dftl_utils.c\
 	   lru_list.c\
+	   tp_utils.c\
 
 OBJS :=\
 	$(patsubst %.c,%.o,$(SRCS))\

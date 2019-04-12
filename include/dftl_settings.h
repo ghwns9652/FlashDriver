@@ -6,7 +6,7 @@
 
 // sftl flag
 #define S_FTL 1 
-#define TP_FTL 1
+#define TPFTL 1
 
 // memcpy op gc flag
 #define MEMCPY_ON_GC 0

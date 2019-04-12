@@ -54,6 +54,7 @@ typedef struct cached_table{
     int32_t idx;
     D_TABLE *p_table;
     NODE *queue_ptr; // for dirty pages (or general use)
+   
 #if C_CACHE
     NODE *clean_ptr; // for clean pages
 #endif
@@ -66,6 +67,7 @@ typedef struct cached_table{
 
     int32_t entry_cnt;   // Count variable for eviction optimization
     LRU *entry_lru;      // Entry LRU pointer for TPFTL
+    NODE *last_ptr;
 } C_TABLE;
 
 struct entry_node{
@@ -147,6 +149,11 @@ extern int32_t tgc_count;
 extern int32_t dgc_count;
 extern int32_t read_tgc_count;
 extern int32_t tgc_w_dgc_count;
+
+extern int32_t free_cache_size;
+extern int32_t flying_cache_size;
+extern int32_t prefetch_cnt;
+
 /* extern variables */
 
 // dftl.c
@@ -176,8 +183,14 @@ int32_t dpage_GC();
 
 
 //tp_utils.c
-NODE* tp_hit_check(int32_t);
-struct entry_node* tp_entry_alloc(int32_t, int32_t, char);
-struct entry_node* tp_entry_merge(int32_t);
-struct entry_node* tp_entry_split(int32_t, int32_t);
+NODE *tp_entry_search(int32_t);
+struct entry_node* tp_entry_alloc(int32_t, int32_t, int32_t, char);
+NODE *tp_entry_update(NODE *, int32_t, int32_t, int32_t, char);
+NODE *tp_entry_op(int32_t, int32_t);
+NODE *tp_entry_split(NODE *, int32_t, int32_t, bool);
+
+
+int32_t tp_get_ppa(int32_t);
+
+int32_t cache_mapped_size();
 #endif

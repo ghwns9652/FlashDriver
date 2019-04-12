@@ -56,7 +56,7 @@ int32_t max_clean_cache;
 int32_t max_dirty_cache;
 #endif
 
-#if TP_FTL
+#if TPFTL
 int32_t total_cache_size;
 int32_t free_cache_size;
 int32_t flying_cache_size;
@@ -235,6 +235,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
 	//Init for TPFTL
 	CMT[i].entry_cnt = 0;
+	CMT[i].last_ptr = NULL;
 	lru_init(&CMT[i].entry_lru);
 
     }
@@ -312,8 +313,9 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     printf("WAF: %.2f\n\n", (float)(data_r+dirty_evict_on_write)/data_r);
 
-    printf("\nnum caching: %d\n", num_caching);
-    printf("num_flying: %d\n\n", num_flying);
+    int32_t cache_mapping_size = cache_mapped_size();
+    printf("cache_mapped_size = %d\n",cache_mapping_size);
+    printf("free_cache_size   = %d\n",free_cache_size);
 
     /* Clear modules */
     q_free(dftl_q);
@@ -336,7 +338,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
     free(CMT);
 }
 
-static uint32_t demand_cache_update(request *const req, char req_t, NODE *entry_node) {
+static uint32_t demand_cache_update(request *const req, char req_t) {
     int lpa = req->key;
     C_TABLE *c_table = &CMT[D_IDX];
     int32_t t_ppa = c_table->t_ppa;
@@ -350,7 +352,7 @@ static uint32_t demand_cache_update(request *const req, char req_t, NODE *entry_
         }
     } else {
        if (c_table->state == CLEAN) {
-            tmp->state = DIRTY;
+            c_table->state = DIRTY;
             BM_InvalidatePage(bm, t_ppa);
             clean_hit_on_write++;
         } else {
@@ -369,8 +371,6 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 
     bool gc_flag;
     bool d_flag;
-
-    struct entry_node *ent = NULL;
 
     value_set *dummy_vs;
     algo_req *temp_req;
@@ -413,7 +413,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
             if(gc_flag) req->type_ftl += 2;
         }
     } else {	
-    	cache_miss_on_write++;
+    	//cache_miss_on_write++;
         if (free_cache_size < ENTRY_SIZE) {
             if (demand_eviction(req, 'W', &gc_flag, &d_flag) == 0) {
                 c_table->flying = true;
@@ -449,7 +449,6 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
     int lpa = req->key;
     C_TABLE *c_table = &CMT[D_IDX];
     int32_t t_ppa    = c_table->t_ppa;
-    struct entry_node *ent = NULL;
 
     value_set *dummy_vs;
     algo_req *temp_req;
@@ -653,6 +652,8 @@ static uint32_t __demand_set(request *const req){
 
     //For TPFTL variable
     NODE *check_node = NULL;
+    struct entry_node *ent_node = NULL;
+
 
 #if W_BUFF
     snode *temp;
@@ -723,7 +724,10 @@ static uint32_t __demand_set(request *const req){
             if (demand_cache_eviction(req, 'W') == 1) {
                 return 1;
             }
-        }
+        }else{
+		cache_hit_on_write++;
+		demand_cache_update(req,'W');
+	}
     } else {
         if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
             if (demand_write_flying(req, 'W') == 1) {
@@ -762,24 +766,17 @@ static uint32_t __demand_set(request *const req){
         BM_ValidatePage(bm, ppa);
         demand_OOB[ppa].lpa = lpa;
     }
-    cache_hit_on_write++;
-    check_node = tp_hit_check(lpa);
+    check_node = c_table->last_ptr;
     if(check_node == NULL){
-	    tp_entry_alloc(lpa, ppa, 'W');
+	    ent_node = tp_entry_alloc(P_IDX, ppa, 0, 'W');
+	    c_table->last_ptr = lru_push(c_table->entry_lru, (void *)ent_node);
     }else{
-	    //Split event
-	    //If LPN is head_entry
-	    if(P_IDX == check_node->p_index){
-		    if(ppa != check_node->ppa){
-
-
-
-	    //Split event
-
-
-			    
-
-
+	    c_table->last_ptr = tp_entry_op(lpa, ppa);
+    }
+    int32_t check_ppa = tp_get_ppa(lpa);
+    if(check_ppa != ppa){
+	    printf("check_ppa = %d real_ppa = %d\n",check_ppa, ppa);
+    }
     req->value = NULL; // moved to 'value' field of snode
     bench_algo_end(req);
     req->end_req(req);
