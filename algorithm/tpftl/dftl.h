@@ -41,6 +41,7 @@
 #if TPFTL
 #define ENTRY_SIZE 8 
 #define MAX_CNT    63
+#define PF_MAX     32
 #endif
 
 // Page table data structure
@@ -65,9 +66,12 @@ typedef struct cached_table{
     uint32_t read_hit;
     uint32_t write_hit;
 
+    bool evic_flag;
     int32_t entry_cnt;   // Count variable for eviction optimization
+    int32_t flying_mapping_size; // Reserve cache space for flying request
     LRU *entry_lru;      // Entry LRU pointer for TPFTL
-    NODE *last_ptr;
+    NODE *last_ptr;      // pointer for last entry node
+
 } C_TABLE;
 
 struct entry_node{
@@ -163,6 +167,7 @@ uint32_t demand_get(request *const);
 uint32_t demand_set(request *const);
 uint32_t demand_remove(request *const);
 uint32_t demand_eviction(request *const, char, bool *, bool *);
+uint32_t demand_hit_eviction(request *const, char, bool *, bool *);
 void    *demand_end_req(algo_req*);
 
 // dftl_utils.c
@@ -188,9 +193,11 @@ struct entry_node* tp_entry_alloc(int32_t, int32_t, int32_t, char);
 NODE *tp_entry_update(NODE *, int32_t, int32_t, int32_t, char);
 NODE *tp_entry_op(int32_t, int32_t);
 NODE *tp_entry_split(NODE *, int32_t, int32_t, bool);
+void tp_batch_update(C_TABLE *);
 
+NODE *tp_get_entry(int32_t, int32_t);
+NODE *tp_fetch(int32_t,int32_t);
 
-int32_t tp_get_ppa(int32_t);
 
 int32_t cache_mapped_size();
 #endif

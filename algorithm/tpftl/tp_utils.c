@@ -55,10 +55,12 @@ NODE *tp_entry_op(int32_t lpa, int32_t ppa){
 	int32_t pre_ppa;
 	
 	//CASE 1 : Merge
+	
 	index   = ent_node->p_index + ent_node->cnt + 1;           //Variable For check current offset
 	pre_ppa = ent_node->ppa + (P_IDX - ent_node->p_index - 1); //Get a Pre ppn
-
 	if(index == P_IDX && ppa == pre_ppa+1){
+
+	//	printf("1_lpa = %d, ppa = %d\n",lpa,ppa);
 		if(ent_node->cnt == MAX_CNT){
 			now = tp_entry_alloc(offset, ppa, 0, 'W');
 			last_ptr = lru_push(c_table->entry_lru, (void *)now);
@@ -86,6 +88,8 @@ NODE *tp_entry_op(int32_t lpa, int32_t ppa){
 			if(find_node != NULL){
 				last_ptr = tp_entry_split(find_node,lpa, ppa, 1);
 			}else{
+
+	//			printf("2_lpa = %d, ppa = %d\n",lpa,ppa);
 				now = tp_entry_alloc(offset, ppa, 0,'W');
 				last_ptr = lru_push(c_table->entry_lru, (void *)now);
 				c_table->entry_cnt++;
@@ -181,65 +185,153 @@ NODE *tp_entry_split(NODE *split_node, int32_t lpa, int32_t ppa, bool flag){
 	
 	return last_ptr;
 }
+void tp_batch_update(C_TABLE *evic_ptr){
+	NODE *entry_head = evic_ptr->entry_lru->head;
+	struct entry_node *update_ent = NULL;
 
-int32_t tp_get_ppa(int32_t lpa){
+	if(entry_head == NULL){
+		return ;
+	}
+	while(entry_head != NULL){
+		update_ent = (struct entry_node *)entry_head->DATA;
+		if(update_ent->state == DIRTY){
+			update_ent->state = CLEAN;
+		}
+		entry_head = entry_head->next;
+	}
+	return ;
+}
+
+
+
+NODE* tp_get_entry(int32_t lpa, int32_t offset){
 	C_TABLE *c_table = &CMT[D_IDX];
-	NODE *entry_lru = c_table->entry_lru->head;
-	int32_t ppa = -1;
+	NODE *entry_node = c_table->entry_lru->head;
+	struct entry_node *ent_node = NULL;
+	
+	if(c_table->queue_ptr == NULL || entry_node == NULL)
+		return NULL;
+
+	/* variable for debug
 	int32_t head_ppn;
 	int32_t head_lpn;
 	int32_t offset;
-	while(entry_lru != NULL){
+	*/
+	while(entry_node != NULL){
 
-		struct entry_node *ent_node = (struct entry_node*)entry_lru->DATA;
-		if(ent_node->p_index <= P_IDX && P_IDX <= ent_node->p_index + ent_node->cnt){
+		ent_node = (struct entry_node*)entry_node->DATA;
+		if(ent_node->p_index <= offset && offset <= ent_node->p_index + ent_node->cnt){
+			/*
 			head_lpn = ent_node->p_index;
 			head_ppn = ent_node->ppa;
 			offset = P_IDX - head_lpn;
 			ppa = head_ppn + offset;
-
+			*/
 			//printf("%d = [%d | %d | %d]\n",P_IDX, head_lpn, head_ppn, ent_node->cnt);
-			return ppa;
+			return entry_node;
 
 		}
 
-		entry_lru = entry_lru->next;
+		entry_node = entry_node->next;
 	}
-	return ppa;
+	return NULL;
 }
+NODE *tp_fetch(int32_t lpa, int32_t ppa){
+	C_TABLE *c_table = &CMT[D_IDX];
+	NODE *last_ptr = c_table->last_ptr;
+	NODE *pre_find = NULL;
+	struct entry_node *now;
+	struct entry_node *ent_node;
+	int32_t pre_ppa;
+	
+	//int32_t cnt = 0;
+	if(ppa == -1){
+		return NULL;
+	}
+	if(P_IDX == 0){
+		if(last_ptr){
+			return last_ptr;
+		}else{
+			/*
+			for(int i = P_IDX ; i < EPP-1; i++){
+				pre_ppa  = c_table->p_table[i].ppa;
+				next_ppa = c_table->p_table[i+1].ppa;
+				if(next_ppa == -1)
+					break;
+				if(next_ppa == pre_ppa + 1){
+					cnt++;
+				}else{
+					break;
+				}
+			}
+			*/
+			now = tp_entry_alloc(P_IDX, ppa, 0, 'R');
+			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+			c_table->entry_cnt++;
+			free_cache_size -= ENTRY_SIZE;
+		}
+	}else{
 
+		pre_ppa = c_table->p_table[P_IDX-1].ppa;
+		if(pre_ppa == -1){
+
+			now = tp_entry_alloc(P_IDX,ppa,0,'R');
+			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+			c_table->entry_cnt++;
+			free_cache_size -= ENTRY_SIZE;
+			return last_ptr;
+		}
+		if(ppa == pre_ppa + 1){
+			pre_find = tp_get_entry(lpa, P_IDX-1);
+			if(pre_find != NULL){
+				ent_node = (struct entry_node *)pre_find->DATA;
+				ent_node->cnt++;
+				last_ptr = pre_find;
+				lru_update(c_table->entry_lru, last_ptr);
+				return last_ptr;
+			}
+		}
+
+		now = tp_entry_alloc(P_IDX,ppa,0,'R');
+		last_ptr = lru_push(c_table->entry_lru, (void *)now);
+		c_table->entry_cnt++;
+		free_cache_size -= ENTRY_SIZE;
+
+	}
+
+	return last_ptr;
+}
 
 int32_t cache_mapped_size()
 {
         int32_t idx = max_cache_entry;
         int32_t cache_size = 0;
         int32_t cnt = 0;
+	int32_t entry_cnt = 0;
         int32_t miss_cnt = 0;
         C_TABLE *c_table;
-        D_TABLE *p_table;
 	LRU *entry_lru = NULL;
 	NODE *entry_node = NULL;
-	struct entry_node *ent = NULL;
+	//struct entry_node *ent = NULL;
 	for(int i = 0; i<idx; i++){
 		c_table = &CMT[i];
 		entry_lru = c_table->entry_lru;
-		entry_node = entry_lru->head;
-		if(i == 0){
-			if(entry_node != NULL){
-				while(entry_node != NULL){
-					ent = (struct entry_node *)entry_node->DATA;
-					printf("%d = [%d | %d | %d]\n",i, ent->p_index, ent->ppa, ent->cnt);
-					entry_node = entry_node->next;
-				}
-				cnt++;
+		entry_node = entry_lru->head;		
+		if(entry_node != NULL){
+			while(entry_node != NULL){
+				//ent = (struct entry_node *)entry_node->DATA;
+				//			printf("%d = [%d | %d | %d]\n",i, ent->p_index, ent->ppa, ent->cnt);
+				entry_node = entry_node->next;
+				entry_cnt++;
 			}
-			else{
-				miss_cnt++;
-			}
-			break;
+			cnt++;
+		}
+		else{
+			miss_cnt++;
 		}
 	}
-	cache_size = cnt * ENTRY_SIZE;
+	printf("cached_size = %d\n",entry_cnt*ENTRY_SIZE);
+	cache_size = entry_cnt * ENTRY_SIZE;
         printf("not_caching : %d\n",miss_cnt);
         printf("num_caching : %d\n",cnt);
         return cache_size;

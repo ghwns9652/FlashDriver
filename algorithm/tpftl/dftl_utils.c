@@ -42,7 +42,7 @@ algo_req* assign_pseudo_req(TYPE type, value_set *temp_v, request *req){
 #if EVICT_POLL
     if(type == TGC_M || type == MAPPING_W){
 #else
-    if(type == TGC_M){
+    if(type == TGC_M || type == MAPPING_M){
 #endif
         dl_sync_init(&params->dftl_mutex, 1);
     }
