@@ -197,7 +197,6 @@ void tp_batch_update(C_TABLE *);
 
 NODE *tp_get_entry(int32_t, int32_t);
 NODE *tp_fetch(int32_t,int32_t);
-
-
+NODE *tp_prefetch(int32_t, int32_t);
 int32_t cache_mapped_size();
 #endif

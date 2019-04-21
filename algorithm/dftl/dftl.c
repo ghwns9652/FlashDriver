@@ -89,6 +89,10 @@ int32_t dirty_hit_on_read;
 int32_t clean_hit_on_write;
 int32_t dirty_hit_on_write;
 
+double total_miss_ratio;
+double read_miss_ratio;
+double write_miss_ratio;
+
 int32_t clean_eviction;
 int32_t dirty_eviction;
 
@@ -96,6 +100,32 @@ int32_t clean_evict_on_read;
 int32_t clean_evict_on_write;
 int32_t dirty_evict_on_read;
 int32_t dirty_evict_on_write;
+
+int32_t total_cnt;
+int32_t r_cnt;
+int32_t w_cnt;
+#if REAL_BENCH_SET
+//define t_main.c
+int32_t real_total_cnt;
+extern int32_t write_cnt;
+extern int32_t read_cnt;
+extern int32_t real_w_cnt;
+extern int32_t real_r_cnt;
+
+int32_t real_cache_r_miss;
+int32_t real_cache_w_miss;
+int32_t real_cache_w_hit;
+int32_t real_cache_r_hit;
+
+double real_t_miss_ratio;
+double real_r_miss_ratio;
+double real_w_miss_ratio;
+
+#else
+//define bench.c
+extern int32_t bench_write;
+extern int32_t bench_read;
+#endif
 
 static void print_algo_log() {
 	printf("\n");
@@ -153,7 +183,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     //num_max_cache = max_cache_entry / 8; // 12.5%
     //num_max_cache = max_cache_entry / 40; // 2.5%
     //num_max_cache = max_cache_entry / 50; // 2%
-    num_max_cache = 256;  //25% of Page_mapping
+    num_max_cache = 128;  //25% of Page_mapping
     real_max_cache = num_max_cache;
 
     num_caching = 0;
@@ -273,9 +303,36 @@ void demand_destroy(lower_info *li, algorithm *algo){
     printf("Cache hit on write: %d\n", cache_hit_on_write);
     printf("Cache miss on write: %d\n\n", cache_miss_on_write);
 
-    printf("Miss ratio: %.2f%%\n", (float)(cache_miss_on_read+cache_miss_on_write)/(data_r*2) * 100);
-    printf("Miss ratio on read : %.2f%%\n", (float)(cache_miss_on_read)/(data_r) * 100);
-    printf("Miss ratio on write: %.2f%%\n\n", (float)(cache_miss_on_write)/(data_r) * 100);
+#if REAL_BENCH_SET
+    total_cnt = write_cnt + read_cnt;
+    r_cnt     = read_cnt;
+    w_cnt     = write_cnt;
+
+    real_total_cnt = real_w_cnt + real_r_cnt;
+    real_t_miss_ratio = (double) (real_cache_r_miss + real_cache_w_miss) / real_total_cnt * 100;
+    real_r_miss_ratio = (double) real_cache_r_miss / real_r_cnt * 100;
+    real_w_miss_ratio = (double) real_cache_w_miss / real_w_cnt * 100;
+
+    total_miss_ratio = (double) (cache_miss_on_read+cache_miss_on_write) / total_cnt * 100;
+    read_miss_ratio  = (double) cache_miss_on_read / read_cnt * 100;
+    write_miss_ratio = (double) cache_miss_on_write / write_cnt * 100;
+
+    printf("real_t_cnt        : %d\n",real_total_cnt);
+    printf("real_r_cnt        : %d\n",real_r_cnt);
+    printf("real_w_cnt        : %d\n",real_w_cnt);
+    printf("real_t_miss_ratio (%) : %.2lf%\n",real_t_miss_ratio);
+    printf("real_r_miss_ratio (%) : %.2lf%\n",real_r_miss_ratio);
+    printf("real_w_miss_ratio (%) : %.2lf%\n",real_w_miss_ratio);
+ 
+#else
+    total_cnt = bench_write + bench_read;
+    total_miss_ratio = (double) (cache_miss_on_read+cache_miss_on_write) / total_cnt * 100;
+    read_miss_ratio  = (double) cache_miss_on_read / bench_read * 100;
+    write_miss_ratio = (double) cache_miss_on_write / bench_write * 100;
+#endif
+    printf("total_miss_ratio (%) : %.2lf%\n",total_miss_ratio);
+    printf("read_miss_ratio  (%) : %.2lf%\n",read_miss_ratio);
+    printf("write_miss_ratio (%) : %.2lf%\n",write_miss_ratio);
 
     printf("Clean hit on read: %d\n", clean_hit_on_read);
     printf("Dirty hit on read: %d\n", dirty_hit_on_read);
@@ -414,8 +471,11 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     req->params = (void *)checker;
 
     if (req_t == 'R') {
-		cache_miss_on_read++;
-
+	cache_miss_on_read++;
+#if REAL_BENCH_SET
+	if(req->mark)
+		real_cache_r_miss++;
+#endif
         req->type_ftl += 2;
 #if C_CACHE
         if (num_clean == max_clean_cache) {
@@ -439,8 +499,11 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
         }
 #endif
     } else {
-		cache_miss_on_write++;
-
+	cache_miss_on_write++;
+#if REAL_BENCH_SET
+	if(req->mark)
+		real_cache_w_miss++;
+#endif
         if (num_caching + num_flying == num_max_cache) {
             if (demand_eviction(req, 'W', &gc_flag, &d_flag) == 0) {
                 c_table->flying = true;
@@ -630,6 +693,10 @@ static uint32_t __demand_get(request *const req){
                 return UINT32_MAX;
             }
             cache_hit_on_read++;
+#if REAL_BENCH_SET
+	if(req->mark)
+		real_cache_r_hit++;
+#endif
             // Cache update
             demand_cache_update(req, 'R');
             req->type_ftl += 1;
@@ -751,7 +818,10 @@ static uint32_t __demand_set(request *const req){
         if (p_table) {
             cache_hit_on_write++;
             demand_cache_update(req, 'W');
-
+#if REAL_BENCH_SET
+	    if(req->mark)
+		real_cache_w_hit++;
+#endif
         } else {
             //cache_miss_on_write++;
             if (demand_cache_eviction(req, 'W') == 1) {

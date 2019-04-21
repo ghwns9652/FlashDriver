@@ -93,6 +93,11 @@ int32_t cache_miss_on_read;
 int32_t cache_hit_on_write;
 int32_t cache_miss_on_write;
 
+double total_miss_ratio;
+double read_miss_ratio;
+double write_miss_ratio;
+
+
 int32_t clean_hit_on_read;
 int32_t dirty_hit_on_read;
 int32_t clean_hit_on_write;
@@ -106,7 +111,35 @@ int32_t clean_evict_on_write;
 int32_t dirty_evict_on_read;
 int32_t dirty_evict_on_write;
 
-int32_t req_total_cnt;
+int32_t total_cnt;
+int32_t r_cnt;
+int32_t w_cnt;
+#if REAL_BENCH_SET
+//define t_main.c
+
+int32_t real_total_cnt;
+extern int32_t write_cnt;
+extern int32_t read_cnt;
+extern int32_t real_w_cnt;
+extern int32_t real_r_cnt;
+
+int32_t real_cache_r_miss;
+int32_t real_cache_w_miss;
+int32_t real_cache_w_hit;
+int32_t real_cache_r_hit;
+
+double real_t_miss_ratio;
+double real_r_miss_ratio;
+double real_w_miss_ratio;
+
+
+#else
+//define bench.c
+extern int32_t bench_write;
+extern int32_t bench_read;
+#endif
+
+int32_t not_found_cnt;
 static void print_algo_log() {
 	printf("\n");
 #if C_CACHE
@@ -155,7 +188,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 
     total_cache_size = max_cache_entry * PAGESIZE;
-    free_cache_size = (max_cache_entry / 8) * PAGESIZE; //12.5%
+    free_cache_size = (max_cache_entry / 16) * PAGESIZE; //12.5%
     prefetch_cnt = 0;
 
     /* Cache control & Init */
@@ -195,7 +228,6 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 #endif
 
     q_init(&dftl_q, 1024);
-    q_init(&evic_q, 1024);
 
     bm = BM_Init(num_block, p_p_b, 2, 1); // 2 heaps and 1 queue
     BM_Queue_Init(&free_b);
@@ -296,10 +328,48 @@ void demand_destroy(lower_info *li, algorithm *algo){
     printf("Cache hit on write: %d\n", cache_hit_on_write);
     printf("Cache miss on write: %d\n\n", cache_miss_on_write);
 
-    printf("Miss ratio: %.2f%%\n", (float)(cache_miss_on_read+cache_miss_on_write)/(data_r*2) * 100);
-    printf("Miss ratio on read : %.2f%%\n", (float)(cache_miss_on_read)/(data_r) * 100);
-    printf("Miss ratio on write: %.2f%%\n\n", (float)(cache_miss_on_write)/(data_r) * 100);
-    printf("req_total_cnt = %d\n",req_total_cnt);
+#if REAL_BENCH_SET
+    total_cnt = write_cnt + read_cnt;
+    r_cnt     = read_cnt;
+    w_cnt     = write_cnt;
+
+    real_total_cnt = real_w_cnt + real_r_cnt;
+    real_t_miss_ratio = (double) (real_cache_r_miss + real_cache_w_miss) / real_total_cnt * 100;
+    real_r_miss_ratio = (double) real_cache_r_miss / real_r_cnt * 100;
+    real_w_miss_ratio = (double) real_cache_w_miss / real_w_cnt * 100;   
+     
+    total_miss_ratio = (double) (cache_miss_on_read+cache_miss_on_write) / total_cnt * 100;
+    read_miss_ratio  = (double) cache_miss_on_read / read_cnt * 100;
+    write_miss_ratio = (double) cache_miss_on_write / write_cnt * 100;
+
+    printf("real_t_cnt        : %d\n",real_total_cnt);
+    printf("real_r_cnt        : %d\n",real_r_cnt);
+    printf("real_w_cnt        : %d\n",real_w_cnt);
+    printf("real_t_miss_ratio (%) : %.2lf%\n",real_t_miss_ratio);
+    printf("real_r_miss_ratio (%) : %.2lf%\n",real_r_miss_ratio);
+    printf("real_w_miss_ratio (%) : %.2lf%\n",real_w_miss_ratio);
+#else
+    total_cnt = bench_write + bench_read;
+    r_cnt     = bench_read;
+    w_cnt     = bench_write;
+    total_miss_ratio = (double) (cache_miss_on_read+cache_miss_on_write) / total_cnt * 100;
+    read_miss_ratio  = (double) cache_miss_on_read / bench_read * 100;
+    write_miss_ratio = (double) cache_miss_on_write / bench_write * 100;
+#endif
+    
+    printf("total_request_cnt    : %d\n",total_cnt);
+    printf("read_request_cnt     : %d\n",r_cnt);
+    printf("read_miss_cnt        : %d\n",cache_miss_on_read);
+    printf("write_request_cnt    : %d\n",w_cnt);
+    printf("wrtie_miss_cnt       : %d\n",cache_miss_on_write);
+    
+    printf("not_found_cnt        : %d\n",not_found_cnt);
+
+    printf("total_miss_ratio (%) : %.2lf%\n",total_miss_ratio);
+    printf("read_miss_ratio  (%) : %.2lf%\n",read_miss_ratio);
+    printf("write_miss_ratio (%) : %.2lf%\n",write_miss_ratio);
+    
+    
 #if C_CACHE
     printf("Clean hit on read: %d\n", clean_hit_on_read);
     printf("Dirty hit on read: %d\n", dirty_hit_on_read);
@@ -323,10 +393,8 @@ void demand_destroy(lower_info *li, algorithm *algo){
     int32_t cache_mapping_size = cache_mapped_size();
     printf("cache_mapped_size = %d\n",cache_mapping_size);
     printf("free_cache_size   = %d\n",free_cache_size);
-
     /* Clear modules */
     q_free(dftl_q);
-    q_free(evic_q);
     BM_Free(bm);
 
     lru_free(lru);
@@ -389,13 +457,11 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     d_flag = false;
 
     // Reserve requests that share flying mapping table
-    if(req_t == 'R'){
 	    if (c_table->flying) {
 		    c_table->flying_arr[c_table->num_waiting++] = req;
 		    bench_algo_end(req);
 		    return 1;
 	    }
-    }
 /*
     if (num_flying == num_max_cache) { // This case occurs only if (QDEPTH > num_max_cache)
         waiting_arr[waiting++] = req;
@@ -410,8 +476,13 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 
     if (req_t == 'R') {
 	    cache_miss_on_read++;
+#if REAL_BENCH_SET
+	    if(req->mark){
+		    real_cache_r_miss++;
+	    }
+#endif
 	    req->type_ftl += 2;
-        if (free_cache_size <= 0) {
+        if (free_cache_size < ENTRY_SIZE) {
             req->type_ftl += 1;
             if (demand_eviction(req, 'R', &gc_flag, &d_flag) == 0) {
 		 c_table->flying = true;
@@ -424,8 +495,12 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
             if(gc_flag) req->type_ftl += 2;
         }
     } else {	
-//   	cache_miss_on_write++;
-	if (free_cache_size <= 0) {
+   	cache_miss_on_write++;
+#if REAL_BENCH_SET
+	    if(req->mark)
+		    real_cache_w_miss++;
+#endif
+	if (free_cache_size < ENTRY_SIZE) {
             if (demand_eviction(req, 'W', &gc_flag, &d_flag) == 0) {
                 c_table->flying = true; 
 		c_table->evic_flag = 0;
@@ -492,7 +567,6 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
             c_table->p_table   = mem_arr[D_IDX].mem_p;
             c_table->queue_ptr = lru_push(lru, (void*)c_table);
             c_table->state     = DIRTY;
-
             // Register reserved requests
             for (int i = 0; i < c_table->num_waiting; i++) {
                 if (!inf_assign_try(c_table->flying_arr[i])) {
@@ -539,12 +613,13 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 
         bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
-
         return 1;
     }
     //Load mapping table
     c_table->p_table = mem_arr[D_IDX].mem_p;
+
     free_cache_size += c_table->flying_mapping_size;
+    
     if (req_t == 'R') {	
 	ppa = c_table->p_table[P_IDX].ppa;
 	if(ppa != -1){
@@ -560,28 +635,19 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 	}
 	c_table->last_ptr = tp_fetch(lpa,ppa);		
 	if(prefetch_cnt == -3){
-		printf("prefetch on!\n");
 		prefetch_cnt = 0;
-		p_count = c_table->entry_cnt;
-		if(p_count > PF_MAX)
-			p_count = PF_MAX;
-		if(p_count > c_table->num_waiting)
-			p_count = c_table->num_waiting;
-		for(int i = 0 ; i < p_count ; i++){
-
-			prefetch_req = c_table->flying_arr[i];
-			prefetch_lpa = prefetch_req->key;
-			prefetch_idx = prefetch_lpa % EPP;
-			prefetch_ppa = c_table->p_table[prefetch_idx].ppa;
-			printf("prefetch_idx = %d\n",prefetch_idx);
-			if(prefetch_ppa == -1)
-				continue;
-			tp_fetch(prefetch_lpa, prefetch_ppa);
-		}
-		if(c_table->last_ptr != NULL){
-			lru_update(c_table->entry_lru, c_table->last_ptr);
-		}
+	//	printf("prefetch_on!\n");
+	
 	}
+	/*
+	for(int i = 0 ; i < c_table->num_waiting; i++){
+		if(P_IDX >= c_table->flying_arr[i]->key%EPP){
+			printf("edge case--> 1 !!\n");
+			exit(0);
+		}	
+		printf("P_IDX = %d prefetch_idx = %d\n",P_IDX, c_table->flying_arr[i]->key%EPP);
+	}
+	*/
 
     }else{
 	    if(c_table->queue_ptr == NULL){
@@ -592,6 +658,7 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 		    lru_update(lru, c_table->queue_ptr);
 		    c_table->state = DIRTY;
 	    }
+	    printf("req->seq = %d\n",req->seq);
     }
 
    // Register reserved requests
@@ -635,7 +702,6 @@ static uint32_t __demand_get(request *const req){
         printf("range error %d\n",lpa);
         exit(3);
     }
-    req_total_cnt = req->seq;
 #if W_BUFF
     /* Check skiplist first */
     if((temp = skiplist_find(write_buffer, lpa))){
@@ -655,25 +721,25 @@ static uint32_t __demand_get(request *const req){
 
     if (req->params == NULL) {
 	c_table->last_ptr = tp_get_entry(lpa, P_IDX);
-        if (c_table->last_ptr) { // Cache hit
-            if (p_table[P_IDX].ppa == -1) {
+        if (c_table->last_ptr != NULL) { // Cache hit
+            /*
+	    if (p_table[P_IDX].ppa == -1) {
                 bench_algo_end(req);
                 return UINT32_MAX;
             }
-	    cache_hit_on_read++; 
-            req->type_ftl += 1;
-	    /*
-            cache_hit_on_read++;
-            // Cache update
-            demand_cache_update(req, 'R');
 	    */
+	    cache_hit_on_read++;
+            req->type_ftl += 1;
+#if REAL_BENCH_SET
+	    if(req->mark)
+	    	real_cache_r_hit++;
+#endif
 	    demand_cache_update(req,'R');
         } else { // Cache miss
             if (t_ppa == -1) {
                 bench_algo_end(req);
                 return UINT32_MAX;
             }
-            //cache_miss_on_read++;
             if (demand_cache_eviction(req, 'R') == 1) {
                 return 1;
             }
@@ -699,6 +765,7 @@ static uint32_t __demand_get(request *const req){
 
     if(c_table->last_ptr == NULL){
 	    bench_algo_end(req);
+	    not_found_cnt++;
 	    return UINT32_MAX;
     }
 
@@ -711,39 +778,42 @@ static uint32_t __demand_get(request *const req){
     ent_node = (struct entry_node *)c_table->last_ptr->DATA;
     offset = P_IDX - ent_node->p_index;
     ppa = ent_node->ppa + offset; 
-    /*
     if(ppa != p_table[P_IDX].ppa){
-	  *
+	  
+	    printf("req->seq = %d\n",req->seq);
 	   NODE *s = c_table->entry_lru->head;
 	   while(s != NULL){
 		   struct entry_node *s_tmp = (struct entry_node *)s->DATA;
 		   if(s_tmp->p_index <= P_IDX && P_IDX <= s_tmp->p_index + s_tmp->cnt)
-			   printf("sadf\n");
+			   printf("?? head_idx =%d head_ppa =%d cnt = %d\n",s_tmp->p_index, s_tmp->ppa, s_tmp->cnt);
 		   s = s->next;
 	   }
-	   
+	    
 	    printf("D_IDX = %d\n",D_IDX);
 	    printf("req->seq_3 : %d\n",req->seq);
 	    printf("P_IDX = %d , p_index = %d cnt = %d\n", P_IDX, ent_node->p_index,ent_node->cnt);	
 	    printf("head_ppa = %d\n",ent_node->ppa);
 	    printf("ppa = %d real_ppa = %d\n",ppa, p_table[P_IDX].ppa);
+	   /*
+	    for(int i = 0 ; i <EPP; i++){
+		    printf("[%d] = %d\n",i, c_table->p_table[i].ppa);
+	    }
+	    */
 	    exit(0);
     } 
     if (p_table[P_IDX].ppa == -1) {
         bench_algo_end(req);
         return UINT32_MAX;
     }
-    */
+    
+    
     if(free_cache_size < 0){
-
-	    printf("free_cache_size = %d\n",free_cache_size);
 	    bool gc_flag = false;
 	    bool d_flag = false;
-	    demand_hit_eviction(req,'W',&gc_flag, &d_flag);
+	    demand_hit_eviction(req,'R',&gc_flag, &d_flag);
 	    if(d_flag) req->type_ftl +=1;
 	    if(gc_flag) req->type_ftl +=2;	
     }
-
     bench_algo_end(req);
     // Get data in ppa
     __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
@@ -778,7 +848,6 @@ static uint32_t __demand_set(request *const req){
         exit(3);
     }
 
-    req_total_cnt = req->seq;
     /* If the write buffer is already full, flush it */
     if (write_buffer->size == max_write_buf) {
         /* Push all the data to lower */
@@ -831,11 +900,14 @@ static uint32_t __demand_set(request *const req){
 	//One-level LRU
 	check_node = c_table->queue_ptr;
 	if(check_node == NULL){
-            cache_miss_on_write++;
             if (demand_cache_eviction(req, 'W') == 1) {
                 return 1;
             }
         }
+#if REAL_BENCH_SET
+	if(req->mark)
+	    real_cache_w_hit++;
+#endif
 	cache_hit_on_write++;
 	demand_cache_update(req,'W');
     } else {
@@ -855,16 +927,9 @@ static uint32_t __demand_set(request *const req){
     req->params = NULL;
 
     c_table->write_hit++;
-
-    w_check = write_buffer->size;
+    
     temp = skiplist_insert(write_buffer, lpa, req->value, true);
-    if(w_check == write_buffer->size){
-	    req->value = NULL; // moved to 'value' field of snode
-	    bench_algo_end(req);
-	    req->end_req(req);
-	    return 1;
-    }
-
+   
     // If the value is successfully inserted to write_buffer, then update the mapping table entry
     if (write_buffer->size == ppa_idx+1) {
         ppa = ppa_prefetch[ppa_idx].ppa;
@@ -876,16 +941,22 @@ static uint32_t __demand_set(request *const req){
 	if(p_table[P_IDX].ppa != -1){
             BM_InvalidatePage(bm, p_table[P_IDX].ppa);
         }
-
         // Update mapping table & OOB
         p_table[P_IDX].ppa = ppa;
 	BM_ValidatePage(bm, ppa);
 	demand_OOB[ppa].lpa = lpa;
+    }else{
+	    //write buffer update
+	    req->value = NULL; // moved to 'value' field of snode
+	    bench_algo_end(req);
+	    req->end_req(req);
+	    return 1;
     }
-   
-    ppa = p_table[P_IDX].ppa;
+
+    ppa = c_table->p_table[P_IDX].ppa;
     check_node = c_table->last_ptr;
     if(check_node == NULL){
+	    //create init entry node
 	    ent_node = tp_entry_alloc(P_IDX, ppa, 0, 'W');
 	    c_table->last_ptr = lru_push(c_table->entry_lru, (void *)ent_node);
 	    c_table->entry_cnt++;
@@ -893,24 +964,45 @@ static uint32_t __demand_set(request *const req){
     }else{
 	    c_table->last_ptr = tp_entry_op(lpa, ppa);
     }
-    /* 
+   
+
     NODE* tmp = tp_get_entry(lpa, P_IDX);
     struct entry_node *tmp_ent = (struct entry_node *)tmp->DATA;
     int32_t offset = P_IDX - tmp_ent->p_index;
     int32_t check_ppa = tmp_ent->ppa + offset;
- 
-    if(check_ppa != p_table[P_IDX].ppa){
-	    printf("HEAD = %d P_IDX = %d\n",tmp_ent->p_index, P_IDX);
-	    printf("check_ppa = %d real_ppa = %d\n",check_ppa,p_table[P_IDX].ppa);
-    	    sleep(1);
+/* 
+    if(D_IDX == 113 && P_IDX == 64){
+	    printf("---- >>> ppa = %d\n",ppa);
+    	    sleep(3);
     }
-    */
+*/
+    if(check_ppa != p_table[P_IDX].ppa){
+	    printf("HEAD = %d HEAD_PPA = %d CNT = %d P_IDX = %d\n",tmp_ent->p_index, tmp_ent->ppa, tmp_ent->cnt, P_IDX);
+	    printf("check_ppa = %d real_ppa = %d\n",check_ppa,p_table[P_IDX].ppa);
+
+	    for(int i = 0 ; i < EPP; i++){
+		    printf("p_table[[%d] = %d\n",i,c_table->p_table[i].ppa);
+	    }
+    	    exit(0);
+    }
+    
     if(free_cache_size < 0){
+	/*	
+    	NODE* tmp = tp_get_entry(lpa, P_IDX);
+	struct entry_node *tmp_ent = (struct entry_node *)tmp->DATA;
+        printf("tmp_ent->p_index = %d\n",tmp_ent->p_index);
+	printf("free_cache_size = %d\n",free_cache_size);
+	printf("P_IDX = %d\n",P_IDX);
+	sleep(1);
+	*/
     	bool gc_flag = false;
 	bool d_flag = false;
-	demand_hit_eviction(req,'W',&gc_flag, &d_flag);
+	free_cache_size += demand_hit_eviction(req,'W',&gc_flag, &d_flag);
 	if(d_flag) req->type_ftl +=1;
 	if(gc_flag) req->type_ftl +=2;	
+
+//	free_cache_size -= add_size;
+	//printf("free_cache_size = %d\n",free_cache_size);
     }
     
     req->value = NULL; // moved to 'value' field of snode
@@ -1281,6 +1373,7 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 	evict_count++;
 #if TPFTL
 	int32_t lpa = req->key;
+	int32_t evic_size = 0;
 	//    C_TABLE *c_table = &CMT[D_IDX];
 	struct entry_node *evic_node = NULL;
 #endif
@@ -1301,8 +1394,8 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 		t_ppa     = cache_ptr->t_ppa;
 		evic_node = (struct entry_node *)lru_pop(cache_ptr->entry_lru);
 		cache_ptr->entry_cnt--; 
-
 		free_cache_size += ENTRY_SIZE;
+
 		if(evic_node->state == DIRTY){ // When t_page on cache has changed
 			dirty_eviction++;
 			if (req_t == 'W') {

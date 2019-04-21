@@ -38,11 +38,12 @@ int main(int argc,char* argv[]){
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
 
-//	bench_add(SEQSET,0,RANGE,RANGE,0);	
-	bench_add(RANDSET,0,RANGE,RANGE,0);
-//	bench_add(SET_LOCALITY,0,RANGE,RANGE,16);
+	bench_add(SEQSET,0,RANGE,RANGE,0);	
 //	bench_add(RANDSET,0,RANGE,RANGE,0);
-	bench_add(RANDGET,0,RANGE,RANGE,0);
+	bench_add(SET_LOCALITY,0,RANGE,RANGE,4);
+//	bench_add(RANDSET,0,RANGE,RANGE,0);
+	bench_add(GET_LOCALITY,0,RANGE,RANGE,4);
+//	bench_add(RANDGET,0,RANGE,RANGE,0);
 //	bench_add(SEQSET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE,RANGE);
@@ -82,8 +83,10 @@ int main(int argc,char* argv[]){
 */
 	MeasureTime aaa;
 	measure_init(&aaa);
+	int32_t s = 0;
 	bool tflag=false;
 	while((value=get_bench())){
+		s++;
 		temp.length=value->length;
 		if(value->type==FS_SET_T){
 			memcpy(&temp.value[0],&value->key,sizeof(value->key));
@@ -110,6 +113,7 @@ int main(int argc,char* argv[]){
 	else{
 		printf("req_cnt_test:cnt -> %d:%d fuck\n",req_cnt_test,cnt);
 	}
+	printf("count = %d\n",s);
 	force_write_start=true;
 	
 	printf("bench finish\n");

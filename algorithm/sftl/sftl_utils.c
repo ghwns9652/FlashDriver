@@ -367,7 +367,7 @@ int32_t cache_mapped_size()
 	int32_t miss_cnt = 0;
 	C_TABLE *c_table;
 	D_TABLE *p_table;
-	for(int i = 0; i < 1024; i++)
+	for(int i = 0; i < idx; i++)
 	{
 		c_table = &CMT[i];
 		p_table = c_table->p_table;

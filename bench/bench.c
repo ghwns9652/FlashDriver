@@ -21,6 +21,8 @@ void seqrw(KEYT,KEYT,monitor *);
 void randget(KEYT,KEYT,monitor*);
 void randset(KEYT,KEYT,monitor*);
 void set_locality(KEYT,KEYT,monitor*);
+void get_locality(KEYT,KEYT,monitor*);
+
 void randrw(KEYT,KEYT,monitor*);
 void latency(KEYT,KEYT,monitor*);
 void mixed(KEYT,KEYT,int percentage,monitor*);
@@ -31,6 +33,13 @@ KEYT keygenerator(uint32_t range);
 KEYT keygenerator_type(uint32_t range, int type);
 pthread_mutex_t bench_lock;
 uint8_t *bitmap;
+
+
+//used algorithm layer
+int32_t bench_write;
+int32_t bench_read;
+int32_t bench_total;
+
 static void bitmap_set(KEYT key){
 	uint32_t block=key/8;
 	uint8_t offset=key%8;
@@ -132,12 +141,18 @@ void bench_make_data(){
 		case SET_LOCALITY:
 			set_locality(start, end, _m);
 			break;
+		case GET_LOCALITY:
+			get_locality(start,end,_m);
+			break;
 		default:
 			printf("making data failed\n");
 			break;
 	}
+
 	_d->read_cnt=_m->read_cnt;
 	_d->write_cnt=_m->write_cnt;
+	bench_write += _d->write_cnt;
+	bench_read  += _d->read_cnt;
 	measure_init(&_m->benchTime);
 	MS(&_m->benchTime);
 }
@@ -703,6 +718,38 @@ void set_locality(KEYT start, KEYT end, monitor *m){
 			idx++;
 			t_key = (t_key+1) % (end-start);
 			cnt--;
+			m->write_cnt++;
+		}
+	}
+	/*	
+	for(KEYT i = 0; i < m->m_num; i++)
+	{
+		printf("m->body[%d][%d].type = %d\n",i/m->bech,i%m->bech,m->body[i/m->bech][i%m->bech].type);
+	}
+	exit(0);
+*/
+}
+void get_locality(KEYT start, KEYT end, monitor *m){
+	printf("making locality get bench: %d\n",m->seq_locality);
+	KEYT t_key;
+	KEYT idx = 0;
+	KEYT cnt;
+	KEYT adding_cnt = 0;
+	if(m->seq_locality == 16){
+		adding_cnt = 1;
+	}	
+	for(KEYT i = 0; i < (m->m_num / m->seq_locality) + adding_cnt; i++){
+		cnt = m->seq_locality;
+		t_key = start + rand()%(end-start);
+		while(cnt > 0){
+			m->body[idx/m->bech][idx%m->bech].key = t_key;
+			m->body[idx/m->bech][idx%m->bech].length = PAGESIZE;
+			m->body[idx/m->bech][idx%m->bech].mark = m->mark;
+			m->body[idx/m->bech][idx%m->bech].type = FS_GET_T;
+			idx++;
+			t_key = (t_key+1) % (end-start);
+			cnt--;
+			m->read_cnt++;
 		}
 	}
 	/*	
