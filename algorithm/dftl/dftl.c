@@ -737,6 +737,8 @@ static uint32_t __demand_get(request *const req){
         bench_algo_end(req);
         return UINT32_MAX;
     }
+    if(ppa != p_table[P_IDX].ppa)
+	    exit(0);
     bench_algo_end(req);
     // Get data in ppa
     __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));

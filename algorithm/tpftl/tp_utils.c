@@ -1,25 +1,43 @@
 #include "dftl.h"
 
-NODE *tp_entry_search(int32_t lpa){
+NODE *tp_entry_search(int32_t lpa, bool flag){
 	C_TABLE *c_table = &CMT[D_IDX];
-	NODE *find_node = c_table->entry_lru->head;
-	struct entry_node *ent_node = (struct entry_node *)find_node->DATA;
+	NODE *find_node = NULL;
+	NODE *re = NULL;
+	if(flag){
+		find_node = c_table->entry_lru->head;
+	}else{
+		find_node = c_table->entry_lru->tail;
+	}
+	struct entry_node *ent_node = NULL;
 	int32_t offset = P_IDX;
+	int32_t max_range;
+	int32_t cnt = 0;
 	while(find_node != NULL){
 		if(find_node == c_table->last_ptr){
-			find_node = find_node->next;
+			if(flag){
+				find_node = find_node->next;
+			}else{
+				find_node = find_node->prev;
+			}
 			continue;
 		}
-
-		ent_node = (struct entry_node *)find_node->DATA;
-		if(ent_node->p_index <= offset && offset <= ent_node->p_index + ent_node->cnt)
-		{
+		ent_node  = (struct entry_node *)find_node->DATA;
+		max_range = ent_node->p_index + ent_node->cnt; 
+		if(ent_node->p_index <= offset && offset <= max_range)
+		{	
+			
 			return find_node;
-		}		
-		find_node = find_node->next;
+		}
+		if(flag){
+			find_node = find_node->next;
+		}else{
+			find_node = find_node->prev;
+		}
 	}
-	return NULL;
+	return re;
 }
+
 
 struct entry_node *tp_entry_alloc(int32_t offset, int32_t ppa, int32_t cnt, char req_t){	
 	struct entry_node *now = (struct entry_node *)malloc(sizeof(struct entry_node));
@@ -49,65 +67,73 @@ NODE *tp_entry_op(int32_t lpa, int32_t ppa){
 	C_TABLE *c_table = &CMT[D_IDX];
 	NODE *last_ptr = c_table->last_ptr;
 	NODE *find_node = NULL;
+	
 	struct entry_node *ent_node = (struct entry_node *)last_ptr->DATA;
 	struct entry_node *now = NULL;
-	int32_t offset = P_IDX;
-	int32_t index;	
-	int32_t pre_ppa;
-	
-	//CASE 1 : Merge
-	
-	index   = ent_node->p_index + ent_node->cnt + 1;           //Variable For check current offset
-	pre_ppa = ent_node->ppa + (P_IDX - ent_node->p_index - 1); //Get a Pre ppn
-	if(index == P_IDX && ppa == pre_ppa+1){
+	int32_t index      = -1;	
+	int32_t pre_ppa    = -1;
+	int32_t head_idx   = ent_node->p_index;
+	int32_t head_ppa   = ent_node->ppa;
+	int32_t head_cnt   = ent_node->cnt;
+	int32_t max_range  = head_idx + head_cnt;
+	int32_t offset;
+	index   = head_idx + head_cnt + 1;
+	pre_ppa = head_ppa + (P_IDX - head_idx - 1);
 
-		if(ent_node->cnt == MAX_CNT){
-			now = tp_entry_alloc(offset, ppa, 0, 'W');
+	int32_t b_align;
+
+	/*
+	if(b_align == _PPS){
+		printf("ppa = %d\n",ppa);	
+		printf("head_ppa = %d head_ppa = %d P_IDX = %d cnt = %d\n",head_idx, head_ppa, P_IDX, head_cnt);
+		for(int i = 0 ; i < EPP; i++){
+			printf("p_table[%d] = %d\n",i,c_table->p_table[i].ppa);
+		}
+		sleep(3);
+	}
+	*/
+	if(index == P_IDX && ppa == pre_ppa+1){
+	//	printf("1_head_lpn = %d head_ppn = %d cnt = %d\n",head_idx, head_ppa,head_cnt);
+	//	printf("P_IDX = %d ppa = %d\n",P_IDX,ppa);
+		b_align = pre_ppa % _PPS + 1;
+		
+	//	printf("align = %d\n",b_align);
+		//If head_cnt is full, create new entry node
+		if(head_cnt == MAX_CNT || b_align == _PPS){
+			now = tp_entry_alloc(P_IDX, ppa, 0, 'W');
 			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+			c_table->last_ptr = last_ptr;
 			c_table->entry_cnt++;
 			free_cache_size -= ENTRY_SIZE;
-			return last_ptr;
+		}else{
+			ent_node->cnt++;
 		}
-
-		ent_node->cnt++;
-		find_node = tp_entry_search(lpa);
-	        	
+		find_node = tp_entry_search(lpa,0);
 		if(find_node != NULL){
-//			printf("P_IDX = %d\n",P_IDX);
-			tp_entry_split(find_node, lpa, ppa, 0);
+			struct entry_node *s=(struct entry_node *)find_node->DATA;
+			tp_entry_split(find_node,lpa, ppa, 0);
 		}
 		lru_update(c_table->entry_lru, c_table->last_ptr);
-
-	}
-	//CASE 2 : Split
-	else{
-		index = ent_node->p_index;
-		
-		//printf("P_IDX = %d ppa = %d\n",P_IDX,ppa);
-		//printf("index= %d cnt = %d\n",index,ent_node->cnt);
-		
-		if(index <= P_IDX && P_IDX <= index + ent_node->cnt){
+	}else{
+	
+	//	printf("2_head_lpn = %d head_ppn = %d cnt = %d\n",head_idx, head_ppa,head_cnt);
+		if(head_idx <= P_IDX && P_IDX <= max_range){
 			last_ptr = tp_entry_split(last_ptr, lpa, ppa, 1);
-		}
-		else{
-
-			find_node = tp_entry_search(lpa);
+		}else{
+			find_node = tp_get_entry(lpa,P_IDX);
 			if(find_node != NULL){
-				last_ptr = tp_entry_split(find_node,lpa, ppa, 1);
+				last_ptr = tp_entry_split(find_node, lpa, ppa, 1);
 			}else{
-
-				
-		//		printf("2_lpa = %d, ppa = %d\n",lpa,ppa);
-				now = tp_entry_alloc(offset, ppa, 0,'W');
+	//			printf("4444444! P_IDX = %d\n",P_IDX);
+				now = tp_entry_alloc(P_IDX, ppa, 0, 'W');
 				last_ptr = lru_push(c_table->entry_lru, (void *)now);
 				c_table->entry_cnt++;
 				free_cache_size -= ENTRY_SIZE;
 			}
-				
 		}
-
 	}
-
+	if(last_ptr == NULL)
+		printf("null..?\n");
 	return last_ptr;
 	
 }
@@ -123,7 +149,9 @@ NODE *tp_entry_split(NODE *split_node, int32_t lpa, int32_t ppa, bool flag){
 	int32_t pre_cnt;
 	int32_t next_cnt;
 	if(P_IDX == head_lpn){
-		//Split After merge
+
+		//printf("1_head_idx = %d head_ppa = %d head_cnt = %d\n",ent_node->p_index, ent_node->ppa, ent_node->cnt);
+		//Split After merge	
 		if(!flag){
 			if(cnt == 0){
 				lru_delete(c_table->entry_lru, split_node);
@@ -131,10 +159,13 @@ NODE *tp_entry_split(NODE *split_node, int32_t lpa, int32_t ppa, bool flag){
 				c_table->entry_cnt--;
 				return c_table->last_ptr;
 			}
+	//		printf("head_lpn = %d head_ppn = %d\n",head_lpn, head_ppn);
 			tp_entry_update(split_node, head_lpn+1, head_ppn+1, ent_node->cnt-1,'W');
 			lru_update(c_table->entry_lru, split_node);
+			last_ptr = split_node;
+		}
 		//Just split	
-		}else{
+		else{
 			if(cnt == 0){
 				last_ptr = tp_entry_update(split_node, P_IDX, ppa, ent_node->cnt, 'W');
 				lru_update(c_table->entry_lru, last_ptr);
@@ -149,11 +180,14 @@ NODE *tp_entry_split(NODE *split_node, int32_t lpa, int32_t ppa, bool flag){
 		}
 
 	}
-	else if (head_lpn < P_IDX && P_IDX < head_lpn + cnt){
-
+	else if (P_IDX < head_lpn + cnt){
+	
+		//printf("2_head_idx = %d head_ppa = %d head_cnt = %d\n",ent_node->p_index, ent_node->ppa, ent_node->cnt);
+		//printf("P_IDX = %d\n",P_IDX);
 		distance = P_IDX - head_lpn;
 		pre_cnt  = (distance) - 1;
 		next_cnt = (cnt - distance) - 1;
+
 		//next_node insert
 		tp_entry_update(split_node, P_IDX+1, head_ppn+distance+1, next_cnt,'W');
 		lru_update(c_table->entry_lru, split_node);
@@ -168,7 +202,8 @@ NODE *tp_entry_split(NODE *split_node, int32_t lpa, int32_t ppa, bool flag){
 
 	}
 	else{
-		
+
+		//printf("3_head_idx = %d head_ppa = %d head_cnt = %d\n",ent_node->p_index, ent_node->ppa, ent_node->cnt);
 		now = tp_entry_alloc(P_IDX,ppa, 0, 'W');
 	//	printf("now->lpn : %d now->ppn: %d\n",now->p_index, now->ppa);
 		last_ptr = lru_push(c_table->entry_lru, (void *)now);
@@ -182,12 +217,12 @@ NODE *tp_entry_split(NODE *split_node, int32_t lpa, int32_t ppa, bool flag){
 		}
 	//	printf("ent_node->cnt = %d\n",ent_node->cnt);
 		tp_entry_update(split_node, head_lpn, head_ppn, ent_node->cnt-1,'W');
-		ent_node = (struct entry_node *)split_node->DATA;	
+	//	ent_node = (struct entry_node *)split_node->DATA;	
 	//	printf("split_node->lpn : %d ppn : %d cnt = %d\n",ent_node->p_index, ent_node->ppa,ent_node->cnt);
 		lru_update(c_table->entry_lru, split_node);
 	}
-
-	
+	if(last_ptr == NULL)
+		printf("null..?\n");
 	return last_ptr;
 }
 void tp_batch_update(C_TABLE *evic_ptr){
@@ -216,28 +251,38 @@ NODE* tp_get_entry(int32_t lpa, int32_t offset){
 	NODE *find_node = NULL;
 	if(c_table->queue_ptr == NULL)
 		return NULL;
-
+	//printf("P_IDX = %d\n",P_IDX);
 	// variable for debug
+	/*
 	int32_t head_ppn;
 	int32_t head_lpn;
 	int32_t ppa;	
 	int32_t cnt = 0;
+	*/
 	while(entry_node != NULL){
 
 		ent_node = (struct entry_node*)entry_node->DATA;
 		if(ent_node->p_index <= offset && offset <= ent_node->p_index + ent_node->cnt){
-			
+			/*
 			head_lpn = ent_node->p_index;
 			head_ppn = ent_node->ppa;
 			int32_t distance = P_IDX - head_lpn;
 			ppa = head_ppn + distance;
-			
-		//	printf("%d = [%d | %d | %d]\n",P_IDX, head_lpn, head_ppn, ent_node->cnt);
-			cnt++;
+			*/
+			//printf("D_IDX = %d %d = [%d | %d | %d]\n",D_IDX,P_IDX, head_lpn, head_ppn, ent_node->cnt);
 			find_node = entry_node;
-			if(cnt > 1){
-		//		printf("중복 노드 발견!\n");
-			}
+			
+			//cnt++;
+			/*if(cnt > 1){
+				printf("중복 노드 발견!\n");
+				for(int i = 0 ; i < EPP ;i++){
+					printf("[%d] = %d\n",i,c_table->p_table[i].ppa);
+					//printf("p_table[%d].bitmap = %d\n",i,c_table->h_bitmap[i]);
+				}
+				exit(0);
+			}*/
+			return find_node;
+			
 
 		}
 
@@ -253,12 +298,15 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 	NODE *next_find = NULL;
 	struct entry_node *now;
 	struct entry_node *ent_node;
+	struct entry_node *next_ent;
 	int32_t pre_ppa, pre_index;
         int32_t cur_ppa;
 	int32_t next_ppa;	
 	int32_t cnt = 0;
 	int32_t merge_cnt = 0;
+	int32_t next_cnt = 0;
 	int32_t i;
+	int32_t idx;
 	if(ppa == -1){
 		return NULL;
 	}
@@ -267,28 +315,43 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 		if(next_ppa == -1 || next_ppa != ppa+1){
 			now = tp_entry_alloc(P_IDX, ppa, 0, 'R');
 			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+			c_table->h_bitmap[P_IDX] = 1;
 			c_table->entry_cnt++;
 			free_cache_size -= ENTRY_SIZE;
 			return last_ptr;
 		}
 		if(next_ppa == ppa+1){
 			next_find = tp_get_entry(lpa, P_IDX+1);
+			//If next_idx is hit
 			if(next_find != NULL){
 				ent_node = (struct entry_node *)next_find->DATA;
-				last_ptr = tp_entry_update(next_find, P_IDX, ppa, ent_node->cnt+1, 'R');
-				lru_update(c_table->entry_lru, last_ptr);
+				if(ent_node->cnt == MAX_CNT){
+					now = tp_entry_alloc(P_IDX, ppa, 0, 'R');
+					last_ptr = lru_push(c_table->entry_lru, (void *)now);
+					c_table->entry_cnt++;
+					free_cache_size -= ENTRY_SIZE;
+					
+				}else{
+					last_ptr = tp_entry_update(next_find, P_IDX, ppa, ent_node->cnt+1,'R');
+					lru_update(c_table->entry_lru, last_ptr);
+				}
+				c_table->h_bitmap[P_IDX] = 1;
 			}else{
-				for(i = P_IDX ; i < EPP-1; i++){
-					cur_ppa  = c_table->p_table[i].ppa;
-					next_ppa = c_table->p_table[i+1].ppa;
-					if(next_ppa == cur_ppa + 1){
+				cur_ppa = ppa;
+				c_table->h_bitmap[P_IDX] = 1;
+				for(i = P_IDX+1; i < EPP; i++){
+					if(c_table->h_bitmap[i] || cnt == MAX_CNT)
+						break;
+					next_ppa = c_table->p_table[i].ppa;
+					if(next_ppa == cur_ppa+1){
 						cnt++;
+						c_table->h_bitmap[i] = 1;
+						cur_ppa = next_ppa;
 					}else{
 						break;
 					}
-					if(cnt == MAX_CNT)
-						break;
 				}
+						
 				//P_IDX == 0 , ppa = c_table->p_table[P_IDX].ppa
 				now = tp_entry_alloc(P_IDX, ppa, cnt, 'R');
 				last_ptr = lru_push(c_table->entry_lru, (void *)now);
@@ -296,14 +359,17 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 				free_cache_size -= ENTRY_SIZE;
 			}
 		}
+		
 	}
 	//0 < P_IDX < EPP
 	else if (P_IDX < EPP){
+		
 		pre_ppa = c_table->p_table[P_IDX-1].ppa;
 		next_ppa = c_table->p_table[P_IDX+1].ppa;
 		if(pre_ppa == -1 || ppa != pre_ppa+1){
 			now = tp_entry_alloc(P_IDX, ppa, 0, 'R');
 			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+			c_table->h_bitmap[P_IDX] = 1;
 			c_table->entry_cnt++;
 			free_cache_size -= ENTRY_SIZE;
 		}
@@ -313,70 +379,102 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 			if(pre_find != NULL){
 				ent_node = (struct entry_node *)pre_find->DATA;
 				//Increment count variable
-				last_ptr = tp_entry_update(pre_find, ent_node->p_index, ent_node->ppa, ent_node->cnt+1,'R');
-				lru_update(c_table->entry_lru, last_ptr);
+				if(ent_node->cnt == MAX_CNT){
+					now = tp_entry_alloc(P_IDX, ppa, 0, 'R');
+					last_ptr = lru_push(c_table->entry_lru, (void *)now);
+					c_table->entry_cnt++;
+					free_cache_size -= ENTRY_SIZE;
+				}else{
+					ent_node->cnt++;
+					last_ptr = pre_find;
+					lru_update(c_table->entry_lru, last_ptr);
+				}
+				c_table->h_bitmap[P_IDX] = 1;
 			}else{
-				for(i = P_IDX; i > 0; i--){
-					pre_ppa = c_table->p_table[i-1].ppa;
-					cur_ppa = c_table->p_table[i].ppa;
+				cur_ppa = ppa;
+				c_table->h_bitmap[P_IDX] = 1;	
+				for(i = P_IDX-1; i >= 0; i--){
+					if(c_table->h_bitmap[i] || cnt == MAX_CNT)
+						break;
+					pre_ppa = c_table->p_table[i].ppa;
 					if(cur_ppa == pre_ppa +1){
 						cnt++;
+						c_table->h_bitmap[i] = 1;
 					}else{
 						break;
 					}
+					cur_ppa = pre_ppa;
 				}
-				if(i == 0){
-					pre_ppa = c_table->p_table[i].ppa;
-					if(cur_ppa == pre_ppa +1){
-						cur_ppa = pre_ppa;
-					}
-				}
-				now = tp_entry_alloc(i, cur_ppa, cnt, 'R');
+				if(i != -1){
+					idx = i+1;
+				}else{
+					idx = 0;
+				}	
+				now = tp_entry_alloc(idx, cur_ppa, cnt, 'R');
 				last_ptr = lru_push(c_table->entry_lru, (void *)now);
 				c_table->entry_cnt++;
 				free_cache_size -= ENTRY_SIZE;
 			}
 		}
 
-		if(next_ppa == -1 || next_ppa != ppa+1){
+		ent_node = (struct entry_node *)last_ptr->DATA;
+		if(next_ppa == -1 || next_ppa != ppa+1 || ent_node->cnt == MAX_CNT){
 			return last_ptr;
 		}
 		else if(next_ppa == ppa+1){
+
 			next_find = tp_get_entry(lpa, P_IDX+1);
-			//CASE 1 : next_find is null
-			if(next_find == NULL){
-				for(i = P_IDX ; i < EPP-1; i++){
-					cur_ppa  = c_table->p_table[i].ppa;
-					next_ppa = c_table->p_table[i+1].ppa;
+			//CASE1 : merge pre_node and next_node
+			if(next_find != NULL){
+				next_ent = (struct entry_node *)next_find->DATA;
+				ent_node = (struct entry_node *)last_ptr->DATA;	
+				next_cnt = next_ent->cnt;
+				for(int i = 0 ; i <= next_cnt; i++){
+					ent_node->cnt++;
+					next_ent->p_index++;
+					next_ent->ppa++;
+					next_ent->cnt--;
+					if(ent_node->cnt == MAX_CNT)
+						break;
+				}
+				if(next_ent->cnt == -1)
+				{
+					lru_delete(c_table->entry_lru, next_find);
+					c_table->entry_cnt--;
+					free_cache_size += ENTRY_SIZE;
+				}
+			}
+			//CASE2 : next_find is null
+			else
+			{
+
+				ent_node = (struct entry_node *)last_ptr->DATA;	
+				cur_ppa = ppa;
+				merge_cnt = ent_node->cnt;
+				//P_IDX bitmap is already set
+				//c_table->h_bitmap[P_IDX] = 1
+				for(i = P_IDX+1 ; i < EPP; i++){
+					if(c_table->h_bitmap[i] || merge_cnt == MAX_CNT)
+						break;
+					next_ppa = c_table->p_table[i].ppa;
 					if(next_ppa == cur_ppa + 1){
 						merge_cnt++;
+						c_table->h_bitmap[i] = 1;
+						cur_ppa = next_ppa;
 					}else{
 						break;
 					}
 				}
 				ent_node = (struct entry_node *)last_ptr->DATA;
-				ent_node->cnt += merge_cnt;
-				return last_ptr;
+				ent_node->cnt = merge_cnt;
+				if(ent_node->cnt > MAX_CNT){
+					printf("cnt error!\n");
+					sleep(3);
+				}
 
 			}
-			//CASE2 : merge request into within range (e.g, range(1,10) LPN = 5)
-			if(last_ptr == next_find){
-				last_ptr = next_find;
-				return last_ptr;
-			}
 
-			//CASE3 : merge pre_node and next_node
-			if(next_find != NULL){
-				ent_node = (struct entry_node *)next_find->DATA;
-				merge_cnt = ent_node->cnt+1;
-				ent_node = (struct entry_node *)last_ptr->DATA;
-				ent_node->cnt += merge_cnt;
-
-				//next_node delete
-				lru_delete(c_table->entry_lru, next_find);
-				c_table->entry_cnt--;
-				free_cache_size += ENTRY_SIZE;
-			}
+			
 		}			
 
 	}
@@ -385,40 +483,57 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 		if(pre_ppa == -1 || ppa != pre_ppa+1){
 			now = tp_entry_alloc(P_IDX, ppa, 0, 'R');
 			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+			c_table->h_bitmap[P_IDX] = 1;
 			c_table->entry_cnt++;
 			free_cache_size -= ENTRY_SIZE;
 			return last_ptr;
 		}
 
 		if(ppa == pre_ppa+1){
+
+			//printf("4\n");
 			pre_find = tp_get_entry(lpa, P_IDX-1);
 			if(pre_find != NULL)
 			{
 				ent_node = (struct entry_node *)pre_find->DATA;
-				last_ptr = tp_entry_update(pre_find, ent_node->p_index, ent_node->ppa, ent_node->cnt+1,'R');
-				lru_update(c_table->entry_lru, last_ptr);
+				if(ent_node->cnt == MAX_CNT){
+					now = tp_entry_alloc(P_IDX, ppa, 0, 'R');
+					last_ptr = lru_push(c_table->entry_lru, (void *)now);
+					c_table->entry_cnt++;
+					free_cache_size -= ENTRY_SIZE;
+				}else{
+					ent_node->cnt++;
+					last_ptr = pre_find;
+					lru_update(c_table->entry_lru, last_ptr);
+				}
+				c_table->h_bitmap[P_IDX] = 1;
 			}else{
-				for(i = P_IDX; i > 0; i--){
-					pre_ppa = c_table->p_table[i-1].ppa;
-					cur_ppa = c_table->p_table[i].ppa;
+				cur_ppa = ppa;
+				c_table->h_bitmap[P_IDX] = 1;
+				for(i = P_IDX-1; i >= 0; i--){
+					if(c_table->h_bitmap[i] || cnt == MAX_CNT)
+						break;
+					pre_ppa = c_table->p_table[i].ppa;
 					if(cur_ppa == pre_ppa +1){
 						cnt++;
+						c_table->h_bitmap[i] = 1;
 					}else{
 						break;
 					}
+					cur_ppa = pre_ppa;
 				}
-				if(i== 0){
-					pre_ppa = c_table->p_table[i].ppa;
-					if(cur_ppa == pre_ppa + 1){
-						cur_ppa = pre_ppa;
-					}
+				if(i != -1){
+					idx = i+1;
+				}else{
+					idx = 0;
 				}
-				now = tp_entry_alloc(i, cur_ppa, cnt, 'R');
+				now = tp_entry_alloc(idx, cur_ppa, cnt, 'R');
 				last_ptr = lru_push(c_table->entry_lru, (void *)now);
 				c_table->entry_cnt++;
 				free_cache_size -= ENTRY_SIZE;
 			}
 		}
+		
 	}
 
 	return last_ptr;
@@ -475,12 +590,18 @@ int32_t cache_mapped_size()
 		entry_node = c_table->entry_lru->head;
 		while(entry_node != NULL){
 			ent = (struct entry_node *)entry_node->DATA;
-		//	printf("[%d | %d | %d]\n",ent->p_index, ent->ppa, ent->cnt);
+	//		printf("[%d | %d | %d]\n",ent->p_index, ent->ppa, ent->cnt);
 
 			entry_cnt++;
 			entry_node = entry_node->next;
 		}
-
+		/*
+		for(int i = 0 ; i < EPP ;i++){
+			//printf("[%d] = %d\n",i,c_table->p_table[i].ppa);
+			printf("p_table[%d].bitmap = %d\n",i,c_table->h_bitmap[i]);
+		}
+		break;
+		*/
 		//printf("[%d]->flying_mapping_size : %d\n",c_table->idx, c_table->flying_mapping_size);
 		check_cnt += c_table->entry_cnt;
 		cnt++;

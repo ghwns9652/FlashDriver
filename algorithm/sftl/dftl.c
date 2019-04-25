@@ -296,6 +296,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].first_check = 0;
 	CMT[i].bit_cnt = 0;
 	CMT[i].evic_flag = 0;
+	CMT[i].gc_flag = 0;
 	memset(CMT[i].bitmap, 0, sizeof(char) * EPP);
 #endif
 
@@ -851,6 +852,8 @@ static uint32_t __demand_get(request *const req){
     else{
 	    ppa = p_table[P_IDX].ppa;
     }
+    if(ppa != p_table[P_IDX].ppa)
+    	    exit(0);
 
     bench_algo_end(req);
     // Get data in ppa

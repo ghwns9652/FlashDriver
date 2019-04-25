@@ -41,7 +41,7 @@
 
 #if S_FTL
 #define BITMAP_SIZE (EPP / 8) //Bitmap_size for SFTL
-#define ENTRY_SIZE 4
+#define ENTRY_SIZE 8          //ppa pointer and linked list pointer
 #endif
 
 
@@ -74,6 +74,7 @@ typedef struct cached_table{
 	bool form_check;   //In-Flash = 0, Bitmap = 1
 	bool first_check;  //First == 0  , Not First == 1
 	bool evic_flag;
+	bool gc_flag;
 #endif
 	uint32_t read_hit;
 	uint32_t write_hit;

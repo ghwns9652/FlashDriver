@@ -704,7 +704,7 @@ void set_locality(KEYT start, KEYT end, monitor *m){
 	KEYT idx = 0;
 	KEYT cnt;
 	KEYT adding_cnt = 0;
-	if(m->seq_locality == 16){
+	if(m->seq_locality > 16){
 		adding_cnt = 1;
 	}	
 	for(KEYT i = 0; i < (m->m_num / m->seq_locality) + adding_cnt; i++){

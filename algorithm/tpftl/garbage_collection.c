@@ -117,7 +117,7 @@ int32_t dpage_GC(){
     value_set *temp_value_set;
     value_set **temp_set;
     value_set *dummy_vs;
-
+    NODE *find = NULL;
     /* Load valid pages to SRAM */
     all = 0;
     dgc_count++;
@@ -202,8 +202,8 @@ int32_t dpage_GC(){
                 continue;
             }
             else{ // but CLEAN state couldn't have this case, so just change ppa
-                p_table[P_IDX].ppa = new_block + real_valid;
-                real_valid++;
+                p_table[P_IDX].ppa = new_block + real_valid;	
+		real_valid++;
                 if(c_table->state == CLEAN){
                     c_table->state = DIRTY;
                     BM_InvalidatePage(bm, t_ppa);
@@ -257,6 +257,22 @@ int32_t dpage_GC(){
             c_table->t_ppa = t_ppa; // Update CMT t_ppa
         }
     }
+
+    NODE *c_ptr = lru->head;
+    NODE *e_ptr = NULL;
+    while(c_ptr != NULL){
+	    c_table = (C_TABLE *)c_ptr->DATA;
+	    e_ptr = c_table->entry_lru->head;
+	    while(e_ptr != NULL){
+		    struct entry_node *ent_node = (struct entry_node *)e_ptr->DATA;
+		    int32_t head_lpn = ent_node->p_index;
+		    int32_t p_idx = head_lpn % EPP;
+		    ent_node->ppa = c_table->p_table[p_idx].ppa;
+		    e_ptr = e_ptr->next;
+	    }
+	    c_ptr = c_ptr->next;
+    }
+
 
 
     /* Write dpages */

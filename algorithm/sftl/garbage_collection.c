@@ -202,7 +202,8 @@ int32_t dpage_GC(){
                 continue;
             }
             else{ // but CLEAN state couldn't have this case, so just change ppa
-                p_table[P_IDX].ppa = new_block + real_valid;
+		c_table->gc_flag=1;
+		p_table[P_IDX].ppa = new_block + real_valid;
                 real_valid++;
                 if(c_table->state == CLEAN){
                     c_table->state = DIRTY;
@@ -256,6 +257,29 @@ int32_t dpage_GC(){
             BM_ValidatePage(bm, t_ppa);
             c_table->t_ppa = t_ppa; // Update CMT t_ppa
         }
+    }
+
+    NODE *c_ptr = lru->head;
+    while(c_ptr != NULL){
+	c_table = (C_TABLE *)c_ptr->DATA;
+	if(c_table->gc_flag){
+		c_table->gc_flag = 0;
+		c_ptr = c_ptr->next;
+		continue;
+	}
+	lpa = c_table->idx;
+	c_table->b_form_size = head_bit_set(lpa);
+	if(c_table->b_form_size < check_size){
+		sftl_bitmap_free(c_table);
+		head_list_set(lpa);
+		c_table->form_check = 1;
+	}else{
+		c_table->b_form_size = PAGESIZE;
+		c_table->form_check = 0;
+	}
+	c_table->gc_flag = 0;
+	c_ptr = c_ptr->next;	
+
     }
 
 

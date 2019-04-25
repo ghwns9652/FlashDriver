@@ -1,0 +1,291 @@
+_buffer:    int32_t t_ppa = c_table->t_ppa;
+_buffer:        lru_update(lru, c_table->queue_ptr);
+_buffer:        if (c_table->state == CLEAN) {
+_buffer:       if (c_table->state == CLEAN) {
+_buffer:            c_table->state = DIRTY;
+_buffer:        lru_update(lru, c_table->queue_ptr);
+_buffer:    int32_t t_ppa = c_table->t_ppa;
+_buffer:	    if (c_table->flying) {
+_buffer:		    c_table->flying_arr[c_table->num_waiting++] = req;
+_buffer:		 c_table->flying = true;
+_buffer:		c_table->evic_flag = 0;
+_buffer:                c_table->flying = true; 
+_buffer:		c_table->evic_flag = 0;
+_buffer:        c_table->flying = true;
+_buffer:	if(c_table->evic_flag){
+_buffer:		c_table->evic_flag = 0;
+_buffer:		c_table->flying_mapping_size = ENTRY_SIZE;
+_buffer:		free_cache_size -= c_table->flying_mapping_size;
+_buffer:    c_table->p_table   = mem_arr[D_IDX].mem_p;
+_buffer:    c_table->queue_ptr = lru_push(lru, (void*)c_table);
+_buffer:    c_table->state     = DIRTY;
+_buffer:    int32_t t_ppa    = c_table->t_ppa;
+_buffer:            c_table->p_table   = mem_arr[D_IDX].mem_p;
+_buffer:            c_table->queue_ptr = lru_push(lru, (void*)c_table);
+_buffer:            c_table->state     = DIRTY;
+_buffer:            for (int i = 0; i < c_table->num_waiting; i++) {
+_buffer:                if (!inf_assign_try(c_table->flying_arr[i])) {
+_buffer:                    q_enqueue((void *)c_table->flying_arr[i], dftl_q);
+_buffer:            c_table->num_waiting = 0;
+_buffer:            c_table->flying = false;
+_buffer:    int32_t t_ppa = c_table->t_ppa;
+_buffer:    if(c_table->queue_ptr == NULL){
+_buffer:		    c_table->queue_ptr = lru_push(lru, (void *)c_table);
+_buffer:		    c_table->queue_ptr = lru_push(lru, (void *)c_table);
+_buffer:		    c_table->state     = DIRTY;
+_buffer:	    lru_update(lru , c_table->queue_ptr);
+_buffer:		    c_table->state = DIRTY;
+_buffer:    c_table->p_table = mem_arr[D_IDX].mem_p;
+_buffer:    free_cache_size += c_table->flying_mapping_size;
+_buffer:	ppa = c_table->p_table[P_IDX].ppa;
+_buffer:	c_table->last_ptr = tp_fetch(lpa,ppa);
+_buffer:		p_count = c_table->entry_cnt;
+_buffer:		if(p_count > c_table->num_waiting)
+_buffer:			p_count = c_table->num_waiting;
+_buffer:			prefetch_req = c_table->flying_arr[i];
+_buffer:			prefetch_ppa = c_table->p_table[prefetch_idx].ppa;
+_buffer:		lru_update(c_table->entry_lru, c_table->last_ptr);
+_buffer:	if(c_table->last_ptr){
+_buffer:		struct entry_node *ent = (struct entry_node *)c_table->last_ptr->DATA;
+_buffer:		if(ppa != c_table->p_table[P_IDX].ppa){
+_buffer:			printf("ppa = %d real_ppa = %d\n",ppa, c_table->p_table[P_IDX].ppa);
+_buffer:    for (int i = 0; i < c_table->num_waiting; i++) {
+_buffer:        //while (!inf_assign_try(c_table->flying_arr[i])) {}
+_buffer:        if (!inf_assign_try(c_table->flying_arr[i])) {
+_buffer:            q_enqueue((void *)c_table->flying_arr[i], dftl_q);
+_buffer:    c_table->num_waiting = 0;
+_buffer:    c_table->flying = false;
+_buffer:    c_table->flying_mapping_size = 0;
+_buffer:    p_table = c_table->p_table;
+_buffer:    t_ppa   = c_table->t_ppa;
+_buffer:	c_table->last_ptr = tp_get_entry(lpa, P_IDX);
+_buffer:        if (c_table->last_ptr) { // Cache hit
+_buffer:    if(c_table->last_ptr == NULL){
+_buffer:    c_table->read_hit++;
+_buffer:    p_table = c_table->p_table;
+_buffer:    ent_node = (struct entry_node *)c_table->last_ptr->DATA;
+_buffer:	   NODE *s = c_table->entry_lru->head;
+_buffer:    p_table = c_table->p_table;
+_buffer:	check_node = c_table->queue_ptr;
+_buffer:    c_table->write_hit++;
+_buffer:        p_table = c_table->p_table;
+_buffer:    check_node = c_table->last_ptr;
+_buffer:	    c_table->last_ptr = lru_push(c_table->entry_lru, (void *)ent_node);
+_buffer:	    c_table->entry_cnt++;
+_buffer:	    c_table->last_ptr = tp_entry_op(lpa, ppa);
+_buffer:    p_table = c_table->p_table;
+_buffer:    t_ppa   = c_table->t_ppa;
+_buffer:        if (c_table->state == CLEAN) { // Clean hit
+_buffer:            lru_update(c_lru, c_table->clean_ptr);
+_buffer:            if (c_table->clean_ptr) {
+_buffer:                lru_update(c_lru, c_table->clean_ptr);
+_buffer:            lru_update(lru, c_table->queue_ptr);
+_buffer:        lru_update(lru, c_table->queue_ptr);
+_buffer:        t_ppa = c_table->t_ppa;
+_buffer:        c_table->p_table = p_table;
+_buffer:        c_table->queue_ptr = lru_push(lru, (void *)c_table);
+_buffer:    if (c_table->state == CLEAN) {
+_buffer:        c_table->state = DIRTY;
+_buffer:        if (!c_table->queue_ptr) {
+_buffer:            c_table->queue_ptr = lru_push(lru, (void *)c_table);
+_buffer:	c_table->flying_mapping_size = ENTRY_SIZE;
+_buffer:    c_table->evic_flag = 1;
+tp_utils.c:		find_node = c_table->entry_lru->head;
+tp_utils.c:		find_node = c_table->entry_lru->tail;
+tp_utils.c:		if(find_node == c_table->last_ptr){
+tp_utils.c:	NODE *last_ptr = c_table->last_ptr;
+tp_utils.c:			printf("p_table[%d] = %d\n",i,c_table->p_table[i].ppa);
+tp_utils.c:			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:			c_table->last_ptr = last_ptr;
+tp_utils.c:			c_table->entry_cnt++;
+tp_utils.c:		lru_update(c_table->entry_lru, c_table->last_ptr);
+tp_utils.c:				last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:				c_table->entry_cnt++;
+tp_utils.c:				lru_delete(c_table->entry_lru, split_node);
+tp_utils.c:				c_table->entry_cnt--;
+tp_utils.c:				return c_table->last_ptr;
+tp_utils.c:			lru_update(c_table->entry_lru, split_node);
+tp_utils.c:				lru_update(c_table->entry_lru, last_ptr);
+tp_utils.c:			lru_update(c_table->entry_lru, split_node);
+tp_utils.c:			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:			c_table->entry_cnt++;
+tp_utils.c:		lru_update(c_table->entry_lru, split_node);
+tp_utils.c:		last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:		lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:		c_table->entry_cnt += 2;
+tp_utils.c:		last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:		c_table->entry_cnt++;
+tp_utils.c:			lru_delete(c_table->entry_lru, split_node);
+tp_utils.c:			c_table->entry_cnt--;
+tp_utils.c:		lru_update(c_table->entry_lru, split_node);
+tp_utils.c:	NODE *entry_node = c_table->entry_lru->head;
+tp_utils.c:	if(c_table->queue_ptr == NULL)
+tp_utils.c:					printf("[%d] = %d\n",i,c_table->p_table[i].ppa);
+tp_utils.c:					//printf("p_table[%d].bitmap = %d\n",i,c_table->h_bitmap[i]);
+tp_utils.c:	NODE *last_ptr = c_table->last_ptr;
+tp_utils.c:		next_ppa = c_table->p_table[P_IDX+1].ppa;
+tp_utils.c:			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:			c_table->h_bitmap[P_IDX] = 1;
+tp_utils.c:			c_table->entry_cnt++;
+tp_utils.c:					last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:					c_table->entry_cnt++;
+tp_utils.c:					lru_update(c_table->entry_lru, last_ptr);
+tp_utils.c:				c_table->h_bitmap[P_IDX] = 1;
+tp_utils.c:				c_table->h_bitmap[P_IDX] = 1;
+tp_utils.c:					if(c_table->h_bitmap[i] || cnt == MAX_CNT)
+tp_utils.c:					next_ppa = c_table->p_table[i].ppa;
+tp_utils.c:						c_table->h_bitmap[i] = 1;
+tp_utils.c:				//P_IDX == 0 , ppa = c_table->p_table[P_IDX].ppa
+tp_utils.c:				last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:				c_table->entry_cnt++;
+tp_utils.c:		pre_ppa = c_table->p_table[P_IDX-1].ppa;
+tp_utils.c:		next_ppa = c_table->p_table[P_IDX+1].ppa;
+tp_utils.c:			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:			c_table->h_bitmap[P_IDX] = 1;
+tp_utils.c:			c_table->entry_cnt++;
+tp_utils.c:					last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:					c_table->entry_cnt++;
+tp_utils.c:					lru_update(c_table->entry_lru, last_ptr);
+tp_utils.c:				c_table->h_bitmap[P_IDX] = 1;
+tp_utils.c:				c_table->h_bitmap[P_IDX] = 1;	
+tp_utils.c:					if(c_table->h_bitmap[i] || cnt == MAX_CNT)
+tp_utils.c:					pre_ppa = c_table->p_table[i].ppa;
+tp_utils.c:						c_table->h_bitmap[i] = 1;
+tp_utils.c:					printf("???ppa=%d hit = %d\n",c_table->p_table[i-1].ppa, c_table->h_bitmap[i-1]);
+tp_utils.c:						printf("[%d] = %d\n",i,c_table->p_table[i].ppa);
+tp_utils.c:						//printf("p_table[%d].bitmap = %d\n",i,c_table->h_bitmap[i]);
+tp_utils.c:				last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:				c_table->entry_cnt++;
+tp_utils.c:					lru_delete(c_table->entry_lru, next_find);
+tp_utils.c:					c_table->entry_cnt--;
+tp_utils.c:				//c_table->h_bitmap[P_IDX] = 1
+tp_utils.c:					if(c_table->h_bitmap[i] || merge_cnt == MAX_CNT)
+tp_utils.c:					next_ppa = c_table->p_table[i].ppa;
+tp_utils.c:						c_table->h_bitmap[i] = 1;
+tp_utils.c:		pre_ppa = c_table->p_table[P_IDX-1].ppa;
+tp_utils.c:			last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:			c_table->h_bitmap[P_IDX] = 1;
+tp_utils.c:			c_table->entry_cnt++;
+tp_utils.c:					last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:					c_table->entry_cnt++;
+tp_utils.c:					lru_update(c_table->entry_lru, last_ptr);
+tp_utils.c:				c_table->h_bitmap[P_IDX] = 1;
+tp_utils.c:				c_table->h_bitmap[P_IDX] = 1;
+tp_utils.c:					if(c_table->h_bitmap[i] || cnt == MAX_CNT)
+tp_utils.c:					pre_ppa = c_table->p_table[i].ppa;
+tp_utils.c:						c_table->h_bitmap[i] = 1;
+tp_utils.c:				last_ptr = lru_push(c_table->entry_lru, (void *)now);
+tp_utils.c:				c_table->entry_cnt++;
+tp_utils.c:	NODE *last_ptr = c_table->last_ptr;
+tp_utils.c:	int32_t entry_cnt = c_table->entry_cnt;
+tp_utils.c:		entry_node = c_table->entry_lru->head;
+tp_utils.c:			printf("[%d] = %d\n",i,c_table->p_table[i].ppa);
+tp_utils.c:		entry_node = c_table->entry_lru->head;
+tp_utils.c:			//printf("[%d] = %d\n",i,c_table->p_table[i].ppa);
+tp_utils.c:			printf("p_table[%d].bitmap = %d\n",i,c_table->h_bitmap[i]);
+tp_utils.c:		//printf("[%d]->flying_mapping_size : %d\n",c_table->idx, c_table->flying_mapping_size);
+tp_utils.c:		check_cnt += c_table->entry_cnt;
+garbage_collection.c:        t_ppa = c_table->t_ppa;
+garbage_collection.c:        p_table = c_table->p_table;
+garbage_collection.c:            if(c_table->state == DIRTY && p_table[P_IDX].ppa != d_sram[i].origin_ppa){
+garbage_collection.c:                if(c_table->state == CLEAN){
+garbage_collection.c:                    c_table->state = DIRTY;
+garbage_collection.c:                    c_table->queue_ptr = lru_push(lru, (void *)c_table);
+garbage_collection.c:            demand_OOB[t_ppa].lpa = c_table->idx;
+garbage_collection.c:            c_table->t_ppa = t_ppa; // Update CMT t_ppa
+garbage_collection.c:	    e_ptr = c_table->entry_lru->head;
+garbage_collection.c:		    ent_node->ppa = c_table->p_table[p_idx].ppa;
+dftl.c:    int32_t t_ppa = c_table->t_ppa;
+dftl.c:        lru_update(lru, c_table->queue_ptr);
+dftl.c:        if (c_table->state == CLEAN) {
+dftl.c:       if (c_table->state == CLEAN) {
+dftl.c:            c_table->state = DIRTY;
+dftl.c:        lru_update(lru, c_table->queue_ptr);
+dftl.c:    int32_t t_ppa = c_table->t_ppa;
+dftl.c:	    if (c_table->flying) {
+dftl.c:		    c_table->flying_arr[c_table->num_waiting++] = req;
+dftl.c:		 c_table->flying = true;
+dftl.c:		c_table->evic_flag = 0;
+dftl.c:                c_table->flying = true; 
+dftl.c:		c_table->evic_flag = 0;
+dftl.c:        c_table->flying = true;
+dftl.c:	if(c_table->evic_flag){
+dftl.c:		c_table->evic_flag = 0;
+dftl.c:		c_table->flying_mapping_size = ENTRY_SIZE;
+dftl.c:		free_cache_size -= c_table->flying_mapping_size;
+dftl.c:    c_table->p_table   = mem_arr[D_IDX].mem_p;
+dftl.c:    c_table->queue_ptr = lru_push(lru, (void*)c_table);
+dftl.c:    c_table->state     = DIRTY;
+dftl.c:    int32_t t_ppa    = c_table->t_ppa;
+dftl.c:            c_table->p_table   = mem_arr[D_IDX].mem_p;
+dftl.c:            c_table->queue_ptr = lru_push(lru, (void*)c_table);
+dftl.c:            c_table->state     = DIRTY;
+dftl.c:            for (int i = 0; i < c_table->num_waiting; i++) {
+dftl.c:                if (!inf_assign_try(c_table->flying_arr[i])) {
+dftl.c:                    q_enqueue((void *)c_table->flying_arr[i], dftl_q);
+dftl.c:            c_table->num_waiting = 0;
+dftl.c:            c_table->flying = false;
+dftl.c:    int32_t t_ppa = c_table->t_ppa;
+dftl.c:    c_table->p_table = mem_arr[D_IDX].mem_p;
+dftl.c:    free_cache_size += c_table->flying_mapping_size;
+dftl.c:	ppa = c_table->p_table[P_IDX].ppa;
+dftl.c:		if(c_table->queue_ptr == NULL){
+dftl.c:			c_table->queue_ptr = lru_push(lru, (void *)c_table);
+dftl.c:			lru_update(lru, c_table->queue_ptr);
+dftl.c:	c_table->read_ptr = tp_fetch(lpa,ppa);		
+dftl.c:	if(c_table->read_ptr != NULL){
+dftl.c:		check_node = (struct entry_node *)c_table->read_ptr->DATA;		
+dftl.c:	for(int i = 0 ; i < c_table->num_waiting; i++){
+dftl.c:		if(P_IDX >= c_table->flying_arr[i]->key%EPP){
+dftl.c:		printf("P_IDX = %d prefetch_idx = %d\n",P_IDX, c_table->flying_arr[i]->key%EPP);
+dftl.c:	    if(c_table->queue_ptr == NULL){
+dftl.c:		    c_table->queue_ptr = lru_push(lru, (void *)c_table);
+dftl.c:		    c_table->state     = DIRTY;
+dftl.c:		    lru_update(lru, c_table->queue_ptr);
+dftl.c:		    c_table->state = DIRTY;
+dftl.c:    for (int i = 0; i < c_table->num_waiting; i++) {
+dftl.c:        //while (!inf_assign_try(c_table->flying_arr[i])) {}
+dftl.c:        if (!inf_assign_try(c_table->flying_arr[i])) {
+dftl.c:            q_enqueue((void *)c_table->flying_arr[i], dftl_q);
+dftl.c:    c_table->num_waiting = 0;
+dftl.c:    c_table->flying = false;
+dftl.c:    c_table->flying_mapping_size = 0;
+dftl.c:    p_table = c_table->p_table;
+dftl.c:    t_ppa   = c_table->t_ppa;
+dftl.c:	    c_table->read_ptr = check_node;
+dftl.c:    if(c_table->read_ptr == NULL){
+dftl.c:	//c_table->last_ptr = c_table->read_ptr;
+dftl.c:    c_table->read_hit++;
+dftl.c:    p_table = c_table->p_table;
+dftl.c:    ent_node = (struct entry_node *)c_table->read_ptr->DATA;
+dftl.c:	   NODE *s = c_table->entry_lru->head;
+dftl.c:		    printf("[%d] = %d\n",i, c_table->p_table[i].ppa);
+dftl.c:    p_table = c_table->p_table;
+dftl.c:	check_node = c_table->queue_ptr;
+dftl.c:    c_table->write_hit++;
+dftl.c:        p_table = c_table->p_table;
+dftl.c:    ppa = c_table->p_table[P_IDX].ppa;
+dftl.c:    c_table->h_bitmap[P_IDX] = 1;
+dftl.c:    check_node = c_table->last_ptr;
+dftl.c:	    c_table->last_ptr = lru_push(c_table->entry_lru, (void *)ent_node);
+dftl.c:	    c_table->entry_cnt++;
+dftl.c:	    c_table->last_ptr = tp_entry_op(lpa, ppa);
+dftl.c: 	    struct entry_node *check = (struct entry_node *)c_table->last_ptr->DATA;
+dftl.c:		    printf("p_table[[%d] = %d\n",i,c_table->p_table[i].ppa);
+dftl.c:    p_table = c_table->p_table;
+dftl.c:    t_ppa   = c_table->t_ppa;
+dftl.c:        if (c_table->state == CLEAN) { // Clean hit
+dftl.c:            lru_update(c_lru, c_table->clean_ptr);
+dftl.c:            if (c_table->clean_ptr) {
+dftl.c:                lru_update(c_lru, c_table->clean_ptr);
+dftl.c:            lru_update(lru, c_table->queue_ptr);
+dftl.c:        lru_update(lru, c_table->queue_ptr);
+dftl.c:        t_ppa = c_table->t_ppa;
+dftl.c:        c_table->p_table = p_table;
+dftl.c:        c_table->queue_ptr = lru_push(lru, (void *)c_table);
+dftl.c:    if (c_table->state == CLEAN) {
+dftl.c:        c_table->state = DIRTY;
+dftl.c:        if (!c_table->queue_ptr) {
+dftl.c:            c_table->queue_ptr = lru_push(lru, (void *)c_table);
+dftl.c:	c_table->flying_mapping_size = ENTRY_SIZE;
+dftl.c:	c_table->evic_flag = 1;

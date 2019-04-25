@@ -66,12 +66,15 @@ typedef struct cached_table{
     uint32_t read_hit;
     uint32_t write_hit;
 
+    
     bool evic_flag;
+    bool gc_flag;
     int32_t entry_cnt;   // Count variable for eviction optimization
     int32_t flying_mapping_size; // Reserve cache space for flying request
     LRU *entry_lru;      // Entry LRU pointer for TPFTL
-    NODE *last_ptr;      // pointer for last entry node
-
+    NODE *last_ptr;      // Write pointer for last entry node
+    NODE *read_ptr;	 // Read pointer for last entry node
+    bool *h_bitmap;      // hit check bitmap
 } C_TABLE;
 
 struct entry_node{
@@ -188,7 +191,7 @@ int32_t dpage_GC();
 
 
 //tp_utils.c
-NODE *tp_entry_search(int32_t);
+NODE *tp_entry_search(int32_t, bool);
 struct entry_node* tp_entry_alloc(int32_t, int32_t, int32_t, char);
 NODE *tp_entry_update(NODE *, int32_t, int32_t, int32_t, char);
 NODE *tp_entry_op(int32_t, int32_t);
@@ -197,6 +200,6 @@ void tp_batch_update(C_TABLE *);
 
 NODE *tp_get_entry(int32_t, int32_t);
 NODE *tp_fetch(int32_t,int32_t);
-NODE *tp_prefetch(int32_t, int32_t);
+//NODE *tp_prefetch(int32_t, int32_t);
 int32_t cache_mapped_size();
 #endif
