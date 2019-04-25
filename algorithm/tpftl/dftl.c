@@ -187,8 +187,9 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     num_dpage       = num_dblock * p_p_b;
     max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 
-    total_cache_size = max_cache_entry * PAGESIZE;
+   
     free_cache_size = (max_cache_entry / 16) * PAGESIZE; //12.5%
+    total_cache_size = free_cache_size;
     prefetch_cnt = 0;
 
     /* Cache control & Init */
@@ -393,8 +394,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     printf("WAF: %.2f\n\n", (float)(data_r+dirty_evict_on_write)/data_r);
 
-    int32_t cache_mapping_size = cache_mapped_size();
-    printf("cache_mapped_size = %d\n",cache_mapping_size);
+    printf("cache_mapped_size = %d\n",total_cache_size-free_cache_size);
     printf("free_cache_size   = %d\n",free_cache_size);
     /* Clear modules */
     q_free(dftl_q);
@@ -773,7 +773,6 @@ static uint32_t __demand_get(request *const req){
 
    
     if(c_table->read_ptr == NULL){
-	    printf("READ NOT FOUND\n");
 	    bench_algo_end(req); 
 	    not_found_cnt++;
 	    return UINT32_MAX;

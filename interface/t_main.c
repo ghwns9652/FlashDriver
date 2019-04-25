@@ -13,8 +13,8 @@
 #include "../bench/measurement.h"
 #include "interface.h"
 
-#define LOAD_FILE YCSB_LOAD_16
-#define RUN_FILE  YCSB_RUN_16
+#define LOAD_FILE MONET_LOAD_16
+#define RUN_FILE  MONET_RUN_16
 #define BLK_NUM 16
 MeasureTime *bt;
 MeasureTime *st;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 		printf("No file\n");
 		return 1;
 	}
-
+	sleep(1);
 	static int cnt = 0;
 	while (fscanf(fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
 	//	printf("cnt = %d\n",cnt++);
@@ -181,6 +181,7 @@ int main(int argc, char *argv[]) {
 	printf("total_throughput: %.2fMB/s\n",(float)req_t_cnt*8192/total_sec/1000/1000);
 	free(bt);
 	free(st);
+	sleep(5);
 	inf_free();
 
 	return 0;

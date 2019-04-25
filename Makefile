@@ -1,9 +1,9 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix_memory
+TARGET_LOWER=posix
 #TARGET_LOWER=linux_aio
-TARGET_ALGO=tpftl
+TARGET_ALGO=sftl
 
 
 PPWD=$(pwd)
@@ -116,7 +116,7 @@ duma_sim: duma_driver
 debug_driver: ./interface/main.c libdriver_d.a
 	$(CC) $(CFLAGS) -DDEBUG -o $@ $^ $(LIBS)
 
-driver: ./interface/main.c libdriver.a
+driver: ./interface/t_main.c libdriver.a
 	$(CC) $(CFLAGS) -o $@ $^ $(ARCH) $(LIBS)
 
 range_driver: ./interface/range_test_main.c libdriver.a

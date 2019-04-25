@@ -29,12 +29,14 @@
 #define TPC_C_BENCH_32 "/home/yumin/FlashDriver/bench/real_trace/tpc_32/tpc_bench_32.out"
 
 //YCSB bench setting
-#define YCSB_LOAD_16   "/home/yumin/FlashDriver/bench/real_trace/ycsb_16/ycsb_load_16c.out"
-#define YCSB_RUN_16    "/home/yumin/FlashDriver/bench/real_trace/ycsb_16/ycsb_run_16c.out"
-
+#define YCSB_LOAD_16   "/home/yumin/FlashDriver/bench/real_trace/ycsb_16/ycsb_load_16a.out"
+#define YCSB_RUN_16    "/home/yumin/FlashDriver/bench/real_trace/ycsb_16/ycsb_run_16a.out"
 #define YCSB_LOAD_32   "/home/yumin/FlashDriver/bench/real_trace/ycsb_32/ycsb_load_32a.out"
 #define YCSB_RUN_32    "/home/yumin/FlashDriver/bench/real_trace/ycsb_32/ycsb_run_32a.out"
 
+//MonetDB bench setting (TPC-H)
+#define MONET_LOAD_16  "/home/yumin/FlashDriver/bench/real_trace/monet_16/monet_load_16.out"
+#define MONET_RUN_16   "/home/yumin/FlashDriver/bench/real_trace/monet_16/monet_run_16.out"
 
 
 #ifdef CDF

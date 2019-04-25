@@ -375,12 +375,12 @@ int32_t cache_mapped_size()
 		{
 		//	printf("b_form_size[%d] = %d\n",i,c_table->b_form_size);
 			cnt++;
-			cache_size += c_table->b_form_size;
 		}else{
 			miss_cnt++;
 		//	printf("index = %d\n",i);
 		}
 	}
+	cache_size = total_cache_size - free_cache_size;
 	printf("not_caching : %d\n",miss_cnt);
 	printf("num_caching : %d\n",cnt);
 	return cache_size;

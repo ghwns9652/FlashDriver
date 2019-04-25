@@ -521,6 +521,7 @@ void bench_reap_data(request *const req,lower_info *li){
 		}
 	}
 #endif
+	
 	if(_m->empty){
 		_m->m_num++;
 		if(req->type==FS_GET_T){
@@ -534,7 +535,7 @@ void bench_reap_data(request *const req,lower_info *li){
 		pthread_mutex_unlock(&bench_lock);
 		return;
 	}
-
+	
 	if(_m->m_num==_m->r_num+1){
 		_data->bench=_m->benchTime;
 	}

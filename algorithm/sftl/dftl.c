@@ -196,8 +196,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     /* Cache control & Init */
 #if S_FTL
-	total_cache_size = max_cache_entry * PAGESIZE;
 	free_cache_size = PAGESIZE * 256 / 2;
+	total_cache_size = free_cache_size;
 	check_size = PAGESIZE * 0.8;
 	sftl_time = (MeasureTime *)malloc(sizeof(MeasureTime));
 	
@@ -417,8 +417,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     printf("WAF: %.2f\n\n", (float)(data_r+dirty_evict_on_write)/data_r);
 
-    int32_t cache_size = cache_mapped_size();
-    printf("\ncache_mapping_size : %d\n",cache_size);
+    printf("\ncache_mapping_size : %d\n",total_cache_size - free_cache_size);
     printf("free_cache_size      : %d\n",free_cache_size);
     printf("max_cache_entry      : %d\n",max_cache_entry);
     

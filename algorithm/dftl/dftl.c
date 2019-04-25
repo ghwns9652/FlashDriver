@@ -330,6 +330,12 @@ void demand_destroy(lower_info *li, algorithm *algo){
     read_miss_ratio  = (double) cache_miss_on_read / bench_read * 100;
     write_miss_ratio = (double) cache_miss_on_write / bench_write * 100;
 #endif
+    printf("total_request_cnt    : %d\n",total_cnt);
+    printf("read_request_cnt     : %d\n",r_cnt);
+    printf("read_miss_cnt        : %d\n",cache_miss_on_read);
+    printf("write_request_cnt    : %d\n",w_cnt);
+    printf("wrtie_miss_cnt       : %d\n",cache_miss_on_write);
+
     printf("total_miss_ratio (%) : %.2lf%\n",total_miss_ratio);
     printf("read_miss_ratio  (%) : %.2lf%\n",read_miss_ratio);
     printf("write_miss_ratio (%) : %.2lf%\n",write_miss_ratio);
