@@ -362,8 +362,8 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 		
 	}
 	//0 < P_IDX < EPP
-	else if (P_IDX < EPP){
-		
+	else if (P_IDX < EPP-1){
+	      	
 		pre_ppa = c_table->p_table[P_IDX-1].ppa;
 		next_ppa = c_table->p_table[P_IDX+1].ppa;
 		if(pre_ppa == -1 || ppa != pre_ppa+1){

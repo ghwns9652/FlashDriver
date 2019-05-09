@@ -13,8 +13,8 @@
 #include "../bench/measurement.h"
 #include "interface.h"
 
-#define LOAD_FILE MONET_LOAD_16
-#define RUN_FILE  MONET_RUN_16
+#define LOAD_FILE ROCKS_R_W_16
+#define RUN_FILE  ROCKS_RW_RR_16
 #define BLK_NUM 16
 MeasureTime *bt;
 MeasureTime *st;
@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
  	int len;
 	int8_t fs_type;
 	unsigned long long int offset;
-	FILE *fp;
-
+	FILE *w_fp;
+	FILE *r_fp;
 	char command[2];
 	char type[5];
 	double cal_len;
@@ -65,17 +65,23 @@ int main(int argc, char *argv[]) {
 	dummy.dmatag=-1;
 	dummy.length=PAGESIZE;
 	*/
-	
 	printf("%s load start!\n",LOAD_FILE);
-	fp = fopen(LOAD_FILE, "r");
-	if (fp == NULL) {
+	w_fp = fopen(LOAD_FILE, "r");
+	if (w_fp == NULL) {
 		printf("No file\n");
 		return 1;
 	}
-	sleep(1);
-	static int cnt = 0;
-	while (fscanf(fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
-	//	printf("cnt = %d\n",cnt++);
+
+	//Set sequential write for GC
+	
+	int32_t set_range = RANGE * 0.7;
+	for(int i = 0 ; i < set_range; i++){
+		inf_make_req(FS_SET_T, i, t_value, PAGESIZE, 0);
+	}
+        
+//	int32_t cnt = 0;
+	while (fscanf(w_fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
+//		printf("cnt = %d\n",cnt++);
 		/*
 		if(offset == 28887332){
 			printf("%s %s %llu %lf\n",command, type, offset, cal_len);
@@ -115,18 +121,18 @@ int main(int argc, char *argv[]) {
 		fflush(stdout);
 	}
 	printf("%s load complete!\n\n",LOAD_FILE);
-	fclose(fp);
+	fclose(w_fp);
 	printf("%s bench start!\n", RUN_FILE);
-	fp = fopen(RUN_FILE, "r");
-	if (fp == NULL) {
+	r_fp = fopen(RUN_FILE, "r");
+	if (r_fp == NULL) {
 		printf("No file\n");
 		return 1;
 	}
 	measure_start(bt);	
-        cnt = 0;	
-	while (fscanf(fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
+//	cnt = 0;
+	while (fscanf(r_fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
 	 	
-	//	printf("cnt = %d\n",cnt++);
+//		printf("cnt = %d\n",cnt++);
 		if(command[0] == 'D'){
 			offset = offset / BLK_NUM;
 			len = ceil(cal_len / BLK_NUM);
@@ -167,7 +173,7 @@ int main(int argc, char *argv[]) {
 	}
 	measure_adding(bt);
 	printf("%s bench complete!\n",RUN_FILE);
-	fclose(fp);
+	fclose(r_fp);
 
 	total_sec = bt->adding.tv_sec + (float)bt->adding.tv_usec/1000000;
 	req_t_cnt = real_w_cnt + real_r_cnt;

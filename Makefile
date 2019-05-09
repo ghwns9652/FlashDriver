@@ -1,9 +1,10 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix
+TARGET_LOWER=posix_memory
 #TARGET_LOWER=linux_aio
-TARGET_ALGO=sftl
+TARGET_ALGO=tpftl
+
 
 
 PPWD=$(pwd)
@@ -17,7 +18,7 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-#			-O2\
+			-O2\
 
 #			-DWRITESYNC\
 

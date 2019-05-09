@@ -71,28 +71,70 @@ struct head_node* head_free(C_TABLE *c_table, struct head_node *pre_node)
 
 	
 }
-int32_t head_bit_set(int32_t lpa)
+int32_t head_bit_set(int32_t t_index)
 {
-	C_TABLE *c_table = &CMT[D_IDX];
-	D_TABLE *p_table = c_table->p_table;
+	C_TABLE *c_table = &CMT[t_index];
+	D_TABLE *p_table = mem_arr[t_index].mem_p;
+        //printf("gc_flag = %d\n",c_table->gc_flag);
+	/*
+	for(int i = 0 ; i < EPP; i++){
+		printf("p_table[%d] = %d\n",i,p_table[i].ppa);
+	}
+	*/
+	/*
+	if(c_table->gc_flag){
+		printf("GC on!\n");
+	}else{
+		printf("GC off!\n");
+	}
 	
+	if(p_table == NULL){
+		printf("p_table null...???\n");
+		printf("t_index = %d\n",t_index);
+		NODE *tmp_lru = lru->head;
+		while(tmp_lru != NULL){
+			C_TABLE *t_table = (C_TABLE *)tmp_lru->DATA;
+			if(t_table->idx == t_index){
+				printf("lru에 있음!\n");
+			}
+			printf("tmp_idx = %d\n",t_table->idx);
+			tmp_lru = tmp_lru->next;
+		}
+		if(tmp_lru == NULL){
+			printf("lru 문제 발생!\n");
+		}
+
+		exit(0);
+	}
+	*/
+
 	int32_t head_ppa = p_table[0].ppa;
+	int32_t next_ppa;
 	int32_t idx = 1;	
 	int32_t b_form_size = 0;
 	int32_t cnt = 0;
 	c_table->bitmap[0] = 1;
+	
 	b_form_size += ENTRY_SIZE;
-	for(int i = 1 ; i < EPP; i++){
-		if(p_table[i].ppa == head_ppa + idx++){
-			c_table->bitmap[i] = 0;
+	cnt++;
+	for(int i = 0 ; i < EPP-1; i++){
+		head_ppa = p_table[i].ppa;
+		next_ppa = p_table[i+1].ppa;
+		if(next_ppa == -1){
+			c_table->bitmap[i+1] = 0;
+			continue;
+		}
+		if(next_ppa == head_ppa + 1){
+			c_table->bitmap[i+1] = 0;
 		}else{
-			head_ppa = p_table[i].ppa;
-			c_table->bitmap[i] = 1;
-			idx = 1;
 			cnt++;
+			c_table->bitmap[i+1] = 1;
 			b_form_size += ENTRY_SIZE;
 		}
+		head_ppa = next_ppa;
 	}
+//	printf("b_form_size = %d\n",b_form_size);
+//	sleep(1);
 	c_table->bit_cnt = cnt;
 	b_form_size += BITMAP_SIZE;
 	return b_form_size;
@@ -138,6 +180,19 @@ struct head_node* sftl_list_find(C_TABLE *c_table, int32_t offset)
 		}
 	}
 	return now;
+}
+
+int32_t sftl_list_reset(int32_t t_index){
+	C_TABLE *c_table = &CMT[t_index];
+	D_TABLE *p_table = c_table->p_table;
+	int32_t head_ppa;
+	for(int i = 0 ; i < EPP; i++){
+		if(c_table->bitmap[i] == 1){
+			head_ppa = p_table[i].ppa;
+			head_tail_push(c_table,head_ppa);
+		}
+	}
+	return 1;
 }
 
 int32_t sftl_bitmap_set(int32_t lpa)
@@ -373,7 +428,7 @@ int32_t cache_mapped_size()
 		p_table = c_table->p_table;
 		if(p_table)
 		{
-		//	printf("b_form_size[%d] = %d\n",i,c_table->b_form_size);
+//			printf("b_form_size[%d] = %d\n",i,c_table->b_form_size);
 			cnt++;
 		}else{
 			miss_cnt++;

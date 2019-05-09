@@ -153,7 +153,7 @@ static void print_algo_log() {
 #else
 	printf(" |  -Mixed Cache entries:  %d\n", num_max_cache);
 #endif
-	printf(" |  -Cache Percentage:     %0.3f%%\n", (float)real_max_cache/2048*100);
+	printf(" |  -Cache Percentage:     %0.3f%%\n", (float)real_max_cache/max_cache_entry*100);
 	printf(" | Write buffer size:      %d\n", max_write_buf);
 	printf(" |\n");
 	printf(" | ! Assume no Shadow buffer\n");
@@ -166,12 +166,17 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     /* Initialize pre-defined values by using macro */
     num_page        = _NOP;
     num_block       = _NOS;
+   /* 
+    num_block = ceil(num_block*100/93);
+    num_page  = num_block * _PPB;
+*/
     p_p_b           = _PPS;
     num_tblock      = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 8;
     num_tpage       = num_tblock * p_p_b;
     num_dblock      = num_block - num_tblock - 2;
     num_dpage       = num_dblock * p_p_b;
     max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
+
 
 
     /* Cache control & Init */
@@ -183,13 +188,13 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     //num_max_cache = max_cache_entry / 8; // 12.5%
     //num_max_cache = max_cache_entry / 40; // 2.5%
     //num_max_cache = max_cache_entry / 50; // 2%
-    num_max_cache = 128;  //25% of Page_mapping
+    num_max_cache = 128;  //12.5% of Page_mapping
     real_max_cache = num_max_cache;
 
     num_caching = 0;
     //max_write_buf = 512;
-	max_write_buf = 1024;
-//	max_write_buf = 1;
+//    max_write_buf = 1024;
+    max_write_buf = 1;
 #if C_CACHE
     max_clean_cache = num_max_cache / 2; // 50 : 50
     num_max_cache -= max_clean_cache;
@@ -363,6 +368,11 @@ void demand_destroy(lower_info *li, algorithm *algo){
     printf("num_flying: %d\n\n", num_flying);
 
     printf("max_cache_entry = %d\n",max_cache_entry);
+  
+    printf("TGC = %d\n",tgc_count);
+    printf("DGC = %d\n",dgc_count);
+    //printf("dgc_r = %d\n",dgc_r);
+    //printf("dgc_w = %d\n",dgc_w);  
     /* Clear modules */
     q_free(dftl_q);
     BM_Free(bm);

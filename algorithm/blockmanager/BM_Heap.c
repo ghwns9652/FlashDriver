@@ -64,5 +64,6 @@ void heap_print(Heap *h){
 		printf("%d ", temp->Invalid);
 		idx++;
 	}
+	printf("cnt: %d\n", idx);
 	printf("\n");
 }

@@ -8,7 +8,7 @@
 #define S_FTL 1 
 #define TPFTL 1
 
-#define REAL_BENCH_SET 1
+#define REAL_BENCH_SET 0
 
 // memcpy op gc flag
 #define MEMCPY_ON_GC 0

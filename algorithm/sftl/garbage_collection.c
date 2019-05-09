@@ -118,6 +118,12 @@ int32_t dpage_GC(){
     value_set **temp_set;
     value_set *dummy_vs;
 
+
+    //For SFTL 
+    NODE *c_ptr = lru->head;
+    int32_t t_index;
+    int32_t tmp_size;
+    int32_t map_size;
     /* Load valid pages to SRAM */
     all = 0;
     dgc_count++;
@@ -139,6 +145,8 @@ int32_t dpage_GC(){
     d_reserved = victim;
     if(all){ // if all page is invalid, then just trim and return
     	puts("dpage_GC - all");
+
+//	fprintf(stderr, "copy count all\n");
         __demand.li->trim_block(old_block, false);
         return new_block;
     }
@@ -188,8 +196,9 @@ int32_t dpage_GC(){
 
     /* Sort pages in SRAM */
     qsort(d_sram, p_p_b, sizeof(D_SRAM), lpa_compare); // Sort valid pages by lpa order
-
+    int32_t cnt = 0;
     /* Manage mapping data and write tpages */
+    int32_t add_size = 0;
     for(int i = 0; i < valid_num; i++){
         lpa = d_sram[i].OOB_RAM.lpa; // Get lpa of a page
         c_table = &CMT[D_IDX];
@@ -202,9 +211,35 @@ int32_t dpage_GC(){
                 continue;
             }
             else{ // but CLEAN state couldn't have this case, so just change ppa
-		c_table->gc_flag=1;
+		//this case is bitmap form 
 		p_table[P_IDX].ppa = new_block + real_valid;
-                real_valid++;
+		if(c_table->form_check){
+			int32_t pre_size = c_table->b_form_size;
+			//printf("pre_size = %d\n",c_table->b_form_size);
+			sftl_bitmap_set(lpa);
+			if(c_table->b_form_size > check_size){
+				temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+				temp_req = assign_pseudo_req(TGC_M, temp_value_set, NULL);
+				params = (demand_params*)temp_req->params;
+				__demand.li->read(c_table->t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
+				dl_sync_wait(&params->dftl_mutex);
+				free(params);
+				free(temp_req);
+				inf_free_valueset(temp_value_set, FS_MALLOC_R);
+
+				if(c_table->head != NULL){
+					sftl_bitmap_free(c_table);
+				}
+				c_table->form_check = 0;
+				c_table->bit_cnt = 0;
+				c_table->b_form_size = PAGESIZE;
+			}
+			pre_size = c_table->b_form_size - pre_size;
+			add_size += pre_size;
+			//printf("after_size = %d\n",c_table->b_form_size);
+
+		}
+		real_valid++;
                 if(c_table->state == CLEAN){
                     c_table->state = DIRTY;
                     BM_InvalidatePage(bm, t_ppa);
@@ -223,8 +258,9 @@ int32_t dpage_GC(){
         }
 
         // cache miss
-        if(tce == INT32_MAX){ // read t_page into temp_table
-            tce = D_IDX;
+        if(tce == INT32_MAX){ // read t_page into temp_table 
+	    tce = D_IDX;
+	    c_table = &CMT[tce];
             temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
             temp_req = assign_pseudo_req(TGC_M, temp_value_set, NULL);
             params = (demand_params*)temp_req->params;
@@ -247,41 +283,81 @@ int32_t dpage_GC(){
             tce = INT32_MAX;
         }
         if(tce == INT32_MAX){ // flush temp table into device
-            BM_InvalidatePage(bm, t_ppa);
+	    BM_InvalidatePage(bm, t_ppa);
             twrite++;
             t_ppa = tp_alloc('D', NULL);
+
             //temp_value_set = inf_get_valueset((PTR)temp_table, FS_MALLOC_W, PAGESIZE); // Make valueset to WRITEMODE
             dummy_vs = inf_get_valueset(NULL, FS_MALLOC_W, PAGESIZE);
             __demand.li->write(t_ppa, PAGESIZE, dummy_vs, ASYNC, assign_pseudo_req(TGC_W, dummy_vs, NULL)); // Unload page to ppa
             demand_OOB[t_ppa].lpa = c_table->idx;
             BM_ValidatePage(bm, t_ppa);
             c_table->t_ppa = t_ppa; // Update CMT t_ppa
+	    t_index = c_table->idx;
+	    c_table->b_form_size = head_bit_set(t_index);
+	    if(c_table->b_form_size > check_size){
+		    c_table->b_form_size = PAGESIZE;
+		    c_table->form_check = 0;
+	    }else{
+		    c_table->form_check = 1;
+	    }
+	    
+
+
         }
     }
-
-    NODE *c_ptr = lru->head;
-    while(c_ptr != NULL){
-	c_table = (C_TABLE *)c_ptr->DATA;
-	if(c_table->gc_flag){
-		c_table->gc_flag = 0;
-		c_ptr = c_ptr->next;
-		continue;
-	}
-	lpa = c_table->idx;
-	c_table->b_form_size = head_bit_set(lpa);
-	if(c_table->b_form_size < check_size){
-		sftl_bitmap_free(c_table);
-		head_list_set(lpa);
-		c_table->form_check = 1;
-	}else{
-		c_table->b_form_size = PAGESIZE;
-		c_table->form_check = 0;
-	}
-	c_table->gc_flag = 0;
-	c_ptr = c_ptr->next;	
-
+    if(free_cache_size < add_size){
+	    bool d_flag = false;
+	    bool gc_flag = false;
+	    global_gc_flag = 1;
+	    free_cache_size += demand_hit_eviction(NULL, 'D', &gc_flag, &d_flag, add_size);
+	    global_gc_flag = 0;
     }
+    free_cache_size -= add_size;
+    /*
+    while(c_ptr != NULL){
+	    c_table = (C_TABLE *)c_ptr->DATA; 
+	    if(c_table->gc_flag){
+		    t_index = c_table->idx;
+		    //return previous mapping size in memory
+		    //printf("pre_size = %d\n",c_table->b_form_size);
+		    free_cache_size += c_table->b_form_size;
+		    tmp_size = head_bit_set(t_index);
+		    //printf("tmp_size = %d\n",tmp_size);
+		    if(tmp_size < check_size){
+			    sftl_bitmap_free(c_table);
+			    sftl_list_reset(t_index);
+			    c_table->b_form_size = tmp_size;
+			    c_table->form_check = 1;
+		    }else{
+			    
+			       temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+			       temp_req = assign_pseudo_req(TGC_M, temp_value_set, NULL);
+			       params = (demand_params*)temp_req->params;
+			       __demand.li->read(c_table->t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
+			       dl_sync_wait(&params->dftl_mutex);
+			       free(params);
+			       free(temp_req);
+			       inf_free_valueset(temp_value_set, FS_MALLOC_R);
+			       
+			    c_table->b_form_size = PAGESIZE;
+			    c_table->form_check = 0;
+		    }
+		    //printf("c_table->size = %d\n",c_table->b_form_size);
+		    if(c_table->b_form_size == PAGESIZE){
+			    printf("c_table size is pagesize\n");
+		    }
+		    free_cache_size -= c_table->b_form_size;
+		    printf("free_cache_size = %d\n",free_cache_size);
+		    c_table->gc_flag = 0;
+		    if(tmp_size != c_table->b_form_size)
+			    printf("tmp_size = %d, change_size = %d\n",tmp_size, c_table->b_form_size);
+	    } 
 
+	    c_ptr = c_ptr->next;
+    		
+    } 
+*/
 
     /* Write dpages */
     real_valid = 0;
@@ -304,7 +380,7 @@ int32_t dpage_GC(){
 
     /* Trim data block */
     __demand.li->trim_block(old_block, false);
-
+    //    fprintf(stderr, "copy count = %d\n",real_valid);
 	printf(" - %d\n", real_valid);
 
     return new_block + real_valid;

@@ -1,0 +1,207 @@
+garbage_collection.c:        t_ppa = c_table->t_ppa;
+garbage_collection.c:        p_table = c_table->p_table;
+garbage_collection.c:            if(c_table->state == DIRTY && p_table[P_IDX].ppa != d_sram[i].origin_ppa){
+garbage_collection.c:                if(c_table->state == CLEAN){
+garbage_collection.c:                    c_table->state = DIRTY;
+garbage_collection.c:                    c_table->queue_ptr = lru_push(lru, (void *)c_table);
+garbage_collection.c:	    t_index = c_table->idx;
+garbage_collection.c:	    c_table->b_form_size = head_bit_set(lpa);
+garbage_collection.c:	    if(c_table->b_form_size > check_size){
+garbage_collection.c:		    c_table->b_form_size = PAGESIZE;
+garbage_collection.c:		    c_table->form_check = 0;
+garbage_collection.c:		    c_table->form_check = 1;
+garbage_collection.c:            demand_OOB[t_ppa].lpa = c_table->idx;
+garbage_collection.c:            c_table->t_ppa = t_ppa; // Update CMT t_ppa
+garbage_collection.c:	    t_index = c_table->idx;
+garbage_collection.c:	    free_cache_size += c_table->b_form_size;
+garbage_collection.c:		    c_table->b_form_size = tmp_size;
+garbage_collection.c:		    c_table->form_check = 1;
+garbage_collection.c:		    __demand.li->read(c_table->t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
+garbage_collection.c:		    c_table->b_form_size = PAGESIZE;
+garbage_collection.c:		    c_table->form_check = 0;
+garbage_collection.c:	    //printf("c_table->size = %d\n",c_table->b_form_size);
+garbage_collection.c:	    free_cache_size -= c_table->b_form_size;
+dftl.c:    int32_t t_ppa = c_table->t_ppa;
+dftl.c:	lru_update(lru, c_table->queue_ptr);
+dftl.c:        if (c_table->state == CLEAN) {
+dftl.c:        if (c_table->state == CLEAN) {
+dftl.c:            c_table->state = DIRTY;
+dftl.c:        lru_update(lru, c_table->queue_ptr);
+dftl.c:    int32_t t_ppa = c_table->t_ppa;
+dftl.c:    int32_t b_form_size = c_table->b_form_size;
+dftl.c:    if (c_table->flying) {
+dftl.c:        c_table->flying_arr[c_table->num_waiting++] = req;
+dftl.c:			c_table->flying = true;
+dftl.c:			c_table->evic_flag = 0;
+dftl.c:			c_table->flying = true;
+dftl.c:			c_table->evic_flag = 0;
+dftl.c:        c_table->flying = true;
+dftl.c:	if(c_table->evic_flag){
+dftl.c:		c_table->evic_flag = 0;	
+dftl.c:		c_table->flying_mapping_size = c_table->b_form_size;
+dftl.c:		free_cache_size -= c_table->flying_mapping_size;
+dftl.c:    c_table->p_table   = mem_arr[D_IDX].mem_p;
+dftl.c:    c_table->queue_ptr = lru_push(lru, (void*)c_table);
+dftl.c:    c_table->state     = DIRTY;
+dftl.c:    c_table->form_check = 1;
+dftl.c:    c_table->bitmap[0] = 1;
+dftl.c:    c_table->first_check = 1;
+dftl.c:    c_table->bit_cnt++;
+dftl.c:    head_ppa = c_table->p_table[0].ppa;
+dftl.c:    c_table->b_form_size = ENTRY_SIZE + BITMAP_SIZE;
+dftl.c:    free_cache_size -= c_table->b_form_size;
+dftl.c:    int32_t t_ppa    = c_table->t_ppa;
+dftl.c:            c_table->p_table   = mem_arr[D_IDX].mem_p;
+dftl.c:            c_table->queue_ptr = lru_push(lru, (void*)c_table);
+dftl.c:            c_table->state     = DIRTY;
+dftl.c:	    c_table->first_check = 1;
+dftl.c:	    c_table->form_check = 1;
+dftl.c:	    c_table->bitmap[0] = 1;
+dftl.c:	    c_table->bit_cnt++;
+dftl.c:	    head_ppa = c_table->p_table[0].ppa;
+dftl.c:	    c_table->b_form_size = ENTRY_SIZE + BITMAP_SIZE;
+dftl.c:	    free_cache_size -= c_table->b_form_size;
+dftl.c:            for (int i = 0; i < c_table->num_waiting; i++) {
+dftl.c:                if (!inf_assign_try(c_table->flying_arr[i])) {
+dftl.c:                    q_enqueue((void *)c_table->flying_arr[i], dftl_q);
+dftl.c:            c_table->num_waiting = 0;
+dftl.c:            c_table->flying = false;
+dftl.c:	    c_table->flying_mapping_size = 0;
+dftl.c:    int32_t t_ppa = c_table->t_ppa;
+dftl.c:    c_table->p_table = mem_arr[D_IDX].mem_p;
+dftl.c:    if(c_table->form_check == 1){
+dftl.c:	    b_form_size = c_table->b_form_size;
+dftl.c:		    c_table->b_form_size = b_form_size;
+dftl.c:		    c_table->form_check = 1;
+dftl.c:    free_cache_size += c_table->flying_mapping_size;
+dftl.c:    free_cache_size -= c_table->b_form_size;
+dftl.c:        c_table->queue_ptr = lru_push(lru, (void*)c_table);
+dftl.c:        c_table->queue_ptr = lru_push(lru, (void*)c_table);
+dftl.c:        c_table->state     = DIRTY;
+dftl.c:    for (int i = 0; i < c_table->num_waiting; i++) {
+dftl.c:        //while (!inf_assign_try(c_table->flying_arr[i])) {}
+dftl.c:        if (!inf_assign_try(c_table->flying_arr[i])) {
+dftl.c:            q_enqueue((void *)c_table->flying_arr[i], dftl_q);
+dftl.c:    c_table->num_waiting = 0;
+dftl.c:    c_table->flying = false;
+dftl.c:    c_table->flying_mapping_size = 0;
+dftl.c:    p_table = c_table->p_table;
+dftl.c:    t_ppa   = c_table->t_ppa;
+dftl.c:    c_table->read_hit++;
+dftl.c:    p_table = c_table->p_table;
+dftl.c:    if(c_table->form_check){
+dftl.c:	    struct head_node *tmp = c_table->head;
+dftl.c:		    if(c_table->bitmap[i] == 1){
+dftl.c:    p_table = c_table->p_table;
+dftl.c:    c_table->write_hit++;
+dftl.c:        p_table = c_table->p_table;
+dftl.c:    int32_t pre_size = c_table->b_form_size;
+dftl.c:    if(c_table->form_check == 1){
+dftl.c:	if(c_table->b_form_size > check_size)
+dftl.c:		__demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
+dftl.c:		if(c_table->head != NULL){
+dftl.c:		c_table->form_check  = 0;
+dftl.c:		c_table->bit_cnt = 0;
+dftl.c:		c_table->b_form_size = PAGESIZE; 
+dftl.c:	    struct head_node *s = c_table->head;
+dftl.c:		    if(c_table->bitmap[i] == 1){
+dftl.c:    int32_t add_size = c_table->b_form_size - pre_size;
+dftl.c:    p_table = c_table->p_table;
+dftl.c:    t_ppa   = c_table->t_ppa;
+dftl.c:        if (c_table->state == CLEAN) { // Clean hit
+dftl.c:            lru_update(c_lru, c_table->clean_ptr);
+dftl.c:            if (c_table->clean_ptr) {
+dftl.c:                lru_update(c_lru, c_table->clean_ptr);
+dftl.c:            lru_update(lru, c_table->queue_ptr);
+dftl.c:        lru_update(lru, c_table->queue_ptr);
+dftl.c:        t_ppa = c_table->t_ppa;
+dftl.c:        c_table->p_table = p_table;
+dftl.c:        c_table->queue_ptr = lru_push(lru, (void *)c_table);
+dftl.c:    if (c_table->state == CLEAN) {
+dftl.c:        c_table->state = DIRTY;
+dftl.c:        if (!c_table->queue_ptr) {
+dftl.c:            c_table->queue_ptr = lru_push(lru, (void *)c_table);
+dftl.c:    b_check_size = c_table->b_form_size;
+dftl.c:    c_table->flying_mapping_size = flying;
+dftl.c:    c_table->evic_flag = 1;
+sftl_utils.c:	if(c_table->head == NULL)
+sftl_utils.c:		c_table->head = c_table->tail = now;
+sftl_utils.c:	if(find_node == c_table->tail){
+sftl_utils.c:		c_table->tail = now;
+sftl_utils.c:	if(c_table->head == NULL){
+sftl_utils.c:		c_table->head = c_table->tail = now;
+sftl_utils.c:		c_table->tail->next = now;
+sftl_utils.c:		c_table->tail = now;
+sftl_utils.c:	struct head_node *tmp = c_table->head;
+sftl_utils.c:	if(next_node == c_table->tail){
+sftl_utils.c:		c_table->tail = pre_node;	
+sftl_utils.c:        //printf("gc_flag = %d\n",c_table->gc_flag);
+sftl_utils.c:	if(c_table->gc_flag){
+sftl_utils.c:	c_table->bitmap[0] = 1;
+sftl_utils.c:			c_table->bitmap[i+1] = 0;
+sftl_utils.c:			c_table->bitmap[i+1] = 0;
+sftl_utils.c:			c_table->bitmap[i+1] = 1;
+sftl_utils.c:	c_table->bit_cnt = cnt;
+sftl_utils.c:	D_TABLE *p_table = c_table->p_table;
+sftl_utils.c:		if(c_table->bitmap[i] == 1){	
+sftl_utils.c:	struct head_node *now = c_table->head;
+sftl_utils.c:		if(c_table->bitmap[i] == 1){
+sftl_utils.c://	printf("pre_offset = %d head_ppa=%d real_ppa = %d\n",i, now->head_ppa, c_table->p_table[i].ppa);
+sftl_utils.c://	printf("cur_offset = %d real_ppa = %d\n",offset, c_table->p_table[offset].ppa);
+sftl_utils.c:	struct head_node *now = c_table->head;
+sftl_utils.c:	D_TABLE *p_table = c_table->p_table;
+sftl_utils.c:		if(c_table->bitmap[i] == 1){
+sftl_utils.c:	D_TABLE *p_table = c_table->p_table;
+sftl_utils.c:		if(c_table->bitmap[i] == 1){
+sftl_utils.c:	D_TABLE *p_table = c_table->p_table;
+sftl_utils.c:		tmp = c_table->head;
+sftl_utils.c:			if(c_table->bitmap[offset+idx] == 0){
+sftl_utils.c:				c_table->bitmap[offset+idx] = 1;
+sftl_utils.c:				c_table->bit_cnt++;
+sftl_utils.c:				c_table->b_form_size += ENTRY_SIZE;
+sftl_utils.c:			if(c_table->bitmap[offset] == 1){
+sftl_utils.c:				c_table->tail->head_ppa = head_entry;
+sftl_utils.c:				c_table->bitmap[offset] = 1;
+sftl_utils.c:				c_table->b_form_size += ENTRY_SIZE;
+sftl_utils.c:				c_table->bit_cnt++;
+sftl_utils.c:				if(c_table->bitmap[offset] == 1){
+sftl_utils.c:					c_table->bitmap[offset] = 0;
+sftl_utils.c:					c_table->bit_cnt--;
+sftl_utils.c:					c_table->b_form_size -= ENTRY_SIZE;
+sftl_utils.c:				if(c_table->bitmap[offset] == 1){
+sftl_utils.c:					c_table->tail->head_ppa = head_entry;
+sftl_utils.c:					c_table->bitmap[offset] = 1;
+sftl_utils.c:					c_table->bit_cnt++;
+sftl_utils.c:					c_table->b_form_size += ENTRY_SIZE;
+sftl_utils.c:			if(c_table->bitmap[offset] == 1){	
+sftl_utils.c:				c_table->bitmap[offset] = 1;
+sftl_utils.c:				c_table->bit_cnt++;
+sftl_utils.c:				c_table->b_form_size += ENTRY_SIZE;
+sftl_utils.c:				if(c_table->bitmap[offset] == 1){
+sftl_utils.c:					c_table->bitmap[offset] = 0;
+sftl_utils.c:					c_table->bit_cnt--;
+sftl_utils.c:					c_table->b_form_size -= ENTRY_SIZE;
+sftl_utils.c:				if(c_table->bitmap[offset] == 1){
+sftl_utils.c:					c_table->bitmap[offset] = 1;
+sftl_utils.c:					c_table->bit_cnt++;
+sftl_utils.c:					c_table->b_form_size += ENTRY_SIZE;
+sftl_utils.c:			if(c_table->bitmap[offset+idx] == 1){
+sftl_utils.c:				c_table->bitmap[offset+idx] = 0;
+sftl_utils.c:				c_table->bit_cnt--;
+sftl_utils.c:				c_table->b_form_size -= ENTRY_SIZE;
+sftl_utils.c:			if(c_table->bitmap[offset+idx] == 1){
+sftl_utils.c:				c_table->bitmap[offset+idx] = 1;
+sftl_utils.c:				c_table->bit_cnt++;
+sftl_utils.c:				c_table->b_form_size += ENTRY_SIZE;
+sftl_utils.c:	//memset(c_table->bitmap,0, sizeof(bool) * EPP);
+sftl_utils.c:	//c_table->form_check = 0;
+sftl_utils.c:	//c_table->bit_cnt = 0;
+sftl_utils.c:		if(c_table->bitmap[i])
+sftl_utils.c:	struct head_node *now = c_table->head;
+sftl_utils.c:	if(c_table->bit_cnt != 1){ 
+sftl_utils.c:			if(c_table->bitmap[i] == 1){
+sftl_utils.c:		if(now == c_table->head){
+sftl_utils.c:		now = c_table->head;
+sftl_utils.c:		head_ppn = c_table->head->head_ppa;
+sftl_utils.c:		p_table = c_table->p_table;
+sftl_utils.c://			printf("b_form_size[%d] = %d\n",i,c_table->b_form_size);

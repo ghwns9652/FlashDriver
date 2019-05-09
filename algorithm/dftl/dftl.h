@@ -18,6 +18,8 @@
 #endif
 #include "../blockmanager/BM.h"
 #include "lru_list.h"
+#include "math.h"
+
 
 #define TYPE uint8_t
 #define DATA_R DATAR

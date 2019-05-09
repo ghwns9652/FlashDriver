@@ -188,7 +188,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 
    
-    free_cache_size = (max_cache_entry / 16) * PAGESIZE; //12.5%
+    free_cache_size = 128 * PAGESIZE; //12.5%
     total_cache_size = free_cache_size;
     prefetch_cnt = 0;
 
@@ -202,12 +202,12 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     //num_max_cache = max_cache_entry / 40; // 2.5%
 	//num_max_cache = max_cache_entry / 50; // 2%
 
-    real_max_cache = num_max_cache;
+    real_max_cache = 128;
 
     num_caching = 0;
     //max_write_buf = 512;
-    max_write_buf = 1024;
-//	max_write_buf = 1;
+//    max_write_buf = 1024;
+	max_write_buf = 1;
 #if C_CACHE
     max_clean_cache = num_max_cache / 2; // 50 : 50
     num_max_cache -= max_clean_cache;
@@ -396,6 +396,11 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     printf("cache_mapped_size = %d\n",total_cache_size-free_cache_size);
     printf("free_cache_size   = %d\n",free_cache_size);
+   
+    printf("TGC = %d\n",tgc_count);
+    printf("DGC = %d\n",dgc_count);
+   
+   
     /* Clear modules */
     q_free(dftl_q);
     BM_Free(bm);
@@ -610,10 +615,8 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
     if (params->t_ppa != t_ppa) {
         params->read  = 0;
         params->t_ppa = t_ppa;
-
         dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
-
         bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
         return 1;
@@ -708,6 +711,7 @@ static uint32_t __demand_get(request *const req){
         printf("range error %d\n",lpa);
         exit(3);
     }
+    //printf("R--->req->seq = %d\n",req->seq);
 #if W_BUFF
     /* Check skiplist first */
     if((temp = skiplist_find(write_buffer, lpa))){
@@ -773,7 +777,8 @@ static uint32_t __demand_get(request *const req){
 
    
     if(c_table->read_ptr == NULL){
-	    bench_algo_end(req); 
+	    bench_algo_end(req);
+	    req->end_req(req);
 	    not_found_cnt++;
 	    return UINT32_MAX;
     }else{
@@ -858,7 +863,9 @@ static uint32_t __demand_set(request *const req){
         printf("range error %d\n",lpa);
         exit(3);
     }
-
+    if(req->seq == 33001437){
+	    printf("W--->req->seq = %d\n",req->seq);
+    }
     /* If the write buffer is already full, flush it */
     if (write_buffer->size == max_write_buf) {
         /* Push all the data to lower */
@@ -978,6 +985,7 @@ static uint32_t __demand_set(request *const req){
     }else{
 	    c_table->last_ptr = tp_entry_op(lpa, ppa);
  	    struct entry_node *check = (struct entry_node *)c_table->last_ptr->DATA;
+	   
 	    if(check->cnt > MAX_CNT){
 		    printf("CNT error!\n");
 		    sleep(2);
@@ -1007,7 +1015,7 @@ static uint32_t __demand_set(request *const req){
 	if(gc_flag) req->type_ftl +=2;	
 
     }
-    
+
     req->value = NULL; // moved to 'value' field of snode
     bench_algo_end(req);
     req->end_req(req);
@@ -1318,7 +1326,7 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 			free(params);
 			free(temp_req);
 
-			BM_InvalidatePage(bm, t_ppa);
+			//BM_InvalidatePage(bm, t_ppa);
 		}
 		//	printf("eviction!!\n");
 		tp_batch_update(cache_ptr);

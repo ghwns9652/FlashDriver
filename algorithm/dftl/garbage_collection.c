@@ -127,6 +127,7 @@ int32_t dpage_GC(){
     }
     else if(victim->Invalid == 0){
         printf("\n!!!dp_full!!!\n");
+	heap_print(data_b);
         exit(3);
     }
     //exchange block

@@ -168,9 +168,9 @@ extern int32_t tgc_w_dgc_count;
 extern int32_t total_cache_size;
 extern int32_t free_cache_size;
 extern int32_t cache_mapping_size;
-extern int32_t over_mapping_size;
 extern int32_t flying_mapping_size;
 extern int32_t check_size;
+extern bool global_gc_flag;
 
 /* extern variables */
 
@@ -217,6 +217,7 @@ struct head_node* sftl_list_find(C_TABLE *, int32_t);
 struct head_node* sftl_pre_find(C_TABLE *, int32_t);
 int32_t sftl_list_free(int32_t, int32_t);
 int32_t sftl_bitmap_size(int32_t);
+int32_t sftl_list_reset(int32_t);
 //To get ppa
 int32_t get_mapped_ppa(int32_t);
 
