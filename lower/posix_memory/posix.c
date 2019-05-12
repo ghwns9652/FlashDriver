@@ -9,6 +9,8 @@
 #include "../../include/utils/cond_lock.h"
 #ifdef dftl
 #include "../../algorithm/dftl/dftl.h"
+#elif defined(hashftl)
+#include "../../algorithm/hashftl/hashftl.h"
 #elif defined(dftl_fm)
 #include "../../algorithm/dftl_fm/dftl.h"
 #elif defined(ctoc)

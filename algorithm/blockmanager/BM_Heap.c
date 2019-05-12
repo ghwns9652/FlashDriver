@@ -35,7 +35,7 @@ void heap_free(Heap *insert){
 void max_heapify(Heap* h){
 	h_node *parents, *target;
 	Block *p, *now;
-    for(int i = 1; i < h->max_size; i++)
+    for(int i = 1; i < h->idx; i++)
     {
 		parents = &h->body[(i - 1)/2];
 		target = &h->body[i];

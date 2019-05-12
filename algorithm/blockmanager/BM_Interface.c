@@ -2,7 +2,7 @@
 #include "BM.h"
 
 /* Interface Functions for editing blockArray */
-int32_t		BM_IsValidPage(BM_T* BM, PPA_T PPA) 
+int32_t		BM_IsValidPage(BM_T* BM, PPA_T PPA)
 {
 	/*
 	 * Return whether parameter PPA is VALID or INVALID

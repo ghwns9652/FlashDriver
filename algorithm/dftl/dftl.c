@@ -109,7 +109,7 @@ static void print_algo_log() {
 	}
 
 #endif
-	printf(" | Total Blocks(Segments): %d\n", num_block); 
+	printf(" | Total Blocks(Segments): %d\n", num_block);
 	printf(" |  -Translation Blocks:   %d (+1 reserved)\n", num_tblock);
 	printf(" |  -Data Blocks:          %d (+1 reserved)\n", num_dblock);
 	printf(" | Total Pages:            %d\n", num_page);
@@ -240,7 +240,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
 void demand_destroy(lower_info *li, algorithm *algo){
 
-    
+
     puts("");
     for (int i = 0; i < max_cache_entry; i++) {
         if (CMT[i].read_hit || CMT[i].write_hit) {

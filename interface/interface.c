@@ -22,6 +22,7 @@ extern struct algorithm __normal;
 extern struct algorithm __badblock;
 extern struct algorithm __demand;
 extern struct algorithm algo_pbase;
+extern struct algorithm __hashftl;
 #ifdef Lsmtree
 extern struct algorithm algo_lsm;
 #endif
@@ -354,6 +355,8 @@ void inf_init(){
 
 #ifdef normal
 	mp.algo=&__normal;
+#elif defined(hashftl)
+	mp.algo=&__hashftl;
 #elif defined(pftl)
 	mp.algo=&algo_pbase;
 #elif defined(dftl) || defined(ctoc) || defined(dftl_test) || defined(ctoc_batch)

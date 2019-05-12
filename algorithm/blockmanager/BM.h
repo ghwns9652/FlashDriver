@@ -22,6 +22,7 @@ typedef struct {
 typedef struct { // 13 + PPB/8 bytes
 	PBA_T		PBA;			/* PBA of this block */
 	IV_T		Invalid;		/* Number of Invalid pages in this block*/
+	int32_t wr_off;		//write offset
 	h_node* 	hn_ptr;
 	TYPE_T		type;
 	ValidP_T*	ValidP;			/* (Bitmap)index means Validity of offset pages. 1 means VALID, 0 means INVALID */
@@ -57,7 +58,7 @@ extern int32_t PagePerBlock;
 extern int32_t numBITMAPB; // number of Bytes(elements) in each bitmap
 
 
-/* Macros that indicate whether the page is valid or not */ 
+/* Macros that indicate whether the page is valid or not */
 #define BM_VALIDPAGE	(0xff) // 8 bits
 #define BM_INVALIDPAGE	(0x00)
 
@@ -100,7 +101,7 @@ void enqueue(b_queue *q, void* node);
 void* dequeue(b_queue *q);
 
 /* BM_Interface.h */
-// Interface Functions for 'Valid bitmap(ValidP)' + 'number of invalid pages(Invalid)' change 
+// Interface Functions for 'Valid bitmap(ValidP)' + 'number of invalid pages(Invalid)' change
 static inline PBA_T BM_PPA_TO_PBA(PPA_T PPA) {
 	return PPA/PagePerBlock;
 }
@@ -112,6 +113,7 @@ int32_t		BM_InvalidatePage(BM_T* BM, PPA_T PPA);
 static inline void BM_InitializeBlock(BM_T* BM, PBA_T PBA) {
 	memset(BM->barray[PBA].ValidP, BM_INVALIDPAGE, numBITMAPB);
 	BM->barray[PBA].Invalid = 0;
+	BM->barray[PBA].wr_off = 0;
 }
 
 /* Initalize all Block */
@@ -119,6 +121,7 @@ static inline void BM_InitializeAll(BM_T* BM) {
 	for (int i=0; i<numBlock; i++){
 		memset(BM->barray[i].ValidP, BM_INVALIDPAGE, numBITMAPB);
 		BM->barray[i].Invalid = 0;
+		BM->barray[i].wr_off = 0;
 	}
 }
 
@@ -149,5 +152,3 @@ static inline void BM_InvalidPPB_PPA(BM_T* BM, PPA_T PPA) {
 }
 
 #endif // !_BM_H_
-
-

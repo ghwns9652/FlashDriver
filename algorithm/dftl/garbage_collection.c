@@ -178,7 +178,7 @@ int32_t dpage_GC(){
 #if GC_POLL
     data_gc_poll = 0;
 #endif
-    
+
     for(int i = 0; i < valid_num; i++){
 #if MEMCPY_ON_GC
         memcpy(d_sram[i].DATA_RAM, temp_set[i]->value, PAGESIZE);
@@ -285,4 +285,3 @@ int32_t dpage_GC(){
 
     return new_block + real_valid;
 }
-

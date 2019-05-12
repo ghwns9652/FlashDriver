@@ -62,7 +62,7 @@ uint32_t pbase_create(lower_info* li, algorithm *algo){
 		BM_Enqueue(free_b, &BM->barray[i]);
 	}
 	b_heap = BM_Heap_Init(_g_nob - 1);//total size == NOB - 1.
-	
+
 	BM->harray[0] = b_heap;
 	BM->qarray[0] = free_b;
 	return 0;
@@ -101,7 +101,7 @@ void *pbase_end_req(algo_req* input){
 			}
 			break;
 		case GC_R:
-			gc_load++;	
+			gc_load++;
 			break;
 		case GC_W:
 			inf_free_valueset(temp_set, FS_MALLOC_W);
@@ -130,7 +130,7 @@ uint32_t pbase_get(request* const req){
 		req->end_req(req);
 		return 1;
 	}
-	bench_algo_end(req);	
+	bench_algo_end(req);
 	algo_pbase.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
 	return 0;
 }
