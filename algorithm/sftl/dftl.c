@@ -174,7 +174,7 @@ static void print_algo_log() {
 #else
 	printf(" |  -Mixed Cache entries:  %d\n", num_max_cache);
 #endif
-	printf(" |  -Cache Percentage:     %0.3f%%\n", (float)real_max_cache/max_cache_entry*100);
+//	printf(" |  -Cache Percentage:     %0.3f%%\n", (float)real_max_cache/max_cache_entry*100);
 	printf(" | Write buffer size:      %d\n", max_write_buf);
 	printf(" |\n");
 	printf(" | ! Assume no Shadow buffer\n");
@@ -188,7 +188,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     num_page        = _NOP;
     num_block       = _NOS;
     p_p_b           = _PPS;
-    num_tblock      = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 8;
+    num_tblock      = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 2;
     num_tpage       = num_tblock * p_p_b;
     num_dblock      = num_block - num_tblock - 2;
     num_dpage       = num_dblock * p_p_b;
@@ -197,7 +197,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     /* Cache control & Init */
 #if S_FTL
-	free_cache_size = PAGESIZE * 128;
+	free_cache_size = ceil(PAGESIZE * 1024 * 0.05);
 	total_cache_size = free_cache_size;
 	check_size = PAGESIZE * 0.8;
 	global_gc_flag = 0;

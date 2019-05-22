@@ -95,6 +95,28 @@ int32_t tpage_GC(){
     return new_block + valid_page_num;
 }
 
+static int dpage_valid_check() {
+    int nr_total_invalid = 0;
+    int nr_total_page = 0;
+
+    int nr_data_block = data_b->max_size;
+    h_node *heap_array = data_b->body;
+
+    for (int i = 0; i < nr_data_block; i++) {
+        if (heap_array[i].value) {
+            Block *b = (Block* )heap_array[i].value;
+
+            nr_total_invalid += b->Invalid;
+            nr_total_page += _PPS;
+        }
+    }
+
+    printf("data page status ( %d / %d )\n", nr_total_page - nr_total_invalid, nr_total_page);
+    printf("Utilization: %.4f%%\n", (float)(nr_total_page - nr_total_invalid) / nr_total_page*100);
+
+    return 0;
+}
+
 int32_t dpage_GC(){
     uint8_t all;
     int32_t lpa;
@@ -143,7 +165,8 @@ int32_t dpage_GC(){
         __demand.li->trim_block(old_block, false);
         return new_block;
     }
-	printf("dpage_GC");
+	//printf("dpage_GC");
+	dpage_valid_check();
 
     valid_num = 0;
     real_valid = 0;

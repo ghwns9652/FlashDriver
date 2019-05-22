@@ -43,11 +43,11 @@
 
 
 #define _PPB (256)
-//#define _PPS (1<<8)
-//#define BPS (1)
+#define _PPS (1<<8)
+#define BPS (1)
 
-#define _PPS (1<<14)
-#define BPS (64)
+//#define _PPS (1<<14)
+//#define BPS (64)
 
 #endif
 

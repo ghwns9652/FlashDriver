@@ -181,14 +181,14 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     num_page        = _NOP;
     num_block       = _NOS;
     p_p_b           = _PPS;
-    num_tblock      = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 8;
+    num_tblock      = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 2;
     num_tpage       = num_tblock * p_p_b;
     num_dblock      = num_block - num_tblock - 2;
     num_dpage       = num_dblock * p_p_b;
     max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 
    
-    free_cache_size = 128 * PAGESIZE; //12.5%
+    free_cache_size = 1024 * PAGESIZE * 0.05; 
     total_cache_size = free_cache_size;
     prefetch_cnt = 0;
 
@@ -467,7 +467,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     // Reserve requests that share flying mapping table
 	    if (c_table->flying) {
 		    c_table->flying_arr[c_table->num_waiting++] = req;
-		    bench_algo_end(req);
+		    //bench_algo_end(req);
 		    return 1;
 	    }
 /*
@@ -497,7 +497,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 		c_table->evic_flag = 0;
                 if(d_flag) req->type_ftl += 1;
                 if(gc_flag) req->type_ftl += 2;
-                bench_algo_end(req);
+                //bench_algo_end(req);
                 return 1;
             }
             if(gc_flag) req->type_ftl += 2;
@@ -512,7 +512,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
             if (demand_eviction(req, 'W', &gc_flag, &d_flag) == 0) {
                 c_table->flying = true; 
 		c_table->evic_flag = 0;
-		bench_algo_end(req);
+		//bench_algo_end(req);
                 return 1;
             }
         }
@@ -531,7 +531,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
         dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
 
-        bench_algo_end(req);
+        //bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
         return 1;
@@ -561,7 +561,7 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
 	dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
 
-        bench_algo_end(req);
+        //bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
         return 1;
@@ -617,7 +617,7 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
         params->t_ppa = t_ppa;
         dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
-        bench_algo_end(req);
+        //bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
         return 1;
     }
@@ -705,7 +705,7 @@ static uint32_t __demand_get(request *const req){
     snode *temp;
 #endif
 
-    bench_algo_start(req);
+   // bench_algo_start(req);
     lpa = req->key;
     if(lpa > RANGE + 1){ // range check
         printf("range error %d\n",lpa);
@@ -719,7 +719,7 @@ static uint32_t __demand_get(request *const req){
         memcpy(req->value->value, temp->value->value, PAGESIZE);
         req->type_ftl = 0;
         req->type_lower = 0;
-        bench_algo_end(req);
+        //bench_algo_end(req);
         req->end_req(req);
         return 1;
     }
@@ -749,7 +749,7 @@ static uint32_t __demand_get(request *const req){
         } else { // Cache miss
 
 	    if (t_ppa == -1) {
-                bench_algo_end(req);
+                //bench_algo_end(req);
                 return UINT32_MAX;
             }
             if (demand_cache_eviction(req, 'R') == 1) {
@@ -777,7 +777,7 @@ static uint32_t __demand_get(request *const req){
 
    
     if(c_table->read_ptr == NULL){
-	    bench_algo_end(req);
+	    //bench_algo_end(req);
 	    req->end_req(req);
 	    not_found_cnt++;
 	    return UINT32_MAX;
@@ -830,7 +830,7 @@ static uint32_t __demand_get(request *const req){
 	    if(d_flag) req->type_ftl +=1;
 	    if(gc_flag) req->type_ftl +=2;	
     }
-    bench_algo_end(req);
+    //bench_algo_end(req);
     // Get data in ppa
     __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
 
@@ -856,7 +856,7 @@ static uint32_t __demand_set(request *const req){
 #endif
 	static bool is_flush = false;
 
-    bench_algo_start(req);
+    //bench_algo_start(req);
 
     lpa = req->key;
     if(lpa > RANGE + 1){ // range check
@@ -966,7 +966,7 @@ static uint32_t __demand_set(request *const req){
     }else{
 	    //write buffer update
 	    req->value = NULL; // moved to 'value' field of snode
-	    bench_algo_end(req);
+	    //bench_algo_end(req);
 	    req->end_req(req);
 	    return 1;
     }
@@ -1017,7 +1017,7 @@ static uint32_t __demand_set(request *const req){
     }
 
     req->value = NULL; // moved to 'value' field of snode
-    bench_algo_end(req);
+    //bench_algo_end(req);
     req->end_req(req);
 
     return 1;
@@ -1039,7 +1039,7 @@ static uint32_t __demand_remove(request *const req) {
     demand_params *params;
 
 
-    bench_algo_start(req);
+    //bench_algo_start(req);
 
     // Range check
     lpa = req->key;
@@ -1054,7 +1054,7 @@ static uint32_t __demand_remove(request *const req) {
 
 #if W_BUFF
     if (skiplist_delete(write_buffer, lpa) == 0) { // Deleted on skiplist
-        bench_algo_end(req);
+        //bench_algo_end(req);
         return 0;
     }
 #endif
@@ -1079,7 +1079,7 @@ static uint32_t __demand_remove(request *const req) {
 
         // Validity check by t_ppa
         if (t_ppa == -1) {
-            bench_algo_end(req);
+            //bench_algo_end(req);
             return UINT32_MAX;
         }
 
@@ -1112,7 +1112,7 @@ static uint32_t __demand_remove(request *const req) {
 
     // Validity check by ppa
     if (ppa == -1) { // case of no data written
-        bench_algo_end(req);
+        //bench_algo_end(req);
         return UINT32_MAX;
     }
 
@@ -1136,7 +1136,7 @@ static uint32_t __demand_remove(request *const req) {
 #endif
     }
 
-    bench_algo_end(req);
+    //bench_algo_end(req);
     return 0;
 }
 

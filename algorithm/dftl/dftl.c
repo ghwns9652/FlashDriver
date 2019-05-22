@@ -153,7 +153,7 @@ static void print_algo_log() {
 #else
 	printf(" |  -Mixed Cache entries:  %d\n", num_max_cache);
 #endif
-	printf(" |  -Cache Percentage:     %0.3f%%\n", (float)real_max_cache/max_cache_entry*100);
+	//printf(" |  -Cache Percentage:     %0.3f%%\n", (float)real_max_cache/max_cache_entry*100);
 	printf(" | Write buffer size:      %d\n", max_write_buf);
 	printf(" |\n");
 	printf(" | ! Assume no Shadow buffer\n");
@@ -171,7 +171,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     num_page  = num_block * _PPB;
 */
     p_p_b           = _PPS;
-    num_tblock      = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 8;
+    num_tblock      = ((num_block / EPP) + ((num_block % EPP != 0) ? 1 : 0)) * 2;
     num_tpage       = num_tblock * p_p_b;
     num_dblock      = num_block - num_tblock - 2;
     num_dpage       = num_dblock * p_p_b;
@@ -188,7 +188,10 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     //num_max_cache = max_cache_entry / 8; // 12.5%
     //num_max_cache = max_cache_entry / 40; // 2.5%
     //num_max_cache = max_cache_entry / 50; // 2%
-    num_max_cache = 128;  //12.5% of Page_mapping
+    
+    //num_max_cache = 128;  //12.5% of Page_mapping
+    
+    num_max_cache = ceil(1024 * 0.05);
     real_max_cache = num_max_cache;
 
     num_caching = 0;
