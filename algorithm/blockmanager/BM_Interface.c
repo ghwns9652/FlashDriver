@@ -2,7 +2,7 @@
 #include "BM.h"
 
 /* Interface Functions for editing blockArray */
-int32_t		BM_IsValidPage(BM_T* BM, PPA_T PPA)
+int32_t	BM_IsValidPage(BM_T* BM, PPA_T PPA)
 {
 	/*
 	 * Return whether parameter PPA is VALID or INVALID
@@ -21,7 +21,7 @@ int32_t		BM_IsValidPage(BM_T* BM, PPA_T PPA)
 		return 0; // is invalid
 }
 
-int32_t		BM_ValidatePage(BM_T* BM, PPA_T PPA)
+int32_t	BM_ValidatePage(BM_T* BM, PPA_T PPA)
 {
 	/*
 	 * if valid -> do nothing, return=0
@@ -29,11 +29,9 @@ int32_t		BM_ValidatePage(BM_T* BM, PPA_T PPA)
 	 */
 	PBA_T PBA = BM_PPA_TO_PBA(PPA);
 	uint32_t offset = PPA % PagePerBlock;
-
 	uint32_t index = offset / 8;
 	offset = offset % 8;
 	uint8_t off_num = (uint8_t)1<<offset;
-
 	if (BM->barray[PBA].ValidP[index] & (off_num)) // is valid?
 		return 0;
 	else { // is invalid. Do Validate.
@@ -42,7 +40,7 @@ int32_t		BM_ValidatePage(BM_T* BM, PPA_T PPA)
 	}
 }
 
-int32_t		BM_InvalidatePage(BM_T* BM, PPA_T PPA)
+int32_t	BM_InvalidatePage(BM_T* BM, PPA_T PPA)
 {
 	/*
 	 * if valid -> Update ValidP and numValid, return=1

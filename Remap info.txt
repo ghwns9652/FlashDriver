@@ -1,5 +1,5 @@
 The number of HID bits: 3	
-The number of PPID bits: 7	
+The number of PPID bits: 6	
 The number of Page offset bits: 8	
-Total secondary entries: 131072	
+Total secondary entries: 56320	
 #	# of valid	# of primary	# of remapped

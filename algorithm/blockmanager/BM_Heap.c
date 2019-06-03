@@ -35,34 +35,37 @@ void heap_free(Heap *insert){
 void max_heapify(Heap* h){
 	h_node *parents, *target;
 	Block *p, *now;
-    for(int i = 1; i < h->idx; i++)
-    {
+	for(int i = 1; i < h->idx; i++)
+	{
 		parents = &h->body[(i - 1)/2];
 		target = &h->body[i];
 		p = (Block*)parents->value;
 		now = (Block*)target->value;
-        if(now->Invalid > p->Invalid)
-        {
-            int j = i;
-            while(now->Invalid > p->Invalid)
-            {
+		if(now->Invalid > p->Invalid)
+		{
+			int j = i;
+			while(now->Invalid > p->Invalid)
+			{
 				heap_swap(target, parents);
-                j = (j - 1) / 2;
+				j = (j - 1) / 2;
 				parents = &h->body[(j - 1)/2];
 				target = &h->body[j];
 				p = (Block*)parents->value;
 				now = (Block*)target->value;
-            }
-        }
-    }
+			}
+		}
+	}
 }
 
 void heap_print(Heap *h){
 	int idx = 0;
 	while(h->body[idx].value){
 		Block *temp=(Block*)h->body[idx].value;
-		printf("%d ", temp->Invalid);
+		printf("block[%d] = %d\n",temp->PBA, temp->wr_off);
 		idx++;
 	}
 	printf("\n");
 }
+
+
+

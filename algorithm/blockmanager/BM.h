@@ -22,10 +22,11 @@ typedef struct {
 typedef struct { // 13 + PPB/8 bytes
 	PBA_T		PBA;			/* PBA of this block */
 	IV_T		Invalid;		/* Number of Invalid pages in this block*/
-	int32_t wr_off;		//write offset
 	h_node* 	hn_ptr;
 	TYPE_T		type;
-	ValidP_T*	ValidP;			/* (Bitmap)index means Validity of offset pages. 1 means VALID, 0 means INVALID */
+	ValidP_T*	ValidP;			/* (Bitmap)index means Validity of offset pages. 1 means VALID, 0 means INVALID */	
+	int32_t wr_off;				//write offset
+	bool flag;
 } Block;
 
 typedef struct {
@@ -109,9 +110,17 @@ int32_t		BM_IsValidPage(BM_T* BM, PPA_T PPA);
 int32_t		BM_ValidatePage(BM_T* BM, PPA_T PPA);
 int32_t		BM_InvalidatePage(BM_T* BM, PPA_T PPA);
 
+
 /* For GC, Call this function to initialize vimctim block */
 static inline void BM_InitializeBlock(BM_T* BM, PBA_T PBA) {
 	memset(BM->barray[PBA].ValidP, BM_INVALIDPAGE, numBITMAPB);
+	/*
+	if(BM->barray[PBA].type == 1){
+		BM->barray[PBA].Invalid = _PPS;
+	}else{	
+		BM->barray[PBA].Invalid = 0;
+	}*/
+
 	BM->barray[PBA].Invalid = 0;
 	BM->barray[PBA].wr_off = 0;
 }

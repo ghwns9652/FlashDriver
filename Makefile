@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=posix_memory
+TARGET_LOWER=posix
 TARGET_ALGO=hashftl
 
 PPWD=$(pwd)
@@ -15,7 +15,7 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-#			-O2\
+			-O2\
 #			-DWRITESYNC\
 
 COMMONFLAGS+=$(DEBUGFLAGS)\

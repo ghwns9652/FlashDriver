@@ -36,13 +36,12 @@ int32_t BM_InitBlockArray(Block* blockArray)
 		blockArray[i].PBA = i;
 		blockArray[i].Invalid = 0;
 		blockArray[i].wr_off = 0;
+		blockArray[i].flag = 0;
 		blockArray[i].hn_ptr = NULL;
 		blockArray[i].type = 0;
 		blockArray[i].ValidP = (ValidP_T*)malloc(numBITMAPB);
-
 		/* Initialization with INVALIDPAGE */
 		memset(blockArray[i].ValidP, BM_INVALIDPAGE, numBITMAPB);
-
 		/* Initialization with VALIDPAGE */
 		//memset(blockArray[i].ValidP, BM_VALIDPAGE, numBITMAPB);
 	}
@@ -61,12 +60,13 @@ int32_t BM_Free(BM_T* BM)
 			heap_free(BM->harray[i]);
 		free(BM->harray);
 	}
-
+/*
 	if (BM->q_count != 0){
 		for (int i = 0; i < BM->q_count; i++)
 			freequeue(BM->qarray[i]);
 		free(BM->qarray);
 	}
+*/
 	free(BM);
 	return 0;
 }

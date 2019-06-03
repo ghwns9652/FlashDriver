@@ -59,7 +59,8 @@ int32_t get_pba_from_md5(uint64_t md5_result, int32_t hid){
 	//shift result using hid;
 	shifted = md5_result >> (hid&0x1ffff);
 
-	temp = shifted % _g_nob;
+//	temp = shifted % _g_nob-1;
+	temp = shifted % num_b_primary;
 
 	return temp;
 }
@@ -68,154 +69,261 @@ int32_t get_pba_from_md5(uint64_t md5_result, int32_t hid){
 if so, return ppa
 if not return -1
 */
-int32_t check_written( int32_t	pba, int32_t lpa, int32_t* cal_ppid)
+int32_t check_written(int32_t pba, int32_t lpa, int32_t* cal_ppid)
 {
-	int32_t bit_fr_lpa, temp2, ppa;
-	bit_fr_lpa = num_page_off - num_ppid;
-	temp2 = bm->barray[pba].wr_off;
+	int32_t add_bit;
+	int32_t b_index;
+	int32_t ppa = -1;
+	int32_t lpn_offset;
+	int32_t b_offset;
+	int32_t offset_checker;
+	
+	Block *block = &bm->barray[pba];
+	add_bit = num_page_off - num_ppid;
+	b_index = block->wr_off;
+
 
 	// corresponding block is full;
-	if(temp2 == _g_ppb){
-		return -1;
+	if(b_index >= _g_ppb){
+		return -1;	
 	}
-
-	if(temp2 > _g_ppb){
-		printf("overflow\n");
-	}
-
-	if(bit_fr_lpa == 0){
+	if(add_bit == 0){
 		// ppid can represent all page offset
-		ppa = (pba * _g_ppb) + temp2;
-		*cal_ppid = temp2;
-		return ppa;
-	}
-	else if(bit_fr_lpa > 0){
-		//ppid cannot represent all page offset
-		uint32_t lpn_v, i;
-		i = pow(2,bit_fr_lpa);
-
-		//get lsb from lpn
-		lpn_v = lpa % i;
-
-		//see lsb of lpn can represent appropriate page offset
-		if((temp2 % i) == lpn_v){
-			//if so, return page no and ppid
-  			ppa = (pba * _g_ppb) + temp2;
-			*cal_ppid = temp2 / i;
-			return ppa;
+		if(block->hn_ptr == NULL){
+			block->hn_ptr = BM_Heap_Insert(primary_b, block);
 		}
+		ppa = (pba * _g_ppb) + b_index;
+		*cal_ppid = b_index;
+		block->wr_off++;
+
+
+	}
+	else{
+		//ppid cannot represent all page offset
+
+		offset_checker = pow(2,add_bit);
+		lpn_offset = lpa % offset_checker;
+		b_offset = b_index % offset_checker;
+	/*					
+		while(b_index != _g_ppb-1){
+			
+			if(lpn_offset == b_offset){
+				if(block->hn_ptr == NULL){
+					block->hn_ptr = BM_Heap_Insert(primary_b, block);
+				}
+				*cal_ppid = b_index / offset_checker;
+				ppa = (pba * _g_ppb) + b_index;
+				return ppa;
+				
+			}
+			b_index = block->wr_off;
+			block->wr_off++;
+			b_offset = b_index % offset_checker;
+		}
+	*/	
+		//see lsb of lpn can represent appropriate page offset
+			
+		if(lpn_offset == b_offset){
+			//if so, return page no and ppid
+			
+			if(block->hn_ptr == NULL){
+				block->hn_ptr = BM_Heap_Insert(primary_b, block);
+			}
+			
+			ppa = (pba * _g_ppb) + b_index;
+			*cal_ppid = b_index / offset_checker;
+			block->wr_off++;
+		}
+		
+		
+		
 	}
 
-	return -1;
+	return ppa;
+
 }
+
 
 /* get ppa from table using appropriate logic */
 int32_t get_ppa_from_table(int32_t lpa){
 	int32_t ppa;
+	int32_t pba;
+	int32_t idx_secondary;	
+	int32_t hid;
+	uint32_t lpa_md5;
+	uint64_t md5_res;
+	size_t len = sizeof(lpa);
 
+
+	lpa_md5 = lpa;
 	// this find logic is for convenience you should change it if you want real performance
-	ppa = pri_table[lpa].ppa;
+	//ppa = pri_table[lpa].ppa;
+	int add_bit = num_page_off - num_ppid;
+	int g_id = pow(2, add_bit);
+	if(pri_table[lpa].hid < hid_secondary){
+		md5(&lpa_md5, len, &md5_res);
+		hid = pri_table[lpa].hid;
+		pba = get_pba_from_md5(md5_res, hid);
+		if(add_bit == 0){
+			ppa = pba*_g_ppb + pri_table[lpa].ppid;
 
-	/*if(pri_table[lpa].hid < hid_secondary){
-
+		}else{
+			ppa = pba*_g_ppb + (g_id*pri_table[lpa].ppid) + (lpa % g_id);
+				
+		}
 	}
-	else if(pri_table[lpa].hid == hid_secondary){
+	else{
+		idx_secondary = get_idx_for_secondary(lpa);
+		if(lpa != sec_table[idx_secondary].lpa){
+			printf("Different LPN !!!\n");
+			exit(0);
+		}
+		ppa = sec_table[idx_secondary].ppa;
+	}
 
-	}*/
+	if(ppa != pri_table[lpa].ppa){
+		printf("Different ppa!!\n");
+		exit(0);
+	}
 
 	return ppa;
 }
 
+int32_t set_idx_secondary(){
+	static int32_t idx = 0;
+	int32_t re_idx = -1;
+	for(int i = 0; i < max_secondary; i++){
+		if(sec_table[idx].state == CLEAN){
+			re_idx = idx;
+			break;
+		}
+		idx = (idx+1) % max_secondary;
+	}
+	if(re_idx == -1){
+		printf("Not found emtry idx in secondary\n");
+		exit(0);
+	}
+	
+	return re_idx;
+}
+
+
+
 int32_t get_idx_for_secondary(int32_t lpa)
 {
-	int32_t i, temp;
-	int k;
+	int32_t num_segment;
+	int32_t max_idx_search;
+	int32_t ppid;
+	int32_t re_idx = -1;
+	int32_t i;
+	
+	ppid           = pri_table[lpa].ppid;
+	num_segment    = max_secondary / pow(2,num_ppid);
+	max_idx_search = (num_segment*ppid) + num_segment; 
 
-	i = pow(2, num_ppid);
-	temp = max_secondary / i;
-
-	for(k = temp * (pri_table[lpa].ppid); k < temp * ((pri_table[lpa].ppid) + 1); k++){
-		if(sec_table[k].lpa == lpa){
-			return k;
+	for(i = num_segment * ppid; i < max_idx_search; i++){
+		if(sec_table[i].lpa == lpa){
+			re_idx = i;
+			break;
 		}
 	}
+	
+	if(re_idx == -1){
+		printf("Not exist entry in secondary table\n");
+		exit(0);
+	}
 
-	printf("get idx for secondary: can't find entry for given lpa\n");
-	exit(3);
-	return max_secondary;
+	return re_idx;
+
+	
 }
 
 
 int32_t alloc_page(int32_t lpa, int32_t* cal_ppid, int32_t* hid){
 	int32_t ppa, pba, cnt;
 	uint32_t lpa_md5;
-	//Block *block;
-	static int32_t pba_secondary = 0;
-	uint64_t* md5_res = NULL;
+	int32_t v_pba;
+	Block *block;
 	size_t len = sizeof(lpa);
-
-	if((md5_res = (uint64_t*)malloc(sizeof(uint64_t))) == NULL){
-    	printf("alloc_page: md5_res allocate failed\n");
-    	return 1;
-  	}
-
-  // get value from md5
+	uint64_t md5_res;
+	int32_t t_ppid;
  	lpa_md5 = lpa;
+	int32_t add_bit = num_page_off - num_ppid;
+	bool flag;
 
-	md5(&lpa_md5, len, md5_res);
-
+	md5(&lpa_md5, len, &md5_res);
 	while(*hid != hid_secondary){
-    pba = get_pba_from_md5(*md5_res, *hid);
-
-		if(pba != reserved_pba){
-			if((ppa = check_written(pba, lpa, cal_ppid)) != -1){
+		pba = get_pba_from_md5(md5_res, *hid);
+		if((ppa = check_written(pba, lpa, cal_ppid)) != -1){
+			return ppa;
+		}
+		*hid = *hid + 1;
+	}
+	
+	//GC trigger by low watermark
+	if(num_secondary >= low_watermark){
+		printf("GC trigger by low watermark\n");
+		//Check valid for primary blocks 
+		for(int i = 0 ; i < num_b_primary; i++){
+			block = &bm->barray[i];
+			if(block->Invalid == 0){
+				flag = 1;
+			}else{
+				flag = 0;
 				break;
 			}
 		}
-
-		*hid = *hid + 1;
+		while(num_secondary >= high_watermark){
+			//If all valid for primary blocks, only operate remapping
+			if(flag == 0)
+				v_pba = hash_primary_gc();
+			remap_sec_to_pri(v_pba,&t_ppid);
+		}
 	}
 
-
-	//if lpa cannot mapped to primary table, map to secondary table
-	if(*hid == hid_secondary){
-			//find appropriate block for free page
-			cnt = 0;
-			while(bm->barray[pba_secondary].wr_off == _g_ppb || pba_secondary == reserved_pba){
-				pba_secondary++;
-
-				if(pba_secondary >= _g_nob){
-					pba_secondary = 0;
-				}
-				cnt++;
-
-				if(cnt == _g_nob){
-					printf("\n\ndo gc aloc\n");
-					
-					gc_val = 0;
-					for(int i = 0; i < 8; i++){
-						ppa = hash_garbage_collection();
-					}
-					pba_secondary = BM_PPA_TO_PBA(ppa);
-					return ppa;
-				}
-			}
-
-			ppa = pba_secondary * _g_ppb + bm->barray[pba_secondary].wr_off;
-	}
-	free(md5_res);
+	//Secondary ppa allocation
+	ppa = secondary_alloc(0);
 	return ppa;
+}
+
+int32_t secondary_alloc(bool flag)
+{
+
+	static int32_t ppa = -1;
+	Block *block = NULL;
+	if(ppa != -1 && ppa % _g_ppb == 0){
+		ppa = -1;
+	}
+	if(ppa == -1){
+		if(secondary_b->idx == secondary_b->max_size){
+			ppa = hash_secondary_gc();
+			return ppa++;
+		}
+		block = BM_Dequeue(free_b);		
+		if(block){
+			block->hn_ptr = BM_Heap_Insert(secondary_b, block);
+			ppa = block->PBA * _g_ppb;
+		}else{
+			ppa = hash_secondary_gc();
+		}
+
+	}
+	return ppa++;
+	
 }
 
 int32_t map_for_gc(int32_t lpa, int32_t ppa){
 	int32_t idx_secondary,temp;
+	int32_t sec_ppid;
+	int32_t b_idx;
 	Block *block;
-
-
+	
+	//If valid page is a secondary entry, Invalidate secondary entry
 	if(pri_table[lpa].state == H_VALID){
 		if(pri_table[lpa].hid == hid_secondary){
+			printf("Never enter here in primary gc\n");
+			exit(0);
 			idx_secondary =	get_idx_for_secondary(lpa);
-
 			sec_table[idx_secondary].state = CLEAN;
 			sec_table[idx_secondary].ppa = -1;
 			sec_table[idx_secondary].lpa = -1;
@@ -223,46 +331,21 @@ int32_t map_for_gc(int32_t lpa, int32_t ppa){
 		}
 	}
 
-	idx_secondary = max_secondary;
-
 	//find free entry at secondary table
-	for(int k = 0; k < max_secondary; k++){
-		if(sec_table[k].state == CLEAN){
-			idx_secondary = k;
-			sec_table[k].state = H_VALID;
-			break;
-		}
-	}
+	idx_secondary = set_idx_secondary();
 
-	if(idx_secondary == max_secondary){
-		printf ("\nmap for gc: secondary table is fulled\n");
-		printf("max secondary table: %d\n", max_secondary);
-		printf("num secondary table: %d\n", num_secondary);
-		printf("Requested writes: %d\n", num_write);
-		printf("Copyed writes: %d\n", num_copy);
-		printf("WAF: %d\n", ((num_write+num_copy)*100/num_write));
 	
-		exit(3);
-		return 1;
-	}
-
 	pri_table[lpa].hid = hid_secondary;
-	pri_table[lpa].ppa = ppa;
+	pri_table[lpa].ppa = ppa;	
 	pri_table[lpa].state = H_VALID;
-	block = &bm->barray[BM_PPA_TO_PBA(ppa)];
-	if(block->wr_off == 0){
-		block->hn_ptr = BM_Heap_Insert(b_heap, block);
-	}
-	block->wr_off++;
+  	//calculate ppid for secondary table
+	sec_ppid = pow(2, num_ppid);
+	sec_ppid = sec_ppid * idx_secondary;
+	sec_ppid = sec_ppid / max_secondary;
+	pri_table[lpa].ppid = sec_ppid;
 
 
-  // calculate ppid for secondary table
-	temp = pow(2, num_ppid);
-	temp = temp*idx_secondary;
-	temp = temp/max_secondary;
-	pri_table[lpa].ppid = temp;
-
-  //set lpa, ppa, status
+ 	//set lpa, ppa, status
   	sec_table[idx_secondary].ppa = ppa;
  	sec_table[idx_secondary].lpa = lpa;
   	sec_table[idx_secondary].state = H_VALID;
@@ -272,19 +355,28 @@ int32_t map_for_gc(int32_t lpa, int32_t ppa){
 
   	return 0;
 }
+int32_t map_for_s_gc(int32_t lpa, int32_t ppa){
+	int32_t idx_secondary;
+	int32_t pba = ppa / _g_ppb;
+	Block *block;
+	idx_secondary = get_idx_for_secondary(lpa);
+	if(idx_secondary == -1){
+		printf("Not found idx_secondary in secondary gc\n");
+		exit(0);
+	}
 
-/* 
-	given lpa is remapped to new ppa and that information is
-	stored at primary table
-	clean corresponding secondary table and invalidate page
-	change lpa's mapping to primary table
-*/
-int32_t map_for_remap(
-	int32_t lpa, 
-	int32_t ppa, 
-	int32_t hid,  
-	int32_t* cal_ppid,
-	int32_t secondary_idx){
+	//Update ppa and Block valid
+	sec_table[idx_secondary].ppa = ppa;
+	pri_table[lpa].ppa = ppa;
+	hash_OOB[ppa].lpa = lpa;
+	BM_ValidatePage(bm,ppa);
+
+	return 0;
+	
+
+}
+
+int32_t map_for_remap(int32_t lpa, int32_t ppa, int32_t hid, int32_t *cal_ppid, int32_t secondary_idx){
 
 	Block *block;
 
@@ -316,74 +408,158 @@ int32_t map_for_remap(
 	hash_OOB[ppa].lpa = lpa;
 	BM_ValidatePage(bm, ppa);
 
-	block = &bm->barray[BM_PPA_TO_PBA(ppa)];
-	if(block->wr_off == 0){
-		block->hn_ptr = BM_Heap_Insert(b_heap, block);
-	}
-	block->wr_off++;
-	if(block->wr_off > _g_ppb){
-		printf("\nmap for remap: overflow page offset\n");
-		exit(3);
-	}
-	
+
 	return 0;
 }
 
+int32_t remap_sec_to_pri(int32_t v_pba, int32_t* cal_ppid){
+        int32_t lpa, ppa, prev_ppa, hid, pba_t;
+        uint32_t lpa_md5;
+        int count = 0;
+        int invalid_cnt = 0;
+        size_t len = sizeof(lpa);
+        uint64_t md5_res;
+	Block *block;
+	value_set *temp_set;
+	value_set *temp_value_set;
+        for(int i =0; i < max_secondary; i++){
+                if(sec_table[i].state == H_VALID){
+                        lpa = sec_table[i].lpa;
+                        lpa_md5 = lpa;
+			md5(&lpa_md5, len, &md5_res);
+                        //md5_res = md5_u(&lpa_md5, len);
+                        prev_ppa = sec_table[i].ppa;
+                        hid = 0;
+                        while(hid != hid_secondary){
+                                pba_t = get_pba_from_md5(md5_res, hid);
+				if((ppa = check_written(pba_t, lpa, cal_ppid)) != -1){
+					gc_load = 0;
+					temp_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+					__hashftl.li->read(prev_ppa, PAGESIZE, temp_set, 1,assign_pseudo_req(GC_R, NULL, NULL));
+					inf_free_valueset(temp_set, FS_MALLOC_R);
+					while(gc_load == 0){}
+					temp_value_set = inf_get_valueset((PTR)temp_set->value, FS_MALLOC_W, PAGESIZE);
+					map_for_remap(lpa, ppa, hid, cal_ppid, i);
+					__hashftl.li->write(ppa, PAGESIZE,temp_value_set,ASYNC,assign_pseudo_req(GC_W, temp_value_set, NULL));
 
-int32_t remap_sec_to_pri(int32_t pba, int32_t* cal_ppid){
-	int32_t lpa, ppa, prev_ppa, hid, pba_t;
-	uint32_t lpa_md5;
-	int count = 0;
+					hash_OOB[prev_ppa].lpa = -1;
 
-	size_t len = sizeof(lpa);
-	
+					count++;
 
-	for(int i =0; i < max_secondary; i++){
-		if(sec_table[i].state == H_VALID){
-			uint64_t md5_res;
-
-			lpa = sec_table[i].lpa;
-			lpa_md5 = lpa;
-			
-			md5_res = md5_u(&lpa_md5, len);
-			prev_ppa = sec_table[i].ppa;
-			hid = 1;
-			while(hid != hid_secondary){
-
-				pba_t = get_pba_from_md5(md5_res, hid);
-				if(pba_t != reserved_pba){
-					if((ppa = check_written(pba_t, lpa, cal_ppid)) != -1){
-						value_set *temp_set = NULL;
-						value_set *temp_value_set = NULL;
-						gc_load = 0;						
-						
-						temp_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);	
-						__hashftl.li->read(prev_ppa, PAGESIZE, temp_set, 1,assign_pseudo_req(GC_R, NULL, NULL));
-						
-						
-						while(gc_load == 0){}
-
-						temp_value_set = inf_get_valueset((PTR)temp_set->value, FS_MALLOC_W, PAGESIZE);
-
-						map_for_remap(lpa, ppa, hid, cal_ppid, i);
-						__hashftl.li->write(ppa, PAGESIZE,temp_value_set,ASYNC,assign_pseudo_req(GC_W, temp_value_set, NULL));
-						
-						hash_OOB[prev_ppa].lpa = -1;
-						free(temp_set);
-						count++;
-
-						//check the number of page that are moved during remapping
-						re_page_count++;
-						re_number++;
-						num_copy++;
-						break;
-					}
+					//check the number of page that are moved during remapping
+					/*
+					re_page_count++;
+					re_number++;
+					num_copy++;
+					*/
+					break;
 				}
 				hid = hid + 1;
 			}
 		}
-	}
-	printf("remapped count: %d\n\n", count);
 
+	}
+	remap_copy += count;
+	//printf("invalid count : %d\n",invalid_cnt);
+        //printf("remapped count: %d\n\n", count);
 	return 0;
 }
+
+
+
+
+/*
+int32_t remap_sec_to_pri(int32_t v_pba, int32_t* cal_ppid){
+	int32_t lpa, ppa, prev_ppa, hid, pba_t;
+	bool flag = 0;
+	uint32_t lpa_md5;
+	int count = 0;
+	int invalid_cnt = 0;
+	size_t len = sizeof(lpa);
+	uint64_t md5_res;
+
+	int32_t re_sec_idx;
+	int32_t re_hid;
+	int32_t re_ppid;
+
+	Block *block = &bm->barray[v_pba];
+
+	for(int i = 0; i < _g_ppb; i++){
+		if(gc_block[i].state == 0){
+			block->wr_off = i;
+			for(int j = 0; j < max_secondary; j++){
+				if(sec_table[j].state == H_VALID && sec_table[j].gc_flag == 0)
+				{
+					lpa = sec_table[j].lpa;
+					lpa_md5 = lpa;
+					md5_res = md5_u(&lpa_md5, len);
+					hid = 0;
+					while(hid != hid_secondary){
+						pba_t = get_pba_from_md5(md5_res, hid);
+						if(pba_t == v_pba && pba_t != reserved_pba){
+							if((ppa = gc_written(pba_t, lpa, cal_ppid, hid)) != -1){
+								gc_block[i].idx_secondary = j;
+								sec_table[j].gc_flag = 1;
+								flag = 1;
+								break;
+
+							}
+						}
+						hid = hid + 1;
+					}
+					if(flag){
+						flag = 0;
+						break;
+					}
+				}
+
+			}
+
+		}
+	}
+
+	for(int i = 0; i < max_secondary; i++){
+		if(sec_table[i].gc_flag)
+			sec_table[i].gc_flag = 0;
+	}	
+
+	ppa = block->PBA * _g_ppb;
+	int32_t wr_off;
+	for(int i = 0 ; i < _g_ppb; i++){
+		if(gc_block[i].state){
+			value_set *temp_set = NULL;
+			value_set *temp_value_set = NULL;
+			gc_load = 0;
+			re_hid = gc_block[i].hid;
+			re_ppid = gc_block[i].ppid;
+			re_sec_idx = gc_block[i].idx_secondary;
+
+			prev_ppa = sec_table[re_sec_idx].ppa;
+			temp_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+			__hashftl.li->read(prev_ppa, PAGESIZE, temp_set, 1,assign_pseudo_req(GC_R, NULL, NULL));
+			while(gc_load == 0){}
+			temp_value_set = inf_get_valueset((PTR)temp_set->value, FS_MALLOC_W, PAGESIZE);
+			if(temp_set->value != NULL) free(temp_set->value);
+			free(temp_set);
+
+			map_for_remap(ppa+i, re_hid, re_ppid, re_sec_idx);
+			__hashftl.li->write(ppa+i, PAGESIZE,temp_value_set,ASYNC,assign_pseudo_req(GC_W, temp_value_set, NULL));
+
+			hash_OOB[prev_ppa].lpa = -1;
+			count++;
+			wr_off = i;
+			sec_table[re_sec_idx].gc_flag = 0;
+		}
+
+		gc_block[i].hid = -1;
+		gc_block[i].ppid = -1;
+		gc_block[i].idx_secondary = -1;
+		gc_block[i].state = 0;
+
+	
+	}
+	block->wr_off = wr_off;
+	printf("remapped count: %d\n\n", count);
+	return 0;
+}
+*/

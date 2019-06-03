@@ -38,6 +38,7 @@ typedef struct secondary_table{
     int32_t ppa;
     int32_t lpa;
     bool state; // CLEAN or DIRTY
+    bool gc_flag;
 
 } SECONDARY_TABLE;
 
@@ -58,11 +59,26 @@ typedef struct hash_params{
 	TYPE type;
 } hash_params;
 
+struct gc_block{
+	int32_t hid;
+	int32_t ppid;
+	int32_t idx_secondary;
+	bool state;
+};
+
+
 
 extern algorithm __hashftl;
 
 extern b_queue *free_b;
 extern Heap *b_heap;
+extern Heap *primary_b;
+extern Heap *secondary_b;
+extern b_queue *victim_b;
+
+extern struct gc_block *gc_block;
+
+
 
 extern PRIMARY_TABLE *pri_table;     // primary table
 extern SECONDARY_TABLE *sec_table;   //secondary table
@@ -71,18 +87,27 @@ extern H_OOB *hash_OOB;	   // Page level OOB.
 extern BM_T *bm;
 extern Block *reserved;    //reserved.
 extern int32_t reserved_pba;
+extern int32_t empty_idx;
+
+extern int32_t start_b_secondary;
 
 extern int32_t _g_nop;
 extern int32_t _g_nob;
 extern int32_t _g_ppb;
 
+extern int32_t num_b_primary;
+
 extern int32_t max_secondary;
 extern int32_t num_secondary;
+extern int32_t num_b_secondary;
+
+
 extern int32_t num_hid;
 extern int32_t num_ppid;
 extern int32_t num_page_off;
 extern int32_t hid_secondary;
 extern int32_t loop_gc;
+extern int32_t pba_secondary;
 
 extern int32_t gc_load;
 extern int32_t gc_count;
@@ -95,6 +120,12 @@ extern int32_t gc_pri;
 
 extern int32_t num_write;
 extern int32_t num_copy;
+
+extern int32_t valid_copy;
+extern int32_t remap_copy;
+
+extern int32_t low_watermark;
+extern int32_t high_watermark;
 
 //hashftl.h
 uint32_t hash_create(lower_info*, algorithm*);
@@ -111,17 +142,29 @@ value_set* SRAM_load(SRAM* sram, int32_t ppa, int idx); // loads info on SRAM.
 void SRAM_unload(SRAM* sram, int32_t ppa, int idx); // unloads info from SRAM.
 int32_t get_pba_from_md5(uint64_t md5_result, uint8_t hid);
 int32_t check_written(int32_t	pba, int32_t lpa, int32_t* cal_ppid);
+
 int32_t get_ppa_from_table(int32_t lpa);
+int32_t set_idx_secondary();
+
 int32_t alloc_page(int32_t lpa, int32_t* cal_ppid, int32_t* hid);
+int32_t secondary_alloc(bool);
+
+
 int32_t get_idx_for_secondary(int32_t lpa);
 int32_t map_for_gc(int32_t lpa, int32_t ppa);
-int32_t map_for_remap(int32_t lpa, int32_t ppa, int32_t hid, int32_t* cal_ppid, int32_t
-secondary_idx);
-int32_t remap_sec_to_pri(int32_t pba, int32_t* cal_ppid);
+int32_t map_for_s_gc(int32_t lpa, int32_t ppa);
+
+int32_t map_for_remap(int32_t lpa, int32_t ppa, int32_t hid, int32_t *cal_ppid, int32_t secondary_idx);
+//int32_t map_for_remap(int32_t ppa, int32_t hid, int32_t cal_ppid, int32_t secondary_idx);
+
+
+int32_t remap_sec_to_pri(int32_t v_pba, int32_t* cal_ppid);
 
 
 //hashftl_gc.h
-int32_t hash_garbage_collection(); // hashftl GC function.
+int32_t hash_primary_gc(); // hashftl GC function.
+int32_t hash_secondary_gc();
+
 
 // md5.h
 void md5(uint32_t *initial_msg, size_t initial_len, uint64_t* result);

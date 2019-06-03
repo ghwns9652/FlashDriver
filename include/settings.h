@@ -5,7 +5,7 @@
 #include<stdint.h>
 #include <stdlib.h>
 #include<stdio.h>
-
+#include<math.h>
 /*
 #define free(a) \
 	do{\
@@ -32,7 +32,10 @@
 #elif defined(SLC)
 
 #define GIGAUNIT 8L
-#define TOTALSIZE ((GIGAUNIT)*G)
+#define _OPAREA ((GIGAUNIT * G) * 0.07)
+
+
+#define TOTALSIZE ((GIGAUNIT*G)+_OPAREA)
 #define REALSIZE (512L*G)
 #define DEVSIZE (64L * G)
 #define PAGESIZE (8*K)
@@ -47,12 +50,12 @@
 #endif
 
 #define BLOCKSIZE (_PPB*PAGESIZE)
-#define _NOP (TOTALSIZE/PAGESIZE)
-#define _NOS (TOTALSIZE/(_PPS*PAGESIZE))
+#define _NOS ceil(TOTALSIZE/(_PPS*PAGESIZE))
+#define _NOP (_PPS*_NOS)
 #define _NOB (BPS*_NOS)
 #define _RNOS (REALSIZE/(_PPS*PAGESIZE))//real number of segment
 
-#define RANGE ((GIGAUNIT)*(M/PAGESIZE)*1024L*0.8)
+#define RANGE ((GIGAUNIT)*(M/PAGESIZE)*1024L)
 //#define RANGE ((GIGAUNIT)*(M/PAGESIZE)*1024L*0.8)
 //#define RANGE (50*(M/PAGESIZE)*1024L*0.8)
 
@@ -66,7 +69,7 @@
 #define PTR char*
 #define ASYNC 1
 #define QSIZE (1024)
-#define QDEPTH (128)
+#define QDEPTH (1)
 #define THREADSIZE (1)
 
 #define THPOOL
