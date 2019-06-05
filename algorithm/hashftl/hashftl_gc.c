@@ -118,8 +118,8 @@ int32_t hash_primary_gc(){
 		SRAM_unload(d_sram, sec_ppa, i);
 
 	}
-
-
+	printf("pri_count = %d\n",pri_count);
+	pri_count = 0;
 	free(temp_set);
 	free(d_sram);
 

@@ -104,23 +104,7 @@ int32_t check_written(int32_t pba, int32_t lpa, int32_t* cal_ppid)
 		offset_checker = pow(2,add_bit);
 		lpn_offset = lpa % offset_checker;
 		b_offset = b_index % offset_checker;
-	/*					
-		while(b_index != _g_ppb-1){
-			
-			if(lpn_offset == b_offset){
-				if(block->hn_ptr == NULL){
-					block->hn_ptr = BM_Heap_Insert(primary_b, block);
-				}
-				*cal_ppid = b_index / offset_checker;
-				ppa = (pba * _g_ppb) + b_index;
-				return ppa;
-				
-			}
-			b_index = block->wr_off;
-			block->wr_off++;
-			b_offset = b_index % offset_checker;
-		}
-	*/	
+
 		//see lsb of lpn can represent appropriate page offset
 			
 		if(lpn_offset == b_offset){
@@ -242,7 +226,7 @@ int32_t get_idx_for_secondary(int32_t lpa)
 int32_t alloc_page(int32_t lpa, int32_t* cal_ppid, int32_t* hid){
 	int32_t ppa, pba, cnt;
 	uint32_t lpa_md5;
-	int32_t v_pba;
+	int32_t v_pba = -1;
 	Block *block;
 	size_t len = sizeof(lpa);
 	uint64_t md5_res;
@@ -331,6 +315,7 @@ int32_t map_for_gc(int32_t lpa, int32_t ppa){
 		}
 	}
 
+	pri_count++;
 	//find free entry at secondary table
 	idx_secondary = set_idx_secondary();
 
@@ -446,12 +431,6 @@ int32_t remap_sec_to_pri(int32_t v_pba, int32_t* cal_ppid){
 
 					count++;
 
-					//check the number of page that are moved during remapping
-					/*
-					re_page_count++;
-					re_number++;
-					num_copy++;
-					*/
 					break;
 				}
 				hid = hid + 1;
@@ -460,8 +439,7 @@ int32_t remap_sec_to_pri(int32_t v_pba, int32_t* cal_ppid){
 
 	}
 	remap_copy += count;
-	//printf("invalid count : %d\n",invalid_cnt);
-        //printf("remapped count: %d\n\n", count);
+	printf("remapped count: %d\n\n", count);
 	return 0;
 }
 

@@ -74,6 +74,9 @@ int32_t pba_secondary;
 int32_t secondary_ppa;
 int32_t start_b_secondary;
 
+int32_t pri_count;
+int32_t sec_count;
+
 
 //Count variable
 
@@ -151,8 +154,8 @@ uint32_t hash_create(lower_info *li, algorithm *algo){
 	num_secondary = 0;                                    //init # of secondary table entry
 	num_hid = 3;					      //Set h_bit (3)
 	num_page_off = bit_cnt - 1;			      //Set p_bit (8)
-	num_ppid = num_page_off;
-	//num_ppid = num_page_off - 2;			      //Set m_bit (6)
+	//num_ppid = num_page_off;
+	num_ppid = num_page_off - 2;			      //Set m_bit (6)
 	hid_secondary = pow(2, num_hid) - 1;
 
 	num_write = 0;

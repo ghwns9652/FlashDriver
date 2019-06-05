@@ -124,6 +124,9 @@ extern int32_t num_copy;
 extern int32_t valid_copy;
 extern int32_t remap_copy;
 
+extern int32_t pri_count;
+extern int32_t sec_count;
+
 extern int32_t low_watermark;
 extern int32_t high_watermark;
 
