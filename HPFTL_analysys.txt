@@ -1,0 +1,19 @@
+[기존 HPFTL 문제]
+
+** Valid copy > remapping entry 현상이 지속적으로 발생하여 high watermark에 도달하지 못하는 현상
+- Remapping 과정이 지속되면 모든 블록에 request 흩어지게 되고, 모든 블록들이 Invalid한 상태가 됨 (거의 가득찬 상태)
+- 이 후, GC가 일어나게 되면 한 블록을 지우고 reserved 블록에 매핑을 하게 되고, 지워진 블록은 reserved 블록이 된다.
+- 이 과정에서 문제가 발생하게 됨
+
+
+e.g, Victim block valid page --> 140 ~ 150개 정도의 valid copy가 이루어지게 되고 reserved block의 영역은 90~100개 정도의
+empy 영역만 가지게 됨
+
+- 이 후 remapping하게 되면 다른 블록들은 Invalid한 상태이기 때문에 결국 90~100개 정도의 remapping만 이루어지게 됨
+- 이 과정이 반복되면 Secondary entry가 줄어들지 않게되는 현상이 발생하게 됨
+
+[수정 HPFTL]
+** Primary 와 Secondary를 위한 blocks들 별도로 관라하여 valid copy < remapping entry 가 되도록 변경
+- Low watermark에 도달하는 경우 Victim primary block을 선정하게 되고 valid page들을 Secondary block으로 valid copy를 수행
+- 이 후 , Secondary entry에 대한 remapping 과정을 수행하게 되면 Victim primary block으로 다시 remapping 되는 entry가
+valid copy page 수보다 더 많아지게 됨.
