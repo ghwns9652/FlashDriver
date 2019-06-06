@@ -117,7 +117,6 @@ int32_t dpage_GC(){
     value_set *temp_value_set;
     value_set **temp_set;
     value_set *dummy_vs;
-    NODE *find = NULL;
     /* Load valid pages to SRAM */
     all = 0;
     dgc_count++;

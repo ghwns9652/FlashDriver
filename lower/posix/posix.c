@@ -63,18 +63,39 @@ void *posix_refresh(lower_info *li){
 }
 
 void *posix_destroy(lower_info *li){
+
+	printf("TRIM\t%lu\n", li->req_type_cnt[0]);
+	printf("TR\t%lu\n", li->req_type_cnt[1]);
+	printf("TW\t%lu\n", li->req_type_cnt[2]);
+	printf("TGCR\t%lu\n", li->req_type_cnt[3]);
+	printf("TGCW\t%lu\n", li->req_type_cnt[4]);
+	printf("DR\t%lu\n", li->req_type_cnt[5]);
+	printf("DW\t%lu\n", li->req_type_cnt[6]);
+	printf("DGCR\t%lu\n", li->req_type_cnt[7]);
+	printf("DGCW\t%lu\n\n", li->req_type_cnt[8]);
+
+	printf("Total Read Traffic : %lu\n", li->req_type_cnt[1]+li->req_type_cnt[3]+li->req_type_cnt[5]+li->req_type_cnt[7]);
+	printf("Total Write Traffic: %lu\n\n", li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]);
+	printf("Total WAF: %.2f\n\n", (float)(li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]) / li->req_type_cnt[6]);
+	printf("Total RAF: %.2f\n\n", (float)(li->req_type_cnt[1]+li->req_type_cnt[3]+li->req_type_cnt[5]+li->req_type_cnt[7]) / li->req_type_cnt[5]);
+
 	pthread_mutex_destroy(&my_posix.lower_lock);
 	pthread_mutex_destroy(&fd_lock);
 	close(_fd);
 	return NULL;
 }
+static uint8_t convert_type(uint8_t type) {
+        return (type & (0x7f));
+}
+
 
 void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo_req *const req){
 	/*
 	if(PPA>6500)
 		printf("PPA : %u\n", PPA);
 	*/
-	
+
+	uint8_t test_type;
 	if(value->dmatag==-1){
 		printf("dmatag -1 error!\n");
 		exit(1);
@@ -96,6 +117,12 @@ void *posix_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo
 	}
 //	}
 	pthread_mutex_unlock(&fd_lock);
+	  test_type = convert_type(req->type);
+        if(test_type < LREQ_TYPE_NUM){
+                my_posix.req_type_cnt[test_type]++;
+        }
+
+
 	if(req->parents)
 		bench_lower_end(req->parents);
 	bench_lower_w_end(&my_posix);
@@ -115,6 +142,7 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 	if(PPA>6500)
 		printf("PPA : %u\n", PPA);
 	*/
+	uint8_t test_type;
 	if(value->dmatag==-1){
 		printf("dmatag -1 error!\n");
 		exit(1);
@@ -135,6 +163,10 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 	}
 	//}
 	pthread_mutex_unlock(&fd_lock);
+	test_type = convert_type(req->type);
+	if(test_type < LREQ_TYPE_NUM){
+		my_posix.req_type_cnt[test_type]++;
+	}
 
 	if(req->parents)
 		bench_lower_end(req->parents);
@@ -151,17 +183,19 @@ void *posix_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async, alg
 }
 
 void *posix_trim_block(KEYT PPA, bool async){
-	bench_lower_t(&my_posix);
+	//ench_lower_t(&my_posix);
 	char *temp=(char *)malloc(my_posix.SOB);
 	memset(temp,0,my_posix.SOB);
 	pthread_mutex_lock(&fd_lock);
 	if(lseek64(_fd,((off64_t)my_posix.SOP)*PPA,SEEK_SET)==-1){
 		printf("lseek error in trim\n");
 	}
+	my_posix.req_type_cnt[TRIM]++;
 	if(!write(_fd,temp,BLOCKSIZE*BPS)){
 		printf("write none\n");
 	}
 	pthread_mutex_unlock(&fd_lock);
+	
 	free(temp);
 	return NULL;
 }

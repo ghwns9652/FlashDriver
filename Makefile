@@ -3,7 +3,7 @@ export CC=g++
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
 #TARGET_LOWER=linux_aio
-TARGET_ALGO=tpftl
+TARGET_ALGO=red_sftl
 
 
 
@@ -18,7 +18,7 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-			-O2\
+#			-O2\
 
 #			-DWRITESYNC\
 

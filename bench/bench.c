@@ -374,7 +374,7 @@ void bench_lower_end(request *const req){
 	MA(&req->lower);
 #endif
 }
-
+/*
 void bench_update_ftltime(bench_data *_d, request *const req){
 	bench_ftl_time *temp;
 	MC(&req->latency_ftl);
@@ -384,15 +384,15 @@ void bench_update_ftltime(bench_data *_d, request *const req){
 	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
 	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
 	temp->cnt++;
-	/*
+	
 	temp = &_d->ftl_npoll[req->type_ftl][req->type_lower];
 	req->latency_ftl.micro_time -= req->latency_poll.adding.tv_sec*1000000 + req->latency_poll.adding.tv_usec;
 	temp->total_micro += req->latency_ftl.micro_time;
 	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
 	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
-	temp->cnt++;*/
+	temp->cnt++;
 }
-
+*/
 void bench_ftl_cdf_print(bench_data *_d){
 	//printf("polling\n");
 	printf("a_type\tl_type\tmax\tmin\tavg\tcnt\tpercentage\n");
@@ -496,7 +496,7 @@ void bench_reap_data(request *const req,lower_info *li){
 	bench_data *_data=&_master->datas[idx];
 
 	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
-		bench_update_ftltime(_data, req);
+		//bench_update_ftltime(_data, req);
 	}
 	
 	if(req->type==FS_NOTFOUND_T){

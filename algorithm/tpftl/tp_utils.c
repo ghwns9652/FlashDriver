@@ -12,7 +12,6 @@ NODE *tp_entry_search(int32_t lpa, bool flag){
 	struct entry_node *ent_node = NULL;
 	int32_t offset = P_IDX;
 	int32_t max_range;
-	int32_t cnt = 0;
 	while(find_node != NULL){
 		if(find_node == c_table->last_ptr){
 			if(flag){
@@ -76,7 +75,6 @@ NODE *tp_entry_op(int32_t lpa, int32_t ppa){
 	int32_t head_ppa   = ent_node->ppa;
 	int32_t head_cnt   = ent_node->cnt;
 	int32_t max_range  = head_idx + head_cnt;
-	int32_t offset;
 	index   = head_idx + head_cnt + 1;
 	pre_ppa = head_ppa + (P_IDX - head_idx - 1);
 
@@ -110,7 +108,6 @@ NODE *tp_entry_op(int32_t lpa, int32_t ppa){
 		}
 		find_node = tp_entry_search(lpa,0);
 		if(find_node != NULL){
-			struct entry_node *s=(struct entry_node *)find_node->DATA;
 			tp_entry_split(find_node,lpa, ppa, 0);
 		}
 		lru_update(c_table->entry_lru, c_table->last_ptr);
@@ -299,7 +296,7 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 	struct entry_node *now;
 	struct entry_node *ent_node;
 	struct entry_node *next_ent;
-	int32_t pre_ppa, pre_index;
+	int32_t pre_ppa;
         int32_t cur_ppa;
 	int32_t next_ppa;	
 	int32_t cnt = 0;
@@ -557,11 +554,11 @@ NODE *tp_prefetch(int32_t pf_idx, int32_t pf_ppa){
 */
 int32_t cache_mapped_size()
 {
-        int32_t idx = max_cache_entry;
+        //int32_t idx = max_cache_entry;
         int32_t cache_size = 0;
         int32_t cnt = 0;
 	int32_t entry_cnt = 0;
-        int32_t miss_cnt = 0;
+        //int32_t miss_cnt = 0;
 	int32_t check_cnt = 0;
         C_TABLE *c_table;
 	NODE *lru_node;

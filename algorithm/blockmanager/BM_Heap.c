@@ -61,7 +61,7 @@ void heap_print(Heap *h){
 	int idx = 0;
 	while(h->body[idx].value){
 		Block *temp=(Block*)h->body[idx].value;
-		printf("%d ", temp->Invalid);
+		printf(" %d\n ", temp->Invalid);
 		idx++;
 	}
 	printf("cnt: %d\n", idx);

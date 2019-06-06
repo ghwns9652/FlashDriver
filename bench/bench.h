@@ -131,6 +131,20 @@ void bench_cache_hit(int mark);
 void bench_reap_data(request *const,lower_info *);
 void bench_reap_nostart(request *const);
 char *bench_lower_type(int);
+
+
+void bench_algo_start(request *const);
+void bench_algo_end(request *const);
+void bench_lower_start(request *const);
+void bench_lower_end(request* const);
+void bench_lower_w_start(lower_info *);
+void bench_lower_w_end(lower_info *);
+void bench_lower_r_start(lower_info *);
+void bench_lower_r_end(lower_info *);
+void bench_lower_t(lower_info*);
+
+
+
 #ifdef CDF
 void bench_cdf_print(uint64_t, uint8_t istype, bench_data*);
 #endif

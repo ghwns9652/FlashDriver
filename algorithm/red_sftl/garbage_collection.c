@@ -214,9 +214,8 @@ int32_t dpage_GC(){
 		//this case is bitmap form 
 		p_table[P_IDX].ppa = new_block + real_valid;
 		if(c_table->form_check){
+			
 			int32_t pre_size = c_table->b_form_size;
-			//printf("pre_size = %d\n",c_table->b_form_size);
-			sftl_entry_set(lpa);
 			if(c_table->b_form_size > check_size){
 				temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 				temp_req = assign_pseudo_req(TGC_M, temp_value_set, NULL);
@@ -226,10 +225,6 @@ int32_t dpage_GC(){
 				free(params);
 				free(temp_req);
 				inf_free_valueset(temp_value_set, FS_MALLOC_R);
-
-				if(c_table->head != NULL){
-					sftl_entry_free(c_table);
-				}
 				c_table->form_check = 0;
 				c_table->bit_cnt = 0;
 				c_table->b_form_size = PAGESIZE;
@@ -294,7 +289,6 @@ int32_t dpage_GC(){
             BM_ValidatePage(bm, t_ppa);
             c_table->t_ppa = t_ppa; // Update CMT t_ppa
 	    t_index = c_table->idx;
-	    c_table->b_form_size = head_bit_set(t_index);
 	    if(c_table->b_form_size > check_size){
 		    c_table->b_form_size = PAGESIZE;
 		    c_table->form_check = 0;

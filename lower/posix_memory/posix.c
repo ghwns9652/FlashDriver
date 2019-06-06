@@ -17,7 +17,10 @@
 #include "../../algorithm/dftl_test/dftl.h"
 #elif defined(sftl)
 #include "../../algorithm/sftl/dftl.h"
+#elif defined(tpftl)
+#include "../../algorithm/tpftl/dftl.h"
 #elif defined(ctoc_batch)
+
 #include "../../algorithm/ctoc_batch/dftl.h"
 #else
 #include "../../algorithm/Lsmtree/lsmtree.h"
