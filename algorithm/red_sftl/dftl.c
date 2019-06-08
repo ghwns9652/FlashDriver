@@ -20,7 +20,6 @@ Heap *trans_b;   // (Allocated) Trans block heap
 #if S_FTL
 queue *sftl_q;
 queue *hit_q;
-queue *p_buffer;
 #endif
 
 /* Tables */
@@ -247,6 +246,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 #if S_FTL
     q_init(&sftl_q, 1024);
     q_init(&hit_q, 1024);
+	q_init(&gc_q, 1024);
 #endif
     bm = BM_Init(num_block, p_p_b, 2, 1); // 2 heaps and 1 queue
     BM_Queue_Init(&free_b);
@@ -288,7 +288,6 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
         CMT[i].read_hit = 0;
         CMT[i].write_hit = 0;
 #if S_FTL
-	CMT[i].bitmap = (char *)malloc(sizeof(char) * EPP);
 	CMT[i].flying_mapping_size = 0;
 	CMT[i].form_check = 0;
 	CMT[i].b_form_size = 0;
@@ -435,7 +434,8 @@ void demand_destroy(lower_info *li, algorithm *algo){
     q_free(dftl_q);
     q_free(sftl_q);
     q_free(hit_q);
-    BM_Free(bm);
+
+	BM_Free(bm);
     free(sftl_time);
     free(sftl_bench_time);
   //  free(evic_time);
@@ -668,7 +668,7 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 
     if(c_table->form_check == 1)
     {
-    
+		reset_rb_entry(lpa);
     }
     free_cache_size += c_table->flying_mapping_size;
     free_cache_size -= c_table->b_form_size;
@@ -709,6 +709,9 @@ static uint32_t __demand_get(request *const req){
     int32_t t_ppa; // Translation page address
     C_TABLE* c_table; // Cache mapping entry pointer
     D_TABLE *p_table; // pointer of p_table on cme
+
+	Redblack f_node;
+	int32_t head_lpn;
 #if W_BUFF
     snode *temp;
 #endif
@@ -786,10 +789,35 @@ static uint32_t __demand_get(request *const req){
 	    return UINT32_MAX;
     }
     if(c_table->form_check){
+		if(c_table->s_bitmap[P_IDX]){
+			if(rb_find_int(c_table->rb_tree, P_IDX, &f_node))
+				ppa = f_node->h_ppa;
+			else{
+				printf("Not found entry in read operation\n");
+				exit(0);
+			}
+		}
+		else{
+			head_lpn = find_head_idx(lpa);
+			if(rb_find_int(c_table->rb_tree, P_IDX, &f_node)){
+				ppa = get_entry(f_node, P_IDX);
+			}else{
+				printf("Not found entry in read operation\n");
+				exit(0);
+			}
+		}
+			
     }
     else{
 	    ppa = p_table[P_IDX].ppa;
     }
+
+	if(ppa != p_table[P_IDX].ppa){
+		printf("ppa allocation error!\n");
+		exit(0);
+	}
+
+
     bench_algo_end(req);
     // Get data in ppa
     __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
@@ -926,35 +954,37 @@ static uint32_t __demand_set(request *const req){
 	    return 1;
     }
     int32_t pre_size = c_table->b_form_size;
-    if(c_table->form_check == 1){
-	if(c_table->b_form_size > check_size)
-	{
-		//Read original mapping table page
+	if(c_table->form_check == 1){
+		set_entry(lpa, ppa);
 
-		dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-		temp_req = assign_pseudo_req(MAPPING_M, dummy_vs, NULL);
-		params   = (demand_params *)temp_req->params;
-		__demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
-		dl_sync_wait(&params->dftl_mutex);
-		free(params);
-		free(temp_req);
-		//Free head entry
-		c_table->form_check  = 0;
-		c_table->bit_cnt = 0;
-		c_table->b_form_size = PAGESIZE; 
+		if(c_table->b_form_size > check_size)
+		{
+			//Read original mapping table page
+			dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+			temp_req = assign_pseudo_req(MAPPING_M, dummy_vs, NULL);
+			params   = (demand_params *)temp_req->params;
+			__demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
+			dl_sync_wait(&params->dftl_mutex);
+			free(params);
+			free(temp_req);
+			//Free head entry
+			remove_entry(c_table->rb_tree);
+			c_table->form_check = 0;
+			c_table->bit_cnt = 0;
+			c_table->b_form_size = PAGESIZE; 
 
-	}
+		}
 
-    } 
+	} 
     
     int32_t add_size = c_table->b_form_size - pre_size;
     if(free_cache_size < add_size){
-	bool gc_flag = false;
-    	bool d_flag  = false;
-	free_cache_size += demand_hit_eviction(req, 'W', &gc_flag, &d_flag, add_size);
-	if(d_flag) req->type_ftl +=1;
-	if(gc_flag) req->type_ftl +=2;
-	
+		bool gc_flag = false;
+		bool d_flag  = false;
+		free_cache_size += demand_hit_eviction(req, 'W', &gc_flag, &d_flag, add_size);
+		if(d_flag) req->type_ftl +=1;
+		if(gc_flag) req->type_ftl +=2;
+
     }
     free_cache_size -= add_size;
     req->value = NULL; // moved to 'value' field of snode
@@ -1219,9 +1249,6 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     C_TABLE   *c_table;         // Cache mapping pointer for mapping
     algo_req  *temp_req;        // pseudo request pointer
     value_set *dummy_vs;
-  //  read_params *res = (read_params *)req->params;
-   // printf("demand_eviction!!!!\n");
-  //printf("req->seq : %d\n",req->seq);
 #if S_FTL
     C_TABLE *evic_ptr;
     bool dirty_flag = 0;
@@ -1230,14 +1257,12 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     b_check_size = c_table->b_form_size;
     int32_t flying = 0;
     req->m_w_cnt = req->m_w_max = 0;
-    //printf("res_m_w_cnt = %d res_m_w_max = %d\n",res->m_w_cnt,res->m_w_max);
 #endif
  
 
 #if EVICT_POLL
     demand_params *params;
 #endif	
-    //printf("num_caching : %d\n", num_caching);
    /* Eviction */
     int32_t cnt = 0;
     while(flying + free_cache_size < b_check_size){	    
@@ -1255,6 +1280,10 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
     {
 	    //p_table   = cache_ptr->p_table;
 	    t_ppa     = cache_ptr->t_ppa;
+		
+
+		//Remove all rb_node
+		remove_entry(cache_ptr->rb_tree);
 
 	    if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
 		    dirty_flag = 1;
@@ -1302,7 +1331,6 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 			    clean_evict_on_read++;
 		    }
 	    }
-
 	    cache_ptr->queue_ptr = NULL;
 	    cache_ptr->p_table   = NULL;
     }
@@ -1342,7 +1370,10 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
     while((cache_ptr = (C_TABLE *)q_dequeue(hit_q)))
     {
 	    t_ppa     = cache_ptr->t_ppa;
-	    
+	  
+		//All remove rb_node
+		remove_entry(cache_ptr->rb_tree);
+
 	    if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
 		    dirty_eviction++;
 		    if (req_t == 'W') {

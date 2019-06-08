@@ -37,6 +37,7 @@
 #define D_IDX (lpa / EPP)   // Idx of directory table
 #define P_IDX (lpa % EPP)   // Idx of page table
 
+
 #define CLEAN 0
 #define DIRTY 1
 
@@ -198,10 +199,16 @@ int32_t dpage_GC();
 //Ver : Red_black_tree
 #if S_FTL
 int32_t find_head_idx(int32_t lpa, int32_t p_idx);
+int32_t set_entry(int32_t lpa, int32_t ppa);
+int32_t get_entry(Redblack f_node, int32_t offset);
+
+int32_t reset_rb_entry(int32_t lpa);
+int32_t reset_bitmap(int32_t t_index);
+void remove_entry(Redblack root);
 
 
-int32_t entry_set(int32_t lpa);
-
+void set_rb_entry(Redblack root, int32_t lpa, int32_t ppa);
+int32_t free_rb_entry(Redblack root, int32_t lpa);
 
 #endif
 

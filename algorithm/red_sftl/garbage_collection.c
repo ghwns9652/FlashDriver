@@ -216,6 +216,7 @@ int32_t dpage_GC(){
 		if(c_table->form_check){
 			
 			int32_t pre_size = c_table->b_form_size;
+			set_entry(lpa, p_table[P_IDX].ppa);
 			if(c_table->b_form_size > check_size){
 				temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
 				temp_req = assign_pseudo_req(TGC_M, temp_value_set, NULL);
@@ -225,6 +226,9 @@ int32_t dpage_GC(){
 				free(params);
 				free(temp_req);
 				inf_free_valueset(temp_value_set, FS_MALLOC_R);
+				
+				remove_entry(c_table->rb_tree);
+
 				c_table->form_check = 0;
 				c_table->bit_cnt = 0;
 				c_table->b_form_size = PAGESIZE;
@@ -256,6 +260,7 @@ int32_t dpage_GC(){
         if(tce == INT32_MAX){ // read t_page into temp_table 
 	    tce = D_IDX;
 	    c_table = &CMT[tce];
+			c_table->gc_flag = 1;
             temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
             temp_req = assign_pseudo_req(TGC_M, temp_value_set, NULL);
             params = (demand_params*)temp_req->params;
@@ -281,6 +286,14 @@ int32_t dpage_GC(){
 	    BM_InvalidatePage(bm, t_ppa);
             twrite++;
             t_ppa = tp_alloc('D', NULL);
+			t_index = c_table->idx;
+			c_table->b_form_size = reset_bitmap(t_index);
+			if(c_table->b_form-size > check_size){
+				c_table->b_form_size = PAGESIZE;
+				c_table->form_check = 0;
+			}else{
+				c_table->form_check = 1;
+			}
 
             //temp_value_set = inf_get_valueset((PTR)temp_table, FS_MALLOC_W, PAGESIZE); // Make valueset to WRITEMODE
             dummy_vs = inf_get_valueset(NULL, FS_MALLOC_W, PAGESIZE);
@@ -288,16 +301,6 @@ int32_t dpage_GC(){
             demand_OOB[t_ppa].lpa = c_table->idx;
             BM_ValidatePage(bm, t_ppa);
             c_table->t_ppa = t_ppa; // Update CMT t_ppa
-	    t_index = c_table->idx;
-	    if(c_table->b_form_size > check_size){
-		    c_table->b_form_size = PAGESIZE;
-		    c_table->form_check = 0;
-	    }else{
-		    c_table->form_check = 1;
-	    }
-	    
-
-
         }
     }
     if(free_cache_size < add_size){

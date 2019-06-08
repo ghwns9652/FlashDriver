@@ -301,9 +301,7 @@ int32_t dpage_GC(){
 	    }else{
 		    c_table->form_check = 1;
 	    }
-	    
-
-
+	
         }
     }
     if(free_cache_size < add_size){
