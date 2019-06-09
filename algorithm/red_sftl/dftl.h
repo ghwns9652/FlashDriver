@@ -198,7 +198,7 @@ int32_t dpage_GC();
 
 //Ver : Red_black_tree
 #if S_FTL
-int32_t find_head_idx(int32_t lpa, int32_t p_idx);
+int32_t find_head_idx(int32_t lpa);
 int32_t set_entry(int32_t lpa, int32_t ppa);
 int32_t get_entry(Redblack f_node, int32_t offset);
 
@@ -209,6 +209,10 @@ void remove_entry(Redblack root);
 
 void set_rb_entry(Redblack root, int32_t lpa, int32_t ppa);
 int32_t free_rb_entry(Redblack root, int32_t lpa);
+
+
+void tree_stat();
+int32_t cache_mapped_size();
 
 #endif
 

@@ -86,7 +86,7 @@ SRCS +=\
 	./bench/measurement.c\
 	./bench/bench.c\
 	./include/utils/thpool.c\
-	#./include/data_struct/redblack.c\
+	./include/data_struct/redblack.c\
 
 TARGETOBJ =\
 			$(patsubst %.c,%.o,$(SRCS))\

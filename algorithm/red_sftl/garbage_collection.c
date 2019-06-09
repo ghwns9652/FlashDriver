@@ -288,7 +288,7 @@ int32_t dpage_GC(){
             t_ppa = tp_alloc('D', NULL);
 			t_index = c_table->idx;
 			c_table->b_form_size = reset_bitmap(t_index);
-			if(c_table->b_form-size > check_size){
+			if(c_table->b_form_size > check_size){
 				c_table->b_form_size = PAGESIZE;
 				c_table->form_check = 0;
 			}else{

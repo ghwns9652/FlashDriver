@@ -151,7 +151,7 @@ static void print_algo_log() {
 	if (num_max_cache == max_cache_entry) {
 		printf(" |---------- algorithm_log : Page FTL\n");
 	} else {
-		printf(" |---------- algorithm_log : S-FTL\n");
+		printf(" |---------- algorithm_log : RED_BLACK S-FTL\n");
 	}
 
 #endif
@@ -196,7 +196,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     /* Cache control & Init */
 #if S_FTL
-	free_cache_size = ceil(PAGESIZE * 1024 * 0.35);
+	free_cache_size = ceil(PAGESIZE * 1024 * 0.2);
 	total_cache_size = free_cache_size;
 	check_size = PAGESIZE * 0.8;
 	global_gc_flag = 0;
@@ -246,7 +246,6 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 #if S_FTL
     q_init(&sftl_q, 1024);
     q_init(&hit_q, 1024);
-	q_init(&gc_q, 1024);
 #endif
     bm = BM_Init(num_block, p_p_b, 2, 1); // 2 heaps and 1 queue
     BM_Queue_Init(&free_b);
@@ -295,6 +294,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].evic_flag = 0;
 	CMT[i].gc_flag = 0;
 	CMT[i].rb_tree = NULL;
+	CMT[i].s_bitmap = (bool *)malloc(sizeof(bool)*EPP);
+	CMT[i].d_bitmap = (bool *)malloc(sizeof(bool)*EPP);
 	memset(CMT[i].s_bitmap, 0, sizeof(bool) * EPP);
 	memset(CMT[i].d_bitmap, 0, sizeof(bool) * EPP);
 #endif
@@ -415,11 +416,12 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     printf("WAF: %.2f\n\n", (float)(data_r+dirty_evict_on_write)/data_r);
 
-    //cache_mapped_size();
+    cache_mapped_size();
     printf("\ncache_mapping_size : %d\n",total_cache_size - free_cache_size);
     printf("free_cache_size      : %d\n",free_cache_size);
     printf("max_cache_entry      : %d\n",max_cache_entry);
-    
+   
+    tree_stat(); 
       printf("sftl_function_time : ");
       measure_adding_print(sftl_time);
       printf("sftl_bench_time : ");
@@ -584,10 +586,10 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     c_table->queue_ptr = lru_push(lru, (void*)c_table);
     c_table->state     = DIRTY;
 
-    c_table->form_check = 1;
+    c_table->form_check = 1; 
     c_table->b_form_size = BITMAP_SIZE;
     c_table->rb_tree = rb_create();    
-
+    free_cache_size -= c_table->b_form_size;
 
     return 0;
 }

@@ -311,7 +311,7 @@ int32_t reset_bitmap(int32_t t_index){
 
 int32_t reset_rb_entry(int32_t lpa){
 	C_TABLE *c_table = &CMT[D_IDX];
-	D_TABLe *p_table = c_table->p_table;
+	D_TABLE *p_table = c_table->p_table;
 	bool *s_bitmap = c_table->s_bitmap;
 	int32_t ppa;
 	int32_t b_form_size = 0;
@@ -331,6 +331,51 @@ int32_t reset_rb_entry(int32_t lpa){
 
 	return b_form_size;
 }
+
+int32_t cache_mapped_size()
+{
+        int32_t idx = max_cache_entry;
+        int32_t cache_size = 0;
+        int32_t cnt = 0;
+        int32_t miss_cnt = 0;
+        C_TABLE *c_table;
+        D_TABLE *p_table;
+        for(int i = 0; i < idx; i++)
+        {
+                c_table = &CMT[i];
+                p_table = c_table->p_table;
+                if(p_table)
+                {
+			printf("b_form_size[%d] = %d\n",i,c_table->b_form_size);
+                        cnt++;
+                }else{
+                        miss_cnt++;
+                }
+        }
+        cache_size = total_cache_size - free_cache_size;
+        printf("not_caching : %d\n",miss_cnt);
+        printf("num_caching : %d\n",cnt);
+        return cache_size;
+
+
+}
+void tree_stat(){
+	FILE *out;
+	C_TABLE *c_table = &CMT[2];
+	D_TABLE *p_table = mem_arr[2].mem_p;
+	out = fopen("tree_stat.txt","W");
+	rb_print_tree(c_table->rb_tree, out);
+	fclose(out);
+
+	for(int i = 0 ; i < EPP; i++)
+		printf("TABLE[%d] = %d\n",i,p_table[i].ppa);
+
+	
+	return ;
+}
+
+
+
 
 
 

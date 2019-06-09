@@ -197,7 +197,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     /* Cache control & Init */
 #if S_FTL
-	free_cache_size = ceil(PAGESIZE * 1024 * 0.35);
+	free_cache_size = ceil(PAGESIZE * 1024 * 0.2);
 	total_cache_size = free_cache_size;
 	check_size = PAGESIZE * 0.8;
 	global_gc_flag = 0;
@@ -587,7 +587,6 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 
     c_table->form_check = 1;
     c_table->bitmap[0] = 1;
-    c_table->first_check = 1;
     c_table->bit_cnt++;
     head_ppa = c_table->p_table[0].ppa;
     head_init(c_table, head_ppa);
@@ -624,7 +623,6 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
             c_table->state     = DIRTY;
 	    
 //	    measure_start(sftl_time); 
-	    c_table->first_check = 1;
 	    c_table->form_check = 1;
 	    c_table->bitmap[0] = 1;
 	    c_table->bit_cnt++;
