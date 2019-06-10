@@ -1,7 +1,7 @@
 #include "dftl.h"
 
 
-int32_t find_head_idx(int32_t lpa){
+int32_t find_head_idx(uint32_t lpa){
 	C_TABLE *c_table = &CMT[D_IDX];
 	int32_t re_idx = -1;
 	for(int i = P_IDX ; i >= 0; i--){
@@ -12,15 +12,16 @@ int32_t find_head_idx(int32_t lpa){
 	}
 
 	printf("Not found head idx!\n");
-    return re_idx;		
+	return re_idx;		
 }
 
 
-int32_t set_entry(int32_t lpa, int32_t ppa){
+int32_t set_entry(uint32_t lpa, int32_t ppa)
+{
 
 	C_TABLE *c_table = &CMT[D_IDX];
-	Redblack root = c_table->rb_tree;
-	Redblack f_node = NULL;
+	hash_t *ht_ptr = c_table->ht_ptr;
+	hash_node *f_node = NULL;
 	bool *s_bitmap = c_table->s_bitmap;  //For sequentialty checking
 	bool *d_bitmap = c_table->d_bitmap;  //For Entry set checking
 
@@ -28,7 +29,6 @@ int32_t set_entry(int32_t lpa, int32_t ppa){
 	int32_t head_lpn;
 	int32_t old_ppa = -1;
 	int32_t pre_ppa = -1;
-	//int32_t next_ppa = -1;
 
 	//Always set allocate bit for entry
 	if(!d_bitmap[P_IDX])
@@ -36,24 +36,26 @@ int32_t set_entry(int32_t lpa, int32_t ppa){
 	//CASE 1 : First offset
 	/*
 	   --------------------
-	        | O | X | X |
-     P_IDX:   F   M   L
+	       | O | X | X |
+	P_IDX:   F   M   L
 	  ---------------------
 	*/
 	if(P_IDX == 0){
 		//Init head entry
 		if(!s_bitmap[P_IDX]){
-			set_rb_entry(root, lpa, head_entry);			
+			set_hash_entry(ht_ptr, lpa, head_entry);			
 		}
 		//Update head entry
 		else{
-			if(rb_find_int(root, P_IDX, &f_node)){
-				old_ppa = f_node->h_ppa;
-				f_node->h_ppa = head_entry;
+			f_node = hash_lookup(ht_ptr, P_IDX);
+			if(f_node != NULL){
+				old_ppa = f_node->data;
+				f_node->data = head_entry;
 			}else{
-				printf("Not found idx error!\n");
+				printf("Not found key error in first offset!\n");
 				exit(0);
 			}
+
 		}
 		//If Next entry is not allocated, return 0
 		if(!d_bitmap[P_IDX+1])
@@ -63,16 +65,16 @@ int32_t set_entry(int32_t lpa, int32_t ppa){
 		//Otherwise, add next entry on rb_tree for update entry
 		if(old_ppa != -1){
 			if(!s_bitmap[P_IDX+1]){
-				set_rb_entry(root, lpa+1, old_ppa+1);
+				set_hash_entry(ht_ptr, lpa+1, old_ppa+1);
 			}
 		}
 	
 	}
 	//CASE 2 : Last offset
-    /*
+    	/*
 	   ----------------------
 	        | X | X | O |
-     P_IDX:   F   M   L
+         P_IDX:   F   M   L
 	  -----------------------
 	*/	
 	else if(P_IDX == EPP-1){
@@ -80,55 +82,62 @@ int32_t set_entry(int32_t lpa, int32_t ppa){
 		if(!d_bitmap[P_IDX-1]){
 			//Update head entry
 			if(s_bitmap[P_IDX]){
-				if(rb_find_int(root, P_IDX, &f_node)){
-					f_node->h_ppa = head_entry;
+				f_node = hash_lookup(ht_ptr, P_IDX);
+				if(f_node != NULL){
+					f_node->data = head_entry;
 				}else{
 					printf("Not found idx error in last offset\n");
 					exit(0);
 				}
+			}	
 			//Add head entry
-			}else{
-				set_rb_entry(root, lpa, head_entry);
+			else{
+				set_hash_entry(ht_ptr, lpa, head_entry);
 			}
 		//Otherwise, check previous ppa and current ppa
 		}else{
 			if(s_bitmap[P_IDX-1]){
-				rb_find_int(root, P_IDX-1, &f_node);
-				pre_ppa = f_node->h_ppa;
+				f_node = hash_lookup(ht_ptr, P_IDX-1);
+				pre_ppa = f_node->data;
 				if(head_entry == pre_ppa+1){
 					if(s_bitmap[P_IDX]){
-						free_rb_entry(root, lpa);
+						free_hash_entry(ht_ptr, lpa);
 					}
 				}else{
 					if(s_bitmap[P_IDX]){
-						if(rb_find_int(root, P_IDX, &f_node)){
-							f_node->h_ppa = head_entry;
+						f_node = hash_lookup(ht_ptr, P_IDX);
+						if(f_node != NULL){
+							f_node->data = head_entry;
 						}else{
-							printf("Not found idx error in last offset\n");
+							printf("Not found idx error in last offset!\n");
 							exit(0);
 						}
+						
 					}else{
-						set_rb_entry(root, lpa, head_entry);
+						set_hash_entry(ht_ptr, lpa, head_entry);
 					}
 				}
 			}else{
 				head_lpn = find_head_idx(lpa-1);
-				rb_find_int(root, head_lpn, &f_node);
-				pre_ppa = get_entry(f_node, P_IDX-1);
+				f_node = hash_lookup(ht_ptr, head_lpn);
+				pre_ppa = get_entry(f_node, P_IDX-1); 
+
 				if(head_entry == pre_ppa + 1){
 					if(s_bitmap[P_IDX]){
-						free_rb_entry(root, lpa);
+						free_hash_entry(ht_ptr, lpa);
 					}
 				}else{
 					if(s_bitmap[P_IDX]){
-						if(rb_find_int(root, P_IDX, &f_node)){
-							f_node->h_ppa = head_entry;
+						f_node = hash_lookup(ht_ptr, P_IDX);
+						if(f_node != NULL){
+							f_node->data = head_entry;
 						}else{
 							printf("Not found idx error in last offset\n");
 							exit(0);
 						}
+						
 					}else{
-						set_rb_entry(root, lpa, head_entry);
+						set_hash_entry(ht_ptr, lpa, head_entry);
 
 					}
 				}
@@ -138,69 +147,86 @@ int32_t set_entry(int32_t lpa, int32_t ppa){
 
 	}
 	//CASE 3 : Middle offset
-    /*
+    	/*
 	   ----------------------
 	        | X | O | X |
-     P_IDX:   F   M   L
+         P_IDX:   F   M   L
 	  -----------------------
 	*/	
 	else{
 		//If pre_ppa is not allocated, Only set current entry
 		if(!d_bitmap[P_IDX-1]){
 			if(s_bitmap[P_IDX]){
-				if(rb_find_int(root, P_IDX, &f_node)){
-					old_ppa = f_node->h_ppa;
-					f_node->h_ppa = head_entry;
+				f_node = hash_lookup(ht_ptr, P_IDX);
+				if(f_node != NULL){
+					old_ppa = f_node->data;
+					f_node->data = head_entry;
 				}else{
-					printf("Not found idx error in last offset\n");
+					printf("Not found key error in middle offset\n");
 					exit(0);
 				}
 			}else{
-				set_rb_entry(root, lpa, head_entry);
+				set_hash_entry(ht_ptr, lpa, head_entry);
 			}
 		//Otherwise, check previous ppa and current ppa
 		}else{
 			if(s_bitmap[P_IDX-1]){
-				rb_find_int(root, P_IDX-1, &f_node);
-				pre_ppa = f_node->h_ppa;
-				old_ppa = pre_ppa + 1;
+				f_node = hash_lookup(ht_ptr, P_IDX-1);
+				if(f_node != NULL){
+					pre_ppa = f_node->data;
+					old_ppa = pre_ppa+1;
+				}else{
+					printf("Not found key error in middle offset!\n");
+					exit(0);
+				}
+
 				if(head_entry == pre_ppa+1){
 					if(s_bitmap[P_IDX]){
-						old_ppa = free_rb_entry(root, lpa);
+						old_ppa = free_hash_entry(ht_ptr, lpa);
 					}
 				}else{
 					if(s_bitmap[P_IDX]){
-						if(rb_find_int(root, P_IDX, &f_node)){
-							old_ppa = f_node->h_ppa;	
-							f_node->h_ppa = head_entry;
+						f_node = hash_lookup(ht_ptr, P_IDX);
+						if(f_node != NULL){
+							old_ppa = f_node->data;
+							f_node->data = head_entry;
 						}else{
-							printf("Not found idx error in last offset\n");
+							printf("Not found key error in middle offset!\n");
 							exit(0);
 						}
+						
 					}else{
-						set_rb_entry(root, lpa, head_entry);
+						set_hash_entry(ht_ptr, lpa, head_entry);
 					}
 				}
 			}else{
+
 				head_lpn = find_head_idx(lpa-1);
-				rb_find_int(root, head_lpn, &f_node);
-				pre_ppa = get_entry(f_node, P_IDX-1);
-				old_ppa = pre_ppa + 1;
+				f_node = hash_lookup(ht_ptr, head_lpn);
+				if(f_node != NULL){
+					pre_ppa = get_entry(f_node, P_IDX-1);
+					old_ppa = pre_ppa + 1;
+				}else{
+					printf("Not found key error in middle offset!\n");
+					exit(0);
+				}
 				if(head_entry == pre_ppa + 1){
 					if(s_bitmap[P_IDX]){
-						old_ppa = free_rb_entry(root, lpa);
+						old_ppa = free_hash_entry(ht_ptr, lpa);
 					}
 				}else{
 					if(s_bitmap[P_IDX]){
-						if(rb_find_int(root, P_IDX, &f_node)){
-							old_ppa = f_node->h_ppa;
-							f_node->h_ppa = head_entry;
+						f_node = hash_lookup(ht_ptr, P_IDX);
+						if(f_node != NULL){
+							old_ppa = f_node->data;
+							f_node->data = head_entry;
 						}else{
-							printf("Not found idx error in last offset\n");
+							printf("Not found key error in middle offset!\n");
 							exit(0);
 						}
+						
 					}else{
-						set_rb_entry(root, lpa, head_entry);
+						set_hash_entry(ht_ptr, lpa, head_entry);
 
 					}
 				}
@@ -216,7 +242,7 @@ int32_t set_entry(int32_t lpa, int32_t ppa){
 		//Otherwise, check next entry and current entry
 		if(old_ppa != -1){
 			if(!s_bitmap[P_IDX+1]){
-				set_rb_entry(root, lpa+1, old_ppa+1);
+				set_hash_entry(ht_ptr, lpa+1, old_ppa+1);
 			}
 		}
 
@@ -227,36 +253,50 @@ int32_t set_entry(int32_t lpa, int32_t ppa){
 
 	return 1;
 
-		
-
 }
 
-int32_t get_entry(Redblack f_node, int32_t offset){
-	return (f_node->h_ppa + (offset - f_node->key));
+
+
+int32_t get_entry(hash_node *f_node, int32_t offset){
+	return (f_node->data + (offset - f_node->key));
 }
 
-void remove_entry(Redblack root){
-	return rb_clear(root);
+void remove_entry(hash_t *ht_ptr){
+	return hash_destroy(ht_ptr);
 }
 
-void set_rb_entry(Redblack root, int32_t lpa, int32_t ppa){
+void set_hash_entry(hash_t *ht_ptr, uint32_t lpa, int32_t ppa){
+	int32_t res;
+	int32_t old_size = ht_ptr->size * P_SIZE;
+	int32_t new_size = 0;
 	C_TABLE *c_table = &CMT[D_IDX];
-	rb_insert_int(root, P_IDX, ppa);
-	
+	res = hash_insert(ht_ptr, P_IDX, ppa);
+
+	if(res == HASH_REBUILD){
+		new_size = ht_ptr->size * P_SIZE;
+		c_table->b_form_size -= old_size;
+		c_table->b_form_size += new_size;
+		c_table->b_form_size += NODE_SIZE;
+	}else if(res == HASH_SUCCESS){
+		c_table->b_form_size += NODE_SIZE;
+	}else{
+		c_table->b_form_size = PAGESIZE;
+	}
 	c_table->s_bitmap[P_IDX] = 1;
-	c_table->b_form_size += NODE_SIZE;
 	c_table->bit_cnt++;
 
 	return ;
-}
-int32_t free_rb_entry(Redblack root, int32_t lpa){
-	C_TABLE *c_table = &CMT[D_IDX];
-	Redblack d_node;
-	int32_t re_ppa;
 
-	rb_find_int(root, P_IDX, &d_node);
-	re_ppa = d_node->h_ppa;
-	rb_delete(d_node);
+}
+int32_t free_hash_entry(hash_t *ht_ptr, uint32_t lpa){
+	C_TABLE *c_table = &CMT[D_IDX];
+	int32_t re_ppa;
+	
+	re_ppa = hash_delete(ht_ptr, P_IDX);
+	if(re_ppa == HASH_FAIL){
+		printf("Not found key error in free_hash_entry !\n");
+		exit(0);
+	}
 	c_table->s_bitmap[P_IDX] = 0;
 	c_table->b_form_size -= NODE_SIZE;
 	c_table->bit_cnt--;
@@ -309,7 +349,7 @@ int32_t reset_bitmap(int32_t t_index){
 	
 }
 
-int32_t reset_rb_entry(int32_t lpa){
+int32_t reset_hash_entry(uint32_t lpa){
 	C_TABLE *c_table = &CMT[D_IDX];
 	D_TABLE *p_table = c_table->p_table;
 	bool *s_bitmap = c_table->s_bitmap;
@@ -317,17 +357,25 @@ int32_t reset_rb_entry(int32_t lpa){
 	int32_t b_form_size = 0;
 	int32_t bit_cnt = 0;
 
+
+
 	for(int i = 0 ; i < EPP; i++){
 		if(s_bitmap[i]){
 			ppa = p_table[i].ppa;
-			rb_insert_int(c_table->rb_tree, i, ppa);
+			hash_insert(c_table->ht_ptr, i, ppa);
 			b_form_size += NODE_SIZE;
 			bit_cnt++;
 		}
 	}
 
 	c_table->bit_cnt = bit_cnt;
-	b_form_size += BITMAP_SIZE;
+	b_form_size += BITMAP_SIZE + (c_table->ht_ptr->size * P_SIZE);
+
+	printf("[original]b_form_size = %d [reset]b_form_size = %d\n",b_form_size);
+	if(c_table->b_form_size != b_form_size){
+		printf("b_form_size different!\n");
+		sleep(2);
+	}
 
 	return b_form_size;
 }
@@ -359,23 +407,34 @@ int32_t cache_mapped_size()
 
 
 }
-void tree_stat(){
-	FILE *out;
+
+
+void hash_table_status(){
 	C_TABLE *c_table = &CMT[2];
-	D_TABLE *p_table = mem_arr[2].mem_p;
-	out = fopen("tree_stat.txt","w");
-	rb_print_tree(c_table->rb_tree, out);
-	fclose(out);
+	hash_t *ht_ptr = c_table->ht_ptr;
 
-	for(int i = 0 ; i < EPP; i++)
-		printf("TABLE[%d] = %d\n",i,p_table[i].ppa);
+	hash_buckets(ht_ptr);
 
-	
+	for(int i = 0 ; i < EPP; i++){
+		printf("p_table[%d] = %d\n",i, c_table->p_table[i].ppa);
+	}
+
 	return ;
 }
 
+int32_t cached_entries(){
+	C_TABLE *c_table;
+	int32_t entries = 0;
 
+	for(int i = 0 ; i < max_cache_entry; i++){
+		c_table = &CMT[i];
+		if(c_table->p_table){
+			entries += c_table->ht_ptr->entries;
+		}
+	}
 
+	return entries;
+}
 
 
 

@@ -3,7 +3,7 @@ export CC=g++
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
 #TARGET_LOWER=linux_aio
-TARGET_ALGO=red_sftl
+TARGET_ALGO=hash_sftl
 
 
 
@@ -87,6 +87,7 @@ SRCS +=\
 	./bench/bench.c\
 	./include/utils/thpool.c\
 	./include/data_struct/redblack.c\
+	./include/data_struct/demand_hash.c\
 
 TARGETOBJ =\
 			$(patsubst %.c,%.o,$(SRCS))\

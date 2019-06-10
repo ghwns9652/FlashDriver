@@ -2,10 +2,10 @@
 #define __H_SETTING__
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
-#include<stdint.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include<stdio.h>
-#include<math.h>
+#include <stdio.h>
+#include <math.h>
 
 /*
 #define free(a) \

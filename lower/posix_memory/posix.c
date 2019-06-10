@@ -19,6 +19,8 @@
 #include "../../algorithm/sftl/dftl.h"
 #elif defined(red_sftl)
 #include "../../algorithm/red_sftl/dftl.h"
+#elif defined(hash_sftl)
+#include "../../algorithm/hash_sftl/dftl.h"
 #elif defined(tpftl)
 #include "../../algorithm/tpftl/dftl.h"
 #elif defined(ctoc_batch)

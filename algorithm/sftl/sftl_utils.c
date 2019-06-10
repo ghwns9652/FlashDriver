@@ -378,6 +378,7 @@ int32_t cache_mapped_size()
 		p_table = c_table->p_table;
 		if(p_table)
 		{
+			printf("b_form_size[%d] = %d\n",i,c_table->b_form_size);
 			cnt++;
 		}else{
 			miss_cnt++;

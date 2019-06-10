@@ -13,6 +13,9 @@
 #include "../../include/dftl_settings.h"
 #include "../../include/dl_sync.h"
 #include "../../include/types.h"
+#include "../../include/data_struct/redblack.h"
+#include "../../include/data_struct/demand_hash.h"
+
 #ifdef W_BUFF
 #include "../Lsmtree/skiplist.h"
 #endif

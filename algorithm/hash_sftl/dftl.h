@@ -15,8 +15,8 @@
 #include "../../include/dftl_settings.h"
 #include "../../include/dl_sync.h"
 #include "../../include/types.h"
-#include "../../include/data_struct/redblack.h"
 #include "../../include/data_struct/demand_hash.h"
+#include "../../include/data_struct/redblack.h"
 #ifdef W_BUFF
 #include "../Lsmtree/skiplist.h"
 #endif
@@ -38,13 +38,15 @@
 #define D_IDX (lpa / EPP)   // Idx of directory table
 #define P_IDX (lpa % EPP)   // Idx of page table
 
+
 #define CLEAN 0
 #define DIRTY 1
 
 #if S_FTL
-#define BITMAP_SIZE (EPP / 8) // Bitmap_size for SFTL
-#define ENTRY_SIZE 8          // ppa pointer and linked list pointer
-#define SFTL_SETTING 0	      // Normal 0, RED_BLACK 1, HASH 2
+/* This variables redefined on deamdn_hash.h */
+//#define BITMAP_SIZE (EPP / 8) // Bitmap_size for SFTL
+//#define NODE_SIZE 12          // hash node size(Key + PPN + chain pointer)
+//#define P_SIZE 4	      // Default bucket pointer size
 
 #endif
 
@@ -69,33 +71,21 @@ typedef struct cached_table{
     int32_t num_waiting;
 
 #if S_FTL
-	struct head_node *head;
-	struct head_node *tail;
 	int32_t b_form_size;
 	int32_t flying_mapping_size;
 	int32_t bit_cnt;
-	char *bitmap;
 	bool form_check;   //In-Flash = 0, Bitmap = 1
 	bool evic_flag;
 	bool gc_flag;
-
-	Redblack rb_tree;
+	bool *s_bitmap;
+	bool *d_bitmap;
+	hash_t *ht_ptr;
 
 #endif
 	uint32_t read_hit;
 	uint32_t write_hit;
 
 } C_TABLE;
-
-#if S_FTL
-struct head_node
-{
-	int32_t head_ppa;
-	struct head_node *next;
-};
-
-
-#endif
 
 // OOB data structure
 typedef struct demand_OOB{
@@ -208,35 +198,24 @@ void cache_show(char* dest);
 int32_t tpage_GC();
 int32_t dpage_GC();
 
+
+//Ver : Hash
 #if S_FTL
+int32_t find_head_idx(uint32_t lpa);
+int32_t set_entry(uint32_t lpa, int32_t ppa);
+int32_t get_entry(hash_node *f_node, int32_t offset);
 
-//For head_entries management
-int32_t head_init(C_TABLE *, int32_t);
-struct head_node* head_free(C_TABLE *, struct head_node *);
-struct head_node* head_push(C_TABLE*, struct head_node **, int32_t);
-int32_t head_tail_push(C_TABLE *, int32_t);
-int32_t head_bit_set(int32_t);
-int32_t head_list_set(int32_t);
-//For bitmap & entry management
-int32_t sftl_entry_set(int32_t);
-int32_t sftl_entry_free(C_TABLE *);
-//struct head_node* sftl_list_find(C_TABLE *, int32_t);
-struct head_node* sftl_pre_find(C_TABLE *, int32_t);
-//int32_t sftl_list_free(int32_t, int32_t);
-int32_t sftl_bitmap_size(int32_t);
-int32_t sftl_list_reset(int32_t);
-//To get ppa
-int32_t get_mapped_ppa(int32_t);
-//Memory size calculation
+int32_t reset_hash_entry(uint32_t lpa);
+int32_t reset_bitmap(int32_t t_index);
+void remove_entry(hash_t *ht_ptr);
+
+
+void set_hash_entry(hash_t *ht_ptr, uint32_t lpa, int32_t ppa);
+int32_t free_hash_entry(hash_t *ht_ptr, uint32_t lpa);
+
 int32_t cache_mapped_size();
-
-
-//For Red_black tree SFTL
-#if SFTL_SETTING
-
-
-#endif
-
+void hash_table_status();
+int32_t cached_entries();
 
 #endif
 
