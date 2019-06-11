@@ -13,8 +13,8 @@
 #include "../bench/measurement.h"
 #include "interface.h"
 
-#define LOAD_FILE ROCKS_R_W_16
-#define RUN_FILE  ROCKS_RW_RR_16
+#define LOAD_FILE TPC_C_W_16
+#define RUN_FILE  TPC_C_BENCH_16
 #define BLK_NUM 16
 MeasureTime *bt;
 MeasureTime *st;
@@ -73,12 +73,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	//Set sequential write for GC
-	
+	/*	
 	int32_t set_range = RANGE * 0.7;
 	for(int i = 0 ; i < set_range; i++){
 		inf_make_req(FS_SET_T, i, t_value, PAGESIZE, 0);
 	}
-        
+        */
 //	int32_t cnt = 0;
 	while (fscanf(w_fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
 //		printf("cnt = %d\n",cnt++);
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
 	printf("\ntotal sec: %.2f\n", total_sec);
 	printf("read_cnt : %d write_cnt : %d\n",real_r_cnt, real_w_cnt);
 	printf("read throughput: %.2fMB/s\n", (float)real_r_cnt*8192/total_sec/1000/1000);
-	printf("write throughput: %.2fMB/s\n\n", (float)real_w_cnt*8192/total_sec/1000/1000);
+	printf("write throughput: %.2fMB/s\n", (float)real_w_cnt*8192/total_sec/1000/1000);
 	printf("total_throughput: %.2fMB/s\n",(float)req_t_cnt*8192/total_sec/1000/1000);
 	free(bt);
 	free(st);

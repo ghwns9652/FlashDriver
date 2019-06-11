@@ -165,8 +165,8 @@ int32_t dpage_GC(){
         __demand.li->trim_block(old_block, false);
         return new_block;
     }
-	//printf("dpage_GC");
-	dpage_valid_check();
+	printf("dpage_GC");
+	//dpage_valid_check();
 
     valid_num = 0;
     real_valid = 0;

@@ -223,8 +223,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     num_caching = 0;
     //max_write_buf = 512;
-//	max_write_buf = 1024;
-	max_write_buf = 1;
+	max_write_buf = 1024;
+//	max_write_buf = 1;
 #if C_CACHE
     max_clean_cache = num_max_cache / 2; // 50 : 50
     num_max_cache -= max_clean_cache;
@@ -673,7 +673,12 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
     if(c_table->form_check == 1)
     {
 	    hash_init(c_table->ht_ptr, 2);
-	    reset_hash_entry(lpa);
+	    b_form_size = reset_hash_entry(lpa);
+	    if(b_form_size > check_size){
+		    c_table->b_form_size = PAGESIZE;
+		    c_table->form_check  = 0;
+	    }
+
     }
     free_cache_size += c_table->flying_mapping_size;
     free_cache_size -= c_table->b_form_size;
@@ -716,7 +721,7 @@ static uint32_t __demand_get(request *const req){
     D_TABLE *p_table; // pointer of p_table on cme
 
 	hash_node *f_node;
-	int32_t head_lpn;
+	int32_t p_idx;
 #if W_BUFF
     snode *temp;
 #endif
@@ -805,8 +810,8 @@ static uint32_t __demand_get(request *const req){
 			
 		}
 		else{
-			head_lpn = find_head_idx(lpa);
-			f_node = hash_lookup(c_table->ht_ptr, P_IDX);
+			p_idx = find_head_idx(lpa);
+			f_node = hash_lookup(c_table->ht_ptr, p_idx);
 			if(f_node != NULL)
 				ppa = get_entry(f_node, P_IDX);
 			else{
@@ -963,29 +968,31 @@ static uint32_t __demand_set(request *const req){
 	    return 1;
     }
     int32_t pre_size = c_table->b_form_size;
-	if(c_table->form_check == 1){
-		set_entry(lpa, ppa);
+    if(c_table->form_check == 1){
+	    set_entry(lpa, ppa);
 
-		if(c_table->b_form_size > check_size)
-		{
-			//Read original mapping table page
-			dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-			temp_req = assign_pseudo_req(MAPPING_M, dummy_vs, NULL);
-			params   = (demand_params *)temp_req->params;
-			__demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
-			dl_sync_wait(&params->dftl_mutex);
-			free(params);
-			free(temp_req);
-			//Free head entry
-			remove_entry(c_table->ht_ptr);
-			c_table->form_check = 0;
-			c_table->bit_cnt = 0;
-			c_table->b_form_size = PAGESIZE; 
+	    if(c_table->b_form_size > check_size)
+	    {
+		    //Read original mapping table page
+		    if(c_table->t_ppa != -1){
+			    dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+			    temp_req = assign_pseudo_req(MAPPING_M, dummy_vs, NULL);
+			    params   = (demand_params *)temp_req->params;
+			    __demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
+			    dl_sync_wait(&params->dftl_mutex);
+			    free(params);
+			    free(temp_req);
+		    }
+		    //Free head entry
+		    remove_entry(c_table->ht_ptr);
+		    c_table->form_check = 0;
+		    c_table->bit_cnt = 0;
+		    c_table->b_form_size = PAGESIZE; 
 
-		}
+	    }
 
-	} 
-    
+    } 
+
     int32_t add_size = c_table->b_form_size - pre_size;
     if(free_cache_size < add_size){
 		bool gc_flag = false;

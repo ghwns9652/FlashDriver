@@ -218,15 +218,16 @@ int32_t dpage_GC(){
 			int32_t pre_size = c_table->b_form_size;
 			set_entry(lpa, p_table[P_IDX].ppa);
 			if(c_table->b_form_size > check_size){
-				temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-				temp_req = assign_pseudo_req(TGC_M, temp_value_set, NULL);
-				params = (demand_params*)temp_req->params;
-				__demand.li->read(c_table->t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
-				dl_sync_wait(&params->dftl_mutex);
-				free(params);
-				free(temp_req);
-				inf_free_valueset(temp_value_set, FS_MALLOC_R);
-				
+				if(c_table->t_ppa != -1){
+					temp_value_set = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+					temp_req = assign_pseudo_req(TGC_M, temp_value_set, NULL);
+					params = (demand_params*)temp_req->params;
+					__demand.li->read(c_table->t_ppa, PAGESIZE, temp_value_set, ASYNC, temp_req);
+					dl_sync_wait(&params->dftl_mutex);
+					free(params);
+					free(temp_req);
+					inf_free_valueset(temp_value_set, FS_MALLOC_R);
+				}
 				remove_entry(c_table->ht_ptr);
 
 				c_table->form_check = 0;
@@ -287,13 +288,9 @@ int32_t dpage_GC(){
             twrite++;
 	    t_ppa = tp_alloc('D', NULL);
 	    t_index = c_table->idx;
-	    c_table->b_form_size = reset_bitmap(t_index);
-	    if(c_table->b_form_size > check_size){
-		    c_table->b_form_size = PAGESIZE;
-		    c_table->form_check = 0;
-	    }else{
-		    c_table->form_check = 1;
-	    }
+	    
+	    
+	    reset_bitmap(t_index);
 
             //temp_value_set = inf_get_valueset((PTR)temp_table, FS_MALLOC_W, PAGESIZE); // Make valueset to WRITEMODE
             dummy_vs = inf_get_valueset(NULL, FS_MALLOC_W, PAGESIZE);

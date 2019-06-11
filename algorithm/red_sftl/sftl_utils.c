@@ -272,34 +272,27 @@ int32_t reset_bitmap(int32_t t_index){
 	int32_t bit_cnt = 0;
 	int32_t head_ppa, next_ppa;
 	int32_t start_idx;
-	
-	for(int i = 0 ; i < EPP-1; i++){
-		if(p_table[i].ppa != -1){
-			start_idx = i;
-			head_ppa = p_table[i].ppa;
-			c_table->s_bitmap[i] = 1;
-			bit_cnt++;
-			break;
-		}else{
-			c_table->s_bitmap[i] = 0;
-		}
-	}
 
-	for(int i = start_idx; i < EPP-1; i++){
+	if(p_table[0].ppa != -1){
+		c_table->s_bitmap[0] = 1;
+		bit_cnt++;
+	}	
+
+
+	for(int i = 0 ; i < EPP-1; i++){
+		head_ppa = p_table[i].ppa;
 		next_ppa = p_table[i+1].ppa;
 		if(next_ppa == -1){
 			c_table->s_bitmap[i+1] = 0;
 			continue;
 		}
-
-		if(next_ppa == head_ppa + 1){
+		if(next_ppa == head_ppa+1){
 			c_table->s_bitmap[i+1] = 0;
 		}else{
+			c_table->s_bitmap[i+1] = 1;	
 			bit_cnt++;
-			c_table->s_bitmap[i+1] = 1;
 		}
 		head_ppa = next_ppa;
-
 	}
 
 	b_form_size = (bit_cnt * NODE_SIZE) + BITMAP_SIZE;

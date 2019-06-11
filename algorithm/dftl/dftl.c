@@ -196,8 +196,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     num_caching = 0;
     //max_write_buf = 512;
-//    max_write_buf = 1024;
-    max_write_buf = 1;
+    max_write_buf = 1024;
+    //max_write_buf = 1;
 #if C_CACHE
     max_clean_cache = num_max_cache / 2; // 50 : 50
     num_max_cache -= max_clean_cache;

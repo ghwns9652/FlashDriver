@@ -80,10 +80,11 @@ int32_t hash_rebuild_table(hash_t *ht_ptr){
 	free(old_bucket);
 	free(old_bucket_cnt);
 
-	if(flag)
+	if(flag){
 		return HASH_FULL;
+	}
 	
-	return b_form_size;
+	return HASH_REBUILD;
 
 
 }
@@ -142,7 +143,7 @@ int32_t hash_insert(hash_t *ht_ptr, uint32_t key, int32_t data){
 	ht_ptr->bucket_cnt[h]++;
 	ht_ptr->entries++;
 
-	if(res != HASH_FULL)
+	if(res == HASH_REBUILD)
 		return HASH_REBUILD;
 
 	return HASH_SUCCESS;

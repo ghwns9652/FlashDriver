@@ -220,8 +220,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     num_caching = 0;
     //max_write_buf = 512;
-//	max_write_buf = 1024;
-	max_write_buf = 1;
+	max_write_buf = 1024;
+//	max_write_buf = 1;
 #if C_CACHE
     max_clean_cache = num_max_cache / 2; // 50 : 50
     num_max_cache -= max_clean_cache;
@@ -421,7 +421,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
     printf("free_cache_size      : %d\n",free_cache_size);
     printf("max_cache_entry      : %d\n",max_cache_entry);
    
-    tree_stat(); 
+    //tree_stat(); 
       printf("sftl_function_time : ");
       measure_adding_print(sftl_time);
       printf("sftl_bench_time : ");
@@ -713,7 +713,7 @@ static uint32_t __demand_get(request *const req){
     D_TABLE *p_table; // pointer of p_table on cme
 
 	Redblack f_node;
-	int32_t head_lpn;
+	int32_t p_idx;
 #if W_BUFF
     snode *temp;
 #endif
@@ -800,8 +800,8 @@ static uint32_t __demand_get(request *const req){
 			}
 		}
 		else{
-			head_lpn = find_head_idx(lpa);
-			if(rb_find_int(c_table->rb_tree, P_IDX, &f_node)){
+			p_idx = find_head_idx(lpa);
+			if(rb_find_int(c_table->rb_tree, p_idx, &f_node)){
 				ppa = get_entry(f_node, P_IDX);
 			}else{
 				printf("Not found entry in read operation\n");
@@ -815,7 +815,14 @@ static uint32_t __demand_get(request *const req){
     }
 
 	if(ppa != p_table[P_IDX].ppa){
+		printf("P_IDX = %d head_idx = %d\n",P_IDX, p_idx);
+		printf("s_bitmap[%d] = %d\n",p_idx, c_table->s_bitmap[p_idx]);
+		printf("ppa = %d, real_ppa = %d\n",ppa, p_table[P_IDX].ppa);
 		printf("ppa allocation error!\n");
+
+		for(int i = 0 ; i < EPP; i++){
+			printf("TABLE[%d] = %d\n",i, c_table->s_bitmap[i]);
+		}
 		exit(0);
 	}
 
@@ -962,13 +969,15 @@ static uint32_t __demand_set(request *const req){
 		if(c_table->b_form_size > check_size)
 		{
 			//Read original mapping table page
-			dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-			temp_req = assign_pseudo_req(MAPPING_M, dummy_vs, NULL);
-			params   = (demand_params *)temp_req->params;
-			__demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
-			dl_sync_wait(&params->dftl_mutex);
-			free(params);
-			free(temp_req);
+			if(c_table->t_ppa != -1){
+				dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+				temp_req = assign_pseudo_req(MAPPING_M, dummy_vs, NULL);
+				params   = (demand_params *)temp_req->params;
+				__demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
+				dl_sync_wait(&params->dftl_mutex);
+				free(params);
+				free(temp_req);
+			}
 			//Free head entry
 			remove_entry(c_table->rb_tree);
 			c_table->form_check = 0;

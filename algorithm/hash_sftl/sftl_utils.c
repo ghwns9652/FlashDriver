@@ -266,17 +266,20 @@ void remove_entry(hash_t *ht_ptr){
 }
 
 void set_hash_entry(hash_t *ht_ptr, uint32_t lpa, int32_t ppa){
+	C_TABLE *c_table = &CMT[D_IDX];	
+	int32_t b_form_size = c_table->b_form_size;
 	int32_t res;
 	int32_t old_size = ht_ptr->size * P_SIZE;
 	int32_t new_size = 0;
-	C_TABLE *c_table = &CMT[D_IDX];
+
 	res = hash_insert(ht_ptr, P_IDX, ppa);
 
 	if(res == HASH_REBUILD){
 		new_size = ht_ptr->size * P_SIZE;
-		c_table->b_form_size -= old_size;
-		c_table->b_form_size += new_size;
-		c_table->b_form_size += NODE_SIZE;
+		b_form_size = b_form_size - old_size;
+		b_form_size = b_form_size + new_size;
+		b_form_size = b_form_size + NODE_SIZE;
+		c_table->b_form_size = b_form_size;
 	}else if(res == HASH_SUCCESS){
 		c_table->b_form_size += NODE_SIZE;
 	}else{
@@ -304,7 +307,7 @@ int32_t free_hash_entry(hash_t *ht_ptr, uint32_t lpa){
 	return re_ppa;
 }
 
-int32_t reset_bitmap(int32_t t_index){
+void reset_bitmap(int32_t t_index){
 	C_TABLE *c_table = &CMT[t_index];
 	D_TABLE *p_table = mem_arr[t_index].mem_p;
 
@@ -313,38 +316,30 @@ int32_t reset_bitmap(int32_t t_index){
 	int32_t head_ppa, next_ppa;
 	int32_t start_idx;
 	
-	for(int i = 0 ; i < EPP-1; i++){
-		if(p_table[i].ppa != -1){
-			start_idx = i;
-			head_ppa = p_table[i].ppa;
-			c_table->s_bitmap[i] = 1;
-			bit_cnt++;
-			break;
-		}else{
-			c_table->s_bitmap[i] = 0;
-		}
+	if(p_table[0].ppa != -1){
+		c_table->s_bitmap[0] = 1;
+		bit_cnt++;
 	}
 
-	for(int i = start_idx; i < EPP-1; i++){
+
+	for(int i = 0 ; i < EPP-1; i++){
+		head_ppa = p_table[i].ppa;
 		next_ppa = p_table[i+1].ppa;
 		if(next_ppa == -1){
 			c_table->s_bitmap[i+1] = 0;
 			continue;
 		}
-
-		if(next_ppa == head_ppa + 1){
+		if(next_ppa == head_ppa+1){
 			c_table->s_bitmap[i+1] = 0;
 		}else{
-			bit_cnt++;
 			c_table->s_bitmap[i+1] = 1;
+			bit_cnt++;
 		}
 		head_ppa = next_ppa;
-
 	}
 
-	b_form_size = (bit_cnt * NODE_SIZE) + BITMAP_SIZE;
 	c_table->bit_cnt = bit_cnt;
-	return b_form_size;
+	return ;
 
 	
 }
@@ -356,8 +351,8 @@ int32_t reset_hash_entry(uint32_t lpa){
 	int32_t ppa;
 	int32_t b_form_size = 0;
 	int32_t bit_cnt = 0;
-
-
+	int32_t pointer_size = 0;
+	int32_t pre_cnt = c_table->bit_cnt;
 
 	for(int i = 0 ; i < EPP; i++){
 		if(s_bitmap[i]){
@@ -367,17 +362,15 @@ int32_t reset_hash_entry(uint32_t lpa){
 			bit_cnt++;
 		}
 	}
-
+	
+	pointer_size = c_table->ht_ptr->size * P_SIZE;	
 	c_table->bit_cnt = bit_cnt;
-	b_form_size += BITMAP_SIZE + (c_table->ht_ptr->size * P_SIZE);
+	b_form_size = b_form_size + (BITMAP_SIZE + pointer_size);
 
-	printf("[original]b_form_size = %d [reset]b_form_size = %d\n",b_form_size);
-	if(c_table->b_form_size != b_form_size){
-		printf("b_form_size different!\n");
-		sleep(2);
-	}
+	//If bit_cnt changed by GC, resize b_form_size
+	c_table->b_form_size = b_form_size;
 
-	return b_form_size;
+	return c_table->b_form_size;
 }
 
 int32_t cache_mapped_size()

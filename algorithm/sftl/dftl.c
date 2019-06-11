@@ -221,8 +221,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     num_caching = 0;
     //max_write_buf = 512;
-//	max_write_buf = 1024;
-	max_write_buf = 1;
+	max_write_buf = 1024;
+//	max_write_buf = 1;
 #if C_CACHE
     max_clean_cache = num_max_cache / 2; // 50 : 50
     num_max_cache -= max_clean_cache;
@@ -828,6 +828,11 @@ static uint32_t __demand_get(request *const req){
     else{
 	    ppa = p_table[P_IDX].ppa;
     }
+
+    if(ppa != p_table[P_IDX].ppa){
+	    printf("different ppa!\n");
+    	    exit(0);
+    }
     /*
     if(ppa != p_table[P_IDX].ppa){
 	    printf("D_IDX = %d P_IDX = %d\n",D_IDX, P_IDX);
@@ -999,14 +1004,15 @@ static uint32_t __demand_set(request *const req){
 	if(c_table->b_form_size > check_size)
 	{
 		//Read original mapping table page
-
-		dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-		temp_req = assign_pseudo_req(MAPPING_M, dummy_vs, NULL);
-		params   = (demand_params *)temp_req->params;
-		__demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
-		dl_sync_wait(&params->dftl_mutex);
-		free(params);
-		free(temp_req);
+		if(c_table->t_ppa != -1){
+			dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+			temp_req = assign_pseudo_req(MAPPING_M, dummy_vs, NULL);
+			params   = (demand_params *)temp_req->params;
+			__demand.li->read(c_table->t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
+			dl_sync_wait(&params->dftl_mutex);
+			free(params);
+			free(temp_req);
+		}	
 		//Free head entry
 		if(c_table->head != NULL){
 			/*

@@ -206,7 +206,7 @@ int32_t set_entry(uint32_t lpa, int32_t ppa);
 int32_t get_entry(hash_node *f_node, int32_t offset);
 
 int32_t reset_hash_entry(uint32_t lpa);
-int32_t reset_bitmap(int32_t t_index);
+void reset_bitmap(int32_t t_index);
 void remove_entry(hash_t *ht_ptr);
 
 

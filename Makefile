@@ -3,7 +3,7 @@ export CC=g++
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
 #TARGET_LOWER=linux_aio
-TARGET_ALGO=hash_sftl
+TARGET_ALGO=red_sftl
 
 
 
@@ -106,7 +106,7 @@ endif
 LIBS +=\
 		-lpthread\
 		-lm\
-#		-laio\
+		#-laio\
 -ljemalloc\
 
 all: driver
