@@ -33,7 +33,7 @@
 #define HASH_REBUILD 3
 
 
-#define HASH_LIMIT  8
+#define HASH_LIMIT  4
 #define BUCKET_SIZE 2
 
 

@@ -257,17 +257,17 @@ int32_t dpage_GC(){
         }
     }
 
-    NODE *c_ptr = lru->head;
-    NODE *e_ptr = NULL;
+	NODE *c_ptr = lru->head;
+    Redblack root = NULL;
+	Redblack node, next;
     while(c_ptr != NULL){
 	    c_table = (C_TABLE *)c_ptr->DATA;
-	    e_ptr = c_table->entry_lru->head;
-	    while(e_ptr != NULL){
-		    struct entry_node *ent_node = (struct entry_node *)e_ptr->DATA;
-		    int32_t head_lpn = ent_node->p_index;
-		    int32_t p_idx = head_lpn % EPP;
-		    ent_node->ppa = c_table->p_table[p_idx].ppa;
-		    e_ptr = e_ptr->next;
+	    root = c_table->rb_tree;
+		node = rb_first(root);
+	    while(node != root){
+			next = rb_next(node);
+		    node->h_ppa = c_table->p_table[node->key].ppa;
+		    node = next;
 	    }
 	    c_ptr = c_ptr->next;
     }

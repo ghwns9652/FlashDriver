@@ -74,9 +74,9 @@ typedef struct cached_table{
     bool gc_flag;
     int32_t entry_cnt;   // Count variable for eviction optimization
     int32_t flying_mapping_size; // Reserve cache space for flying request
-    LRU *entry_lru;      // Entry LRU pointer for TPFTL
-    NODE *last_ptr;      // Write pointer for last entry node
-    NODE *read_ptr;	 // Read pointer for last entry node
+    //LRU *entry_lru;      // Entry LRU pointer for TPFTL
+    Redbalck *last_ptr;      // Write pointer for last entry node
+    Redblack *read_ptr;	 // Read pointer for last entry node
     bool *h_bitmap;      // hit check bitmap
     Redblack rb_tree;	 // Root node
 
@@ -196,15 +196,16 @@ int32_t dpage_GC();
 
 
 //tp_utils.c
-NODE *tp_entry_search(int32_t, bool);
-struct entry_node* tp_entry_alloc(int32_t, int32_t, int32_t, char);
-NODE *tp_entry_update(NODE *, int32_t, int32_t, int32_t, char);
-NODE *tp_entry_op(int32_t, int32_t);
-NODE *tp_entry_split(NODE *, int32_t, int32_t, bool);
-void tp_batch_update(C_TABLE *);
+Redblack tp_entry_search(int32_t);
+Redblack tp_entry_alloc(int32_t, int32_t, int32_t, int32_t, char);
+void tp_entry_free(int32_t, Redblack);
+Redblack tp_entry_update(NODE *, int32_t, int32_t, int32_t, char);
+Redblack tp_entry_op(int32_t, int32_t);
+Redblack tp_entry_split(NODE *, int32_t, int32_t, bool);
+void tp_batch_update(C_TABLE *, bool);
 
-NODE *tp_get_entry(int32_t, int32_t);
-NODE *tp_fetch(int32_t,int32_t);
+//Redblack tp_get_entry(int32_t, int32_t);
+Redblack tp_fetch(int32_t,int32_t);
 
 int32_t cache_mapped_size();
 int32_t cached_entries();

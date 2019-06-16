@@ -279,7 +279,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].gc_flag = 0;
 	CMT[i].h_bitmap = (bool *)malloc(sizeof(bool) * EPP);
 	CMT[i].rb_tree = NULL;
-	lru_init(&CMT[i].entry_lru);
+	//lru_init(&CMT[i].entry_lru);
 
     }
 
@@ -656,9 +656,7 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 		
 			}
 			
-
 		}
-		lru_update(c_table->entry_lru, c_table->read_ptr);	
 	}
 	
     }else{
@@ -702,8 +700,8 @@ static uint32_t __demand_get(request *const req){
     int32_t offset; // distacne to get ppa from entry node
     C_TABLE* c_table; // Cache mapping entry pointer
     D_TABLE *p_table; // pointer of p_table on cme
-    struct entry_node *ent_node; //contents pointer within entry_node
-    NODE *check_node = NULL;
+    Redblack ent_node; //contents pointer within entry_node
+    Redblack check_node = NULL;
 #if W_BUFF
     snode *temp;
 #endif
@@ -736,10 +734,10 @@ static uint32_t __demand_get(request *const req){
     if (req->params == NULL) {
 #if B_TPFTL
 	if(c_table->h_bitmap[P_IDX]){
-		check_node = tp_get_entry(lpa,P_IDX);
+		check_node = tp_entry_search(lpa);
 	}
 #else
-	check_node = tp_get_entry(lpa, P_IDX);
+	check_node = tp_entry_search(lpa);
 #endif
      	if (check_node != NULL) { // Cache hit
 	     
@@ -801,9 +799,9 @@ static uint32_t __demand_get(request *const req){
     /* Get actual data from device */
     p_table = c_table->p_table;
    // ppa = p_table[P_IDX].ppa;
-    ent_node = (struct entry_node *)c_table->read_ptr->DATA;
-    offset = P_IDX - ent_node->p_index;
-    ppa = ent_node->ppa + offset; 
+    ent_node = c_table->read_ptr;
+    offset = P_IDX - ent_node->key;
+    ppa = ent_node->h_ppa + offset; 
 
     /* 
     if(ppa != p_table[P_IDX].ppa){
@@ -871,8 +869,6 @@ static uint32_t __demand_set(request *const req){
     //For TPFTL variable
     Redblack check_node = NULL;
         // if there is previous data with same lpa, then invalidate it
-    struct entry_node *ent_node = NULL;
-    //int32_t w_check = 0;
 #if W_BUFF
     snode *temp;
     sk_iter *iter;
@@ -994,18 +990,14 @@ ign_pseudo_req(DATA_W, temp->value, NULL);
 
     ppa = c_table->p_table[P_IDX].ppa; 
     c_table->h_bitmap[P_IDX] = 1;
-    c_table->last_ptr = c_table->entry_lru->head;
+    //c_table->last_ptr = c_table->entry_lru->head;
    
     if(check_node == NULL){
 	    //create init entry node
 	    c_table->rb_tree = rb_create();
-	    ent_node = tp_entry_alloc(lpa, ppa, 0, 'W');
-	    c_table->last_ptr = lru_push(c_table->entry_lru, (void *)ent_node);
-	    c_table->entry_cnt++;
-	    free_cache_size -= ENTRY_SIZE;
+	    c_table->last_ptr = tp_entry_alloc(lpa, P_IDX, ppa, 0, 'W');
     }else{
 	    c_table->last_ptr = tp_entry_op(lpa, ppa);
- 	    struct entry_node *check = (struct entry_node *)c_table->last_ptr->DATA;    
     }
 
    
@@ -1300,7 +1292,6 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 	int32_t lpa = req->key;
 	bool dirty_flag = 0;
 	C_TABLE *c_table = &CMT[D_IDX];
-	struct entry_node *evic_node = NULL;
 	int32_t start, end;
 	struct entry_node *t_ptr = NULL;
 #endif
@@ -1308,22 +1299,10 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 	//Select One-level LRU
 	
 	evict_count++;
-	cache_ptr = (C_TABLE *)lru->tail->DATA;
+	cache_ptr = (C_TABLE *)lru_pop(lru);
 	t_ppa     = cache_ptr->t_ppa;
-	//Select Tow-level eviction entry_node
-	
-	evic_node = (struct entry_node *)lru_pop(cache_ptr->entry_lru);	
-	
-	//Set h_bitmap initilaization
-	start = evic_node->p_index;
-	end = start + evic_node->cnt;
-	for(int32_t i = start ; i <= end; i++){
-		cache_ptr->h_bitmap[i] = 0;
-	}
-	cache_ptr->entry_cnt--;
-	c_table->flying_mapping_size = ENTRY_SIZE;
-	
-	if(evic_node->state == DIRTY){ // When t_page on cache has changed
+
+	if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
 		dirty_flag = 1;
 		dirty_eviction++;
 		if (req_t == 'W') {
@@ -1346,7 +1325,7 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 			//BM_InvalidatePage(bm, t_ppa);
 		}
 		//	printf("eviction!!\n");
-		tp_batch_update(cache_ptr);
+		tp_batch_update(cache_ptr,1);
 
 		/* Write translation page */
 		t_ppa = tp_alloc(req_t, flag);
@@ -1372,7 +1351,8 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 		free(temp_req);
 #endif
 
-	} else {
+	} else {	
+		tp_batch_update(cache_ptr,1);
 		clean_eviction++;
 		if (req_t == 'W') {
 			clean_evict_on_write++;
@@ -1382,7 +1362,6 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 	}
 
 	if(cache_ptr->entry_cnt == 0){
-		lru_pop(lru);
 		cache_ptr->queue_ptr = NULL;
 		//cache_ptr->p_table   = NULL;
 		cache_ptr->last_ptr  = NULL;
@@ -1409,8 +1388,6 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 	int32_t lpa = req->key;
 	int32_t evic_size = 0;
 	 C_TABLE *c_table = &CMT[D_IDX];
-	struct entry_node *evic_node = NULL;
-	int32_t start, end;
 #endif
 
 	//cache_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
@@ -1418,18 +1395,10 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 	while(free_cache_size < 0)
 	{
 		evict_count++;
-		cache_ptr = (C_TABLE *)lru->tail->DATA;
-		evic_node = (struct entry_node *)lru_pop(cache_ptr->entry_lru);	
+		cache_ptr = (C_TABLE *)lru_pop(lru);
 		t_ppa     = cache_ptr->t_ppa;
-		start = evic_node->p_index;
-		end = start + evic_node->cnt;
-		for(int32_t i = start ; i <= end; i++){
-			cache_ptr->h_bitmap[i] = 0;
-		}
-		cache_ptr->entry_cnt--; 
-		free_cache_size += ENTRY_SIZE;
 
-		if(evic_node->state == DIRTY){ // When t_page on cache has changed
+		if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
 			dirty_eviction++;
 			if (req_t == 'W') {
 				dirty_evict_on_write++;
@@ -1450,7 +1419,7 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 
 				BM_InvalidatePage(bm, t_ppa);
 			}
-			tp_batch_update(cache_ptr);
+			tp_batch_update(cache_ptr,0);
 
 			/* Write translation page */
 			t_ppa = tp_alloc(req_t, flag);
@@ -1478,6 +1447,7 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 
 		} else {
 			clean_eviction++;
+			tp_batch_update(cache_ptr,0);
 			if (req_t == 'W') {
 				clean_evict_on_write++;
 			} else {
@@ -1486,11 +1456,8 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 		}
 
 		if(cache_ptr->entry_cnt == 0){
-			
-			lru_pop(lru);
 			cache_ptr->entry_cnt = 0;
 			cache_ptr->queue_ptr = NULL;
-			//cache_ptr->p_table   = NULL;
 			cache_ptr->last_ptr  = NULL;
 			if(req_t == 'R')
 				prefetch_cnt--;
