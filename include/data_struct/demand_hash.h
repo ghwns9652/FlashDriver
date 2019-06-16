@@ -33,17 +33,19 @@
 #define HASH_REBUILD 3
 
 
-#define HASH_LIMIT 4
+#define HASH_LIMIT  8
+#define BUCKET_SIZE 2
+
 
 #define CHANGE_SIZE (PAGESIZE * 0.8)	 //Threshold bitmap_form and original form
 #define EOP	    (PAGESIZE / 4)	 //Number entries of page
 #define BITMAP_SIZE (EOP / 8)            //Default bitmap size
-#define NODE_SIZE   12			 //The size of hash_node
+#define NODE_SIZE   10			 //The size of hash_node
 #define P_SIZE      4			 //Default pointer size of bucket
 
 
 typedef struct hash_node{
-	uint32_t key;            /* key for hash lookup */
+	uint16_t key;            /* key for hash lookup */
 	int32_t  data;           /* data(ppn) in hash node */
 	struct hash_node *next;  /* next node in hash chain */
 } hash_node;

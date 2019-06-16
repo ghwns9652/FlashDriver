@@ -3,7 +3,7 @@ export CC=g++
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
 #TARGET_LOWER=linux_aio
-TARGET_ALGO=red_sftl
+TARGET_ALGO=sftl
 
 
 
@@ -18,7 +18,7 @@ COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-#			-O2\
+			-O2\
 
 #			-DWRITESYNC\
 
@@ -106,8 +106,8 @@ endif
 LIBS +=\
 		-lpthread\
 		-lm\
-		#-laio\
--ljemalloc\
+#		-laio\
+#-ljemalloc\
 
 all: driver
 

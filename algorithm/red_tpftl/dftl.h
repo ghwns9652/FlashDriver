@@ -6,22 +6,21 @@
 #include <stdint.h>
 #include <string.h>
 #include <pthread.h>
-#include <time.h>
 #include <unistd.h>
-#include <math.h>
 #include "../../interface/interface.h"
 #include "../../interface/queue.h"
 #include "../../include/container.h"
 #include "../../include/dftl_settings.h"
 #include "../../include/dl_sync.h"
 #include "../../include/types.h"
-#include "../../include/data_struct/demand_hash.h"
 #include "../../include/data_struct/redblack.h"
+
 #ifdef W_BUFF
 #include "../Lsmtree/skiplist.h"
 #endif
 #include "../blockmanager/BM.h"
 #include "lru_list.h"
+
 #define TYPE uint8_t
 #define DATA_R DATAR
 #define DATA_W DATAW
@@ -38,17 +37,16 @@
 #define D_IDX (lpa / EPP)   // Idx of directory table
 #define P_IDX (lpa % EPP)   // Idx of page table
 
-
 #define CLEAN 0
 #define DIRTY 1
 
-#if S_FTL
-/* This variables redefined on deamdn_hash.h */
-//#define BITMAP_SIZE (EPP / 8) // Bitmap_size for SFTL
-//#define NODE_SIZE 12          // hash node size(Key + PPN + chain pointer)
-//#define P_SIZE 4	      // Default bucket pointer size
-
+#if TPFTL
+#define ENTRY_SIZE 20 	    // table idx, ppa, cnt, pointers (tree pointers) 
+#define MAX_CNT    63
+#define PF_MAX     32
 #endif
+
+#define B_TPFTL 1
 
 
 // Page table data structure
@@ -62,6 +60,7 @@ typedef struct cached_table{
     int32_t idx;
     D_TABLE *p_table;
     NODE *queue_ptr; // for dirty pages (or general use)
+   
 #if C_CACHE
     NODE *clean_ptr; // for clean pages
 #endif
@@ -69,23 +68,26 @@ typedef struct cached_table{
     bool flying;
     request **flying_arr;
     int32_t num_waiting;
-
-#if S_FTL
-	int32_t b_form_size;
-	int32_t flying_mapping_size;
-	int32_t bit_cnt;
-	bool form_check;   //In-Flash = 0, Bitmap = 1
-	bool evic_flag;
-	bool gc_flag;
-	bool *s_bitmap;
-	bool *d_bitmap;
-	hash_t *ht_ptr;
-
-#endif
-	uint32_t read_hit;
-	uint32_t write_hit;
+    uint32_t read_hit;
+    uint32_t write_hit;    
+    bool evic_flag;
+    bool gc_flag;
+    int32_t entry_cnt;   // Count variable for eviction optimization
+    int32_t flying_mapping_size; // Reserve cache space for flying request
+    LRU *entry_lru;      // Entry LRU pointer for TPFTL
+    NODE *last_ptr;      // Write pointer for last entry node
+    NODE *read_ptr;	 // Read pointer for last entry node
+    bool *h_bitmap;      // hit check bitmap
+    Redblack rb_tree;	 // Root node
 
 } C_TABLE;
+
+struct entry_node{
+	int16_t p_index; 
+	int32_t ppa;
+	int16_t  cnt;
+	bool    state;
+};
 
 // OOB data structure
 typedef struct demand_OOB{
@@ -103,14 +105,11 @@ typedef struct demand_params{
     value_set *value;
     dl_sync dftl_mutex;
     TYPE type;
-    KEYT seq;
 } demand_params;
 
 typedef struct read_params{
     int32_t t_ppa;
     uint8_t read;
-    int32_t m_w_cnt;
-    int32_t m_w_max;
 } read_params;
 
 typedef struct mem_table{
@@ -163,12 +162,9 @@ extern int32_t dgc_count;
 extern int32_t read_tgc_count;
 extern int32_t tgc_w_dgc_count;
 
-extern int32_t total_cache_size;
 extern int32_t free_cache_size;
-extern int32_t cache_mapping_size;
-extern int32_t flying_mapping_size;
-extern int32_t check_size;
-extern bool global_gc_flag;
+extern int32_t flying_cache_size;
+extern int32_t prefetch_cnt;
 
 /* extern variables */
 
@@ -179,7 +175,7 @@ uint32_t demand_get(request *const);
 uint32_t demand_set(request *const);
 uint32_t demand_remove(request *const);
 uint32_t demand_eviction(request *const, char, bool *, bool *);
-uint32_t demand_hit_eviction(request *const, char, bool *, bool *,int32_t);
+uint32_t demand_hit_eviction(request *const, char, bool *, bool *);
 void    *demand_end_req(algo_req*);
 
 // dftl_utils.c
@@ -199,25 +195,19 @@ int32_t tpage_GC();
 int32_t dpage_GC();
 
 
-//Ver : Hash
-#if S_FTL
-int32_t find_head_idx(uint32_t lpa);
-int32_t set_entry(uint32_t lpa, int32_t ppa);
-int32_t get_entry(hash_node *f_node, int32_t offset);
+//tp_utils.c
+NODE *tp_entry_search(int32_t, bool);
+struct entry_node* tp_entry_alloc(int32_t, int32_t, int32_t, char);
+NODE *tp_entry_update(NODE *, int32_t, int32_t, int32_t, char);
+NODE *tp_entry_op(int32_t, int32_t);
+NODE *tp_entry_split(NODE *, int32_t, int32_t, bool);
+void tp_batch_update(C_TABLE *);
 
-int32_t reset_hash_entry(uint32_t lpa);
-void reset_bitmap(int32_t t_index);
-void remove_entry(hash_t *ht_ptr);
-
-
-void set_hash_entry(hash_t *ht_ptr, uint32_t lpa, int32_t ppa);
-int32_t free_hash_entry(hash_t *ht_ptr, uint32_t lpa);
+NODE *tp_get_entry(int32_t, int32_t);
+NODE *tp_fetch(int32_t,int32_t);
 
 int32_t cache_mapped_size();
-void hash_table_status();
 int32_t cached_entries();
-int32_t cached_buckets();
-#endif
 
 
 #endif

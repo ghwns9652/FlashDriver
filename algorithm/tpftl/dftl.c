@@ -188,7 +188,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 
    
-    free_cache_size = 1024 * PAGESIZE * 0.35; 
+    free_cache_size = ceil(1024 * PAGESIZE * 0.2); 
     total_cache_size = free_cache_size;
     prefetch_cnt = 0;
 
@@ -206,8 +206,8 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     num_caching = 0;
     //max_write_buf = 512;
-//    max_write_buf = 1024;
-	max_write_buf = 1;
+    max_write_buf = 1024;
+    //max_write_buf = 1;
 #if C_CACHE
     max_clean_cache = num_max_cache / 2; // 50 : 50
     num_max_cache -= max_clean_cache;
@@ -396,11 +396,12 @@ void demand_destroy(lower_info *li, algorithm *algo){
 
     printf("cache_mapped_size = %d\n",total_cache_size-free_cache_size);
     printf("free_cache_size   = %d\n",free_cache_size);
-   
+    cached_entries();
+
+
+
     printf("TGC = %d\n",tgc_count);
     printf("DGC = %d\n",dgc_count);
-    printf("tgc_r = %d\n",tgc_r);
-    printf("tgc_w = %d\n",tgc_w); 
    
     /* Clear modules */
     q_free(dftl_q);
@@ -466,11 +467,11 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     d_flag = false;
 
     // Reserve requests that share flying mapping table
-	    if (c_table->flying) {
-		    c_table->flying_arr[c_table->num_waiting++] = req;
-		    //bench_algo_end(req);
-		    return 1;
-	    }
+    if (c_table->flying) {
+	    c_table->flying_arr[c_table->num_waiting++] = req;
+	    //bench_algo_end(req);
+	    return 1;
+    }
 /*
     if (num_flying == num_max_cache) { // This case occurs only if (QDEPTH > num_max_cache)
         waiting_arr[waiting++] = req;
@@ -603,12 +604,10 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
     C_TABLE *c_table = &CMT[D_IDX];
     int32_t ppa;
     int32_t t_ppa = c_table->t_ppa;
-    //int32_t p_count = 0;
     read_params *params = (read_params *)req->params;
-   // request *prefetch_req;
-    //int32_t prefetch_lpa;
-    int32_t prefetch_idx;
+    int32_t prefetch_lpa;
     int32_t prefetch_ppa;
+    bool hit_flag;
     value_set *dummy_vs;
     algo_req *temp_req;
     //struct entry_node *check_node = NULL;
@@ -639,26 +638,28 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 		}
 	}
 	c_table->read_ptr = tp_fetch(lpa,ppa);		
+	
 	if(prefetch_cnt == -3){
 		prefetch_cnt = 0;
 		printf("prefetch_on!!\n");
-
-		c_table->p_table = mem_arr[D_IDX].mem_p;
-		for(int i = 0 ; i < c_table->num_waiting; i++){
+		for(int i = 0 ; i < c_table->num_waiting; i++){		
+			prefetch_lpa = c_table->flying_arr[i]->key;
+			prefetch_ppa = c_table->p_table[prefetch_lpa%EPP].ppa;
+			hit_flag     = c_table->h_bitmap[prefetch_lpa%EPP];
 			
-			prefetch_idx = c_table->flying_arr[i]->key % EPP;	
-			prefetch_ppa = c_table->p_table[prefetch_idx].ppa;
-			bool hit_flag = c_table->h_bitmap[prefetch_idx];
-			if(!hit_flag && prefetch_ppa == -1) 
+			
+			if(hit_flag || prefetch_ppa == -1) 
 				continue;
 			else{
-				tp_fetch(prefetch_idx, prefetch_ppa);
+				tp_fetch(prefetch_lpa, prefetch_ppa);
+		
 			}
+			
 
 		}
 		lru_update(c_table->entry_lru, c_table->read_ptr);	
 	}
-
+	
     }else{
 	    if(c_table->queue_ptr == NULL){
 		    c_table->queue_ptr = lru_push(lru, (void *)c_table);
@@ -701,7 +702,7 @@ static uint32_t __demand_get(request *const req){
     C_TABLE* c_table; // Cache mapping entry pointer
     D_TABLE *p_table; // pointer of p_table on cme
     struct entry_node *ent_node; //contents pointer within entry_node
-    NODE *check_node;
+    NODE *check_node = NULL;
 #if W_BUFF
     snode *temp;
 #endif
@@ -732,14 +733,20 @@ static uint32_t __demand_get(request *const req){
     t_ppa   = c_table->t_ppa;
 
     if (req->params == NULL) {
+#if B_TPFTL
+	if(c_table->h_bitmap[P_IDX]){
+		check_node = tp_get_entry(lpa,P_IDX);
+	}
+#else
 	check_node = tp_get_entry(lpa, P_IDX);
-        if (check_node != NULL) { // Cache hit
-	     /*
+#endif
+     	if (check_node != NULL) { // Cache hit
+	     
 	    if (p_table[P_IDX].ppa == -1) {
-                bench_algo_end(req);
+                //bench_algo_end(req);
                 return UINT32_MAX;
             }
-	    */
+	    
 	    c_table->read_ptr = check_node;
 	    cache_hit_on_read++;
             req->type_ftl += 1;
@@ -752,7 +759,6 @@ static uint32_t __demand_get(request *const req){
 
 	    if (t_ppa == -1) {
                 //bench_algo_end(req);
-                printf("sdafsdf\n");
 	        return UINT32_MAX;
             }
             if (demand_cache_eviction(req, 'R') == 1) {
@@ -797,15 +803,19 @@ static uint32_t __demand_get(request *const req){
     ent_node = (struct entry_node *)c_table->read_ptr->DATA;
     offset = P_IDX - ent_node->p_index;
     ppa = ent_node->ppa + offset; 
-    /*
+
+    /* 
     if(ppa != p_table[P_IDX].ppa){
 	  
 	   printf("req->seq = %d\n",req->seq);
 	   NODE *s = c_table->entry_lru->head;
+	   printf("c_table->entry_cnt : %d\n",c_table->entry_cnt);
 	   while(s != NULL){
+		   
 		   struct entry_node *s_tmp = (struct entry_node *)s->DATA;
-		   if(s_tmp->p_index <= P_IDX && P_IDX <= s_tmp->p_index + s_tmp->cnt)
-			   printf("?? head_idx =%d head_ppa =%d cnt = %d\n",s_tmp->p_index, s_tmp->ppa, s_tmp->cnt);
+		   printf("head_lpn : %d head_ppa : %d cnt : %d\n",s_tmp->p_index,s_tmp->ppa,s_tmp->cnt);
+		   //if(s_tmp->p_index <= P_IDX && P_IDX <= s_tmp->p_index + s_tmp->cnt)
+			   //printf("?? head_idx =%d head_ppa =%d cnt = %d\n",s_tmp->p_index, s_tmp->ppa, s_tmp->cnt);
 		   s = s->next;
 	   }
 	    
@@ -821,11 +831,17 @@ static uint32_t __demand_get(request *const req){
 	    
 	    exit(0);
     } 
+    */
     if (p_table[P_IDX].ppa == -1) {
         bench_algo_end(req);
         return UINT32_MAX;
     }
-    */
+    
+    if(ppa != p_table[P_IDX].ppa){
+	    printf("ppa allocation error!\n");
+	    exit(0);
+    }
+    
     if(free_cache_size < 0){
 	    bool gc_flag = false;
 	    bool d_flag = false;
@@ -973,27 +989,23 @@ static uint32_t __demand_set(request *const req){
 	    return 1;
     }
 
-    ppa = c_table->p_table[P_IDX].ppa;
+    ppa = c_table->p_table[P_IDX].ppa; 
     c_table->h_bitmap[P_IDX] = 1;
     c_table->last_ptr = c_table->entry_lru->head;
    
     if(check_node == NULL){
 	    //create init entry node
-	    
 	    ent_node = tp_entry_alloc(P_IDX, ppa, 0, 'W');
 	    c_table->last_ptr = lru_push(c_table->entry_lru, (void *)ent_node);
 	    c_table->entry_cnt++;
 	    free_cache_size -= ENTRY_SIZE;
     }else{
 	    c_table->last_ptr = tp_entry_op(lpa, ppa);
- 	    struct entry_node *check = (struct entry_node *)c_table->last_ptr->DATA;
-	   
-	    if(check->cnt > MAX_CNT){
-		    printf("CNT error!\n");
-		    sleep(2);
-	    }
+ 	    struct entry_node *check = (struct entry_node *)c_table->last_ptr->DATA;    
     }
-   /* 
+
+   
+    /* 
     NODE* tmp = tp_get_entry(lpa, P_IDX);
     struct entry_node *tmp_ent = (struct entry_node *)tmp->DATA;
     int32_t offset = P_IDX - tmp_ent->p_index;

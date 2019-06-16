@@ -43,7 +43,7 @@
 
 #if S_FTL
 #define BITMAP_SIZE (EPP / 8) // Bitmap_size for SFTL
-#define NODE_SIZE 21          // rb_tree node size(LPN+PPN+Pointers)
+#define NODE_SIZE 18          // rb_tree node size(LPN+PPN+Pointers)
 
 #endif
 

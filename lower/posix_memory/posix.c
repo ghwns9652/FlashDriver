@@ -21,10 +21,11 @@
 #include "../../algorithm/red_sftl/dftl.h"
 #elif defined(hash_sftl)
 #include "../../algorithm/hash_sftl/dftl.h"
+#elif defined(red_tpftl)
+#include "../../algorithm/red_tpftl/dftl.h"
 #elif defined(tpftl)
 #include "../../algorithm/tpftl/dftl.h"
 #elif defined(ctoc_batch)
-
 #include "../../algorithm/ctoc_batch/dftl.h"
 #else
 #include "../../algorithm/Lsmtree/lsmtree.h"

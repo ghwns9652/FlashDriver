@@ -197,18 +197,34 @@ Redblack rb_create (void)
  * the reference <node> is NULL, then it will not be set.
  *
  */
-int rb_find_int(Redblack rb,int key,Redblack *node)
+int rb_find_int(Redblack rb,int key, Redblack *node)
 {
 	Redblack x = root(rb);
-
+#if TPFTL
+	int16_t start_idx;
+	int16_t end_idx;
+#endif
 	assert(issentinel(rb));
-
+#if TPFTL
+	start_idx = x->key;
+	end_idx   = x->key + x->cnt;
+	while(x != rb_nil(rb) && !(key >= start_idx && key <= end_idx)){
+		x = (key < x->key) ? : x->left : x->right;
+		start_idx = x->key;
+		end_idx = x->key + x->cnt;
+	}
+#else
 	while (x != rb_nil(rb) && key != x->key)
 		x = (key < x->key) ? x->left : x->right;
 
+#endif
 	if (node) *node = x;
 
+#if TPFTL
+	return (x != rb_nil(rb) && (key >= start_idx && key <= end_idx))
+#else
 	return (x != rb_nil(rb) && key == x->key);
+#endif
 }
 
 

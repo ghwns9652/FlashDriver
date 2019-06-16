@@ -81,10 +81,11 @@ void bench_init(){
 		for(int j=0;j<ALGOTYPE;j++){
 			for(int k=0;k<LOWERTYPE;k++){
 				_master->datas[i].ftl_poll[j][k].min = UINT64_MAX;
-				//_master->datas[i].ftl_npoll[j][k].min = UINT64_MAX;
+				_master->datas[i].ftl_npoll[j][k].min = UINT64_MAX;
 			}
 		}
-	}*/
+	}
+	*/
 	printf("bench:%ld\n",TOTALSIZE/PAGESIZE/8);
 	bitmap=(uint8_t*)malloc(sizeof(uint8_t)*(TOTALSIZE/(PAGESIZE)/8));
 }
@@ -384,13 +385,14 @@ void bench_update_ftltime(bench_data *_d, request *const req){
 	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
 	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
 	temp->cnt++;
-	
+		
 	temp = &_d->ftl_npoll[req->type_ftl][req->type_lower];
 	req->latency_ftl.micro_time -= req->latency_poll.adding.tv_sec*1000000 + req->latency_poll.adding.tv_usec;
 	temp->total_micro += req->latency_ftl.micro_time;
 	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
 	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
 	temp->cnt++;
+	
 }
 */
 void bench_ftl_cdf_print(bench_data *_d){

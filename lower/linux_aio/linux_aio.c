@@ -102,9 +102,11 @@ void *poller(void *input) {
 				else{
 				//	printf("cb->offset:%d cb->nbytes:%d\n",cb->u.c.offset,cb->u.c.nbytes);
 				}
+				/*
 				if(req->parents){
 					bench_lower_end(req->parents);
 				}
+				*/
 				req->end_req(req);
 				cl_release(lower_flying);
 
@@ -221,10 +223,11 @@ void *aio_push_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo_r
 	if(t_type < LREQ_TYPE_NUM){
 		aio_info.req_type_cnt[t_type]++;
 	}
-	
+
+	/*	
 	if(req->parents)
 		bench_lower_start(req->parents);
-
+	*/
 	struct iocb *cb=(struct iocb*)malloc(sizeof(struct iocb));
 	cl_grap(lower_flying);
 
@@ -259,9 +262,10 @@ void *aio_pull_data(KEYT PPA, uint32_t size, value_set* value, bool async,algo_r
 	if(t_type < LREQ_TYPE_NUM){
 		aio_info.req_type_cnt[t_type]++;
 	}
-	
+	/*
 	if(req->parents)
 		bench_lower_start(req->parents);
+	*/
 	struct iocb *cb=(struct iocb*)malloc(sizeof(struct iocb));
 	cl_grap(lower_flying);
 	io_prep_pread(cb,_fd,(void*)value->value,PAGESIZE,offset_hooker(aio_info.SOP*PPA,t_type));

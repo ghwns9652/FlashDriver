@@ -38,7 +38,10 @@ NODE *tp_entry_search(int32_t lpa, bool flag){
 }
 
 
-struct entry_node *tp_entry_alloc(int32_t offset, int32_t ppa, int32_t cnt, char req_t){	
+struct entry_node *tp_entry_alloc(int32_t lpa, int32_t ppa, int32_t cnt, char req_t){	
+
+	Redblack now = rb_insert_int(	
+	
 	struct entry_node *now = (struct entry_node *)malloc(sizeof(struct entry_node));
 	now->p_index = offset;
 	now->ppa = ppa;

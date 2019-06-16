@@ -986,7 +986,8 @@ static uint32_t __demand_set(request *const req){
 
 		}
 
-	} 
+	}
+	       	
     
     int32_t add_size = c_table->b_form_size - pre_size;
     if(free_cache_size < add_size){

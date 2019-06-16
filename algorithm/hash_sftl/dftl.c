@@ -424,6 +424,7 @@ void demand_destroy(lower_info *li, algorithm *algo){
     printf("free_cache_size      : %d\n",free_cache_size);
     printf("max_cache_entry      : %d\n",max_cache_entry);
     printf("total_cached_entries : %d\n",cached_entries());
+    cached_buckets();
 
   //  hash_table_status();
       printf("sftl_function_time : ");
@@ -589,7 +590,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     c_table->state     = DIRTY;
 
     c_table->form_check = 1; 	
-    hash_init(c_table->ht_ptr, 2);
+    hash_init(c_table->ht_ptr, BUCKET_SIZE);
     c_table->b_form_size = BITMAP_SIZE + (c_table->ht_ptr->size * P_SIZE); 
     free_cache_size -= c_table->b_form_size;
 
@@ -672,7 +673,7 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 
     if(c_table->form_check == 1)
     {
-	    hash_init(c_table->ht_ptr, 2);
+	    hash_init(c_table->ht_ptr, BUCKET_SIZE);
 	    b_form_size = reset_hash_entry(lpa);
 	    if(b_form_size > check_size){
 		    c_table->b_form_size = PAGESIZE;

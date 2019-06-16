@@ -13,6 +13,8 @@
 #include "../../include/dftl_settings.h"
 #include "../../include/dl_sync.h"
 #include "../../include/types.h"
+#include "../../include/data_struct/redblack.h"
+
 #ifdef W_BUFF
 #include "../Lsmtree/skiplist.h"
 #endif
@@ -39,10 +41,14 @@
 #define DIRTY 1
 
 #if TPFTL
-#define ENTRY_SIZE 8 
+#define ENTRY_SIZE 12       //table idx, ppa, cnt, pointer(lru_pointer) 
+//#define ENTRY_SIZE 8
 #define MAX_CNT    63
 #define PF_MAX     32
 #endif
+
+#define B_TPFTL 0
+
 
 // Page table data structure
 typedef struct demand_mapping_table{
@@ -64,9 +70,7 @@ typedef struct cached_table{
     request **flying_arr;
     int32_t num_waiting;
     uint32_t read_hit;
-    uint32_t write_hit;
-
-    
+    uint32_t write_hit;    
     bool evic_flag;
     bool gc_flag;
     int32_t entry_cnt;   // Count variable for eviction optimization
@@ -80,7 +84,7 @@ typedef struct cached_table{
 struct entry_node{
 	int16_t p_index; 
 	int32_t ppa;
-	int8_t  cnt;
+	int16_t  cnt;
 	bool    state;
 };
 
@@ -200,6 +204,9 @@ void tp_batch_update(C_TABLE *);
 
 NODE *tp_get_entry(int32_t, int32_t);
 NODE *tp_fetch(int32_t,int32_t);
-//NODE *tp_prefetch(int32_t, int32_t);
+
 int32_t cache_mapped_size();
+int32_t cached_entries();
+
+
 #endif

@@ -422,7 +422,9 @@ int32_t cached_entries(){
 	for(int i = 0 ; i < max_cache_entry; i++){
 		c_table = &CMT[i];
 		if(c_table->p_table){
-			entries += c_table->ht_ptr->entries;
+			if(c_table->ht_ptr->size != 0){
+				entries += c_table->ht_ptr->entries;
+			}
 		}
 	}
 
@@ -430,6 +432,22 @@ int32_t cached_entries(){
 }
 
 
+int32_t cached_buckets(){
+	C_TABLE *c_table;
+	
+	for(int i = 0 ; i < max_cache_entry; i++){
+		c_table = &CMT[i];
+		if(c_table->p_table){
+			if(c_table->ht_ptr->size != 0){
+				printf("CMT[%d]-->buckets : %d\n",i,c_table->ht_ptr->size);
+			}
+		}
+	}
+
+
+
+	return 1;
+}
 
 
 

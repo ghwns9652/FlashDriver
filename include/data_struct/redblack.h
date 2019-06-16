@@ -58,8 +58,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include<stdint.h>
+#include <stdint.h>
 #include "../settings.h"
+#include "../dftl_settings.h"
 /* typedef struct str_key{
 	uint8_t len;
 	//char key[30];
@@ -69,8 +70,12 @@
 
 typedef struct redblack {
 
-	KEYT key;
+	int16_t key;
 	int32_t h_ppa;
+#if TPFTL
+	int8_t cnt;
+	bool   state;
+#endif	
 	struct redblack *parent;
 	struct redblack *left;
 	struct redblack *right;
@@ -89,8 +94,11 @@ Redblack rb_create (void);
 
 int rb_find_int (Redblack rb, int key, Redblack *node);
 
+#if TPFTL
+Redblack rb_insert_int (Redblack rb, int key, int32_t ppa, int8_t cnt);
+#elif
 Redblack rb_insert_int (Redblack rb, int key, int32_t ppa);
-
+#endif
 void rb_delete      (Redblack node);
 
 void rb_clear     (Redblack rb);
