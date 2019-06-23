@@ -25,6 +25,8 @@
 #include "../../algorithm/red_tpftl/dftl.h"
 #elif defined(tpftl)
 #include "../../algorithm/tpftl/dftl.h"
+#elif defined(hash_tpftl)
+#include "../../algorithm/hash_tpftl/dftl.h"
 #elif defined(ctoc_batch)
 #include "../../algorithm/ctoc_batch/dftl.h"
 #else

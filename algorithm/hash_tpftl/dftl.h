@@ -13,8 +13,7 @@
 #include "../../include/dftl_settings.h"
 #include "../../include/dl_sync.h"
 #include "../../include/types.h"
-#include "../../include/data_struct/redblack.h"
-
+#include "../../include/data_struct/demand_hash.h"
 #ifdef W_BUFF
 #include "../Lsmtree/skiplist.h"
 #endif
@@ -41,7 +40,8 @@
 #define DIRTY 1
 
 #if TPFTL
-#define ENTRY_SIZE 20 	    // table idx, ppa, cnt, pointers (tree pointers) 
+/* This defined value is redefined to NODE_SIZE on demand_hash.h */
+//#define ENTRY_SIZE 20 	    // table idx, ppa, cnt, pointers (tree pointers) 
 #define MAX_CNT    63
 #define PF_MAX     32
 #endif
@@ -75,19 +75,22 @@ typedef struct cached_table{
     int32_t entry_cnt;   // Count variable for eviction optimization
     int32_t flying_mapping_size; // Reserve cache space for flying request
     //LRU *entry_lru;      // Entry LRU pointer for TPFTL
-    Redblack last_ptr;      // Write pointer for last entry node
-    Redblack read_ptr;	 // Read pointer for last entry node
+    hash_node *last_ptr;      // Write pointer for last entry node
+    hash_node *read_ptr;	 // Read pointer for last entry node
     bool *h_bitmap;      // hit check bitmap
-    Redblack rb_tree;	 // Root node
-
+	bool *s_bitmap;		 // bitmap for checking head entry
+	hash_t *ht_ptr;		 // hash table pointer
+	int32_t evic_idx;
 } C_TABLE;
 
+/* Normal TPFTL struct
 struct entry_node{
 	int16_t p_index; 
 	int32_t ppa;
 	int16_t  cnt;
 	bool    state;
 };
+*/
 
 // OOB data structure
 typedef struct demand_OOB{
@@ -196,20 +199,25 @@ int32_t dpage_GC();
 
 
 //tp_utils.c
-Redblack tp_entry_search(int32_t);
-Redblack tp_entry_alloc(int32_t, int32_t, int32_t, int8_t, char);
-void tp_entry_free(int32_t, Redblack);
-Redblack tp_entry_update(Redblack, int32_t, int32_t, int8_t, char);
-Redblack tp_entry_op(int32_t, int32_t);
-Redblack tp_entry_split(Redblack, int32_t, int32_t, bool);
-void tp_batch_update(C_TABLE *,int32_t, bool);
+int32_t find_head_idx(int32_t lpa);
+
+void tp_init_hash(C_TABLE *);
+hash_node* tp_entry_search(int32_t, int32_t);
+hash_node* tp_entry_alloc(int32_t, int32_t, int32_t, int8_t, char);
+void tp_entry_free(int32_t, int32_t);
+hash_node* tp_entry_update(hash_node *,int32_t, int32_t, int32_t, int8_t, char);
+hash_node* tp_entry_op(int32_t, int32_t);
+hash_node* tp_entry_split(hash_node *, int32_t, int32_t, bool);
+void tp_batch_update(C_TABLE *);
+
+hash_node *hash_eviction(C_TABLE *, int32_t, bool);
 
 //Redblack tp_get_entry(int32_t, int32_t);
-Redblack tp_fetch(int32_t,int32_t);
+hash_node* tp_fetch(int32_t,int32_t);
 
 int32_t cache_print_entries();
-int32_t cache_mapped_size();
-int32_t cached_entries();
 int32_t cache_single_entries(C_TABLE *);
+
+int32_t cached_entries();
 
 #endif

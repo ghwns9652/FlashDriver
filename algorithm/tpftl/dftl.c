@@ -735,10 +735,10 @@ static uint32_t __demand_get(request *const req){
     if (req->params == NULL) {
 #if B_TPFTL
 	if(c_table->h_bitmap[P_IDX]){
-		check_node = tp_get_entry(lpa,P_IDX);
+		check_node = tp_entry_search(lpa,P_IDX);
 	}
 #else
-	check_node = tp_get_entry(lpa, P_IDX);
+	check_node = tp_get_entry(lpa,P_IDX);
 #endif
      	if (check_node != NULL) { // Cache hit
 	     
@@ -1020,7 +1020,7 @@ static uint32_t __demand_set(request *const req){
 	    }
     	    exit(0);
     }
-  */
+    */
     if(free_cache_size < 0){
 	bool gc_flag = false;
 	bool d_flag = false;

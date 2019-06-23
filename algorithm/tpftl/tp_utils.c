@@ -320,7 +320,8 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 			return last_ptr;
 		}
 		if(next_ppa == ppa+1){
-			next_find = tp_get_entry(lpa, P_IDX+1);
+			if(c_table->h_bitmap[P_IDX+1])
+				next_find = tp_get_entry(lpa, P_IDX+1);
 			//If next_idx is hit
 			if(next_find != NULL){
 				ent_node = (struct entry_node *)next_find->DATA;
@@ -374,7 +375,8 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 			free_cache_size -= ENTRY_SIZE;
 		}
 		else if (ppa == pre_ppa+1){
-			pre_find = tp_get_entry(lpa, P_IDX-1);
+			if(c_table->h_bitmap[P_IDX-1])
+				pre_find = tp_get_entry(lpa, P_IDX-1);
 			//Merge request into pre_node
 			if(pre_find != NULL){
 				ent_node = (struct entry_node *)pre_find->DATA;
@@ -422,8 +424,8 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 			return last_ptr;
 		}
 		else if(next_ppa == ppa+1){
-
-			next_find = tp_get_entry(lpa, P_IDX+1);
+			if(c_table->h_bitmap[P_IDX+1])
+				next_find = tp_get_entry(lpa, P_IDX+1);
 			//CASE1 : merge pre_node and next_node
 			if(next_find != NULL){
 				next_ent = (struct entry_node *)next_find->DATA;
@@ -487,8 +489,8 @@ NODE *tp_fetch(int32_t lpa, int32_t ppa){
 		}
 
 		if(ppa == pre_ppa+1){
-
-			pre_find = tp_get_entry(lpa, P_IDX-1);
+			if(c_table->h_bitmap[P_IDX-1])
+				pre_find = tp_get_entry(lpa, P_IDX-1);
 			if(pre_find != NULL)
 			{
 				ent_node = (struct entry_node *)pre_find->DATA;

@@ -258,19 +258,23 @@ int32_t dpage_GC(){
     }
 
     NODE *c_ptr = lru->head;
-    Redblack root = NULL;
-    Redblack node, next;
+    hash_t *ht_ptr;
+	hash_node *node, *next;
+
     while(c_ptr != NULL){
 	    c_table = (C_TABLE *)c_ptr->DATA;
-	    root = c_table->rb_tree;
-		node = rb_first(root);
-	    while(node != root){
-		    next = rb_next(node);
-		    node->h_ppa = c_table->p_table[node->key].ppa;
-		    node = next;
-	    }
-	    c_ptr = c_ptr->next;
-    }
+		ht_ptr = c_table->ht_ptr;
+	    for(int i = 0 ; i < ht_ptr->size; i++){
+			node = ht_ptr->bucket[i];
+			while(node != NULL){
+				node->data = c_table->p_table[node->key].ppa;
+				node = node->next;
+			}
+		}
+
+		c_ptr = c_ptr->next;
+	}
+
 
 
 

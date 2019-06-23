@@ -96,7 +96,7 @@ int rb_find_int (Redblack rb, int key, Redblack *node);
 
 #if TPFTL
 Redblack rb_insert_int (Redblack rb, int key, int32_t ppa, int8_t cnt);
-#elif
+#else
 Redblack rb_insert_int (Redblack rb, int key, int32_t ppa);
 #endif
 void rb_delete      (Redblack node);

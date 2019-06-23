@@ -3,7 +3,7 @@ export CC=g++
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
 #TARGET_LOWER=linux_aio
-TARGET_ALGO=sftl
+TARGET_ALGO=red_tpftl
 
 
 
@@ -12,13 +12,14 @@ PPWD=$(pwd)
 DEBUGFLAGS=\
 			-rdynamic\
 			-Wno-pointer-arith\
+#			-fsanitize=address\
 #	-DBUSE_DEBUG
 
 COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-			-O2\
+#			-O2\
 
 #			-DWRITESYNC\
 

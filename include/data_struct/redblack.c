@@ -209,7 +209,7 @@ int rb_find_int(Redblack rb,int key, Redblack *node)
 	start_idx = x->key;
 	end_idx   = x->key + x->cnt;
 	while(x != rb_nil(rb) && !(key >= start_idx && key <= end_idx)){
-		x = (key < x->key) ? : x->left : x->right;
+		x = (key < x->key) ? x->left : x->right;
 		start_idx = x->key;
 		end_idx = x->key + x->cnt;
 	}
@@ -221,7 +221,7 @@ int rb_find_int(Redblack rb,int key, Redblack *node)
 	if (node) *node = x;
 
 #if TPFTL
-	return (x != rb_nil(rb) && (key >= start_idx && key <= end_idx))
+	return (x != rb_nil(rb) && (key >= start_idx && key <= end_idx));
 #else
 	return (x != rb_nil(rb) && key == x->key);
 #endif
@@ -235,7 +235,11 @@ int rb_find_int(Redblack rb,int key, Redblack *node)
  * Insert <item> into the red-black tree <rb> using the integer <key>.
  *
  */
+#if TPFTL
+Redblack rb_insert_int(	Redblack rb,int key, int32_t ppa, int8_t cnt)
+#else
 Redblack rb_insert_int(	Redblack rb,int key, int32_t ppa)
+#endif
 {
 	Redblack x = root(rb), y = x, z, r;
 
@@ -250,6 +254,9 @@ Redblack rb_insert_int(	Redblack rb,int key, int32_t ppa)
 	if (!(r = z)) return NULL;
 	z->key = key;
 	z->h_ppa = ppa;
+#if TPFTL
+	z->cnt = cnt;
+#endif
 	z->parent = y;
 	z->left  =
 		z->right = rb;

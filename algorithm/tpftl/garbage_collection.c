@@ -265,7 +265,7 @@ int32_t dpage_GC(){
 	    while(e_ptr != NULL){
 		    struct entry_node *ent_node = (struct entry_node *)e_ptr->DATA;
 		    int32_t head_lpn = ent_node->p_index;
-		    int32_t p_idx = head_lpn % EPP;
+		    int32_t p_idx = head_lpn;
 		    ent_node->ppa = c_table->p_table[p_idx].ppa;
 		    e_ptr = e_ptr->next;
 	    }

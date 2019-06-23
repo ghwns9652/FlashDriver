@@ -148,7 +148,7 @@ static void print_algo_log() {
 	if (num_max_cache == max_cache_entry) {
 		printf(" |---------- algorithm_log : Page FTL\n");
 	} else {
-		printf(" |---------- algorithm_log : RED TPFTL\n");
+		printf(" |---------- algorithm_log : HASH TPFTL\n");
 	}
 
 #endif
@@ -278,8 +278,9 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 	CMT[i].evic_flag = 0;
 	CMT[i].gc_flag = 0;
 	CMT[i].h_bitmap = (bool *)malloc(sizeof(bool) * EPP);
-	CMT[i].rb_tree = NULL;
-	//lru_init(&CMT[i].entry_lru);
+	CMT[i].s_bitmap = (bool *)malloc(sizeof(bool) * EPP);
+	CMT[i].ht_ptr = (hash_t *)malloc(sizeof(hash_t));
+    CMT[i].evic_idx = 0;	
 
     }
 
@@ -494,7 +495,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 	    }
 #endif
 	    req->type_ftl += 2;
-        if (free_cache_size < ENTRY_SIZE) {
+        if (free_cache_size < NODE_SIZE) {
             req->type_ftl += 1;
             if (demand_eviction(req, 'R', &gc_flag, &d_flag) == 0) {
 		 c_table->flying = true;
@@ -512,7 +513,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 	    if(req->mark)
 		    real_cache_w_miss++;
 #endif
-	if (free_cache_size < ENTRY_SIZE) {
+	if (free_cache_size < NODE_SIZE) {
             if (demand_eviction(req, 'W', &gc_flag, &d_flag) == 0) {
                 c_table->flying = true; 
 		c_table->evic_flag = 0;
@@ -527,7 +528,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
 	if(c_table->evic_flag){
 		c_table->evic_flag = 0;
 	}else{
-		c_table->flying_mapping_size = ENTRY_SIZE;
+		c_table->flying_mapping_size = NODE_SIZE;
 		free_cache_size -= c_table->flying_mapping_size;
 
 	}
@@ -547,7 +548,11 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     c_table->p_table   = mem_arr[D_IDX].mem_p;
     c_table->queue_ptr = lru_push(lru, (void*)c_table);
     c_table->state     = DIRTY;
-    c_table->rb_tree = rb_create();
+
+	tp_init_hash(c_table);
+	//hash_init(c_table->ht_ptr, BUCKET_SIZE);   //Init hash table
+    //Calculate init size of bucket pointers and bitmap for checking head entry
+	//free_cache_size -= BITMAP_SIZE + (c_table->ht_ptr->size * P_SIZE); 
 
     return 0;
 }
@@ -575,6 +580,7 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
             // not found
             printf("\nUnknown behavior: in demand_write_flying()\n");
         } else {
+			printf("nonono!\n");
             /* Case of initial state (t_ppa == -1) */
             c_table->p_table   = mem_arr[D_IDX].mem_p;
             c_table->queue_ptr = lru_push(lru, (void*)c_table);
@@ -630,7 +636,9 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 	ppa = c_table->p_table[P_IDX].ppa;
 	if(ppa != -1){
 		if(c_table->queue_ptr == NULL){
+			//Should insert hash init code in here
 			c_table->queue_ptr = lru_push(lru, (void *)c_table);
+			tp_init_hash(c_table);
 			prefetch_cnt++;
 			if(prefetch_cnt == 3){
 				prefetch_cnt = 0;
@@ -662,7 +670,12 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
 	
     }else{
 	    if(c_table->queue_ptr == NULL){
-		    c_table->queue_ptr = lru_push(lru, (void *)c_table);
+			c_table->queue_ptr = lru_push(lru, (void *)c_table);
+			
+			//printf("entries : %d\n",c_table->ht_ptr->entries);
+			//printf("entry_cnt : %d\n",c_table->entry_cnt);
+			
+			tp_init_hash(c_table);
 		    c_table->state     = DIRTY;
 		    BM_InvalidatePage(bm, t_ppa);
 	    }else{
@@ -701,8 +714,9 @@ static uint32_t __demand_get(request *const req){
     int32_t offset; // distacne to get ppa from entry node
     C_TABLE* c_table; // Cache mapping entry pointer
     D_TABLE *p_table; // pointer of p_table on cme
-    Redblack ent_node; //contents pointer within entry_node
-    Redblack check_node = NULL;
+    hash_node *ent_node; //contents pointer within entry_node
+    hash_node *check_node = NULL;
+	int32_t f_offset;
 #if W_BUFF
     snode *temp;
 #endif
@@ -734,13 +748,16 @@ static uint32_t __demand_get(request *const req){
 
     if (req->params == NULL) {
 #if B_TPFTL
-	if(c_table->h_bitmap[P_IDX]){
-		check_node = tp_entry_search(lpa);
-	}
-#else
-	check_node = tp_entry_search(lpa);
+		if(c_table->h_bitmap[P_IDX]){
+			if(c_table->s_bitmap[P_IDX]){
+				check_node = tp_entry_search(lpa, P_IDX);
+			}else{
+				f_offset = find_head_idx(lpa);
+				check_node = tp_entry_search(lpa, f_offset);
+			}
+		}
 #endif
-     	if (check_node != NULL) { // Cache hit
+		if (check_node != NULL) { // Cache hit
 	     
 	    if (p_table[P_IDX].ppa == -1) {
                 //bench_algo_end(req);
@@ -802,7 +819,7 @@ static uint32_t __demand_get(request *const req){
    // ppa = p_table[P_IDX].ppa;
     ent_node = c_table->read_ptr;
     offset = P_IDX - ent_node->key;
-    ppa = ent_node->h_ppa + offset; 
+    ppa = ent_node->data + offset; 
 
     /* 
     if(ppa != p_table[P_IDX].ppa){
@@ -1005,27 +1022,43 @@ static uint32_t __demand_set(request *const req){
 
     c_table->h_bitmap[P_IDX] = 1;
   
+	hash_node *tmp;
+    int32_t offset;
+	int32_t check_ppa;
+	if(c_table->s_bitmap[P_IDX]){
+		tmp = tp_entry_search(lpa , P_IDX);
 
-    /*
-	Redblack tmp = tp_entry_search(lpa);
-	
-	if(tmp == NULL){
-		printf("lpa = %d P_IDX = %d ppa = %d\n",lpa,P_IDX,c_table->p_table[P_IDX]);
-	    cache_single_entries(c_table);
-		exit(0);
+		if(tmp == NULL){
+			printf("\n");
+			cache_single_entries(c_table);
+			printf("1_lpa = %d P_IDX = %d ppa = %d\n",lpa,P_IDX,c_table->p_table[P_IDX].ppa);
+			//cache_single_entries(c_table);
+			exit(0);
+		}	
+		check_ppa = tmp->data;
+	}else{
+		int32_t f_offset = find_head_idx(lpa);
+		tmp = tp_entry_search(lpa, f_offset);
+		if(tmp == NULL){
+
+			printf("\n");
+			cache_single_entries(c_table);
+			printf("lpa = %d P_IDX = %d ppa = %d\n",lpa,P_IDX,c_table->p_table[P_IDX].ppa);
+			//cache_single_entries(c_table);
+			exit(0);
+		}
+		offset = P_IDX - tmp->key;
+		check_ppa = tmp->data + offset;
 	}
+
 	
-    int32_t offset = P_IDX - tmp->key;
-    int32_t check_ppa = tmp->h_ppa + offset;
-	*/
-    /*
 	if(check_ppa != ppa){
 	
 	   printf("check_ppa : %d ppa : %d\n",check_ppa, ppa);
-	   cache_single_entries(c_table);
+	   //cache_single_entries(c_table);
 		exit(0);
     }
-	*/
+	
 
     if(free_cache_size < 0){
 	bool gc_flag = false;
@@ -1302,16 +1335,21 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 	int32_t lpa = req->key;
 	bool dirty_flag = 0;
 	C_TABLE *c_table = &CMT[D_IDX];
-	int32_t start, end;
+	hash_node *evic_node = NULL;
+	int32_t bucket_size;
 #endif
 
 	//Select One-level LRU
 	
 	evict_count++;
-	cache_ptr = (C_TABLE *)lru_pop(lru);
+	cache_ptr = (C_TABLE *)lru->tail->DATA;
 	t_ppa     = cache_ptr->t_ppa;
 
-	if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
+	//printf("[NORMAL EVIC] cache_ptr->idx : %d\n",cache_ptr->idx);
+	evic_node = hash_eviction(cache_ptr, lpa, 1);
+
+	if(evic_node->state == DIRTY){ // When t_page on cache has changed
+
 		dirty_flag = 1;
 		dirty_eviction++;
 		if (req_t == 'W') {
@@ -1334,14 +1372,12 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 			//BM_InvalidatePage(bm, t_ppa);
 		}
 		//	printf("eviction!!\n");
-		tp_batch_update(cache_ptr,lpa, 1);
+		tp_batch_update(cache_ptr);
 
 		/* Write translation page */
 		t_ppa = tp_alloc(req_t, flag);
 		demand_OOB[t_ppa].lpa = cache_ptr->idx;
 
-		//cache_ptr->queue_ptr = NULL;
-		//cache_ptr->p_table   = NULL;
 		cache_ptr->t_ppa = t_ppa;
 		cache_ptr->state = CLEAN;
 		BM_ValidatePage(bm, t_ppa);
@@ -1360,8 +1396,8 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 		free(temp_req);
 #endif
 
-	} else {	
-		tp_batch_update(cache_ptr,lpa,1);
+	} else {
+
 		clean_eviction++;
 		if (req_t == 'W') {
 			clean_evict_on_write++;
@@ -1369,14 +1405,25 @@ uint32_t demand_eviction(request *const req, char req_t, bool *flag, bool *dflag
 			clean_evict_on_read++;
 		}
 	}
+	
+	//Free eviction node
+	free(evic_node);
+	if(cache_ptr->entry_cnt == 0){	
+		lru_pop(lru);
+		cache_ptr->queue_ptr= NULL;
 
-	if(cache_ptr->entry_cnt == 0){
-		cache_ptr->queue_ptr = NULL;
 		//cache_ptr->p_table   = NULL;
 		cache_ptr->last_ptr  = NULL;
+		cache_ptr->evic_idx = 0;	
+		//Return memory for bucket pointers and head bitmap
+		bucket_size = cache_ptr->ht_ptr->size;
+		c_table->flying_mapping_size += (bucket_size * P_SIZE + BITMAP_SIZE);
+		hash_destroy(cache_ptr->ht_ptr);
 		if(req_t == 'R')
 			prefetch_cnt--;
+
 	}
+
 	c_table->evic_flag = 1;
 	if(dirty_flag == 1){
 		return 0;
@@ -1395,18 +1442,30 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 	evict_count++;
 #if TPFTL
 	int32_t lpa = req->key;
+	int32_t bucket_size = 0;
 	 C_TABLE *c_table = &CMT[D_IDX];
+	 hash_node *evic_node = NULL;
 #endif
 
 	//cache_ptr = (C_TABLE*)lru_pop(lru); // call pop to get least used cache
 	//Select One-level LRU 
+	
 	while(free_cache_size < 0)
 	{
 		evict_count++;
-		cache_ptr = (C_TABLE *)lru_pop(lru);
-		t_ppa     = cache_ptr->t_ppa;
 
-		if(cache_ptr->state == DIRTY){ // When t_page on cache has changed
+		cache_ptr = (C_TABLE *)lru->tail->DATA;
+		/*
+		printf("free_cache_size : %d\n",free_cache_size);
+		printf("[HIT EVIC] cache_ptr->idx : %d\n",cache_ptr->idx);
+		printf("[HIT EVIC] entries        : %d\n",cache_ptr->ht_ptr->entries);
+		*/
+		t_ppa     = cache_ptr->t_ppa;
+		
+		evic_node = hash_eviction(cache_ptr, lpa, 0);
+	
+		if(evic_node->state == DIRTY){ // When t_page on cache has changed
+
 			dirty_eviction++;
 			if (req_t == 'W') {
 				dirty_evict_on_write++;
@@ -1427,7 +1486,7 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 
 				BM_InvalidatePage(bm, t_ppa);
 			}
-			tp_batch_update(cache_ptr,lpa, 0);
+			tp_batch_update(cache_ptr);
 
 			/* Write translation page */
 			t_ppa = tp_alloc(req_t, flag);
@@ -1454,19 +1513,26 @@ uint32_t demand_hit_eviction(request *const req, char req_t, bool *flag, bool *d
 #endif
 
 		} else {
+
 			clean_eviction++;
-			tp_batch_update(cache_ptr,lpa,0);
 			if (req_t == 'W') {
 				clean_evict_on_write++;
 			} else {
 				clean_evict_on_read++;
 			}
 		}
-
+		free(evic_node);
 		if(cache_ptr->entry_cnt == 0){
+			lru_pop(lru);
+			cache_single_entries(cache_ptr);
 			cache_ptr->entry_cnt = 0;
 			cache_ptr->queue_ptr = NULL;
 			cache_ptr->last_ptr  = NULL;
+			cache_ptr->evic_idx = 0;	
+			bucket_size = cache_ptr->ht_ptr->size;
+			free_cache_size += (bucket_size * P_SIZE + BITMAP_SIZE);
+			hash_destroy(cache_ptr->ht_ptr);
+
 			if(req_t == 'R')
 				prefetch_cnt--;
 		}
