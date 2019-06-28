@@ -36,9 +36,11 @@ uint8_t *bitmap;
 
 
 //used algorithm layer
+uint64_t trace_cdf[1000000/10+1];
 int32_t bench_write;
 int32_t bench_read;
 int32_t bench_total;
+
 
 static void bitmap_set(KEYT key){
 	uint32_t block=key/8;
@@ -262,6 +264,7 @@ void bench_print(){
 		_m=&_master->m[i];
 		bdata=&_master->datas[i];
 #ifdef CDF
+		printf("m_num : %d\n",_m->m_num);
 		bench_cdf_print(_m->m_num,_m->type,bdata);
 #endif
 		bench_ftl_cdf_print(bdata);
@@ -375,8 +378,9 @@ void bench_lower_end(request *const req){
 	MA(&req->lower);
 #endif
 }
-/*
+
 void bench_update_ftltime(bench_data *_d, request *const req){
+	/*	
 	bench_ftl_time *temp;
 	MC(&req->latency_ftl);
 	temp = &_d->ftl_poll[req->type_ftl][req->type_lower];
@@ -385,16 +389,17 @@ void bench_update_ftltime(bench_data *_d, request *const req){
 	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
 	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
 	temp->cnt++;
-		
+	*/
+	/*	
 	temp = &_d->ftl_npoll[req->type_ftl][req->type_lower];
 	req->latency_ftl.micro_time -= req->latency_poll.adding.tv_sec*1000000 + req->latency_poll.adding.tv_usec;
 	temp->total_micro += req->latency_ftl.micro_time;
 	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
 	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
 	temp->cnt++;
-	
+	*/
 }
-*/
+
 void bench_ftl_cdf_print(bench_data *_d){
 	//printf("polling\n");
 	printf("a_type\tl_type\tmax\tmin\tavg\tcnt\tpercentage\n");
@@ -506,9 +511,18 @@ void bench_reap_data(request *const req,lower_info *li){
 	}
 #ifdef CDF
 	int slot_num=req->latency_checker.micro_time/TIMESLOT;
-	if(req->type==FS_GET_T){
+	if(req->type==FS_GET_T){	
+		
+		if(req->mark){
+			if(slot_num>=1000000/TIMESLOT){
+				trace_cdf[1000000/TIMESLOT]++;
+			}else{
+				trace_cdf[slot_num]++;
+			}
+		}
 		if(slot_num>=1000000/TIMESLOT){
 			_data->read_cdf[1000000/TIMESLOT]++;
+
 		}
 		else{
 			_data->read_cdf[slot_num]++;

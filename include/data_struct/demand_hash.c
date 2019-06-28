@@ -8,7 +8,9 @@ static uint32_t hashing(hash_t *ht_ptr, uint32_t key){
 	res = (res+0xd3a2646c) ^ (res<<9);
 	res = (res+0xfd7046c5) + (res<<3);
 	res = (res^0xb55a4f09) ^ (res>>16);
+	
 	res = res % ht_ptr->size;
+	
 	return res;
 }
 
@@ -205,16 +207,16 @@ int32_t hash_delete(hash_t *ht_ptr, uint32_t key){
 	if(node == NULL)
 		return HASH_FAIL;
 #if TPFTL
-	h = hashing(ht_ptr, d_node->key);
+	h = hashing(ht_ptr, node->key);
 #endif
 
 
 	/* if node is at head of bucket, we have it easy */
-	if(node==ht_ptr->bucket[h]){
+	if(node == ht_ptr->bucket[h]){
 		ht_ptr->bucket[h] = node->next;
 	}else{
 		/* find the previous node before the node we want to remove */
-		for(last = ht_ptr->bucket[h]; last && last->next; last = last->next){
+		for(last = ht_ptr->bucket[h]; last->next != NULL; last = last->next){
 			if(last->next == node)
 				break;
 		}
@@ -240,7 +242,7 @@ int32_t hash_update_delete(hash_t *ht_ptr, hash_node *d_node){
 	if(d_node == ht_ptr->bucket[h]){
 		ht_ptr->bucket[h] = d_node->next;
 	}else{
-		for(last = ht_ptr->bucket[h]; last && last->next; last = last->next){
+		for(last = ht_ptr->bucket[h]; last->next != NULL; last = last->next){
 			if(last->next == d_node)
 				break;
 		}
@@ -309,6 +311,8 @@ void hash_destroy(hash_t *ht_ptr){
 	if(ht_ptr->bucket != NULL){	
 		free(ht_ptr->bucket_cnt);
 		free(ht_ptr->bucket);
+		ht_ptr->bucket_cnt = NULL;
+		ht_ptr->bucket = NULL;
 		memset(ht_ptr, 0, sizeof(hash_t));
 	}
 

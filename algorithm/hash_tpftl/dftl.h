@@ -168,7 +168,7 @@ extern int32_t tgc_w_dgc_count;
 extern int32_t free_cache_size;
 extern int32_t flying_cache_size;
 extern int32_t prefetch_cnt;
-
+extern hash_node *g_last_ptr;
 /* extern variables */
 
 // dftl.c

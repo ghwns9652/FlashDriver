@@ -25,7 +25,7 @@
 //TPC-C bench setting
 #define TPC_C_W_16     "/home/yumin/FlashDriver/bench/real_trace/tpc_16/tpc_write_16.out"
 #define TPC_C_BENCH_16 "/home/yumin/FlashDriver/bench/real_trace/tpc_16/tpc_bench_16.out"
-#define TPC_C_W_32     "/home/yumin/FlashDriver/bench/real_trace/tpc_32/tpc_write_32.out"
+#define TPC_C_W_32     "/home/yumin/FlashDriver/bench/real_trace/tpc_32/tpc_c_write_32.out"
 #define TPC_C_BENCH_32 "/home/yumin/FlashDriver/bench/real_trace/tpc_32/tpc_bench_32.out"
 
 //YCSB bench setting
@@ -112,9 +112,8 @@ typedef struct{
 	uint32_t error_cnt;
 }master;
 
-
 //Real bench parsing functions
-
+extern uint64_t trace_cdf[1000000/10+1];
 
 
 void bench_init();

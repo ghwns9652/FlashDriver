@@ -188,7 +188,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     max_cache_entry = (num_page / EPP) + ((num_page % EPP != 0) ? 1 : 0);
 
    
-    free_cache_size = ceil(1024 * PAGESIZE * 0.2); 
+    free_cache_size = ceil(1024 * PAGESIZE * 0.125); 
     total_cache_size = free_cache_size;
     prefetch_cnt = 0;
 
@@ -559,40 +559,49 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
     algo_req *temp_req;
 
     if(t_ppa != -1) {
-        //Make read flying request
-	dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
-        temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
+		//Make read flying request
+		((read_params*)req->params)->read = 1;
+        if(!inf_assign_try(req)) {
+              puts("not queued 1");
+             q_enqueue((void*)req, dftl_q);
+         }
 
-        //bench_algo_end(req);
-        __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
+		
+		//dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
+		//temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
 
-        return 1;
+		//bench_algo_end(req);
+		//__demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
-    } else {
-        if (req_t == 'R') {
-            // not found
-            printf("\nUnknown behavior: in demand_write_flying()\n");
-        } else {
-            /* Case of initial state (t_ppa == -1) */
-            c_table->p_table   = mem_arr[D_IDX].mem_p;
-            c_table->queue_ptr = lru_push(lru, (void*)c_table);
-            c_table->state     = DIRTY;
-            // Register reserved requests
-            for (int i = 0; i < c_table->num_waiting; i++) {
-                if (!inf_assign_try(c_table->flying_arr[i])) {
-                    puts("not queued 3");
-                    q_enqueue((void *)c_table->flying_arr[i], dftl_q);
-                }
-            }
-            c_table->num_waiting = 0;
-            c_table->flying = false;
-            for (int i = 0; i < waiting; i++) {
-                if (!inf_assign_try(waiting_arr[i])) {
-                    puts("not queued 5");
-                    q_enqueue((void *)waiting_arr[i], dftl_q);
-                }
-            }
-            waiting = 0;
+		return 1;
+
+	} else {
+		printf("No insert in Normal TPFTL!\n");
+		exit(0);
+		if (req_t == 'R') {
+			// not found
+			printf("\nUnknown behavior: in demand_write_flying()\n");
+		} else {
+			/* Case of initial state (t_ppa == -1) */
+			c_table->p_table   = mem_arr[D_IDX].mem_p;
+			c_table->queue_ptr = lru_push(lru, (void*)c_table);
+			c_table->state     = DIRTY;
+			// Register reserved requests
+			for (int i = 0; i < c_table->num_waiting; i++) {
+				if (!inf_assign_try(c_table->flying_arr[i])) {
+					puts("not queued 3");
+					q_enqueue((void *)c_table->flying_arr[i], dftl_q);
+				}
+			}
+			c_table->num_waiting = 0;
+			c_table->flying = false;
+			for (int i = 0; i < waiting; i++) {
+				if (!inf_assign_try(waiting_arr[i])) {
+					puts("not queued 5");
+					q_enqueue((void *)waiting_arr[i], dftl_q);
+				}
+			}
+			waiting = 0;
         }
     }
 

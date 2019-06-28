@@ -1,0 +1,2187 @@
+Binary file .git/objects/pack/pack-8831608674a14914bf025daccc002c8ce93f81f4.pack matches
+algorithm/hash_sftl/request_flow.txt:-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==1이기 때문에 read flying임을 알 수 있음
+algorithm/hash_sftl/request_flow.txt:-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==0이기 때문에 write flying임을 알 수 있음
+algorithm/hash_sftl/request_flow.txt:-> req->params != NULL 이고 params->read==1이니까 read flying
+algorithm/hash_sftl/request_flow.txt:--> req->params != NULL, flying을 보낸놈이고, params->read == 1이기 때문에 read_flying임을 알 수 있음
+algorithm/hash_sftl/request_flow.txt:--> req->params != NULL이고, flying request이면서, params->read == 0이기 때문에 write flying임을 알 수 있음
+algorithm/hash_sftl/request_flow.txt:--> req->params != NULL이고, params->read == 1 이니까 read flying임을 알 수 있음
+algorithm/hash_sftl/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/hash_sftl/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/hash_sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/hash_sftl/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/hash_sftl/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/hash_sftl/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/hash_sftl/garbage_collection.c:					params = (demand_params*)temp_req->params;
+algorithm/hash_sftl/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/hash_sftl/garbage_collection.c:			       params = (demand_params*)temp_req->params;
+algorithm/hash_sftl/dftl.c:    int lpa = req->key;
+algorithm/hash_sftl/dftl.c:    int lpa = req->key;
+algorithm/hash_sftl/dftl.c:    req->params = (void *)checker;
+algorithm/hash_sftl/dftl.c:	if(req->mark)
+algorithm/hash_sftl/dftl.c:	req->type_ftl += 2;
+algorithm/hash_sftl/dftl.c:		req->type_ftl += 1;
+algorithm/hash_sftl/dftl.c:			if(d_flag) req->type_ftl += 1;
+algorithm/hash_sftl/dftl.c:			if(gc_flag) req->type_ftl += 2;
+algorithm/hash_sftl/dftl.c:	if(req->mark)
+algorithm/hash_sftl/dftl.c:			if(d_flag) req->type_ftl += 1;
+algorithm/hash_sftl/dftl.c:			if(gc_flag) req->type_ftl += 2;
+algorithm/hash_sftl/dftl.c:    int lpa = req->key;
+algorithm/hash_sftl/dftl.c:    int lpa = req->key;
+algorithm/hash_sftl/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/hash_sftl/dftl.c:    lpa = req->key;
+algorithm/hash_sftl/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/hash_sftl/dftl.c:        req->type_ftl = 0;
+algorithm/hash_sftl/dftl.c:        req->type_lower = 0;
+algorithm/hash_sftl/dftl.c:        req->end_req(req);
+algorithm/hash_sftl/dftl.c:    if (req->params == NULL) {
+algorithm/hash_sftl/dftl.c:	if(req->mark)
+algorithm/hash_sftl/dftl.c:            req->type_ftl += 1;
+algorithm/hash_sftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/hash_sftl/dftl.c:    free(req->params);
+algorithm/hash_sftl/dftl.c:    req->params = NULL;
+algorithm/hash_sftl/dftl.c:    __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/hash_sftl/dftl.c:    lpa = req->key;
+algorithm/hash_sftl/dftl.c:    lpa = req->key;
+algorithm/hash_sftl/dftl.c:    if (req->params == NULL) {
+algorithm/hash_sftl/dftl.c:	    if(req->mark)
+algorithm/hash_sftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/hash_sftl/dftl.c:    free(req->params);
+algorithm/hash_sftl/dftl.c:    req->params = NULL;
+algorithm/hash_sftl/dftl.c:    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+algorithm/hash_sftl/dftl.c:	    req->value = NULL; // moved to 'value' field of snode
+algorithm/hash_sftl/dftl.c:	    req->end_req(req);
+algorithm/hash_sftl/dftl.c:			    params   = (demand_params *)temp_req->params;
+algorithm/hash_sftl/dftl.c:		if(d_flag) req->type_ftl +=1;
+algorithm/hash_sftl/dftl.c:		if(gc_flag) req->type_ftl +=2;
+algorithm/hash_sftl/dftl.c:    req->value = NULL; // moved to 'value' field of snode
+algorithm/hash_sftl/dftl.c:    req->end_req(req);
+algorithm/hash_sftl/dftl.c:    lpa = req->key;
+algorithm/hash_sftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/hash_sftl/dftl.c:        MS(&req->latency_poll);
+algorithm/hash_sftl/dftl.c:        MA(&req->latency_poll);
+algorithm/hash_sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/hash_sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/hash_sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/hash_sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/hash_sftl/dftl.c:        req->type = FS_NOTFOUND_T;
+algorithm/hash_sftl/dftl.c:        req->end_req(req);
+algorithm/hash_sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/hash_sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/hash_sftl/dftl.c:    req->end_req(req);
+algorithm/hash_sftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/hash_sftl/dftl.c:    lpa = req->key; 
+algorithm/hash_sftl/dftl.c:    req->m_w_cnt = req->m_w_max = 0;
+algorithm/hash_sftl/dftl.c:	    	req->m_w_max++;
+algorithm/hash_sftl/dftl.c:		    params = (demand_params*)temp_req->params;
+algorithm/hash_sftl/dftl.c:		    params = (demand_params*)temp_req->params;
+algorithm/hash_tpftl/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/hash_tpftl/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/hash_tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/hash_tpftl/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/hash_tpftl/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/hash_tpftl/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/hash_tpftl/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/hash_tpftl/dftl.c:    int lpa = req->key;
+algorithm/hash_tpftl/dftl.c:	int lpa = req->key;
+algorithm/hash_tpftl/dftl.c:	req->params = (void *)checker;
+algorithm/hash_tpftl/dftl.c:		if(req->mark){
+algorithm/hash_tpftl/dftl.c:		req->type_ftl += 2;
+algorithm/hash_tpftl/dftl.c:			req->type_ftl += 1;
+algorithm/hash_tpftl/dftl.c:				if(d_flag) req->type_ftl += 1;
+algorithm/hash_tpftl/dftl.c:				if(gc_flag) req->type_ftl += 2;
+algorithm/hash_tpftl/dftl.c:			if(gc_flag) req->type_ftl += 2;
+algorithm/hash_tpftl/dftl.c:		if(req->mark)
+algorithm/hash_tpftl/dftl.c:    int lpa = req->key;
+algorithm/hash_tpftl/dftl.c:		((read_params*)req->params)->read = 1;
+algorithm/hash_tpftl/dftl.c:    int lpa = req->key; 
+algorithm/hash_tpftl/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/hash_tpftl/dftl.c:    lpa = req->key;
+algorithm/hash_tpftl/dftl.c:    //printf("R--->req->seq = %d\n",req->seq);
+algorithm/hash_tpftl/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/hash_tpftl/dftl.c:        req->type_ftl = 0;
+algorithm/hash_tpftl/dftl.c:        req->type_lower = 0;
+algorithm/hash_tpftl/dftl.c:        req->end_req(req);
+algorithm/hash_tpftl/dftl.c:    if (req->params == NULL) {
+algorithm/hash_tpftl/dftl.c:            req->type_ftl += 1;
+algorithm/hash_tpftl/dftl.c:	    if(req->mark)
+algorithm/hash_tpftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/hash_tpftl/dftl.c:    req->type_ftl += 1;
+algorithm/hash_tpftl/dftl.c:    free(req->params);
+algorithm/hash_tpftl/dftl.c:    req->params = NULL;
+algorithm/hash_tpftl/dftl.c:	    //req->end_req(req);
+algorithm/hash_tpftl/dftl.c:	    if(d_flag) req->type_ftl +=1;
+algorithm/hash_tpftl/dftl.c:	    if(gc_flag) req->type_ftl +=2;	
+algorithm/hash_tpftl/dftl.c:	__demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/hash_tpftl/dftl.c:    lpa = req->key;
+algorithm/hash_tpftl/dftl.c:    lpa = req->key;
+algorithm/hash_tpftl/dftl.c:    if (req->params == NULL) {
+algorithm/hash_tpftl/dftl.c:	if(req->mark)
+algorithm/hash_tpftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/hash_tpftl/dftl.c:    free(req->params);
+algorithm/hash_tpftl/dftl.c:    req->params = NULL;
+algorithm/hash_tpftl/dftl.c:    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+algorithm/hash_tpftl/dftl.c:	    req->value = NULL; // moved to 'value' field of snode
+algorithm/hash_tpftl/dftl.c:	    req->end_req(req);
+algorithm/hash_tpftl/dftl.c:	if(d_flag) req->type_ftl +=1;
+algorithm/hash_tpftl/dftl.c:	if(gc_flag) req->type_ftl +=2;	
+algorithm/hash_tpftl/dftl.c:    req->value = NULL; // moved to 'value' field of snode
+algorithm/hash_tpftl/dftl.c:    req->end_req(req);
+algorithm/hash_tpftl/dftl.c:    lpa = req->key;
+algorithm/hash_tpftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/hash_tpftl/dftl.c:        MS(&req->latency_poll);
+algorithm/hash_tpftl/dftl.c:        MA(&req->latency_poll);
+algorithm/hash_tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/hash_tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/hash_tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/hash_tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/hash_tpftl/dftl.c:	req->type = FS_NOTFOUND_T;
+algorithm/hash_tpftl/dftl.c:        req->end_req(req);
+algorithm/hash_tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/hash_tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/hash_tpftl/dftl.c:    req->end_req(req);
+algorithm/hash_tpftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/hash_tpftl/dftl.c:	int32_t lpa = req->key;
+algorithm/hash_tpftl/dftl.c:			params   = (demand_params *)temp_req->params;
+algorithm/hash_tpftl/dftl.c:		params = (demand_params*)temp_req->params;
+algorithm/hash_tpftl/dftl.c:	int32_t lpa = req->key;
+algorithm/hash_tpftl/dftl.c:				params   = (demand_params *)temp_req->params;
+algorithm/hash_tpftl/dftl.c:			params = (demand_params*)temp_req->params;
+algorithm/normal/normal.c:	my_req->parents=req;
+algorithm/normal/normal.c:	my_req->end_req=normal_end_req;
+algorithm/normal/normal.c:	my_req->params=(void*)params;
+algorithm/normal/normal.c:	my_req->type=DATAR;
+algorithm/normal/normal.c:	__normal.li->pull_data(req->key,PAGESIZE,req->value,req->isAsync,my_req);
+algorithm/normal/normal.c:	my_req->parents=req;
+algorithm/normal/normal.c:	my_req->end_req=normal_end_req;
+algorithm/normal/normal.c:	my_req->type=DATAW;
+algorithm/normal/normal.c:	my_req->params=(void*)params;
+algorithm/normal/normal.c:	//	printf("key:%d\n",req->key);
+algorithm/normal/normal.c:	__normal.li->push_data(req->key,PAGESIZE,req->value,req->isAsync,my_req);
+algorithm/normal/normal.c:	__normal.li->trim_block(req->key,NULL);
+algorithm/sftl/request_flow.txt:-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==1이기 때문에 read flying임을 알 수 있음
+algorithm/sftl/request_flow.txt:-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==0이기 때문에 write flying임을 알 수 있음
+algorithm/sftl/request_flow.txt:-> req->params != NULL 이고 params->read==1이니까 read flying
+algorithm/sftl/request_flow.txt:--> req->params != NULL, flying을 보낸놈이고, params->read == 1이기 때문에 read_flying임을 알 수 있음
+algorithm/sftl/request_flow.txt:--> req->params != NULL이고, flying request이면서, params->read == 0이기 때문에 write flying임을 알 수 있음
+algorithm/sftl/request_flow.txt:--> req->params != NULL이고, params->read == 1 이니까 read flying임을 알 수 있음
+algorithm/sftl/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/sftl/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/sftl/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/sftl/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/sftl/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/sftl/garbage_collection.c:					params = (demand_params*)temp_req->params;
+algorithm/sftl/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/sftl/garbage_collection.c:			       params = (demand_params*)temp_req->params;
+algorithm/sftl/dftl.c:    int lpa = req->key;
+algorithm/sftl/dftl.c:    int lpa = req->key;
+algorithm/sftl/dftl.c:    req->params = (void *)checker;
+algorithm/sftl/dftl.c:	if(req->mark)
+algorithm/sftl/dftl.c:	req->type_ftl += 2;
+algorithm/sftl/dftl.c:		req->type_ftl += 1;
+algorithm/sftl/dftl.c:			if(d_flag) req->type_ftl += 1;
+algorithm/sftl/dftl.c:			if(gc_flag) req->type_ftl += 2;
+algorithm/sftl/dftl.c:	if(req->mark)
+algorithm/sftl/dftl.c:			if(d_flag) req->type_ftl += 1;
+algorithm/sftl/dftl.c:			if(gc_flag) req->type_ftl += 2;
+algorithm/sftl/dftl.c:    int lpa = req->key;
+algorithm/sftl/dftl.c:    int lpa = req->key;
+algorithm/sftl/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/sftl/dftl.c:	       if(req->mark)
+algorithm/sftl/dftl.c:	       if(req->mark)
+algorithm/sftl/dftl.c:    lpa = req->key;
+algorithm/sftl/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/sftl/dftl.c:        req->type_ftl = 0;
+algorithm/sftl/dftl.c:        req->type_lower = 0;
+algorithm/sftl/dftl.c:        req->end_req(req);
+algorithm/sftl/dftl.c:    if (req->params == NULL) {
+algorithm/sftl/dftl.c:	if(req->mark)
+algorithm/sftl/dftl.c:            req->type_ftl += 1;
+algorithm/sftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/sftl/dftl.c:    free(req->params);
+algorithm/sftl/dftl.c:    req->params = NULL;
+algorithm/sftl/dftl.c:	    if(req->mark)
+algorithm/sftl/dftl.c:     		 if(req->mark)
+algorithm/sftl/dftl.c:    //printf("R end req_seq = %d\n",req->seq);
+algorithm/sftl/dftl.c:    __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/sftl/dftl.c:    lpa = req->key;
+algorithm/sftl/dftl.c:    lpa = req->key;
+algorithm/sftl/dftl.c:    if (req->params == NULL) {
+algorithm/sftl/dftl.c:	    if(req->mark)
+algorithm/sftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/sftl/dftl.c:    free(req->params);
+algorithm/sftl/dftl.c:    req->params = NULL;
+algorithm/sftl/dftl.c:    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+algorithm/sftl/dftl.c:	    req->value = NULL; // moved to 'value' field of snode
+algorithm/sftl/dftl.c:	    req->end_req(req);
+algorithm/sftl/dftl.c:	    if(req->mark)
+algorithm/sftl/dftl.c:	    if(req->mark)
+algorithm/sftl/dftl.c:			params   = (demand_params *)temp_req->params;
+algorithm/sftl/dftl.c:			if(req->mark)
+algorithm/sftl/dftl.c:			if(req->mark)
+algorithm/sftl/dftl.c:	if(d_flag) req->type_ftl +=1;
+algorithm/sftl/dftl.c:	if(gc_flag) req->type_ftl +=2;
+algorithm/sftl/dftl.c:    req->value = NULL; // moved to 'value' field of snode
+algorithm/sftl/dftl.c:    req->end_req(req);
+algorithm/sftl/dftl.c:    lpa = req->key;
+algorithm/sftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/sftl/dftl.c:        MS(&req->latency_poll);
+algorithm/sftl/dftl.c:        MA(&req->latency_poll);
+algorithm/sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/sftl/dftl.c:        req->type = FS_NOTFOUND_T;
+algorithm/sftl/dftl.c:        req->end_req(req);
+algorithm/sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/sftl/dftl.c:    req->end_req(req);
+algorithm/sftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/sftl/dftl.c:  //  read_params *res = (read_params *)req->params;
+algorithm/sftl/dftl.c:  //printf("req->seq : %d\n",req->seq);
+algorithm/sftl/dftl.c:    lpa = req->key; 
+algorithm/sftl/dftl.c:    req->m_w_cnt = req->m_w_max = 0;
+algorithm/sftl/dftl.c:	    	req->m_w_max++;
+algorithm/sftl/dftl.c:		    if(req->mark)
+algorithm/sftl/dftl.c:		    if(req->mark)
+algorithm/sftl/dftl.c:		    params = (demand_params*)temp_req->params;
+algorithm/sftl/dftl.c:		    if(req->mark)
+algorithm/sftl/dftl.c:		    if(req->mark)
+algorithm/sftl/dftl.c:		    params = (demand_params*)temp_req->params;
+algorithm/page/page.c:	my_req->end_req=pbase_end_req;//allocate end_req for request.
+algorithm/page/page.c:	my_req->params=(void*)params;//allocate parameter for request.	
+algorithm/page/page.c:	KEYT target = lpa_to_ppa[req->key];
+algorithm/page/page.c:	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req,0);
+algorithm/page/page.c:	my_req->end_req = pbase_end_req;
+algorithm/page/page.c:	my_req->params = (void*)params;
+algorithm/page/page.c:	lpa_to_ppa[req->key] = PPA_status; //map ppa status to table.
+algorithm/page/page.c:	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req,0);
+algorithm/page/page.c:	lpa_to_ppa[req->key] = -1; //reset to default.
+algorithm/page/page_revised.c:	my_req->parents = req;
+algorithm/page/page_revised.c:	my_req->end_req=pbase_end_req;//allocate end_req for request.
+algorithm/page/page_revised.c:	KEYT target = page_TABLE[req->key].lpa_to_ppa;
+algorithm/page/page_revised.c:	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req,0);
+algorithm/page/page_revised.c:	my_req->parents = req;
+algorithm/page/page_revised.c:	my_req->end_req = pbase_end_req;
+algorithm/page/page_revised.c:	if (page_TABLE[req->key].lpa_to_ppa != -1)
+algorithm/page/page_revised.c:		int temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
+algorithm/page/page_revised.c:	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
+algorithm/page/page_revised.c:	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
+algorithm/page/page_revised.c:	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req,0);
+algorithm/page/page_revised.c:	page_TABLE[req->key].lpa_to_ppa = -1; //reset to default.
+algorithm/page/page_revised.c:	page_OOB[req->key].reverse_table = -1; //reset reverse_table to default.
+algorithm/page/page_revised.c:	my_req->end_req = pbase_algo_end_req; //request termination.
+algorithm/page/page_revised.c:	my_req->end_req = pbase_algo_end_req;
+algorithm/page/page_0130.c:	my_req->end_req = pbase_end_req;
+algorithm/page/page_0130.c:	my_req->params= (void*)params;
+algorithm/page/page_0130.c:	KEYT target = page_TABLE[req->key].lpa_to_ppa;
+algorithm/page/page_0130.c:	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req,0);
+algorithm/page/page_0130.c:	my_req->end_req = pbase_end_req;
+algorithm/page/page_0130.c:	my_req->params = (void*)params;
+algorithm/page/page_0130.c:	if (page_TABLE[req->key].lpa_to_ppa != -1)
+algorithm/page/page_0130.c:		int temp = page_TABLE[req->key].lpa_to_ppa;
+algorithm/page/page_0130.c:	page_TABLE[req->key].lpa_to_ppa = PPA_status;
+algorithm/page/page_0130.c:	page_OOB[PPA_status].reverse_table = req->key;
+algorithm/page/page_0130.c:	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req,0);
+algorithm/page/page_0130.c:	page_TABLE[req->key].lpa_to_ppa = -1;
+algorithm/page/page_0130.c:	page_OOB[req->key].reverse_table = -1;
+algorithm/page/page_0130.c:	my_req->end_req = pbase_algo_end_req;
+algorithm/page/page_0130.c:	my_req->end_req = pbase_algo_end_req;
+algorithm/page/page_0127.c:	my_req->end_req = pbase_end_req;
+algorithm/page/page_0127.c:	my_req->params= (void*)params;
+algorithm/page/page_0127.c:	KEYT target = page_TABLE[req->key].lpa_to_ppa;
+algorithm/page/page_0127.c:	algo_pbase.li->pull_data(target,PAGESIZE,req->value,0,my_req,0);
+algorithm/page/page_0127.c:	my_req->end_req = pbase_end_req;
+algorithm/page/page_0127.c:	my_req->params = (void*)params;
+algorithm/page/page_0127.c:	if (page_TABLE[req->key].lpa_to_ppa != -1)
+algorithm/page/page_0127.c:		int temp = page_TABLE[req->key].lpa_to_ppa;
+algorithm/page/page_0127.c:	page_TABLE[req->key].lpa_to_ppa = PPA_status;
+algorithm/page/page_0127.c:	page_OOB[PPA_status].reverse_table = req->key;
+algorithm/page/page_0127.c:	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,0,my_req,0);
+algorithm/page/page_0127.c:	page_TABLE[req->key].lpa_to_ppa = -1;
+algorithm/page/page_0127.c:	page_OOB[req->key].reverse_table = -1;
+Binary file algorithm/page/.page_revised.c.swp matches
+algorithm/ctoc/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/ctoc/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/ctoc/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/ctoc/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/ctoc/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/ctoc/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/ctoc/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/ctoc/dftl.c:	int lpa = req->key;
+algorithm/ctoc/dftl.c:    int lpa = req->key;
+algorithm/ctoc/dftl.c:    req->params = (void *)checker;
+algorithm/ctoc/dftl.c:        req->type_ftl += 2;
+algorithm/ctoc/dftl.c:            req->type_ftl += 1;
+algorithm/ctoc/dftl.c:            req->type_ftl += 1;
+algorithm/ctoc/dftl.c:                if(d_flag) req->type_ftl += 1;
+algorithm/ctoc/dftl.c:                if(gc_flag) req->type_ftl += 2;
+algorithm/ctoc/dftl.c:    int lpa = req->key;
+algorithm/ctoc/dftl.c:    int lpa = req->key;
+algorithm/ctoc/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/ctoc/dftl.c:    lpa = req->key;
+algorithm/ctoc/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/ctoc/dftl.c:        req->type_ftl = 0;
+algorithm/ctoc/dftl.c:        req->type_lower = 0;
+algorithm/ctoc/dftl.c:        req->end_req(req);
+algorithm/ctoc/dftl.c:	if (req->params == NULL) {
+algorithm/ctoc/dftl.c:			req->type_ftl += 1;
+algorithm/ctoc/dftl.c:		if (((read_params *)req->params)->read == 0) {
+algorithm/ctoc/dftl.c:	free(req->params);
+algorithm/ctoc/dftl.c:	req->params = NULL;
+algorithm/ctoc/dftl.c:	__demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/ctoc/dftl.c:    lpa = req->key;
+algorithm/ctoc/dftl.c:						((demand_params *)temp_req->params)->sn = temp;
+algorithm/ctoc/dftl.c:						((demand_params *)temp_req->params)->sn = temp;
+algorithm/ctoc/dftl.c:    lpa = req->key;
+algorithm/ctoc/dftl.c:    temp = skiplist_insert(mem_buf, lpa, req->value, true);
+algorithm/ctoc/dftl.c:    req->value = NULL; // moved to value field of snode
+algorithm/ctoc/dftl.c:    req->end_req(req);
+algorithm/ctoc/dftl.c:    lpa = req->key;
+algorithm/ctoc/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/ctoc/dftl.c:        MS(&req->latency_poll);
+algorithm/ctoc/dftl.c:        MA(&req->latency_poll);
+algorithm/ctoc/dftl.c:	if(req->params==NULL){
+algorithm/ctoc/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/ctoc/dftl.c:            temp_req->end_req(temp_req);
+algorithm/ctoc/dftl.c:        req->type = FS_NOTFOUND_T;
+algorithm/ctoc/dftl.c:        req->end_req(req);
+algorithm/ctoc/dftl.c:	if(req->params==NULL){
+algorithm/ctoc/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/ctoc/dftl.c:            temp_req->end_req(temp_req);
+algorithm/ctoc/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/ctoc/dftl.c:            temp_req->end_req(temp_req);
+algorithm/ctoc/dftl.c:    req->end_req(req);
+algorithm/ctoc/dftl.c:		((demand_params *)temp_req->params)->sn = sn;
+algorithm/ctoc/dftl.c:        params = (demand_params*)temp_req->params;
+algorithm/ctoc_batch/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/ctoc_batch/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/ctoc_batch/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/ctoc_batch/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/ctoc_batch/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/ctoc_batch/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/ctoc_batch/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/ctoc_batch/dftl.c:    int lpa = req->key;
+algorithm/ctoc_batch/dftl.c:    int lpa = req->key;
+algorithm/ctoc_batch/dftl.c:    req->params = (void *)checker;
+algorithm/ctoc_batch/dftl.c:        req->type_ftl += 2;
+algorithm/ctoc_batch/dftl.c:            req->type_ftl += 1;
+algorithm/ctoc_batch/dftl.c:            req->type_ftl += 1;
+algorithm/ctoc_batch/dftl.c:                if(d_flag) req->type_ftl += 1;
+algorithm/ctoc_batch/dftl.c:                if(gc_flag) req->type_ftl += 2;
+algorithm/ctoc_batch/dftl.c:    int lpa = req->key;
+algorithm/ctoc_batch/dftl.c:    int lpa = req->key;
+algorithm/ctoc_batch/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/ctoc_batch/dftl.c:    lpa = req->key;
+algorithm/ctoc_batch/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/ctoc_batch/dftl.c:        req->type_ftl = 0;
+algorithm/ctoc_batch/dftl.c:        req->type_lower = 0;
+algorithm/ctoc_batch/dftl.c:        req->end_req(req);
+algorithm/ctoc_batch/dftl.c:    if (req->params == NULL) {
+algorithm/ctoc_batch/dftl.c:            req->type_ftl += 1;
+algorithm/ctoc_batch/dftl.c:            req->type_ftl += 1;
+algorithm/ctoc_batch/dftl.c:        if (((read_params *)req->params)->read == 0) {
+algorithm/ctoc_batch/dftl.c:    free(req->params);
+algorithm/ctoc_batch/dftl.c:    req->params = NULL;
+algorithm/ctoc_batch/dftl.c:    __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/ctoc_batch/dftl.c:    lpa = req->key;
+algorithm/ctoc_batch/dftl.c:                        ((demand_params *)temp_req->params)->sn = temp;
+algorithm/ctoc_batch/dftl.c:                        ((demand_params *)temp_req->params)->sn = temp;
+algorithm/ctoc_batch/dftl.c:    lpa = req->key;
+algorithm/ctoc_batch/dftl.c:    temp = skiplist_insert(mem_buf, lpa, req->value, true);
+algorithm/ctoc_batch/dftl.c:    req->value = NULL; // moved to value field of snode
+algorithm/ctoc_batch/dftl.c:    req->end_req(req);
+algorithm/ctoc_batch/dftl.c:    lpa = req->key;
+algorithm/ctoc_batch/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/ctoc_batch/dftl.c:        MS(&req->latency_poll);
+algorithm/ctoc_batch/dftl.c:        MA(&req->latency_poll);
+algorithm/ctoc_batch/dftl.c:    if(req->params==NULL){
+algorithm/ctoc_batch/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/ctoc_batch/dftl.c:            temp_req->end_req(temp_req);
+algorithm/ctoc_batch/dftl.c:        req->type = FS_NOTFOUND_T;
+algorithm/ctoc_batch/dftl.c:        req->end_req(req);
+algorithm/ctoc_batch/dftl.c:    if(req->params==NULL){
+algorithm/ctoc_batch/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/ctoc_batch/dftl.c:            temp_req->end_req(temp_req);
+algorithm/ctoc_batch/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/ctoc_batch/dftl.c:            temp_req->end_req(temp_req);
+algorithm/ctoc_batch/dftl.c:    req->end_req(req);
+algorithm/ctoc_batch/dftl.c:            params = (demand_params *)temp_req->params;
+algorithm/ctoc_batch/dftl.c:        ((demand_params *)temp_req->params)->sn = sn;
+algorithm/ctoc_batch/dftl.c:        params = (demand_params*)temp_req->params;
+algorithm/new_pftl/page_utils.c:	pseudo_my_req->parents = req;
+algorithm/new_pftl/page_utils.c:	pseudo_my_req->end_req = pbase_end_req;
+algorithm/new_pftl/page_utils.c:	pseudo_my_req->params = (void*)params;
+algorithm/new_pftl/page.c:	lpa = req->key;
+algorithm/new_pftl/page.c:		req->type = FS_NOTFOUND_T;
+algorithm/new_pftl/page.c:		req->end_req(req);
+algorithm/new_pftl/page.c:	algo_pbase.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/new_pftl/page.c:	lpa = req->key;
+algorithm/new_pftl/page.c:	algo_pbase.li->push_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
+algorithm/new_pftl/page.c:	lpa = req->key;
+algorithm/red_tpftl/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/red_tpftl/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/red_tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/red_tpftl/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/red_tpftl/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/red_tpftl/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/red_tpftl/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/red_tpftl/dftl.c:    int lpa = req->key;
+algorithm/red_tpftl/dftl.c:    int lpa = req->key;
+algorithm/red_tpftl/dftl.c:    req->params = (void *)checker;
+algorithm/red_tpftl/dftl.c:	    if(req->mark){
+algorithm/red_tpftl/dftl.c:	    req->type_ftl += 2;
+algorithm/red_tpftl/dftl.c:            req->type_ftl += 1;
+algorithm/red_tpftl/dftl.c:                if(d_flag) req->type_ftl += 1;
+algorithm/red_tpftl/dftl.c:                if(gc_flag) req->type_ftl += 2;
+algorithm/red_tpftl/dftl.c:            if(gc_flag) req->type_ftl += 2;
+algorithm/red_tpftl/dftl.c:	    if(req->mark)
+algorithm/red_tpftl/dftl.c:	int lpa = req->key;
+algorithm/red_tpftl/dftl.c:		((read_params*)req->params)->read = 1;
+algorithm/red_tpftl/dftl.c:    int lpa = req->key; 
+algorithm/red_tpftl/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/red_tpftl/dftl.c:    lpa = req->key;
+algorithm/red_tpftl/dftl.c:    //printf("R--->req->seq = %d\n",req->seq);
+algorithm/red_tpftl/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/red_tpftl/dftl.c:        req->type_ftl = 0;
+algorithm/red_tpftl/dftl.c:        req->type_lower = 0;
+algorithm/red_tpftl/dftl.c:        req->end_req(req);
+algorithm/red_tpftl/dftl.c:    if (req->params == NULL) {
+algorithm/red_tpftl/dftl.c:            req->type_ftl += 1;
+algorithm/red_tpftl/dftl.c:	    if(req->mark)
+algorithm/red_tpftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/red_tpftl/dftl.c:    req->type_ftl += 1;
+algorithm/red_tpftl/dftl.c:    free(req->params);
+algorithm/red_tpftl/dftl.c:    req->params = NULL;
+algorithm/red_tpftl/dftl.c:	    //req->end_req(req);
+algorithm/red_tpftl/dftl.c:	   printf("req->seq = %d\n",req->seq);
+algorithm/red_tpftl/dftl.c:	    printf("req->seq_3 : %d\n",req->seq);
+algorithm/red_tpftl/dftl.c:	    if(d_flag) req->type_ftl +=1;
+algorithm/red_tpftl/dftl.c:	    if(gc_flag) req->type_ftl +=2;	
+algorithm/red_tpftl/dftl.c:    __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/red_tpftl/dftl.c:    lpa = req->key;
+algorithm/red_tpftl/dftl.c:    lpa = req->key;
+algorithm/red_tpftl/dftl.c:    if (req->params == NULL) {
+algorithm/red_tpftl/dftl.c:	if(req->mark)
+algorithm/red_tpftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/red_tpftl/dftl.c:    free(req->params);
+algorithm/red_tpftl/dftl.c:    req->params = NULL;
+algorithm/red_tpftl/dftl.c:    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+algorithm/red_tpftl/dftl.c:	    req->value = NULL; // moved to 'value' field of snode
+algorithm/red_tpftl/dftl.c:	    req->end_req(req);
+algorithm/red_tpftl/dftl.c:	if(d_flag) req->type_ftl +=1;
+algorithm/red_tpftl/dftl.c:	if(gc_flag) req->type_ftl +=2;	
+algorithm/red_tpftl/dftl.c:    req->value = NULL; // moved to 'value' field of snode
+algorithm/red_tpftl/dftl.c:    req->end_req(req);
+algorithm/red_tpftl/dftl.c:    lpa = req->key;
+algorithm/red_tpftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/red_tpftl/dftl.c:        MS(&req->latency_poll);
+algorithm/red_tpftl/dftl.c:        MA(&req->latency_poll);
+algorithm/red_tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/red_tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/red_tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/red_tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/red_tpftl/dftl.c:	req->type = FS_NOTFOUND_T;
+algorithm/red_tpftl/dftl.c:        req->end_req(req);
+algorithm/red_tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/red_tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/red_tpftl/dftl.c:    req->end_req(req);
+algorithm/red_tpftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/red_tpftl/dftl.c:	int32_t lpa = req->key;
+algorithm/red_tpftl/dftl.c:			params   = (demand_params *)temp_req->params;
+algorithm/red_tpftl/dftl.c:		params = (demand_params*)temp_req->params;
+algorithm/red_tpftl/dftl.c:	int32_t lpa = req->key;
+algorithm/red_tpftl/dftl.c:				params   = (demand_params *)temp_req->params;
+algorithm/red_tpftl/dftl.c:			params = (demand_params*)temp_req->params;
+algorithm/dftl_test/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/dftl_test/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/dftl_test/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/dftl_test/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/dftl_test/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/dftl_test/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/dftl_test/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/dftl_test/dftl.c:    int lpa = req->key;
+algorithm/dftl_test/dftl.c:    int lpa = req->key;
+algorithm/dftl_test/dftl.c:    req->params = (void *)checker;
+algorithm/dftl_test/dftl.c:        req->type_ftl += 2;
+algorithm/dftl_test/dftl.c:            req->type_ftl += 1;
+algorithm/dftl_test/dftl.c:            if(d_flag) req->type_ftl += 1;
+algorithm/dftl_test/dftl.c:            if(gc_flag) req->type_ftl += 2;
+algorithm/dftl_test/dftl.c:            req->type_ftl += 1;
+algorithm/dftl_test/dftl.c:                if(d_flag) req->type_ftl += 1;
+algorithm/dftl_test/dftl.c:                if(gc_flag) req->type_ftl += 2;
+algorithm/dftl_test/dftl.c:            if(gc_flag) req->type_ftl += 2;
+algorithm/dftl_test/dftl.c:    int lpa = req->key;
+algorithm/dftl_test/dftl.c:    int lpa = req->key;
+algorithm/dftl_test/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/dftl_test/dftl.c:    lpa = req->key;
+algorithm/dftl_test/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/dftl_test/dftl.c:        req->type_ftl = 0;
+algorithm/dftl_test/dftl.c:        req->type_lower = 0;
+algorithm/dftl_test/dftl.c:        req->end_req(req);
+algorithm/dftl_test/dftl.c:    if (req->params == NULL) {
+algorithm/dftl_test/dftl.c:            req->type_ftl += 1;
+algorithm/dftl_test/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/dftl_test/dftl.c:    free(req->params);
+algorithm/dftl_test/dftl.c:    req->params = NULL;
+algorithm/dftl_test/dftl.c:    __demand.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/dftl_test/dftl.c:    lpa = req->key;
+algorithm/dftl_test/dftl.c:						((demand_params *)temp_req->params)->sn = temp;
+algorithm/dftl_test/dftl.c:						((demand_params *)temp_req->params)->sn = temp;
+algorithm/dftl_test/dftl.c:                            ((demand_params *)temp_req->params)->sn = temp;
+algorithm/dftl_test/dftl.c:    lpa = req->key;
+algorithm/dftl_test/dftl.c:    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+algorithm/dftl_test/dftl.c:    req->value = NULL; // moved to 'value' field of snode
+algorithm/dftl_test/dftl.c:    req->end_req(req);
+algorithm/dftl_test/dftl.c:    lpa = req->key;
+algorithm/dftl_test/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/dftl_test/dftl.c:        MS(&req->latency_poll);
+algorithm/dftl_test/dftl.c:        MA(&req->latency_poll);
+algorithm/dftl_test/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/dftl_test/dftl.c:            temp_req->end_req(temp_req);
+algorithm/dftl_test/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/dftl_test/dftl.c:            temp_req->end_req(temp_req);
+algorithm/dftl_test/dftl.c:        req->type = FS_NOTFOUND_T;
+algorithm/dftl_test/dftl.c:        req->end_req(req);
+algorithm/dftl_test/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/dftl_test/dftl.c:            temp_req->end_req(temp_req);
+algorithm/dftl_test/dftl.c:    req->end_req(req);
+algorithm/dftl_test/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/dftl_test/dftl.c:        ((demand_params *)temp_req->params)->sn = sn;
+algorithm/Lsmtree/skiplist.c:	//	lsm_params *old_params=(lsm_params*)old_req->params;
+algorithm/Lsmtree/skiplist.c:	//	old_req->end_req(old_req);
+algorithm/Lsmtree/skiplist.c:			free(now->req->params);
+algorithm/Lsmtree/page.c:	lsm_req->parents=NULL;
+algorithm/Lsmtree/page.c:	lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/page.c:	lsm_req->params=(void*)params;
+algorithm/Lsmtree/page.c:	lsm_req->type_lower=0;
+algorithm/Lsmtree/page.c:	lsm_req->rapid=false;
+algorithm/Lsmtree/page.c:	lsm_req->type=BLOCKR;
+algorithm/Lsmtree/page.c:	lsm_req->parents=NULL;
+algorithm/Lsmtree/page.c:	lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/page.c:	lsm_req->params=(void*)params;
+algorithm/Lsmtree/page.c:	lsm_req->rapid=false;
+algorithm/Lsmtree/page.c:	lsm_req->type=BLOCKW;
+algorithm/Lsmtree/page.c:	areq->parents=NULL;
+algorithm/Lsmtree/page.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/page.c:	areq->params=(void*)params;
+algorithm/Lsmtree/page.c:	areq->type_lower=0;
+algorithm/Lsmtree/page.c:	areq->rapid=false;
+algorithm/Lsmtree/page.c:	areq->type=params->lsm_type;
+algorithm/Lsmtree/page.c:	areq->parents=NULL;
+algorithm/Lsmtree/page.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/page.c:	areq->params=(void*)params;
+algorithm/Lsmtree/page.c:	areq->type=params->lsm_type;
+algorithm/Lsmtree/page.c:	areq->rapid=false;
+algorithm/Lsmtree/compaction.c:			req->seq=seq_num++;
+algorithm/Lsmtree/compaction.c:		lsm_req->parents=NULL;
+algorithm/Lsmtree/compaction.c:		lsm_req->params=(void*)params;
+algorithm/Lsmtree/compaction.c:		lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/compaction.c:		lsm_req->rapid=true;
+algorithm/Lsmtree/compaction.c:		lsm_req->type=DATAW;
+algorithm/Lsmtree/compaction.c:	areq->parents=NULL;
+algorithm/Lsmtree/compaction.c:	areq->rapid=false;
+algorithm/Lsmtree/compaction.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/compaction.c:	areq->params=(void*)params;
+algorithm/Lsmtree/compaction.c:	areq->type=HEADERW;
+algorithm/Lsmtree/compaction.c:	areq->parents=NULL;
+algorithm/Lsmtree/compaction.c:	areq->rapid=false;
+algorithm/Lsmtree/compaction.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/compaction.c:	areq->params=(void*)params;
+algorithm/Lsmtree/compaction.c:	areq->type=HEADERW;
+algorithm/Lsmtree/compaction.c:		if(req->fromL==-1){
+algorithm/Lsmtree/compaction.c:		req->fromL=-1;
+algorithm/Lsmtree/compaction.c:		req->toL=0;
+algorithm/Lsmtree/compaction.c:	areq->parents=NULL;
+algorithm/Lsmtree/compaction.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/compaction.c:	areq->params=(void*)params;
+algorithm/Lsmtree/compaction.c:	areq->type_lower=0;
+algorithm/Lsmtree/compaction.c:	areq->rapid=false;
+algorithm/Lsmtree/compaction.c:	areq->type=HEADERR;
+algorithm/Lsmtree/lsmtree.c:	lsm_params *params=(lsm_params*)req->params;
+algorithm/Lsmtree/lsmtree.c:	request* parents=req->parents;
+algorithm/Lsmtree/lsmtree.c:			parents->type_lower=req->type_lower;
+algorithm/Lsmtree/lsmtree.c:	printf("key : %u\n",req->key);//for debug
+algorithm/Lsmtree/lsmtree.c:	if(req->type==FS_DELETE_T){
+algorithm/Lsmtree/lsmtree.c:		skiplist_insert(LSM.memtable,req->key,req->value,false);
+algorithm/Lsmtree/lsmtree.c:		skiplist_insert(LSM.memtable,req->key,req->value,true);
+algorithm/Lsmtree/lsmtree.c:	req->value=NULL;
+algorithm/Lsmtree/lsmtree.c:	//req->value will be ignored at free
+algorithm/Lsmtree/lsmtree.c:	MP(&req->latency_ftl);
+algorithm/Lsmtree/lsmtree.c:	req->end_req(req); //end write
+algorithm/Lsmtree/lsmtree.c:	//printf("seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/lsmtree.c:				//printf("from req not found seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/lsmtree.c:				tmp_req->type=tmp_req->type==FS_GET_T?FS_NOTFOUND_T:tmp_req->type;
+algorithm/Lsmtree/lsmtree.c:				tmp_req->end_req(tmp_req);
+algorithm/Lsmtree/lsmtree.c:		//printf("not found seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/lsmtree.c:		req->type=req->type==FS_GET_T?FS_NOTFOUND_T:req->type;
+algorithm/Lsmtree/lsmtree.c:		req->end_req(req);
+algorithm/Lsmtree/lsmtree.c:	lsm_req->params=params;
+algorithm/Lsmtree/lsmtree.c:	lsm_req->parents=parents;
+algorithm/Lsmtree/lsmtree.c:	lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/lsmtree.c:	lsm_req->type_lower=0;
+algorithm/Lsmtree/lsmtree.c:	lsm_req->rapid=true;
+algorithm/Lsmtree/lsmtree.c:	lsm_req->type=DATAR;
+algorithm/Lsmtree/lsmtree.c:		target_node=skiplist_find(list,req->key);
+algorithm/Lsmtree/lsmtree.c:		bench_cache_hit(req->mark);
+algorithm/Lsmtree/lsmtree.c:			memcpy(req->value->value,target_node->value->value,PAGESIZE);
+algorithm/Lsmtree/lsmtree.c:			req->end_req(req);
+algorithm/Lsmtree/lsmtree.c:			req->value->ppa=target_node->ppa;
+algorithm/Lsmtree/lsmtree.c:		target_set=LSM.lop->find_keyset((char*)entry->cpt_data->sets,req->key);
+algorithm/Lsmtree/lsmtree.c:			bench_cache_hit(req->mark);	
+algorithm/Lsmtree/lsmtree.c:			req->value->ppa=target_set->ppa;
+algorithm/Lsmtree/lsmtree.c:		target_set=LSM.lop->find_keyset((char*)table,req->key);
+algorithm/Lsmtree/lsmtree.c:			req->value->ppa=target_set->ppa;
+algorithm/Lsmtree/lsmtree.c:				new_target_set=LSM.lop->find_keyset((char*)table,temp_req->key);	
+algorithm/Lsmtree/lsmtree.c:				int *temp_params=(int*)temp_req->params;
+algorithm/Lsmtree/lsmtree.c:					temp_req->value->ppa=new_target_set->ppa;
+algorithm/Lsmtree/lsmtree.c:					LSM.li->pull_data(temp_req->value->ppa,PAGESIZE,temp_req->value,ASYNC,new_lsm_req);
+algorithm/Lsmtree/lsmtree.c:		free(lsm_req->params);
+algorithm/Lsmtree/lsmtree.c:		req->end_req(req);
+algorithm/Lsmtree/lsmtree.c:		LSM.li->pull_data(ppa/(PAGESIZE/PIECE),PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree.c:		LSM.li->pull_data(ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree.c:	lsm_params *params=(lsm_params*)lsm_req->params;
+algorithm/Lsmtree/lsmtree.c:	lsm_req->type=HEADERR;
+algorithm/Lsmtree/lsmtree.c:	LSM.li->pull_data(params->ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree.c:	if(req->params==NULL){
+algorithm/Lsmtree/lsmtree.c:		req->params=(void*)_temp_data;
+algorithm/Lsmtree/lsmtree.c:		int *temp_req=(int*)req->params;
+algorithm/Lsmtree/lsmtree.c:		mapinfo.sets=(keyset*)req->value->nocpy;
+algorithm/Lsmtree/lsmtree.c:		mapinfo.sets=(keyset*)req->value->value;
+algorithm/Lsmtree/lsmtree.c:		_entry=LSM.lop->find_run(LSM.disk[level],req->key);
+algorithm/Lsmtree/lsmtree.c:			keyset *find=LSM.lop->cache_find(LSM.disk[i],req->key);
+algorithm/Lsmtree/lsmtree.c:				req->value->ppa=find->ppa;
+algorithm/Lsmtree/lsmtree.c:				LSM.li->pull_data(find->ppa/(PAGESIZE/PIECE),PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree.c:				LSM.li->pull_data(find->ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree.c:		entries=LSM.lop->find_run(LSM.disk[i],req->key);
+algorithm/Lsmtree/lsmtree.c:		int *temp_data=(int*)req->params;
+algorithm/Lsmtree/lsmtree.c:					bench_cache_hit(req->mark);
+algorithm/Lsmtree/lsmtree.c:			if(!bf_check(entry->filter,req->key)){
+algorithm/Lsmtree/lsmtree.c:			lsm_params* params=(lsm_params*)lsm_req->params;
+algorithm/Lsmtree/lsmtree.c:			lsm_req->type=HEADERR;
+algorithm/Lsmtree/lsmtree.c:			req->ppa=params->ppa;
+algorithm/Lsmtree/lsmtree.c:			req->value->nocpy=nocpy_pick(params->ppa);
+algorithm/Lsmtree/lsmtree.c:			LSM.li->pull_data(params->ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/deprecated/skiplist.c:	//	lsm_params *old_params=(lsm_params*)old_req->params;
+algorithm/Lsmtree/deprecated/skiplist.c:	//	old_req->end_req(old_req);
+algorithm/Lsmtree/deprecated/skiplist.c:			free(now->req->params);
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->parents=NULL;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->params=(void*)params;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->type_lower=0;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->rapid=false;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->type=BLOCKR;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->parents=NULL;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->params=(void*)params;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->rapid=false;
+algorithm/Lsmtree/deprecated/page.c:	lsm_req->type=BLOCKW;
+algorithm/Lsmtree/deprecated/page.c:	areq->parents=NULL;
+algorithm/Lsmtree/deprecated/page.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/page.c:	areq->params=(void*)params;
+algorithm/Lsmtree/deprecated/page.c:	areq->type_lower=0;
+algorithm/Lsmtree/deprecated/page.c:	areq->rapid=false;
+algorithm/Lsmtree/deprecated/page.c:	areq->type=params->lsm_type;
+algorithm/Lsmtree/deprecated/page.c:	areq->parents=NULL;
+algorithm/Lsmtree/deprecated/page.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/page.c:	areq->params=(void*)params;
+algorithm/Lsmtree/deprecated/page.c:	areq->type=params->lsm_type;
+algorithm/Lsmtree/deprecated/page.c:	areq->rapid=false;
+algorithm/Lsmtree/deprecated/compaction.c_t:			req->seq=seq_num++;
+algorithm/Lsmtree/deprecated/compaction.c_t:		lsm_req->parents=NULL;
+algorithm/Lsmtree/deprecated/compaction.c_t:		lsm_req->params=(void*)params;
+algorithm/Lsmtree/deprecated/compaction.c_t:		lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/compaction.c_t:		lsm_req->rapid=true;
+algorithm/Lsmtree/deprecated/compaction.c_t:		lsm_req->type=DATAW;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->parents=NULL;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->rapid=false;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->params=(void*)params;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->type=HEADERW;
+algorithm/Lsmtree/deprecated/compaction.c_t:		if(req->fromL==-1){
+algorithm/Lsmtree/deprecated/compaction.c_t:		req->fromL=-1;
+algorithm/Lsmtree/deprecated/compaction.c_t:		req->toL=0;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->parents=NULL;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->params=(void*)params;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->type_lower=0;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->rapid=false;
+algorithm/Lsmtree/deprecated/compaction.c_t:	areq->type=HEADERR;
+algorithm/Lsmtree/deprecated/merge_compaction.c:	printf("[%d] %d~%d t:%p, tli:%p\n",cnt++,req->start,req->end,req->t, req->tli);
+algorithm/Lsmtree/deprecated/compaction.c:			req->seq=seq_num++;
+algorithm/Lsmtree/deprecated/compaction.c:		lsm_req->parents=NULL;
+algorithm/Lsmtree/deprecated/compaction.c:		lsm_req->params=(void*)params;
+algorithm/Lsmtree/deprecated/compaction.c:		lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/compaction.c:		lsm_req->rapid=true;
+algorithm/Lsmtree/deprecated/compaction.c:		lsm_req->type=DATAW;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->parents=NULL;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->rapid=false;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->params=(void*)params;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->type=HEADERW;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->parents=NULL;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->rapid=false;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->params=(void*)params;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->type=HEADERW;
+algorithm/Lsmtree/deprecated/compaction.c:		if(req->fromL==-1){
+algorithm/Lsmtree/deprecated/compaction.c:		req->fromL=-1;
+algorithm/Lsmtree/deprecated/compaction.c:		req->toL=0;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->parents=NULL;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->params=(void*)params;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->type_lower=0;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->rapid=false;
+algorithm/Lsmtree/deprecated/compaction.c:	areq->type=HEADERR;
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_params *params=(lsm_params*)req->params;
+algorithm/Lsmtree/deprecated/lsmtree.c:	request* parents=req->parents;
+algorithm/Lsmtree/deprecated/lsmtree.c:			parents->type_lower=req->type_lower;
+algorithm/Lsmtree/deprecated/lsmtree.c:		printf("key : %u\n",req->key);//for debug
+algorithm/Lsmtree/deprecated/lsmtree.c:	if(req->type==FS_DELETE_T){
+algorithm/Lsmtree/deprecated/lsmtree.c:		skiplist_insert(LSM.memtable,req->key,req->value,false);
+algorithm/Lsmtree/deprecated/lsmtree.c:		skiplist_insert(LSM.memtable,req->key,req->value,true);
+algorithm/Lsmtree/deprecated/lsmtree.c:	req->value=NULL;
+algorithm/Lsmtree/deprecated/lsmtree.c:	//req->value will be ignored at free
+algorithm/Lsmtree/deprecated/lsmtree.c:	MP(&req->latency_ftl);
+algorithm/Lsmtree/deprecated/lsmtree.c:	req->end_req(req); //end write
+algorithm/Lsmtree/deprecated/lsmtree.c:	//printf("seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:				printf("from req not found seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:				tmp_req->type=FS_NOTFOUND_T;
+algorithm/Lsmtree/deprecated/lsmtree.c:				tmp_req->end_req(tmp_req);
+algorithm/Lsmtree/deprecated/lsmtree.c://		printf("not found seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:		req->type=FS_NOTFOUND_T;
+algorithm/Lsmtree/deprecated/lsmtree.c:		req->end_req(req);
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_req->params=params;
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_req->parents=parents;
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_req->type_lower=0;
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_req->rapid=true;
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_req->type=DATAR;
+algorithm/Lsmtree/deprecated/lsmtree.c:		target_node=skiplist_find(list,req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:		bench_cache_hit(req->mark);
+algorithm/Lsmtree/deprecated/lsmtree.c:			memcpy(req->value->value,target_node->value->value,PAGESIZE);
+algorithm/Lsmtree/deprecated/lsmtree.c:			req->end_req(req);
+algorithm/Lsmtree/deprecated/lsmtree.c:			req->value->ppa=target_node->ppa;
+algorithm/Lsmtree/deprecated/lsmtree.c:		target_set=htable_find(entry->t_table->sets,req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:			bench_cache_hit(req->mark);	
+algorithm/Lsmtree/deprecated/lsmtree.c:			req->value->ppa=target_set->ppa;
+algorithm/Lsmtree/deprecated/lsmtree.c:		target_set=htable_find(table,req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:			req->value->ppa=target_set->ppa;
+algorithm/Lsmtree/deprecated/lsmtree.c:		free(lsm_req->params);
+algorithm/Lsmtree/deprecated/lsmtree.c:		req->end_req(req);
+algorithm/Lsmtree/deprecated/lsmtree.c:		LSM.li->pull_data(ppa/(PAGESIZE/PIECE),PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/deprecated/lsmtree.c:		LSM.li->pull_data(ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_params *params=(lsm_params*)lsm_req->params;
+algorithm/Lsmtree/deprecated/lsmtree.c:	lsm_req->type=HEADERR;
+algorithm/Lsmtree/deprecated/lsmtree.c:	LSM.li->pull_data(params->ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/deprecated/lsmtree.c:	if(req->params==NULL){
+algorithm/Lsmtree/deprecated/lsmtree.c:		req->params=(void*)_temp_data;
+algorithm/Lsmtree/deprecated/lsmtree.c:		int *temp_req=(int*)req->params;
+algorithm/Lsmtree/deprecated/lsmtree.c:		mapinfo.sets=(keyset*)req->value->value;
+algorithm/Lsmtree/deprecated/lsmtree.c:		KEYT offset=req->key%KEYNUM;
+algorithm/Lsmtree/deprecated/lsmtree.c:		LSM.li->pull_data(mapinfo.sets[offset].ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/deprecated/lsmtree.c:		KEYT tppa=find_S_ent(&LSM.disk[level]->o_ent[run],req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:			LSM.li->pull_data(tppa,PAGESIZE,req->value,ASYNC,mreq);
+algorithm/Lsmtree/deprecated/lsmtree.c:		Entry **_entry=level_find(LSM.disk[level],req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:		int *temp_data=(int*)req->params;
+algorithm/Lsmtree/deprecated/lsmtree.c:		o_entry *toent=find_O_ent(LSM.disk[i],req->key,(uint32_t*)&temp_data[1]);
+algorithm/Lsmtree/deprecated/lsmtree.c:		KEYT p=req->key/KEYNUM;
+algorithm/Lsmtree/deprecated/lsmtree.c:		int *temp_data=(int*)req->params;
+algorithm/Lsmtree/deprecated/lsmtree.c:		entries=level_find(LSM.disk[i],req->key);
+algorithm/Lsmtree/deprecated/lsmtree.c:			int *temp_data=(int*)req->params;
+algorithm/Lsmtree/deprecated/lsmtree.c:			if(!bf_check(entry->filter,req->key)){
+algorithm/Lsmtree/deprecated/lsmtree.c:			lsm_params* params=(lsm_params*)lsm_req->params;
+algorithm/Lsmtree/deprecated/lsmtree.c:			lsm_req->type=HEADERR;
+algorithm/Lsmtree/deprecated/lsmtree.c:				mapinfo.sets=(keyset*)__req->value->value;
+algorithm/Lsmtree/deprecated/lsmtree.c:			LSM.li->pull_data(params->ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/deprecated/lsmtree.c:			if(!req->isAsync){
+algorithm/Lsmtree/deprecated/lsmtree.c:				mapinfo.sets=(keyset*)req->value->value;
+algorithm/Lsmtree/deprecated/lsmtree.c:	if(!level_all_check_ext(req->key)){
+algorithm/Lsmtree/deprecated/lsmtree.c:		req->end_req(req);
+algorithm/Lsmtree/factory.c:		l_params=(lsm_params*)lsm_req->params;
+algorithm/Lsmtree/factory.c:		request* req=lsm_req->parents;
+algorithm/Lsmtree/factory.c:		value_set *origin_valueset=req->value;
+algorithm/Lsmtree/factory.c:				origin_valueset=req->value;
+algorithm/Lsmtree/factory.c:				req->value=f_grep_data(req->key,origin_valueset->ppa,origin_valueset->value);
+algorithm/Lsmtree/factory.c:				if(req->value==NULL){
+algorithm/Lsmtree/factory.c:					printf("not_found %d\n",req->key);
+algorithm/Lsmtree/factory.c:					req->type=FS_NOTFOUND_T;
+algorithm/Lsmtree/factory.c:					req->value=origin_valueset;
+algorithm/Lsmtree/factory.c:			req->end_req(req);
+algorithm/Lsmtree/lsmtree_org.c:	lsm_params *params=(lsm_params*)req->params;
+algorithm/Lsmtree/lsmtree_org.c:	request* parents=req->parents;
+algorithm/Lsmtree/lsmtree_org.c:			parents->type_lower=req->type_lower;
+algorithm/Lsmtree/lsmtree_org.c://	printf("seq:%d\n",req->seq);
+algorithm/Lsmtree/lsmtree_org.c:	if(req->seq==16616){
+algorithm/Lsmtree/lsmtree_org.c:		printf("key : %u\n",req->key);//for debug
+algorithm/Lsmtree/lsmtree_org.c:	if(req->type==FS_DELETE_T){
+algorithm/Lsmtree/lsmtree_org.c:		skiplist_insert(LSM.memtable,req->key,req->value,false);
+algorithm/Lsmtree/lsmtree_org.c:		skiplist_insert(LSM.memtable,req->key,req->value,true);
+algorithm/Lsmtree/lsmtree_org.c:	req->value=NULL;
+algorithm/Lsmtree/lsmtree_org.c:	//req->value will be ignored at free
+algorithm/Lsmtree/lsmtree_org.c:	MP(&req->latency_ftl);
+algorithm/Lsmtree/lsmtree_org.c:	req->end_req(req); //end write
+algorithm/Lsmtree/lsmtree_org.c:	//printf("seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/lsmtree_org.c:				//printf("from req not found seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/lsmtree_org.c:				tmp_req->type=tmp_req->type==FS_GET_T?FS_NOTFOUND_T:tmp_req->type;
+algorithm/Lsmtree/lsmtree_org.c:				tmp_req->end_req(tmp_req);
+algorithm/Lsmtree/lsmtree_org.c:		//printf("not found seq: %d, key:%u\n",nor++,req->key);
+algorithm/Lsmtree/lsmtree_org.c:		req->type=req->type==FS_GET_T?FS_NOTFOUND_T:req->type;
+algorithm/Lsmtree/lsmtree_org.c:		req->end_req(req);
+algorithm/Lsmtree/lsmtree_org.c:	lsm_req->params=params;
+algorithm/Lsmtree/lsmtree_org.c:	lsm_req->parents=parents;
+algorithm/Lsmtree/lsmtree_org.c:	lsm_req->end_req=lsm_end_req;
+algorithm/Lsmtree/lsmtree_org.c:	lsm_req->type_lower=0;
+algorithm/Lsmtree/lsmtree_org.c:	lsm_req->rapid=true;
+algorithm/Lsmtree/lsmtree_org.c:	lsm_req->type=DATAR;
+algorithm/Lsmtree/lsmtree_org.c:		target_node=skiplist_find(list,req->key);
+algorithm/Lsmtree/lsmtree_org.c:		bench_cache_hit(req->mark);
+algorithm/Lsmtree/lsmtree_org.c:			memcpy(req->value->value,target_node->value->value,PAGESIZE);
+algorithm/Lsmtree/lsmtree_org.c:			req->end_req(req);
+algorithm/Lsmtree/lsmtree_org.c:			req->value->ppa=target_node->ppa;
+algorithm/Lsmtree/lsmtree_org.c:		target_set=LSM.lop->find_keyset((char*)entry->cpt_data->sets,req->key);
+algorithm/Lsmtree/lsmtree_org.c:			bench_cache_hit(req->mark);	
+algorithm/Lsmtree/lsmtree_org.c:			req->value->ppa=target_set->ppa;
+algorithm/Lsmtree/lsmtree_org.c:		target_set=LSM.lop->find_keyset((char*)table,req->key);
+algorithm/Lsmtree/lsmtree_org.c:				bench_cache_hit(req->mark);
+algorithm/Lsmtree/lsmtree_org.c:			req->value->ppa=target_set->ppa;
+algorithm/Lsmtree/lsmtree_org.c:				new_target_set=LSM.lop->find_keyset((char*)table,temp_req->key);	
+algorithm/Lsmtree/lsmtree_org.c:				int *temp_params=(int*)temp_req->params;
+algorithm/Lsmtree/lsmtree_org.c:					temp_req->value->ppa=new_target_set->ppa;
+algorithm/Lsmtree/lsmtree_org.c:					LSM.li->pull_data(temp_req->value->ppa,PAGESIZE,temp_req->value,ASYNC,new_lsm_req);
+algorithm/Lsmtree/lsmtree_org.c:		free(lsm_req->params);
+algorithm/Lsmtree/lsmtree_org.c:		req->end_req(req);
+algorithm/Lsmtree/lsmtree_org.c:		LSM.li->pull_data(ppa/(PAGESIZE/PIECE),PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree_org.c:		LSM.li->pull_data(ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree_org.c:	lsm_params *params=(lsm_params*)lsm_req->params;
+algorithm/Lsmtree/lsmtree_org.c:	lsm_req->type=HEADERR;
+algorithm/Lsmtree/lsmtree_org.c:	LSM.li->pull_data(params->ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree_org.c:	if(req->params==NULL){
+algorithm/Lsmtree/lsmtree_org.c:		req->params=(void*)_temp_data;
+algorithm/Lsmtree/lsmtree_org.c:		int *temp_req=(int*)req->params;
+algorithm/Lsmtree/lsmtree_org.c:		mapinfo.sets=(keyset*)req->value->nocpy;
+algorithm/Lsmtree/lsmtree_org.c:		mapinfo.sets=(keyset*)req->value->value;
+algorithm/Lsmtree/lsmtree_org.c:		_entry=LSM.lop->find_run(LSM.disk[level],req->key);
+algorithm/Lsmtree/lsmtree_org.c:			keyset *find=LSM.lop->cache_find(LSM.disk[i],req->key);
+algorithm/Lsmtree/lsmtree_org.c:				req->value->ppa=find->ppa;
+algorithm/Lsmtree/lsmtree_org.c:				LSM.li->pull_data(find->ppa/(PAGESIZE/PIECE),PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree_org.c:				LSM.li->pull_data(find->ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/Lsmtree/lsmtree_org.c:		entries=LSM.lop->find_run(LSM.disk[i],req->key);
+algorithm/Lsmtree/lsmtree_org.c:		int *temp_data=(int*)req->params;
+algorithm/Lsmtree/lsmtree_org.c:			if(!bf_check(entry->filter,req->key)){
+algorithm/Lsmtree/lsmtree_org.c:			lsm_params* params=(lsm_params*)lsm_req->params;
+algorithm/Lsmtree/lsmtree_org.c:			lsm_req->type=HEADERR;
+algorithm/Lsmtree/lsmtree_org.c:			req->ppa=params->ppa;
+algorithm/Lsmtree/lsmtree_org.c:			req->value->nocpy=nocpy_pick(params->ppa);
+algorithm/Lsmtree/lsmtree_org.c:			LSM.li->pull_data(params->ppa,PAGESIZE,req->value,ASYNC,lsm_req);
+algorithm/tpftl/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/tpftl/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/tpftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/tpftl/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/tpftl/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/tpftl/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/tpftl/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/tpftl/dftl.c:    int lpa = req->key;
+algorithm/tpftl/dftl.c:    int lpa = req->key;
+algorithm/tpftl/dftl.c:    req->params = (void *)checker;
+algorithm/tpftl/dftl.c:	    if(req->mark){
+algorithm/tpftl/dftl.c:	    req->type_ftl += 2;
+algorithm/tpftl/dftl.c:            req->type_ftl += 1;
+algorithm/tpftl/dftl.c:                if(d_flag) req->type_ftl += 1;
+algorithm/tpftl/dftl.c:                if(gc_flag) req->type_ftl += 2;
+algorithm/tpftl/dftl.c:            if(gc_flag) req->type_ftl += 2;
+algorithm/tpftl/dftl.c:	    if(req->mark)
+algorithm/tpftl/dftl.c:    int lpa = req->key;
+algorithm/tpftl/dftl.c:		((read_params*)req->params)->read = 1;
+algorithm/tpftl/dftl.c:    int lpa = req->key; 
+algorithm/tpftl/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/tpftl/dftl.c:    lpa = req->key;
+algorithm/tpftl/dftl.c:    //printf("R--->req->seq = %d\n",req->seq);
+algorithm/tpftl/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/tpftl/dftl.c:        req->type_ftl = 0;
+algorithm/tpftl/dftl.c:        req->type_lower = 0;
+algorithm/tpftl/dftl.c:        req->end_req(req);
+algorithm/tpftl/dftl.c:    if (req->params == NULL) {
+algorithm/tpftl/dftl.c:            req->type_ftl += 1;
+algorithm/tpftl/dftl.c:	    if(req->mark)
+algorithm/tpftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/tpftl/dftl.c:    req->type_ftl += 1;
+algorithm/tpftl/dftl.c:    free(req->params);
+algorithm/tpftl/dftl.c:    req->params = NULL;
+algorithm/tpftl/dftl.c:	    //req->end_req(req);
+algorithm/tpftl/dftl.c:	   printf("req->seq = %d\n",req->seq);
+algorithm/tpftl/dftl.c:	    printf("req->seq_3 : %d\n",req->seq);
+algorithm/tpftl/dftl.c:	    if(d_flag) req->type_ftl +=1;
+algorithm/tpftl/dftl.c:	    if(gc_flag) req->type_ftl +=2;	
+algorithm/tpftl/dftl.c:    __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/tpftl/dftl.c:    lpa = req->key;
+algorithm/tpftl/dftl.c:    lpa = req->key;
+algorithm/tpftl/dftl.c:    if (req->params == NULL) {
+algorithm/tpftl/dftl.c:	if(req->mark)
+algorithm/tpftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/tpftl/dftl.c:    free(req->params);
+algorithm/tpftl/dftl.c:    req->params = NULL;
+algorithm/tpftl/dftl.c:    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+algorithm/tpftl/dftl.c:	    req->value = NULL; // moved to 'value' field of snode
+algorithm/tpftl/dftl.c:	    req->end_req(req);
+algorithm/tpftl/dftl.c:	if(d_flag) req->type_ftl +=1;
+algorithm/tpftl/dftl.c:	if(gc_flag) req->type_ftl +=2;	
+algorithm/tpftl/dftl.c:    req->value = NULL; // moved to 'value' field of snode
+algorithm/tpftl/dftl.c:    req->end_req(req);
+algorithm/tpftl/dftl.c:    lpa = req->key;
+algorithm/tpftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/tpftl/dftl.c:        MS(&req->latency_poll);
+algorithm/tpftl/dftl.c:        MA(&req->latency_poll);
+algorithm/tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/tpftl/dftl.c:	req->type = FS_NOTFOUND_T;
+algorithm/tpftl/dftl.c:        req->end_req(req);
+algorithm/tpftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/tpftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/tpftl/dftl.c:    req->end_req(req);
+algorithm/tpftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/tpftl/dftl.c:	int32_t lpa = req->key;
+algorithm/tpftl/dftl.c:			params   = (demand_params *)temp_req->params;
+algorithm/tpftl/dftl.c:		params = (demand_params*)temp_req->params;
+algorithm/tpftl/dftl.c:	int32_t lpa = req->key;
+algorithm/tpftl/dftl.c:				params   = (demand_params *)temp_req->params;
+algorithm/tpftl/dftl.c:			params = (demand_params*)temp_req->params;
+algorithm/dftl/request_flow.txt:-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==1이기 때문에 read flying임을 알 수 있음
+algorithm/dftl/request_flow.txt:-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==0이기 때문에 write flying임을 알 수 있음
+algorithm/dftl/request_flow.txt:-> req->params != NULL 이고 params->read==1이니까 read flying
+algorithm/dftl/request_flow.txt:--> req->params != NULL, flying을 보낸놈이고, params->read == 1이기 때문에 read_flying임을 알 수 있음
+algorithm/dftl/request_flow.txt:--> req->params != NULL이고, flying request이면서, params->read == 0이기 때문에 write flying임을 알 수 있음
+algorithm/dftl/request_flow.txt:--> req->params != NULL이고, params->read == 1 이니까 read flying임을 알 수 있음
+algorithm/dftl/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/dftl/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/dftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/dftl/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/dftl/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/dftl/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/dftl/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/dftl/dftl.c:    int lpa = req->key;
+algorithm/dftl/dftl.c:    int lpa = req->key;
+algorithm/dftl/dftl.c:    req->params = (void *)checker;
+algorithm/dftl/dftl.c:	if(req->mark)
+algorithm/dftl/dftl.c:        req->type_ftl += 2;
+algorithm/dftl/dftl.c:            req->type_ftl += 1;
+algorithm/dftl/dftl.c:            if(d_flag) req->type_ftl += 1;
+algorithm/dftl/dftl.c:            if(gc_flag) req->type_ftl += 2;
+algorithm/dftl/dftl.c:            req->type_ftl += 1;
+algorithm/dftl/dftl.c:                if(d_flag) req->type_ftl += 1;
+algorithm/dftl/dftl.c:                if(gc_flag) req->type_ftl += 2;
+algorithm/dftl/dftl.c:            if(gc_flag) req->type_ftl += 2;
+algorithm/dftl/dftl.c:	if(req->mark)
+algorithm/dftl/dftl.c:    int lpa = req->key;
+algorithm/dftl/dftl.c:    int lpa = req->key;
+algorithm/dftl/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/dftl/dftl.c:    lpa = req->key;
+algorithm/dftl/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/dftl/dftl.c:        req->type_ftl = 0;
+algorithm/dftl/dftl.c:        req->type_lower = 0;
+algorithm/dftl/dftl.c:        req->end_req(req);
+algorithm/dftl/dftl.c:    if (req->params == NULL) {
+algorithm/dftl/dftl.c:	if(req->mark)
+algorithm/dftl/dftl.c:            req->type_ftl += 1;
+algorithm/dftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/dftl/dftl.c:    free(req->params);
+algorithm/dftl/dftl.c:    req->params = NULL;
+algorithm/dftl/dftl.c:    __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/dftl/dftl.c:    lpa = req->key;
+algorithm/dftl/dftl.c:    lpa = req->key;
+algorithm/dftl/dftl.c:    if (req->params == NULL) {
+algorithm/dftl/dftl.c:	    if(req->mark)
+algorithm/dftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/dftl/dftl.c:    free(req->params);
+algorithm/dftl/dftl.c:    req->params = NULL;
+algorithm/dftl/dftl.c:    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+algorithm/dftl/dftl.c:    req->value = NULL; // moved to 'value' field of snode
+algorithm/dftl/dftl.c:    req->end_req(req);
+algorithm/dftl/dftl.c:    lpa = req->key;
+algorithm/dftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/dftl/dftl.c:        MS(&req->latency_poll);
+algorithm/dftl/dftl.c:        MA(&req->latency_poll);
+algorithm/dftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/dftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/dftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/dftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/dftl/dftl.c:        req->type = FS_NOTFOUND_T;
+algorithm/dftl/dftl.c:        req->end_req(req);
+algorithm/dftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/dftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/dftl/dftl.c:    req->end_req(req);
+algorithm/dftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/dftl/dftl.c:        params = (demand_params*)temp_req->params;
+algorithm/pftl/page_utils.c:	pseudo_my_req->parents = req;
+algorithm/pftl/page_utils.c:	pseudo_my_req->end_req = pbase_end_req;
+algorithm/pftl/page_utils.c:	pseudo_my_req->params = (void*)params;
+algorithm/pftl/page.c:	lpa = req->key;
+algorithm/pftl/page.c:		req->type = FS_NOTFOUND_T;
+algorithm/pftl/page.c:		req->end_req(req);
+algorithm/pftl/page.c:	algo_pbase.li->pull_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/pftl/page.c:	lpa = req->key;
+algorithm/pftl/page.c:	algo_pbase.li->push_data(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
+algorithm/pftl/page.c:	lpa = req->key;
+algorithm/pftl/page_opt.c:	target = page_TABLE[req->key].lpa_to_ppa;
+algorithm/pftl/page_opt.c:		req->type = FS_NOTFOUND_T;
+algorithm/pftl/page_opt.c:		req->end_req(req);
+algorithm/pftl/page_opt.c:	my_req->parents = req;
+algorithm/pftl/page_opt.c:	my_req->end_req = pbase_end_req; //allocate end_req for request.
+algorithm/pftl/page_opt.c:	algo_pbase.li->pull_data(target, PAGESIZE, req->value, ASYNC, my_req);
+algorithm/pftl/page_opt.c:	my_req->parents = req;
+algorithm/pftl/page_opt.c:	my_req->end_req = pbase_end_req;
+algorithm/pftl/page_opt.c:	if (page_TABLE[req->key].lpa_to_ppa != -1){
+algorithm/pftl/page_opt.c:		temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
+algorithm/pftl/page_opt.c:	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
+algorithm/pftl/page_opt.c:	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
+algorithm/pftl/page_opt.c:	algo_pbase.li->push_data(PPA_status++,PAGESIZE,req->value,ASYNC,my_req);
+algorithm/pftl/page_opt.c:	page_TABLE[req->key].lpa_to_ppa = -1; //reset to default.
+algorithm/pftl/page_opt.c:	page_OOB[req->key].reverse_table = -1; //reset reverse_table to default.
+algorithm/pftl/page_aio.c:	my_req->parents = req;
+algorithm/pftl/page_aio.c:	my_req->end_req=pbase_end_req;//allocate end_req for request.
+algorithm/pftl/page_aio.c:	int target = page_TABLE[req->key].lpa_to_ppa;
+algorithm/pftl/page_aio.c:		algo_pbase.li->pull_data(target,PAGESIZE,req->value,ASYNC,my_req);
+algorithm/pftl/page_aio.c:		printf("target is : %d\n",req->key);
+algorithm/pftl/page_aio.c:	my_req->parents = req;
+algorithm/pftl/page_aio.c:	my_req->end_req = pbase_end_req;
+algorithm/pftl/page_aio.c:	if (page_TABLE[req->key].lpa_to_ppa != -1)
+algorithm/pftl/page_aio.c:		printf("update [%d]lpa. mapped ppa was [%d]\n",req->key,page_TABLE[req->key].lpa_to_ppa); 
+algorithm/pftl/page_aio.c:		int64_t temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
+algorithm/pftl/page_aio.c:	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
+algorithm/pftl/page_aio.c:	printf("req-> key:%d, mapped ppa: %d\n",req->key, PPA_status);
+algorithm/pftl/page_aio.c:	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
+algorithm/pftl/page_aio.c:	printf("target is : %d\n",req->key);
+algorithm/pftl/page_aio.c:	printf("value is : %c\n",req->value->value[0]);
+algorithm/pftl/page_aio.c:	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,ASYNC,my_req);
+algorithm/pftl/page_aio.c:	page_TABLE[req->key].lpa_to_ppa = -1; //reset to default.
+algorithm/pftl/page_aio.c:	page_OOB[req->key].reverse_table = -1; //reset reverse_table to default.
+algorithm/pftl/page_aio.c:	my_req->parents = NULL;
+algorithm/pftl/page_aio.c:	my_req->end_req = pbase_algo_end_req; //make pseudo reqeust.
+algorithm/pftl/page_aio.c:	my_req->end_req = pbase_algo_end_req;
+algorithm/pftl/page_aio.c:	my_req->parents = NULL;
+algorithm/pftl/opt_bdbm_page.c:	target = page_TABLE[req->key].lpa_to_ppa;
+algorithm/pftl/opt_bdbm_page.c:		req->type = FS_NOTFOUND_T;
+algorithm/pftl/opt_bdbm_page.c:		req->end_req(req);
+algorithm/pftl/opt_bdbm_page.c:	my_req->parents = req;
+algorithm/pftl/opt_bdbm_page.c:	my_req->end_req = pbase_end_req; //allocate end_req for request.
+algorithm/pftl/opt_bdbm_page.c:	algo_pbase.li->pull_data(target, PAGESIZE, req->value, ASYNC, my_req);
+algorithm/pftl/opt_bdbm_page.c:	my_req->parents = req;
+algorithm/pftl/opt_bdbm_page.c:	my_req->end_req = pbase_end_req;
+algorithm/pftl/opt_bdbm_page.c:	if (page_TABLE[req->key].lpa_to_ppa != -1)
+algorithm/pftl/opt_bdbm_page.c:		temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
+algorithm/pftl/opt_bdbm_page.c:	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
+algorithm/pftl/opt_bdbm_page.c:	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
+algorithm/pftl/opt_bdbm_page.c:	algo_pbase.li->push_data(PPA_status++,PAGESIZE,req->value,ASYNC,my_req);
+algorithm/pftl/opt_bdbm_page.c:	page_TABLE[req->key].lpa_to_ppa = -1; //reset to default.
+algorithm/pftl/opt_bdbm_page.c:	page_OOB[req->key].reverse_table = -1; //reset reverse_table to default.
+algorithm/pftl/page_gc.h:	my_req->parents = NULL;
+algorithm/pftl/page_gc.h:	my_req->end_req = pbase_algo_end_req; //make pseudo reqeust.
+algorithm/pftl/page_gc.h:	my_req->end_req = pbase_algo_end_req;
+algorithm/pftl/page_gc.h:	my_req->parents = NULL;
+algorithm/pftl/page_bdbm2.c:	my_req->parents = req;
+algorithm/pftl/page_bdbm2.c:	my_req->end_req=pbase_end_req;//allocate end_req for request.
+algorithm/pftl/page_bdbm2.c:	int target = page_TABLE[req->key].lpa_to_ppa;
+algorithm/pftl/page_bdbm2.c:		algo_pbase.li->pull_data(target,PAGESIZE,req->value,ASYNC,my_req);
+algorithm/pftl/page_bdbm2.c:		printf("target is : %d\n",req->key);
+algorithm/pftl/page_bdbm2.c:	my_req->parents = req;
+algorithm/pftl/page_bdbm2.c:	my_req->end_req = pbase_end_req;
+algorithm/pftl/page_bdbm2.c:	if (page_TABLE[req->key].lpa_to_ppa != -1)
+algorithm/pftl/page_bdbm2.c://		printf("update [%d]lpa. mapped ppa was [%d]\n",req->key,page_TABLE[req->key].lpa_to_ppa); 
+algorithm/pftl/page_bdbm2.c:		int64_t temp = page_TABLE[req->key].lpa_to_ppa; //find old ppa.
+algorithm/pftl/page_bdbm2.c:	page_TABLE[req->key].lpa_to_ppa = PPA_status; //map ppa status to table.
+algorithm/pftl/page_bdbm2.c://	printf("req-> key:%d, mapped ppa: %d\n",req->key, PPA_status);
+algorithm/pftl/page_bdbm2.c:	page_OOB[PPA_status].reverse_table = req->key;//reverse-mapping.
+algorithm/pftl/page_bdbm2.c:	printf("target is : %d\n",req->key);
+algorithm/pftl/page_bdbm2.c:	printf("value is : %c\n",req->value->value[0]);
+algorithm/pftl/page_bdbm2.c:	algo_pbase.li->push_data(set_target,PAGESIZE,req->value,ASYNC,my_req);
+algorithm/pftl/page_bdbm2.c:	page_TABLE[req->key].lpa_to_ppa = -1; //reset to default.
+algorithm/pftl/page_bdbm2.c:	page_OOB[req->key].reverse_table = -1; //reset reverse_table to default.
+algorithm/pftl/page_bdbm2.c:	my_req->parents = NULL;
+algorithm/pftl/page_bdbm2.c:	my_req->end_req = pbase_algo_end_req; //make pseudo reqeust.
+algorithm/pftl/page_bdbm2.c:	my_req->end_req = pbase_algo_end_req;
+algorithm/pftl/page_bdbm2.c:	my_req->parents = NULL;
+algorithm/red_sftl/request_flow.txt:-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==1이기 때문에 read flying임을 알 수 있음
+algorithm/red_sftl/request_flow.txt:-> req->params != NULL 이니까 flying을 보낸 놈이고, params->read==0이기 때문에 write flying임을 알 수 있음
+algorithm/red_sftl/request_flow.txt:-> req->params != NULL 이고 params->read==1이니까 read flying
+algorithm/red_sftl/request_flow.txt:--> req->params != NULL, flying을 보낸놈이고, params->read == 1이기 때문에 read_flying임을 알 수 있음
+algorithm/red_sftl/request_flow.txt:--> req->params != NULL이고, flying request이면서, params->read == 0이기 때문에 write flying임을 알 수 있음
+algorithm/red_sftl/request_flow.txt:--> req->params != NULL이고, params->read == 1 이니까 read flying임을 알 수 있음
+algorithm/red_sftl/dftl_utils.c:    pseudo_my_req->parents = req;
+algorithm/red_sftl/dftl_utils.c:    pseudo_my_req->type    = type;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = true;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/red_sftl/dftl_utils.c:            pseudo_my_req->rapid = false;
+algorithm/red_sftl/dftl_utils.c:    pseudo_my_req->type_lower = 0;
+algorithm/red_sftl/dftl_utils.c:    pseudo_my_req->end_req = demand_end_req;
+algorithm/red_sftl/dftl_utils.c:    pseudo_my_req->params = (void*)params;
+algorithm/red_sftl/garbage_collection.c:					params = (demand_params*)temp_req->params;
+algorithm/red_sftl/garbage_collection.c:            params = (demand_params*)temp_req->params;
+algorithm/red_sftl/garbage_collection.c:			       params = (demand_params*)temp_req->params;
+algorithm/red_sftl/dftl.c:    int lpa = req->key;
+algorithm/red_sftl/dftl.c:    int lpa = req->key;
+algorithm/red_sftl/dftl.c:    req->params = (void *)checker;
+algorithm/red_sftl/dftl.c:	if(req->mark)
+algorithm/red_sftl/dftl.c:	req->type_ftl += 2;
+algorithm/red_sftl/dftl.c:		req->type_ftl += 1;
+algorithm/red_sftl/dftl.c:			if(d_flag) req->type_ftl += 1;
+algorithm/red_sftl/dftl.c:			if(gc_flag) req->type_ftl += 2;
+algorithm/red_sftl/dftl.c:	if(req->mark)
+algorithm/red_sftl/dftl.c:			if(d_flag) req->type_ftl += 1;
+algorithm/red_sftl/dftl.c:			if(gc_flag) req->type_ftl += 2;
+algorithm/red_sftl/dftl.c:    int lpa = req->key;
+algorithm/red_sftl/dftl.c:    int lpa = req->key;
+algorithm/red_sftl/dftl.c:    read_params *params = (read_params *)req->params;
+algorithm/red_sftl/dftl.c:    lpa = req->key;
+algorithm/red_sftl/dftl.c:        memcpy(req->value->value, temp->value->value, PAGESIZE);
+algorithm/red_sftl/dftl.c:        req->type_ftl = 0;
+algorithm/red_sftl/dftl.c:        req->type_lower = 0;
+algorithm/red_sftl/dftl.c:        req->end_req(req);
+algorithm/red_sftl/dftl.c:    if (req->params == NULL) {
+algorithm/red_sftl/dftl.c:	if(req->mark)
+algorithm/red_sftl/dftl.c:            req->type_ftl += 1;
+algorithm/red_sftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/red_sftl/dftl.c:    free(req->params);
+algorithm/red_sftl/dftl.c:    req->params = NULL;
+algorithm/red_sftl/dftl.c:    __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
+algorithm/red_sftl/dftl.c:    lpa = req->key;
+algorithm/red_sftl/dftl.c:    lpa = req->key;
+algorithm/red_sftl/dftl.c:    if (req->params == NULL) {
+algorithm/red_sftl/dftl.c:	    if(req->mark)
+algorithm/red_sftl/dftl.c:        if (((read_params *)req->params)->read == 0) { // Case of mapping write finished
+algorithm/red_sftl/dftl.c:    free(req->params);
+algorithm/red_sftl/dftl.c:    req->params = NULL;
+algorithm/red_sftl/dftl.c:    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+algorithm/red_sftl/dftl.c:	    req->value = NULL; // moved to 'value' field of snode
+algorithm/red_sftl/dftl.c:	    req->end_req(req);
+algorithm/red_sftl/dftl.c:				params   = (demand_params *)temp_req->params;
+algorithm/red_sftl/dftl.c:		if(d_flag) req->type_ftl +=1;
+algorithm/red_sftl/dftl.c:		if(gc_flag) req->type_ftl +=2;
+algorithm/red_sftl/dftl.c:    req->value = NULL; // moved to 'value' field of snode
+algorithm/red_sftl/dftl.c:    req->end_req(req);
+algorithm/red_sftl/dftl.c:    lpa = req->key;
+algorithm/red_sftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/red_sftl/dftl.c:        MS(&req->latency_poll);
+algorithm/red_sftl/dftl.c:        MA(&req->latency_poll);
+algorithm/red_sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/red_sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/red_sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/red_sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/red_sftl/dftl.c:        req->type = FS_NOTFOUND_T;
+algorithm/red_sftl/dftl.c:        req->end_req(req);
+algorithm/red_sftl/dftl.c:            temp_req->type = FS_NOTFOUND_T;
+algorithm/red_sftl/dftl.c:            temp_req->end_req(temp_req);
+algorithm/red_sftl/dftl.c:    req->end_req(req);
+algorithm/red_sftl/dftl.c:        params = (demand_params *)temp_req->params;
+algorithm/red_sftl/dftl.c:    lpa = req->key; 
+algorithm/red_sftl/dftl.c:    req->m_w_cnt = req->m_w_max = 0;
+algorithm/red_sftl/dftl.c:	    	req->m_w_max++;
+algorithm/red_sftl/dftl.c:		    params = (demand_params*)temp_req->params;
+algorithm/red_sftl/dftl.c:		    params = (demand_params*)temp_req->params;
+interface/interface.c:	void *_data=__hash_find_data(app_hash,req->key);
+interface/interface.c:		memcpy(req->value->value,d_req->value->value,PAGESIZE);
+interface/interface.c:	if(!req->isAsync){
+interface/interface.c:		pthread_mutex_init(&req->async_mutex,NULL);
+interface/interface.c:		pthread_mutex_lock(&req->async_mutex);
+interface/interface.c:			if(req->type==FS_SET_T){
+interface/interface.c:					if((m_req=__hash_find_data(app_hash,req->key))){
+interface/interface.c:						value_set *t_value=t_req->value;
+interface/interface.c:						t_req->value=req->value;
+interface/interface.c:						req->value=t_value;
+interface/interface.c:						t_req->seq=req->seq;
+interface/interface.c:						req->end_req(req);
+interface/interface.c:					write_hash_res=__hash_insert(app_hash,req->key,req,NULL,(void**)&m_req);
+interface/interface.c:					req->__hash_node=(void*)__hash_get_node(app_hash,write_hash_res);
+interface/interface.c:					if(req->isstart==false){
+interface/interface.c:						req->type_ftl=10;
+interface/interface.c:					req->end_req(req);
+interface/interface.c:	//if(!req->isAsync){
+interface/interface.c:		pthread_mutex_lock(&req->async_mutex);	
+interface/interface.c:		pthread_mutex_destroy(&req->async_mutex);
+interface/interface.c:			if(inf_req->type==FS_SET_T){
+interface/interface.c:				t_h_node=(__hash_node*)inf_req->__hash_node;
+interface/interface.c:		//		printf("inf:%u\n",inf_req->seq);
+interface/interface.c:		inf_req->isstart=true;
+interface/interface.c:		switch(inf_req->type){
+interface/interface.c:				//			printf("read key :%d\n",inf_req->key);
+interface/interface.c:				//			printf("write key :%d\n",inf_req->key);
+interface/interface.c:				mp.algo->multi_set(inf_req,inf_req->num);
+interface/interface.c:				mp.algo->range_get(inf_req,inf_req->num);
+interface/interface.c:				printf("wtf??, type %d\n", inf_req->type);
+interface/interface.c:				inf_req->end_req(inf_req);
+interface/interface.c:			//inf_req->end_req(inf_req);
+interface/interface.c:	req->p_req=_req;
+interface/interface.c:	req->p_end_req=end_func;
+interface/interface.c:	req->isstart=false;
+interface/interface.c:	measure_init(&req->latency_checker);
+interface/interface.c:	measure_start(&req->latency_checker);
+interface/interface.c:	req->end_req=inf_end_req;
+interface/interface.c:	req->isAsync=ASYNC;
+interface/interface.c:	req->params=NULL;
+interface/interface.c:	req->type_ftl = 0;
+interface/interface.c:	req->type_lower = 0;
+interface/interface.c:	req->before_type_lower=0;
+interface/interface.c:	req->seq=seq_num++;
+interface/interface.c:	req->special_func=NULL;
+interface/interface.c:	req->added_end_req=NULL;
+interface/interface.c:	req->p_req=NULL;
+interface/interface.c:	req->p_end_req=NULL;
+interface/interface.c:	req->algo.isused=false;
+interface/interface.c:	req->lower.isused=false;
+interface/interface.c:	req->mark=mark;
+interface/interface.c:	req->type=type;
+interface/interface.c:	req->key=key;	
+interface/interface.c:	req->ppa=0;
+interface/interface.c:			req->value=NULL;
+interface/interface.c:			req->value=inf_get_valueset(_value,FS_SET_T,len);
+interface/interface.c:			req->value=inf_get_valueset(_value,FS_GET_T,len);
+interface/interface.c:	req->type=type;
+interface/interface.c:	req->multi_key=keys;
+interface/interface.c:	req->multi_value=(value_set**)malloc(sizeof(value_set*)*req_num);
+interface/interface.c:	req->num=req_num;
+interface/interface.c:				req->value=inf_get_valueset(_value[i],FS_SET_T,len[i]);
+interface/interface.c:				req->value=inf_get_valueset(_value[i],FS_GET_T,len[i]);
+interface/interface.c:	req->seq = num++;
+interface/interface.c:	req->isstart=false;
+interface/interface.c:	measure_init(&req->latency_checker);
+interface/interface.c:	measure_start(&req->latency_checker);
+interface/interface.c:	req->special_func=special;
+interface/interface.c:	req->seq=seq;
+interface/interface.c:	req->isstart=false;
+interface/interface.c:	measure_init(&req->latency_checker);
+interface/interface.c:	measure_start(&req->latency_checker);
+interface/interface.c:	if(req->type==FS_RMW_T){
+interface/interface.c:		req->type=FS_SET_T;
+interface/interface.c:		value_set *original=req->value;
+interface/interface.c:		value_set *temp=inf_get_valueset(req->value->value,FS_SET_T,req->value->length);
+interface/interface.c:		req->value=temp;
+interface/interface.c:	if(req->isstart){
+interface/interface.c:	special=req->special_func;
+interface/interface.c:		*type=req->type;
+interface/interface.c:		*seq=req->seq;
+interface/interface.c:	if(req->added_end_req){
+interface/interface.c:		req->added_end_req(req);
+interface/interface.c:	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+interface/interface.c:	if(req->value){
+interface/interface.c:		if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+interface/interface.c:			inf_free_valueset(req->value, FS_MALLOC_R);
+interface/interface.c:		else if(req->type==FS_SET_T){
+interface/interface.c:			inf_free_valueset(req->value, FS_MALLOC_W);
+interface/interface.c:	if(req->p_req){
+interface/interface.c:		req->p_end_req(req->p_req);
+interface/interface.c:	if(!req->isAsync){
+interface/interface.c:		pthread_mutex_unlock(&req->async_mutex);	
+interface/interface.c:			req->multi_value=(value_set**)malloc(sizeof(value_set*)*lengths);
+interface/interface.c:				req->multi_value[i]=inf_get_valueset(NULL,FS_GET_T,PAGESIZE);
+interface/interface.c:	req->added_end_req=added_end;
+interface/interface.c:	req->isstart=false;
+interface/interface.c:	measure_init(&req->latency_checker);
+interface/interface.c:	measure_start(&req->latency_checker);
+interface/interface_org.c:	void *_data=__hash_find_data(app_hash,req->key);
+interface/interface_org.c:		memcpy(req->value->value,d_req->value->value,PAGESIZE);
+interface/interface_org.c:	if(!req->isAsync){
+interface/interface_org.c:		pthread_mutex_init(&req->async_mutex,NULL);
+interface/interface_org.c:		pthread_mutex_lock(&req->async_mutex);
+interface/interface_org.c:			if(req->type==FS_SET_T){
+interface/interface_org.c:					if((m_req=__hash_find_data(app_hash,req->key))){
+interface/interface_org.c:						value_set *t_value=t_req->value;
+interface/interface_org.c:						t_req->value=req->value;
+interface/interface_org.c:						req->value=t_value;
+interface/interface_org.c:						t_req->seq=req->seq;
+interface/interface_org.c:						req->end_req(req);
+interface/interface_org.c:					write_hash_res=__hash_insert(app_hash,req->key,req,NULL,(void**)&m_req);
+interface/interface_org.c:					req->__hash_node=(void*)__hash_get_node(app_hash,write_hash_res);
+interface/interface_org.c:					if(req->isstart==false){
+interface/interface_org.c:						req->type_ftl=10;
+interface/interface_org.c:					req->end_req(req);
+interface/interface_org.c:	//if(!req->isAsync){
+interface/interface_org.c:		pthread_mutex_lock(&req->async_mutex);	
+interface/interface_org.c:		pthread_mutex_destroy(&req->async_mutex);
+interface/interface_org.c:				if(inf_req->type==FS_SET_T){
+interface/interface_org.c:					t_h_node=(__hash_node*)inf_req->__hash_node;
+interface/interface_org.c:		//printf("inf:%u\n",inf_req->seq);
+interface/interface_org.c:		inf_req->isstart=true;
+interface/interface_org.c:		switch(inf_req->type){
+interface/interface_org.c:		//inf_req->end_req(inf_req);
+interface/interface_org.c:	req->upper_req=NULL;
+interface/interface_org.c:	req->type=type;
+interface/interface_org.c:	req->key=key;
+interface/interface_org.c:		req->value=NULL;
+interface/interface_org.c:		req->value=inf_get_valueset(value->value,req->type,value->length);
+interface/interface_org.c:	req->end_req=inf_end_req;
+interface/interface_org.c:	req->isAsync=ASYNC;
+interface/interface_org.c:	req->params=NULL;
+interface/interface_org.c:	req->type_ftl = 0;
+interface/interface_org.c:	req->type_lower = 0;
+interface/interface_org.c:	req->before_type_lower=0;
+interface/interface_org.c:	req->seq=seq_num++;
+interface/interface_org.c:	req->algo.isused=false;
+interface/interface_org.c:	req->lower.isused=false;
+interface/interface_org.c:	req->mark=mark;
+interface/interface_org.c:	req->isstart=false;
+interface/interface_org.c:	measure_init(&req->latency_checker);
+interface/interface_org.c:	measure_start(&req->latency_checker);
+interface/interface_org.c:	req->upper_req=ureq;
+interface/interface_org.c:	req->upper_end=end_req;
+interface/interface_org.c:	req->type=u_req->type;
+interface/interface_org.c:	req->key=u_req->key;
+interface/interface_org.c:	req->value=inf_get_valueset(u_req->value,req->type,u_req->length);
+interface/interface_org.c:	req->isAsync=true;
+interface/interface_org.c:	switch(req->type){
+interface/interface_org.c:	if(req->isstart){
+interface/interface_org.c:	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+interface/interface_org.c:		//memcpy(&check,req->value,sizeof(check));
+interface/interface_org.c:	if(req->value){
+interface/interface_org.c:		if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+interface/interface_org.c:			inf_free_valueset(req->value, FS_MALLOC_R);
+interface/interface_org.c:		else if(req->type==FS_SET_T){
+interface/interface_org.c:			inf_free_valueset(req->value, FS_MALLOC_W);
+interface/interface_org.c:	if(!req->isAsync){
+interface/interface_org.c:		pthread_mutex_unlock(&req->async_mutex);	
+interface/network/epoll_main.c:    struct serv_params *params = (struct serv_params *)req->params;
+interface/network/epoll_main.c:    params->data->type_lower = req->type_lower;
+interface/network/epoll_main.c:    free(req->params);
+interface/network/epoll_main.c:    req->params  = (void *)params;
+interface/network/epoll_main.c:    req->end_req = serv_end_req;
+interface/network/epoll_main.c:    req->type    = data->req_type;
+interface/network/epoll_main.c:	req->type_lower =0;
+interface/network/epoll_main.c:	req->parents=NULL;
+interface/network/network_main.c:    struct serv_params *params = (struct serv_params *)req->params;
+interface/network/network_main.c:    params->data->type_lower = req->type_lower;
+interface/network/network_main.c:    free(req->params);
+interface/network/network_main.c:    req->params  = (void *)params;
+interface/network/network_main.c:    req->end_req = serv_end_req;
+interface/network/network_main.c:    req->type    = data->req_type;
+interface/network/network_main.c:	req->type_lower =0;
+interface/network/network_main.c:	req->parents=NULL;
+interface/network/origin_network_main.c:    struct serv_params *params = (struct serv_params *)req->params;
+interface/network/origin_network_main.c:    params->data->type_lower = req->type_lower;
+interface/network/origin_network_main.c:    free(req->params);
+interface/network/origin_network_main.c:    req->params  = (void *)params;
+interface/network/origin_network_main.c:    req->end_req = serv_end_req;
+interface/network/origin_network_main.c:    req->type    = data->req_type;
+interface/network/origin_network_main.c:	req->type_lower =0;
+interface/network/origin_network_main.c:	req->parents=NULL;
+interface/network/temp_network_main.c:    struct serv_params *params = (struct serv_params *)req->params;
+interface/network/temp_network_main.c:    params->data->type_lower = req->type_lower;
+interface/network/temp_network_main.c:	measure_calc(&req->server_time);
+interface/network/temp_network_main.c:	int slot_num=req->server_time.micro_time/TIMESLOT;
+interface/network/temp_network_main.c:	if(req->type==FS_GET_T){
+interface/network/temp_network_main.c:    free(req->params);
+interface/network/temp_network_main.c:    req->params  = (void *)params;
+interface/network/temp_network_main.c:    req->end_req = serv_end_req;
+interface/network/temp_network_main.c:    req->type    = data->req_type;
+interface/network/temp_network_main.c:	req->type_lower =0;
+interface/network/temp_network_main.c:	req->parents=NULL;
+interface/network/temp_network_main.c:	measure_init(&req->server_time);
+interface/network/temp_network_main.c:	MS(&req->server_time);
+Binary file interface/.interface.c.swp matches
+interface/interface_reserve.c:	void *_data=__hash_find_data(app_hash,req->key);
+interface/interface_reserve.c:		memcpy(req->value->value,d_req->value->value,PAGESIZE);
+interface/interface_reserve.c:	if(!req->isAsync){
+interface/interface_reserve.c:		pthread_mutex_init(&req->async_mutex,NULL);
+interface/interface_reserve.c:		pthread_mutex_lock(&req->async_mutex);
+interface/interface_reserve.c:			if(req->type==FS_SET_T){
+interface/interface_reserve.c:					if((m_req=__hash_find_data(app_hash,req->key))){
+interface/interface_reserve.c:						value_set *t_value=t_req->value;
+interface/interface_reserve.c:						t_req->value=req->value;
+interface/interface_reserve.c:						req->value=t_value;
+interface/interface_reserve.c:						t_req->seq=req->seq;
+interface/interface_reserve.c:						req->end_req(req);
+interface/interface_reserve.c:					write_hash_res=__hash_insert(app_hash,req->key,req,NULL,(void**)&m_req);
+interface/interface_reserve.c:					req->__hash_node=(void*)__hash_get_node(app_hash,write_hash_res);
+interface/interface_reserve.c:					if(req->isstart==false){
+interface/interface_reserve.c:						req->type_ftl=10;
+interface/interface_reserve.c:					req->end_req(req);
+interface/interface_reserve.c:	//if(!req->isAsync){
+interface/interface_reserve.c:		pthread_mutex_lock(&req->async_mutex);	
+interface/interface_reserve.c:		pthread_mutex_destroy(&req->async_mutex);
+interface/interface_reserve.c:			if(inf_req->type==FS_SET_T){
+interface/interface_reserve.c:				t_h_node=(__hash_node*)inf_req->__hash_node;
+interface/interface_reserve.c://		printf("inf:%u\n",inf_req->seq);
+interface/interface_reserve.c:		inf_req->isstart=true;
+interface/interface_reserve.c:		switch(inf_req->type){
+interface/interface_reserve.c:	//			printf("read key :%d\n",inf_req->key);
+interface/interface_reserve.c:	//			printf("write key :%d\n",inf_req->key);
+interface/interface_reserve.c:				printf("wtf??, type %d\n", inf_req->type);
+interface/interface_reserve.c:				inf_req->end_req(inf_req);
+interface/interface_reserve.c:		//inf_req->end_req(inf_req);
+interface/interface_reserve.c:	req->p_req=_req;
+interface/interface_reserve.c:	req->p_end_req=end_func;
+interface/interface_reserve.c:	req->target_buf=_value;
+interface/interface_reserve.c:	req->target_len=len;
+interface/interface_reserve.c:	req->istophalf=istophalf;
+interface/interface_reserve.c:	req->org_type=_type;
+interface/interface_reserve.c:	req->inter_offset=inter_offset;
+interface/interface_reserve.c:			memcpy(req->value->value,_value+inter_offset,len);
+interface/interface_reserve.c:	req->seq=0;
+interface/interface_reserve.c:	if((req->type==FS_RMW_T || req->type==FS_SET_T) && req->key==0){
+interface/interface_reserve.c:		req->seq=cnt++;
+interface/interface_reserve.c:		printf("\n %d inter:%d len:%d\n",req->seq,inter_offset,len);
+interface/interface_reserve.c:	req->isstart=false;
+interface/interface_reserve.c:	measure_init(&req->latency_checker);
+interface/interface_reserve.c:	measure_start(&req->latency_checker);
+interface/interface_reserve.c:	req->type=type;
+interface/interface_reserve.c:	req->key=key;	
+interface/interface_reserve.c:	req->ppa=0;
+interface/interface_reserve.c:		req->value=NULL;
+interface/interface_reserve.c:				req->value=inf_get_valueset(value->value,FS_SET_T,value->length);	
+interface/interface_reserve.c:					req->value=value;
+interface/interface_reserve.c:					req->value=inf_get_valueset(value->value,FS_GET_T,value->length);
+interface/interface_reserve.c:				req->value=inf_get_valueset(NULL,temp_type,PAGESIZE);
+interface/interface_reserve.c:	req->end_req=inf_end_req;
+interface/interface_reserve.c:	req->isAsync=ASYNC;
+interface/interface_reserve.c:	req->params=NULL;
+interface/interface_reserve.c:	req->type_ftl = 0;
+interface/interface_reserve.c:	req->type_lower = 0;
+interface/interface_reserve.c:	req->before_type_lower=0;
+interface/interface_reserve.c:	req->seq=seq_num++;
+interface/interface_reserve.c:	req->special_func=NULL;
+interface/interface_reserve.c:	req->p_req=NULL;
+interface/interface_reserve.c:	req->p_end_req=NULL;
+interface/interface_reserve.c:	req->algo.isused=false;
+interface/interface_reserve.c:	req->lower.isused=false;
+interface/interface_reserve.c:	req->mark=mark;
+interface/interface_reserve.c:	req->isstart=false;
+interface/interface_reserve.c:	measure_init(&req->latency_checker);
+interface/interface_reserve.c:	measure_start(&req->latency_checker);
+interface/interface_reserve.c:	req->special_func=special;
+interface/interface_reserve.c:	req->seq=seq;
+interface/interface_reserve.c:	req->isstart=false;
+interface/interface_reserve.c:	measure_init(&req->latency_checker);
+interface/interface_reserve.c:	measure_start(&req->latency_checker);
+interface/interface_reserve.c:	//printf("end_req :%d\n",req->type);
+interface/interface_reserve.c:	value_set *original=req->value;
+interface/interface_reserve.c:	if(req->type==FS_GET_T){
+interface/interface_reserve.c:		memcpy(&test,&req->value->value[0],sizeof(test));
+interface/interface_reserve.c:		if(test!=req->key){
+interface/interface_reserve.c:	if((req->type==FS_GET_T || req->type==FS_RMW_T) && req->key==0){
+interface/interface_reserve.c:		if(req->type==FS_GET_T)
+interface/interface_reserve.c:			printf("\nread %d\n",req->seq);
+interface/interface_reserve.c:			printf("\nrmw %d\n",req->seq);
+interface/interface_reserve.c:			printf("%02x",*(uint8_t*)&req->value->value[i]);
+interface/interface_reserve.c:	if(req->type==FS_RMW_T){
+interface/interface_reserve.c:		req->type=FS_SET_T;
+interface/interface_reserve.c:		memcpy(&original->value[0]+req->inter_offset,req->target_buf,req->target_len);
+interface/interface_reserve.c:		req->value=new_val;
+interface/interface_reserve.c:	}else if(req->type==FS_GET_T){
+interface/interface_reserve.c:		memcpy(req->target_buf,&original->value[0]+req->inter_offset,req->target_len);
+interface/interface_reserve.c:	}else if(req->type==FS_NOTFOUND_T){
+interface/interface_reserve.c:		memset(req->target_buf,0,req->target_len);
+interface/interface_reserve.c:	if(req->isstart){
+interface/interface_reserve.c:	special=req->special_func;
+interface/interface_reserve.c:		res_value=req->value;
+interface/interface_reserve.c:		req->value=NULL;
+interface/interface_reserve.c:		*type=req->type;
+interface/interface_reserve.c:		*seq=req->seq;
+interface/interface_reserve.c:	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+interface/interface_reserve.c:	if(req->value){
+interface/interface_reserve.c:		if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+interface/interface_reserve.c:			inf_free_valueset(req->value, FS_MALLOC_R);
+interface/interface_reserve.c:		else if(req->type==FS_SET_T){
+interface/interface_reserve.c:			inf_free_valueset(req->value, FS_MALLOC_W);
+interface/interface_reserve.c:	if(req->p_req){
+interface/interface_reserve.c:		req->p_end_req(req->p_req);
+interface/interface_reserve.c:	if(!req->isAsync){
+interface/interface_reserve.c:		pthread_mutex_unlock(&req->async_mutex);	
+interface/interface_mq.c:	void *_data=__hash_find_data(app_hash,req->key);
+interface/interface_mq.c:		memcpy(req->value->value,d_req->value->value,PAGESIZE);
+interface/interface_mq.c:	if(!req->isAsync){
+interface/interface_mq.c:		pthread_mutex_init(&req->async_mutex,NULL);
+interface/interface_mq.c:		pthread_mutex_lock(&req->async_mutex);
+interface/interface_mq.c:			if(req->type==FS_SET_T){
+interface/interface_mq.c:					if((m_req=__hash_find_data(app_hash,req->key))){
+interface/interface_mq.c:						value_set *t_value=t_req->value;
+interface/interface_mq.c:						t_req->value=req->value;
+interface/interface_mq.c:						req->value=t_value;
+interface/interface_mq.c:						t_req->seq=req->seq;
+interface/interface_mq.c:						req->end_req(req);
+interface/interface_mq.c:					write_hash_res=__hash_insert(app_hash,req->key,req,NULL,(void**)&m_req);
+interface/interface_mq.c:					req->__hash_node=(void*)__hash_get_node(app_hash,write_hash_res);
+interface/interface_mq.c:					if(req->isstart==false){
+interface/interface_mq.c:						req->type_ftl=10;
+interface/interface_mq.c:					req->end_req(req);
+interface/interface_mq.c:	//if(!req->isAsync){
+interface/interface_mq.c:		pthread_mutex_lock(&req->async_mutex);	
+interface/interface_mq.c:		pthread_mutex_destroy(&req->async_mutex);
+interface/interface_mq.c:			t_h_node=(__hash_node*)inf_req->__hash_node;
+interface/interface_mq.c:		//printf("inf:%u\n",inf_req->seq);
+interface/interface_mq.c:		inf_req->isstart=true;
+interface/interface_mq.c:		switch(inf_req->type){
+interface/interface_mq.c:		//inf_req->end_req(inf_req);
+interface/interface_mq.c:		//printf("inf:%u\n",inf_req->seq);
+interface/interface_mq.c:		inf_req->isstart=true;
+interface/interface_mq.c:		switch(inf_req->type){
+interface/interface_mq.c:		//inf_req->end_req(inf_req);
+interface/interface_mq.c:	req->upper_req=NULL;
+interface/interface_mq.c:	req->type=type;
+interface/interface_mq.c:	req->key=key;
+interface/interface_mq.c:		req->value=NULL;
+interface/interface_mq.c:		req->value=inf_get_valueset(value->value,req->type,value->length);
+interface/interface_mq.c:	req->end_req=inf_end_req;
+interface/interface_mq.c:	req->isAsync=ASYNC;
+interface/interface_mq.c:	req->params=NULL;
+interface/interface_mq.c:	req->type_ftl = 0;
+interface/interface_mq.c:	req->type_lower = 0;
+interface/interface_mq.c:	req->before_type_lower=0;
+interface/interface_mq.c:	req->seq=seq_num++;
+interface/interface_mq.c:	req->algo.isused=false;
+interface/interface_mq.c:	req->lower.isused=false;
+interface/interface_mq.c:	req->mark=mark;
+interface/interface_mq.c:	req->isstart=false;
+interface/interface_mq.c:	measure_init(&req->latency_checker);
+interface/interface_mq.c:	measure_start(&req->latency_checker);
+interface/interface_mq.c:	req->upper_req=ureq;
+interface/interface_mq.c:	req->upper_end=end_req;
+interface/interface_mq.c:	req->type=u_req->type;
+interface/interface_mq.c:	req->key=u_req->key;
+interface/interface_mq.c:	req->value=inf_get_valueset(u_req->value,req->type,u_req->length);
+interface/interface_mq.c:	req->isAsync=true;
+interface/interface_mq.c:	switch(req->type){
+interface/interface_mq.c:	if(req->isstart){
+interface/interface_mq.c:	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+interface/interface_mq.c:		//memcpy(&check,req->value,sizeof(check));
+interface/interface_mq.c:	if(req->value){
+interface/interface_mq.c:		if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+interface/interface_mq.c:			inf_free_valueset(req->value, FS_MALLOC_R);
+interface/interface_mq.c:		else if(req->type==FS_SET_T){
+interface/interface_mq.c:			inf_free_valueset(req->value, FS_MALLOC_W);
+interface/interface_mq.c:	if(!req->isAsync){
+interface/interface_mq.c:		pthread_mutex_unlock(&req->async_mutex);	
+lower/network/network.c:            req->type_lower = data.type_lower;
+lower/network/network.c:            req->end_req(req);
+lower/network/network.c:            req->end_req(req);
+lower/network/network.c:    t_type = test_type(req->type);
+lower/network/network.c:    if (req->type <= GCMW) {
+lower/network/network.c:    t_type = test_type(req->type);
+lower/network/network.c:    if (req->type <= GCMW) {
+lower/network/network.c:        req->type_lower = 1;
+lower/network/epoll_network.c:				req->type_lower = data.type_lower;
+lower/network/epoll_network.c:					req->end_req(req);
+lower/network/epoll_network.c:					req->end_req(req);
+lower/network/epoll_network.c:    t_type = test_type(req->type);
+lower/network/epoll_network.c:    if (req->type <= GCMW) {
+lower/network/epoll_network.c:    t_type = test_type(req->type);
+lower/network/epoll_network.c:    if (req->type <= GCMW) {
+lower/network/epoll_network.c:        req->type_lower = 1;
+lower/linux_aio/linux_aio.c:				if(req->parents){
+lower/linux_aio/linux_aio.c:					bench_lower_end(req->parents);
+lower/linux_aio/linux_aio.c:				req->end_req(req);
+lower/linux_aio/linux_aio.c:	req->ppa = PPA;
+lower/linux_aio/linux_aio.c:	uint8_t t_type=test_type(req->type);
+lower/linux_aio/linux_aio.c:	if(req->parents)
+lower/linux_aio/linux_aio.c:		bench_lower_start(req->parents);
+lower/linux_aio/linux_aio.c:	req->ppa = PPA;
+lower/linux_aio/linux_aio.c:	uint8_t t_type=test_type(req->type);
+lower/linux_aio/linux_aio.c:	if(req->parents)
+lower/linux_aio/linux_aio.c:		bench_lower_start(req->parents);
+lower/posix_async/posix.c:		inf_req->key=bb_checker_fix_ppa(inf_req->key);
+lower/posix_async/posix.c:		switch(inf_req->type){
+lower/posix_async/posix.c:				posix_push_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, inf_req->upper_req);
+lower/posix_async/posix.c:				posix_pull_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, inf_req->upper_req);
+lower/posix_async/posix.c:				posix_trim_block(inf_req->key, inf_req->isAsync);
+lower/posix_async/posix.c:	p_req->type=FS_LOWER_W;
+lower/posix_async/posix.c:	p_req->key=PPA;
+lower/posix_async/posix.c:	p_req->value=value;
+lower/posix_async/posix.c:	p_req->upper_req=req;
+lower/posix_async/posix.c:	p_req->isAsync=async;
+lower/posix_async/posix.c:	p_req->size=size;
+lower/posix_async/posix.c:	p_req->type=FS_LOWER_R;
+lower/posix_async/posix.c:	p_req->key=PPA;
+lower/posix_async/posix.c:	p_req->value=value;
+lower/posix_async/posix.c:	p_req->upper_req=req;
+lower/posix_async/posix.c:	p_req->isAsync=async;
+lower/posix_async/posix.c:	p_req->size=size;
+lower/posix_async/posix.c:	p_req->type=FS_LOWER_T;
+lower/posix_async/posix.c:	p_req->key=PPA;
+lower/posix_async/posix.c:	p_req->isAsync=async;
+lower/posix_async/posix.c:	if(req->parents)
+lower/posix_async/posix.c:		bench_lower_start(req->parents);
+lower/posix_async/posix.c:	if(((lsm_params*)req->params)->lsm_type < 6){
+lower/posix_async/posix.c:	if(req->parents)
+lower/posix_async/posix.c:		bench_lower_end(req->parents);
+lower/posix_async/posix.c:	req->end_req(req);
+lower/posix_async/posix.c:	if(req->parents)
+lower/posix_async/posix.c:		bench_lower_start(req->parents);
+lower/posix_async/posix.c:	if(((lsm_params*)req->params)->lsm_type < 6){
+lower/posix_async/posix.c:	if(req->parents)
+lower/posix_async/posix.c:		bench_lower_end(req->parents);
+lower/posix_async/posix.c:	req->end_req(req);
+lower/posix_async/posix.c:		req->end_req(req);
+lower/posix/posix.c:	if(req->parents)
+lower/posix/posix.c:		bench_lower_start(req->parents);
+lower/posix/posix.c:	//if(((lsm_params*)req->params)->lsm_type!=5){
+lower/posix/posix.c:	//	if(req->parents->key == 1805458){
+lower/posix/posix.c:	  test_type = convert_type(req->type);
+lower/posix/posix.c:	if(req->parents)
+lower/posix/posix.c:		bench_lower_end(req->parents);
+lower/posix/posix.c:	req->end_req(req);
+lower/posix/posix.c:		req->end_req(req);
+lower/posix/posix.c:	if(req->parents)
+lower/posix/posix.c:		bench_lower_start(req->parents);
+lower/posix/posix.c:	//if(((lsm_params*)req->params)->lsm_type!=4){
+lower/posix/posix.c:		printf("LOWER - LPA : %d PPA: %d SEQ: %d\n",req->parents->key, PPA,req->parents->seq);
+lower/posix/posix.c:	test_type = convert_type(req->type);
+lower/posix/posix.c:	if(req->parents)
+lower/posix/posix.c:		bench_lower_end(req->parents);
+lower/posix/posix.c:	req->end_req(req);
+lower/posix/posix.c:		req->end_req(req);
+lower/posix_memory/posix.c:		switch(inf_req->type){
+lower/posix_memory/posix.c:				posix_push_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, inf_req->upper_req);
+lower/posix_memory/posix.c:				posix_pull_data(inf_req->key, inf_req->size, inf_req->value, inf_req->isAsync, inf_req->upper_req);
+lower/posix_memory/posix.c:				posix_trim_block(inf_req->key, inf_req->isAsync);
+lower/posix_memory/posix.c:	p_req->type=FS_LOWER_W;
+lower/posix_memory/posix.c:	p_req->key=PPA;
+lower/posix_memory/posix.c:	p_req->value=value;
+lower/posix_memory/posix.c:	p_req->upper_req=req;
+lower/posix_memory/posix.c:	p_req->isAsync=async;
+lower/posix_memory/posix.c:	p_req->size=size;
+lower/posix_memory/posix.c:	p_req->type=FS_LOWER_R;
+lower/posix_memory/posix.c:	p_req->key=PPA;
+lower/posix_memory/posix.c:	p_req->value=value;
+lower/posix_memory/posix.c:	p_req->upper_req=req;
+lower/posix_memory/posix.c:	p_req->isAsync=async;
+lower/posix_memory/posix.c:	p_req->size=size;
+lower/posix_memory/posix.c:	req->type_lower=0;
+lower/posix_memory/posix.c:			req->type_lower=1;
+lower/posix_memory/posix.c:	p_req->type=FS_LOWER_T;
+lower/posix_memory/posix.c:	p_req->key=PPA;
+lower/posix_memory/posix.c:	p_req->isAsync=async;
+lower/posix_memory/posix.c:	test_type = convert_type(req->type);
+lower/posix_memory/posix.c:	if(req->type<=GCMW){
+lower/posix_memory/posix.c:	req->end_req(req);
+lower/posix_memory/posix.c:	if(req->type_lower!=1 && req->type_lower!=0){
+lower/posix_memory/posix.c:		req->type_lower=0;
+lower/posix_memory/posix.c:	test_type = convert_type(req->type);
+lower/posix_memory/posix.c:	if(req->type <=GCMW){
+lower/posix_memory/posix.c:		req->type_lower=1;
+lower/posix_memory/posix.c:	req->end_req(req);
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:	//if ( r->req ) r->req->end_req(r->req);
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		if ( lsm_req->end_req ) lsm_req->end_req(lsm_req);
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		if ( lsm_gc_req->end_req ) lsm_gc_req->end_req(lsm_gc_req);
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		if(my_algo_req->parents){
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		MC(&my_algo_req->lower_latency_checker);
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		my_algo_req->lower_latency_data=my_algo_req->lower_latency_checker.micro_time;
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		my_algo_req->lower_path_flag=r->path_type+4;
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:	//	printf("test-time:%ld type:%u\n",my_algo_req->lower_latency_data,my_algo_req->lower_path_flag);*/
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		my_algo_req->end_req(my_algo_req);
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:	if(lsm_req->isgc){
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		lsm_req->end_req(lsm_req);
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		if(my_algo_req->parents){
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		//r->dmaTag = req->req->dmaTag;
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		measure_init(&my_algo_req->lower_latency_checker);
+lower/bdbm_drv/frontend/libmemio/libmemio_org.cpp:		MS(&my_algo_req->lower_latency_checker);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:	//if ( r->req ) r->req->end_req(r->req);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:		if ( lsm_req->end_req ) lsm_req->end_req(lsm_req);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:		if ( lsm_gc_req->end_req ) lsm_gc_req->end_req(lsm_gc_req);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:		if(my_algo_req->parents){
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			//bench_lower_end(my_algo_req->parents);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:	//	printf("test-time:%ld type:%u\n",my_algo_req->lower_latency_data,my_algo_req->lower_path_flag);*/
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			//my_algo_req->type_lower=r->path_type+4;
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:	//		my_algo_req->type_lower=r->path_type>r->before_path_type?r->path_type:r->before_path_type;
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			if(my_algo_req->type_lower<r->path_type)
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:				my_algo_req->type_lower=r->path_type;
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			MC(&my_algo_req->latency_lower);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			my_algo_req->end_req(my_algo_req);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			my_algo_req->end_req(my_algo_req);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:	if(lsm_req->isgc){
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:		lsm_req->end_req(lsm_req);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:		if(my_algo_req->parents){
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			//bench_lower_start(my_algo_req->parents);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:		//r->dmaTag = req->req->dmaTag;
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			if(my_algo_req->type_lower!=0){
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:				if(my_algo_req->type_lower>10){
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			measure_init(&my_algo_req->latency_lower);
+lower/bdbm_drv/frontend/libmemio/libmemio.cpp:			MS(&my_algo_req->latency_lower);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	switch(m_req->type){
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:			llm_req->req_type=REQTYPE_READ;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:			llm_req->req_type=REQTYPE_WRITE;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	llm_req->logaddr.lpa[0]=m_req->lba;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	llm_req->fmain.kp_ptr[0]=m_req->data;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	llm_req->async=m_req->async;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	llm_req->dmaTag=m_req->dma_tag;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	llm_req->req=m_req->req;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	llm_req->path_type=m_req->q_path_type;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	algo_req *my_algo_req=(algo_req*)m_req->req;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	if(my_algo_req->parents){
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		bench_lower_start(my_algo_req->parents);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	if(llm_req->req_type==REQTYPE_READ){
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		if(my_algo_req->type_lower!=0){
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:			if(my_algo_req->type_lower>10){
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	//	measure_init(&my_algo_req->latency_lower);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	//	MS(&my_algo_req->latency_lower);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		t_h_node=(__hash_node*)t_m_req->__hash_node;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		t_h_node=(__hash_node*)t_m_req->__hash_node;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		t_h_node=(__hash_node*)t_m_req->__hash_node;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		t_h_node=(__hash_node*)t_m_req->__hash_node;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		if(my_algo_req->parents){
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:			bench_lower_end(my_algo_req->parents);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		MA(&my_algo_req->latency_lower);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		my_algo_req->lower_latency_data=my_algo_req->lower_latency_checker.adding.tv_usec+my_algo_req->lower_latency_checker.adding.tv_sec*1000000;*/
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		if(my_algo_req->type_lower <r->path_type){
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:			my_algo_req->type_lower=r->path_type;	
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	/*	printf("test-time:%ld type:%u\n",my_algo_req->lower_latency_data,my_algo_req->lower_path_flag);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		my_algo_req->end_req(my_algo_req);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	//	printf("read:%d read_gc:%d writea:%d\n now type:%d\n",read_tagQ->size(),read_gc_tagQ->size(),write_tagQ->size(),t_req->type);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	algo_req *my_algo_req=(algo_req*)req->req;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	my_algo_req->end_req(my_algo_req);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:	void *_data=__hash_find_data(write_hash,m_req->lba);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		memcpy(m_req->data,d_req->data,8192);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:			_req->q_path_type=1;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:					t_data=(algo_req*)m_req->req;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:					m_req->req=(void*)_req->req;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:					_req->req=(void*)t_data;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:				_req->__hash_node=(void*)__hash_get_node(write_hash,write_hash_res);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:				   _req->__hash_node=(void*)__hash_get_node(write_hash,write_hash_res);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:			if(_req->__hash_node==NULL){
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		temp_m_req->req=req;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		temp_m_req->lba=lba;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		temp_m_req->len=len;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		temp_m_req->data=data;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		temp_m_req->async=async;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		temp_m_req->dma_tag=dmaTag;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		temp_m_req->q_path_type=0;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		temp_m_req->type=dir;
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		r = __memio_alloc_llm_req (mio,dir,(void*)temp_m_req,my_algo_req->rapid);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		//measure_init(&my_algo_req->lower_latency_checker);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		//MS(&my_algo_req->lower_latency_checker);
+lower/bdbm_drv/frontend/libmemio/libmemio_priority.cpp:		//r->dmaTag = req->req->dmaTag;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->bi_rw = REQTYPE_WRITE;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->bi_offset = offset;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->bi_size = size;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->bi_bvec_cnt = size / 8;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->cb_done = nvme_cb_done;
+lower/bdbm_drv/frontend/nvme/main.c:		for (j = 0; j < blkio_req->bi_bvec_cnt; j++) {
+lower/bdbm_drv/frontend/nvme/main.c:			blkio_req->bi_bvec_ptr[j] = (uint8_t*)bdbm_malloc (4096);
+lower/bdbm_drv/frontend/nvme/main.c:			blkio_req->bi_bvec_ptr[j][0] = 0x0A;
+lower/bdbm_drv/frontend/nvme/main.c:			blkio_req->bi_bvec_ptr[j][1] = 0x0B;
+lower/bdbm_drv/frontend/nvme/main.c:			blkio_req->bi_bvec_ptr[j][2] = 0x0C;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->bi_rw = REQTYPE_READ;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->bi_offset = offset;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->bi_size = size;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->bi_bvec_cnt = size / 8;
+lower/bdbm_drv/frontend/nvme/main.c:		blkio_req->cb_done = nvme_cb_done;
+lower/bdbm_drv/frontend/nvme/main.c:		for (j = 0; j < blkio_req->bi_bvec_cnt; j++) {
+lower/bdbm_drv/frontend/nvme/main.c:			blkio_req->bi_bvec_ptr[j] = (uint8_t*)bdbm_malloc (4096);
+lower/bdbm_drv/frontend/nvme/main.c:			if (blkio_req->bi_bvec_ptr[j] == NULL) {
+lower/bdbm_drv/frontend/nvme/userio.c:	bdbm_blkio_req_t* r = (bdbm_blkio_req_t*)req->blkio_req;
+lower/bdbm_drv/frontend/user/main.c:	bdbm_sema_unlock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:	for (j = 0; j < blkio_req->bi_bvec_cnt; j++)
+lower/bdbm_drv/frontend/user/main.c:		bdbm_free (blkio_req->bi_bvec_ptr[j]);
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_rw = REQTYPE_WRITE;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_offset = offset;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_size = size;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_bvec_cnt = size / 8;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->cb_done = write_done;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->user = (void*)blkio_req;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->user2 = (bdbm_sema_t*)bdbm_malloc (sizeof (bdbm_sema_t));
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_init ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		for (j = 0; j < blkio_req->bi_bvec_cnt; j++) {
+lower/bdbm_drv/frontend/user/main.c:			blkio_req->bi_bvec_ptr[j] = (uint8_t*)bdbm_malloc (4096);
+lower/bdbm_drv/frontend/user/main.c:			blkio_req->bi_bvec_ptr[j][0] = (uint8_t)w_cnt;
+lower/bdbm_drv/frontend/user/main.c:			blkio_req->bi_bvec_ptr[j][1] = (uint8_t)w_cnt+1;
+lower/bdbm_drv/frontend/user/main.c:			blkio_req->bi_bvec_ptr[j][2] = (uint8_t)w_cnt+2;;
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_lock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_lock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		for (j = 0; j < blkio_req->bi_bvec_cnt; j++)
+lower/bdbm_drv/frontend/user/main.c:			bdbm_free (blkio_req->bi_bvec_ptr[j]);
+lower/bdbm_drv/frontend/user/main.c:	for (j = 0; j < blkio_req->bi_bvec_cnt; j++) {
+lower/bdbm_drv/frontend/user/main.c:		if (blkio_req->bi_bvec_ptr[j][0] != (uint8_t)blkio_req->bi_offset) {
+lower/bdbm_drv/frontend/user/main.c:				blkio_req->bi_bvec_ptr[j][0], 
+lower/bdbm_drv/frontend/user/main.c:				(uint8_t)blkio_req->bi_offset);
+lower/bdbm_drv/frontend/user/main.c:		if (blkio_req->bi_bvec_ptr[j][1] != (uint8_t)blkio_req->bi_size) {
+lower/bdbm_drv/frontend/user/main.c:				blkio_req->bi_bvec_ptr[j][1], 
+lower/bdbm_drv/frontend/user/main.c:				(uint8_t)blkio_req->bi_size);
+lower/bdbm_drv/frontend/user/main.c:		if (blkio_req->bi_bvec_ptr[j][2] != (uint8_t)(blkio_req->bi_offset + blkio_req->bi_size)) {
+lower/bdbm_drv/frontend/user/main.c:				blkio_req->bi_bvec_ptr[j][2], 
+lower/bdbm_drv/frontend/user/main.c:				(uint8_t)(uint8_t)(blkio_req->bi_offset + blkio_req->bi_size));
+lower/bdbm_drv/frontend/user/main.c:		bdbm_free (blkio_req->bi_bvec_ptr[j]);
+lower/bdbm_drv/frontend/user/main.c:	bdbm_sema_unlock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:	for (j = 0; j < blkio_req->bi_bvec_cnt; j++)
+lower/bdbm_drv/frontend/user/main.c:		bdbm_free (blkio_req->bi_bvec_ptr[j]);
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_rw = REQTYPE_READ;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_offset = offset;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_size = size;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_bvec_cnt = size / 8;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->cb_done = read_done;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->user = (void*)blkio_req;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->user2 = (bdbm_sema_t*)bdbm_malloc (sizeof (bdbm_sema_t));
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_init ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		for (j = 0; j < blkio_req->bi_bvec_cnt; j++) {
+lower/bdbm_drv/frontend/user/main.c:			blkio_req->bi_bvec_ptr[j] = (uint8_t*)bdbm_malloc (4096);
+lower/bdbm_drv/frontend/user/main.c:			if (blkio_req->bi_bvec_ptr[j] == NULL) {
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_lock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_lock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		for (j = 0; j < blkio_req->bi_bvec_cnt; j++)
+lower/bdbm_drv/frontend/user/main.c:			bdbm_free (blkio_req->bi_bvec_ptr[j]);
+lower/bdbm_drv/frontend/user/main.c:	bdbm_sema_unlock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_rw = REQTYPE_TRIM;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_offset = offset;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_size = size;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->bi_bvec_cnt = size / 8;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->cb_done = erase_done;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->user = (void*)blkio_req;
+lower/bdbm_drv/frontend/user/main.c:		blkio_req->user2 = (bdbm_sema_t*)bdbm_malloc (sizeof (bdbm_sema_t));
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_init ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		for (j = 0; j < blkio_req->bi_bvec_cnt; j++) {
+lower/bdbm_drv/frontend/user/main.c:			blkio_req->bi_bvec_ptr[j] = (uint8_t*)bdbm_malloc (4096);
+lower/bdbm_drv/frontend/user/main.c:			if (blkio_req->bi_bvec_ptr[j] == NULL) {
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_lock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		bdbm_sema_lock ((bdbm_sema_t*)blkio_req->user2);
+lower/bdbm_drv/frontend/user/main.c:		for (j = 0; j < blkio_req->bi_bvec_cnt; j++)
+lower/bdbm_drv/frontend/user/main.c:			bdbm_free (blkio_req->bi_bvec_ptr[j]);
+lower/bdbm_drv/frontend/user/userio.c:	bdbm_blkio_req_t* r = (bdbm_blkio_req_t*)req->blkio_req;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->req_type = REQTYPE_TRIM;
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->lpa = bio->bi_sector / nr_secs_per_fp;
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->len = bio_sectors (bio) / nr_secs_per_fp;
+lower/bdbm_drv/frontend/kernel/blkio.c:		if (hlm_req->len == 0) 
+lower/bdbm_drv/frontend/kernel/blkio.c:			hlm_req->len = 1;
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->lpa = (bio->bi_sector + nr_secs_per_fp - 1) / nr_secs_per_fp;
+lower/bdbm_drv/frontend/kernel/blkio.c:		if ((hlm_req->lpa * nr_secs_per_fp - bio->bi_sector) > bio_sectors (bio)) {
+lower/bdbm_drv/frontend/kernel/blkio.c:			bdbm_error ("'hlm_req->lpa (%llu) * nr_secs_per_fp (%llu) - bio->bi_sector (%lu)' (%llu) > bio_sectors (bio) (%u)",
+lower/bdbm_drv/frontend/kernel/blkio.c:					hlm_req->lpa, nr_secs_per_fp, bio->bi_sector,
+lower/bdbm_drv/frontend/kernel/blkio.c:					hlm_req->lpa * nr_secs_per_fp - bio->bi_sector,
+lower/bdbm_drv/frontend/kernel/blkio.c:			hlm_req->len = 0;
+lower/bdbm_drv/frontend/kernel/blkio.c:			hlm_req->len = 
+lower/bdbm_drv/frontend/kernel/blkio.c:				(bio_sectors (bio) - (hlm_req->lpa * nr_secs_per_fp - bio->bi_sector)) / nr_secs_per_fp;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->nr_done_reqs = 0;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->kpg_flags = NULL;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->pptr_kpgs = NULL;	/* no data */
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->ptr_host_req = (void*)bio;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->ret = 0;
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->req_type = REQTYPE_READ;
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->req_type = REQTYPE_WRITE;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->lpa = (bio->bi_sector / nr_secs_per_fp);
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->len = (bio->bi_sector + bio_sectors (bio) + nr_secs_per_fp - 1) / nr_secs_per_fp - hlm_req->lpa;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->nr_done_reqs = 0;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->ptr_host_req = (void*)bio;
+lower/bdbm_drv/frontend/kernel/blkio.c:	hlm_req->ret = 0;
+lower/bdbm_drv/frontend/kernel/blkio.c:	/*bdbm_spin_lock_init (&hlm_req->lock);*/
+lower/bdbm_drv/frontend/kernel/blkio.c:	if ((hlm_req->pptr_kpgs = (uint8_t**)bdbm_malloc_atomic
+lower/bdbm_drv/frontend/kernel/blkio.c:			(sizeof(uint8_t*) * hlm_req->len * nr_kp_per_fp)) == NULL) {
+lower/bdbm_drv/frontend/kernel/blkio.c:	if ((hlm_req->kpg_flags = (uint8_t*)bdbm_malloc_atomic
+lower/bdbm_drv/frontend/kernel/blkio.c:			(sizeof(uint8_t) * hlm_req->len * nr_kp_per_fp)) == NULL) {
+lower/bdbm_drv/frontend/kernel/blkio.c:		if ((hlm_req->lpa * nr_kp_per_fp + kpg_loop) != (bio->bi_sector + bvec_offset) / nr_secs_per_kp) {
+lower/bdbm_drv/frontend/kernel/blkio.c:			hlm_req->pptr_kpgs[kpg_loop] = (uint8_t*)bdbm_malloc_atomic (KERNEL_PAGE_SIZE);
+lower/bdbm_drv/frontend/kernel/blkio.c:			hlm_req->kpg_flags[kpg_loop] = MEMFLAG_FRAG_PAGE;
+lower/bdbm_drv/frontend/kernel/blkio.c:		if ((hlm_req->pptr_kpgs[kpg_loop] = (uint8_t*)page_address (bvec->bv_page)) != NULL) {
+lower/bdbm_drv/frontend/kernel/blkio.c:			hlm_req->kpg_flags[kpg_loop] = MEMFLAG_KMAP_PAGE;
+lower/bdbm_drv/frontend/kernel/blkio.c:	while (kpg_loop < hlm_req->len * nr_kp_per_fp) {
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->pptr_kpgs[kpg_loop] = (uint8_t*)bdbm_malloc_atomic (KERNEL_PAGE_SIZE);
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->kpg_flags[kpg_loop] = MEMFLAG_FRAG_PAGE;
+lower/bdbm_drv/frontend/kernel/blkio.c:	for (kpg_loop = 0; kpg_loop < hlm_req->len * nr_kp_per_fp; kpg_loop++) {
+lower/bdbm_drv/frontend/kernel/blkio.c:		if (hlm_req->kpg_flags[kpg_loop] == MEMFLAG_FRAG_PAGE) {
+lower/bdbm_drv/frontend/kernel/blkio.c:			bdbm_free_atomic (hlm_req->pptr_kpgs[kpg_loop]);
+lower/bdbm_drv/frontend/kernel/blkio.c:		} else if (hlm_req->kpg_flags[kpg_loop] == MEMFLAG_KMAP_PAGE) {
+lower/bdbm_drv/frontend/kernel/blkio.c:		} else if (hlm_req->kpg_flags[kpg_loop] != MEMFLAG_NOT_SET) {
+lower/bdbm_drv/frontend/kernel/blkio.c:			bdbm_error ("invalid flags (kpg_flags[%u]=%u)", kpg_loop, hlm_req->kpg_flags[kpg_loop]);
+lower/bdbm_drv/frontend/kernel/blkio.c:	bdbm_free_atomic (hlm_req->kpg_flags);
+lower/bdbm_drv/frontend/kernel/blkio.c:	bdbm_free_atomic (hlm_req->pptr_kpgs);
+lower/bdbm_drv/frontend/kernel/blkio.c:		bdbm_stopwatch_start (&hlm_req->sw);
+lower/bdbm_drv/frontend/kernel/blkio.c:	if (hlm_req->org_pptr_kpgs) {
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->pptr_kpgs = hlm_req->org_pptr_kpgs;
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->kpg_flags = hlm_req->org_kpg_flags;
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->lpa--;
+lower/bdbm_drv/frontend/kernel/blkio.c:		hlm_req->len++;
+lower/bdbm_drv/frontend/kernel/blkio.c:	if (hlm_req->kpg_flags != NULL && hlm_req->pptr_kpgs != NULL) {
+lower/bdbm_drv/frontend/kernel/blkio.c:		for (kpg_loop = 0; kpg_loop < hlm_req->len * nr_kp_per_fp; kpg_loop++) {
+lower/bdbm_drv/frontend/kernel/blkio.c:			if (hlm_req->kpg_flags[kpg_loop] == MEMFLAG_FRAG_PAGE_DONE) {
+lower/bdbm_drv/frontend/kernel/blkio.c:				bdbm_free_atomic (hlm_req->pptr_kpgs[kpg_loop]);
+lower/bdbm_drv/frontend/kernel/blkio.c:			} else if (hlm_req->kpg_flags[kpg_loop] == MEMFLAG_KMAP_PAGE_DONE) {
+lower/bdbm_drv/frontend/kernel/blkio.c:			} else if (hlm_req->kpg_flags[kpg_loop] != MEMFLAG_NOT_SET) {
+lower/bdbm_drv/frontend/kernel/blkio.c:				bdbm_error ("invalid flags (kpg_flags[%u]=%u)", kpg_loop, hlm_req->kpg_flags[kpg_loop]);
+lower/bdbm_drv/frontend/kernel/blkio.c:	if (hlm_req->kpg_flags != NULL) 
+lower/bdbm_drv/frontend/kernel/blkio.c:		bdbm_free_atomic (hlm_req->kpg_flags);
+lower/bdbm_drv/frontend/kernel/blkio.c:	if (hlm_req->pptr_kpgs != NULL) 
+lower/bdbm_drv/frontend/kernel/blkio.c:		bdbm_free_atomic (hlm_req->pptr_kpgs);
+lower/bdbm_drv/frontend/kernel/blkio.c:		seg_no = ftl->get_segno (bdi, hlm_req->lpa);
+lower/bdbm_drv/frontend/kernel/blkio.c:	switch (hlm_req->req_type) {
+lower/bdbm_drv/frontend/kernel/blkio.c:		bdbm_msg ("[%llu] TRIM\t%llu\t%llu", seg_no, hlm_req->lpa, hlm_req->len);
+lower/bdbm_drv/frontend/kernel/blkio.c:		bdbm_msg ("[%llu] READ\t%llu\t%llu", seg_no, hlm_req->lpa, hlm_req->len);
+lower/bdbm_drv/frontend/kernel/blkio.c:		bdbm_msg ("[%llu] WRITE\t%llu\t%llu", seg_no, hlm_req->lpa, hlm_req->len);
+lower/bdbm_drv/frontend/kernel/blkio.c:		bdbm_error ("invalid REQTYPE (%u)", hlm_req->req_type);
+lower/bdbm_drv/frontend/kernel/blkio.c:	if (hlm_req->done)
+lower/bdbm_drv/frontend/kernel/blkio.c:		bdbm_sema_unlock (hlm_req->done);
+lower/bdbm_drv/frontend/kernel/blkio.c:	bio = (struct bio*)hlm_req->ptr_host_req;
+lower/bdbm_drv/frontend/kernel/blkio.c:	ret = hlm_req->ret;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:	bdbm_blkio_req_t* r = (bdbm_blkio_req_t*)&proxy_req->blkio_req;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:			uint8_t* mmap_vec = (uint8_t*)proxy_req->bi_bvec_ptr[r->bi_bvec_cnt];
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:	proxy_req->stt = REQ_STT_KERN_INIT;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:	proxy_req->blkio_req.bio = (void*)bio;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:	struct bio* bio = (struct bio*)proxy_req->blkio_req.bio;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:	if (proxy_req->blkio_req.bi_rw == REQTYPE_READ) {
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:			uint8_t* mmap_vec = (uint8_t*)proxy_req->bi_bvec_ptr[i];
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:	if (proxy_req->blkio_req.ret == 0)
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:		bdbm_warning ("oops! make_req () failed with %d", proxy_req->blkio_req.ret);
+lower/bdbm_drv/frontend/hybrid/blkio_proxy.c:	proxy_req->stt = REQ_STT_FREE;
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:				if (proxy_req->id != i) {
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:					bdbm_msg ("proxy_req->id: %llu i: %llu", proxy_req->id != i);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:				bdbm_bug_on (proxy_req->id != i);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:				if (proxy_req->stt == REQ_STT_KERN_SENT) {
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:					proxy_req->stt = REQ_STT_USER_PROG;
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:					for (j = 0; j < proxy_req->blkio_req.bi_bvec_cnt; j++)
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:						proxy_req->blkio_req.bi_bvec_ptr[j] = proxy_req->bi_bvec_ptr[j];
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:					host_inf->make_req (bdi, &proxy_req->blkio_req);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:	proxy_req->stt = REQ_STT_USER_DONE;
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:	ioctl (p->fd, BDBM_BLOCKIO_PROXY_IOCTL_DONE, &proxy_req->id);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:		seg_no = ftl->get_segno (bdi, hlm_req->lpa);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:	switch (hlm_req->req_type) {
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:		bdbm_msg ("[%llu] TRIM\t%llu\t%llu", seg_no, hlm_req->lpa, hlm_req->len);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:		bdbm_msg ("[%llu] READ\t%llu\t%llu", seg_no, hlm_req->lpa, hlm_req->len);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:		bdbm_msg ("[%llu] WRITE\t%llu\t%llu", seg_no, hlm_req->lpa, hlm_req->len);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:		bdbm_error ("invalid REQTYPE (%u)", hlm_req->req_type);
+lower/bdbm_drv/frontend/hybrid/blkio_stub.c:	bdbm_blkio_req_t* br = (bdbm_blkio_req_t*)req->blkio_req;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy_reqs_pool.c:		item->mmap_req->id = i;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy_reqs_pool.c:		item->mmap_req->stt = REQ_STT_FREE;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy_reqs_pool.c:		bdbm_bug_on (item->mmap_req->stt != REQ_STT_FREE);
+lower/bdbm_drv/frontend/hybrid/blkio_proxy_reqs_pool.c:			if (item->mmap_req->id == req->id) {
+lower/bdbm_drv/frontend/hybrid/blkio_proxy_reqs_pool.c:				bdbm_bug_on (item->mmap_req->stt == REQ_STT_FREE);
+lower/bdbm_drv/frontend/hybrid/blkio_proxy_reqs_pool.c:		item->mmap_req->stt = REQ_STT_FREE;
+lower/bdbm_drv/frontend/hybrid/blkio_proxy_reqs_pool.c:		bdbm_warning ("oops! cannot find the request in the used_list (%u)", req->id);
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:	switch (ptr_req->req_type) {
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.channel_no, 
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.chip_no, 
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.block_no, 
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.page_no, 
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->fmain.kp_stt,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->fmain.kp_ptr,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->foob.data,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.channel_no,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.chip_no,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.block_no,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.page_no,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->fmain.kp_stt,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->fmain.kp_ptr,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->foob.data,
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.channel_no, 
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.chip_no, 
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:			ptr_req->phyaddr.block_no);
+lower/bdbm_drv/devices/ramdrive/dev_ramssd.c:	ptr_req->ret = ret;
+lower/bdbm_drv/bdbm_inf.c:	uint8_t t_type=test_type(req->type);
+lower/bdbm_drv/bdbm_inf.c:	//req->parents->ppa=bb_checker_fix_ppa(ppa);
+lower/bdbm_drv/bdbm_inf.c:	uint8_t t_type=test_type(req->type);
+lower/bdbm_drv/bdbm_inf.c:	//req->parents->ppa=bb_checker_fix_ppa(ppa);
+lower/bdbm_drv/test_main.c:		req->params=params;
+lower/bdbm_drv/test_main.c:		req->end_req=t_end_req;
+lower/bdbm_drv/ftl/hlm_nobuf.c:	for (i = 0; i < ptr_hlm_req->len; i++) {
+lower/bdbm_drv/ftl/hlm_nobuf.c:		ftl->invalidate_lpa (bdi, ptr_hlm_req->lpa + i, 1);
+lower/bdbm_drv/ftl/llm_noq_lock.c:	punit_id = llm_req->phyaddr.punit_id;
+lower/bdbm_drv/ftl/llm_noq_lock.c:	punit_id = llm_req->phyaddr.punit_id;
+lower/bdbm_drv/ftl/llm_rmq.c:		bdbm_error ("invalid req-type (%u)", r->req_type);
+lower/bdbm_drv/ftl/hlm_rsd.c:	if (hlm_req->req_type != REQTYPE_WRITE) {
+lower/bdbm_drv/ftl/hlm_rsd.c:	new_hlm_req->req_type = hlm_req->req_type;
+lower/bdbm_drv/ftl/hlm_rsd.c:	new_hlm_req->lpa = hlm_req->lpa;
+lower/bdbm_drv/ftl/hlm_rsd.c:	new_hlm_req->len = hlm_req->len;
+lower/bdbm_drv/ftl/hlm_rsd.c:	new_hlm_req->nr_done_reqs = 0;
+lower/bdbm_drv/ftl/hlm_rsd.c:	new_hlm_req->ptr_host_req = NULL;
+lower/bdbm_drv/ftl/hlm_rsd.c:	new_hlm_req->ret = 0;
+lower/bdbm_drv/ftl/hlm_rsd.c:	new_hlm_req->queued = 1;	/* mark it queued */
+lower/bdbm_drv/ftl/hlm_rsd.c:	new_hlm_req->sw = hlm_req->sw;
+lower/bdbm_drv/ftl/hlm_rsd.c:	if ((new_hlm_req->pptr_kpgs = (uint8_t**)bdbm_malloc
+lower/bdbm_drv/ftl/hlm_rsd.c:			(sizeof(uint8_t*) * new_hlm_req->len * nr_kp_per_fp)) == NULL) {
+lower/bdbm_drv/ftl/hlm_rsd.c:	if ((new_hlm_req->kpg_flags = (uint8_t*)bdbm_malloc
+lower/bdbm_drv/ftl/hlm_rsd.c:			(sizeof(uint8_t) * new_hlm_req->len * nr_kp_per_fp)) == NULL) {
+lower/bdbm_drv/ftl/hlm_rsd.c:	for (i = 0; i < new_hlm_req->len * nr_kp_per_fp; i++) {
+lower/bdbm_drv/ftl/hlm_rsd.c:		new_hlm_req->kpg_flags[i] = hlm_req->kpg_flags[i];
+lower/bdbm_drv/ftl/hlm_rsd.c:		if ((new_hlm_req->pptr_kpgs[i] = (uint8_t*)bdbm_malloc (KERNEL_PAGE_SIZE)) == NULL) {
+lower/bdbm_drv/ftl/hlm_rsd.c:			new_hlm_req->pptr_kpgs[i], 
+lower/bdbm_drv/ftl/hlm_rsd.c:			hlm_req->pptr_kpgs[i], 
+lower/bdbm_drv/ftl/hlm_rsd.c:	for (i = 0; i < hlm_req->len * nr_kp_per_fp; i++) {
+lower/bdbm_drv/ftl/hlm_rsd.c:		bdbm_free (hlm_req->pptr_kpgs[i]);
+lower/bdbm_drv/ftl/hlm_rsd.c:	bdbm_free (hlm_req->pptr_kpgs);
+lower/bdbm_drv/ftl/hlm_rsd.c:	bdbm_free (hlm_req->kpg_flags);
+lower/bdbm_drv/ftl/hlm_rsd.c:	seg_no = ftl->get_segno (bdi, new_hlm_req->lpa);
+lower/bdbm_drv/ftl/hlm_rsd.c:		if ((new_hlm_req->lpa + new_hlm_req->len - 1) < old_hlm_req->lpa) {
+lower/bdbm_drv/ftl/hlm_rsd.c:		if (new_hlm_req->lpa > (old_hlm_req->lpa + old_hlm_req->len - 1)) {
+lower/bdbm_drv/ftl/hlm_rsd.c:		for (lpa_new = new_hlm_req->lpa; lpa_new < new_hlm_req->lpa + new_hlm_req->len; lpa_new++) {
+lower/bdbm_drv/ftl/hlm_rsd.c:			for (lpa_old = old_hlm_req->lpa; lpa_old < old_hlm_req->lpa + old_hlm_req->len; lpa_old++) {
+lower/bdbm_drv/ftl/hlm_rsd.c:				bdbm_msg ("\t[%u] CACHE-READ-HIT: %llu(%llu)", seg_no, new_hlm_req->lpa, new_hlm_req->len);
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_ofs = (lpa_new - new_hlm_req->lpa) * nr_kp_per_fp;
+lower/bdbm_drv/ftl/hlm_rsd.c:				old_ofs = (lpa_old - old_hlm_req->lpa) * nr_kp_per_fp;
+lower/bdbm_drv/ftl/hlm_rsd.c:					if (old_hlm_req->kpg_flags[old_ofs + i] == MEMFLAG_KMAP_PAGE) {
+lower/bdbm_drv/ftl/hlm_rsd.c:							new_hlm_req->pptr_kpgs[new_ofs + i],
+lower/bdbm_drv/ftl/hlm_rsd.c:							old_hlm_req->pptr_kpgs[old_ofs + i],
+lower/bdbm_drv/ftl/hlm_rsd.c:						new_hlm_req->kpg_flags[new_ofs + i] |= MEMFLAG_DONE;
+lower/bdbm_drv/ftl/hlm_rsd.c:					if (old_hlm_req->kpg_flags[(lpa_old - old_hlm_req->lpa) * nr_kp_per_fp + i] == MEMFLAG_KMAP_PAGE) {
+lower/bdbm_drv/ftl/hlm_rsd.c:							new_hlm_req->pptr_kpgs[(lpa_new - new_hlm_req->lpa) * nr_kp_per_fp + i],
+lower/bdbm_drv/ftl/hlm_rsd.c:							old_hlm_req->pptr_kpgs[(lpa_old - old_hlm_req->lpa) * nr_kp_per_fp + i],
+lower/bdbm_drv/ftl/hlm_rsd.c:						new_hlm_req->kpg_flags[(lpa_new - new_hlm_req->lpa) * nr_kp_per_fp + i] |= MEMFLAG_DONE;
+lower/bdbm_drv/ftl/hlm_rsd.c:	seg_no = ftl->get_segno (bdi, new_hlm_req->lpa);
+lower/bdbm_drv/ftl/hlm_rsd.c:		if ((old_hlm_req->lpa + old_hlm_req->len - 1) == new_hlm_req->lpa) {
+lower/bdbm_drv/ftl/hlm_rsd.c:			uint32_t ofs = (old_hlm_req->len - 1) * nr_kp_per_fp;
+lower/bdbm_drv/ftl/hlm_rsd.c:			bdbm_msg ("\t[%u] CACHE-WRITE-HIT: %llu(%llu)", seg_no, new_hlm_req->lpa, new_hlm_req->len);
+lower/bdbm_drv/ftl/hlm_rsd.c:				if (old_hlm_req->kpg_flags[ofs+i] == MEMFLAG_FRAG_PAGE &&
+lower/bdbm_drv/ftl/hlm_rsd.c:					new_hlm_req->kpg_flags[i] == MEMFLAG_KMAP_PAGE) {
+lower/bdbm_drv/ftl/hlm_rsd.c:						old_hlm_req->pptr_kpgs[ofs+i],
+lower/bdbm_drv/ftl/hlm_rsd.c:						new_hlm_req->pptr_kpgs[i],
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->kpg_flags[i] |= MEMFLAG_DONE;
+lower/bdbm_drv/ftl/hlm_rsd.c:			if (new_hlm_req->len == 1) {
+lower/bdbm_drv/ftl/hlm_rsd.c:				bdbm_msg ("\t[%u] DIRECT-WRITE-IGNORE: %llu(%llu)", seg_no, new_hlm_req->lpa, new_hlm_req->len);
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->lpa++;
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->len--;
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->org_kpg_flags = new_hlm_req->kpg_flags;
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->org_pptr_kpgs = new_hlm_req->pptr_kpgs;
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->pptr_kpgs+=nr_kp_per_fp;
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->kpg_flags+=nr_kp_per_fp;
+lower/bdbm_drv/ftl/hlm_rsd.c:			old_hlm_req->lpa, 
+lower/bdbm_drv/ftl/hlm_rsd.c:			old_hlm_req->len,
+lower/bdbm_drv/ftl/hlm_rsd.c:			old_hlm_req->pptr_kpgs[1][0],
+lower/bdbm_drv/ftl/hlm_rsd.c:			old_hlm_req->pptr_kpgs[1][1],
+lower/bdbm_drv/ftl/hlm_rsd.c:			old_hlm_req->pptr_kpgs[1][2],
+lower/bdbm_drv/ftl/hlm_rsd.c:			old_hlm_req->pptr_kpgs[1][511]);
+lower/bdbm_drv/ftl/hlm_rsd.c:		if (new_hlm_req->kpg_flags[new_hlm_req->len * nr_kp_per_fp - 1] == MEMFLAG_FRAG_PAGE) {
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->lpa, 
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->len, 
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->pptr_kpgs[1][0],
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->pptr_kpgs[1][1],
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->pptr_kpgs[1][2],
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->pptr_kpgs[1][511]);
+lower/bdbm_drv/ftl/hlm_rsd.c:			for (i = 0; i < new_hlm_req->len * nr_kp_per_fp; i++)
+lower/bdbm_drv/ftl/hlm_rsd.c:				new_hlm_req->kpg_flags[i] |= MEMFLAG_DONE;
+lower/bdbm_drv/ftl/hlm_rsd.c:	switch (hlm_req->req_type) {
+lower/bdbm_drv/ftl/hlm_rsd.c:		bdbm_warning ("unknown req_type (%u)", hlm_req->req_type);
+lower/bdbm_drv/ftl/hlm_rsd.c:	bdbm_hlm_req_t* ptr_hlm_req = (bdbm_hlm_req_t* )ptr_llm_req->ptr_hlm_req;
+lower/bdbm_drv/ftl/hlm_rsd.c:	if (ptr_llm_req->ptr_oob != NULL) {
+lower/bdbm_drv/ftl/hlm_rsd.c:		if (ptr_llm_req->req_type == REQTYPE_READ) {
+lower/bdbm_drv/ftl/hlm_rsd.c:			uint64_t lpa = ((uint64_t*)ptr_llm_req->ptr_oob)[0];
+lower/bdbm_drv/ftl/hlm_rsd.c:			if (lpa != ptr_llm_req->lpa) {
+lower/bdbm_drv/ftl/hlm_rsd.c:				bdbm_warning ("%llu != %llu (%llX)", ptr_llm_req->lpa, lpa, lpa);
+lower/bdbm_drv/ftl/hlm_rsd.c:		bdbm_free (ptr_llm_req->ptr_oob);
+lower/bdbm_drv/ftl/hlm_rsd.c:	ptr_hlm_req->nr_done_reqs++; 
+lower/bdbm_drv/ftl/hlm_rsd.c:	if (ptr_hlm_req->nr_done_reqs == ptr_hlm_req->len) {
+lower/bdbm_drv/ftl/hlm_rsd.c:	bdbm_hlm_req_t* hlm_req = (bdbm_hlm_req_t* )ptr_llm_req->ptr_hlm_req;
+lower/bdbm_drv/ftl/hlm_rsd.c:	if (hlm_req->queued == 1) {
+lower/bdbm_drv/ftl/pmu.c:	uint64_t pid = llm_req->phyaddr->punit_id;
+lower/bdbm_drv/ftl/pmu.c:	uint64_t pid = llm_req->phyaddr.punit_id;
+lower/bdbm_drv/ftl/pmu.c:	switch (llm_req->req_type) {
+lower/bdbm_drv/ftl/pmu.c:	bdbm_hlm_req_t* h = (bdbm_hlm_req_t*)req->ptr_hlm_req;
+lower/bdbm_drv/ftl/pmu.c:	switch (req->req_type) {
+lower/bdbm_drv/ftl/pmu.c:	bdbm_hlm_req_t* h = (bdbm_hlm_req_t*)req->ptr_hlm_req;
+lower/bdbm_drv/ftl/pmu.c:	switch (req->req_type) {
+lower/bdbm_drv/ftl/pmu.c:	bdbm_hlm_req_t* h = (bdbm_hlm_req_t*)req->ptr_hlm_req;
+lower/bdbm_drv/ftl/pmu.c:	switch (req->req_type) {
+bench/bench.c:	measure_init(&req->algo);
+bench/bench.c:	if(req->params==NULL){
+bench/bench.c:	//	measure_init(&req->latency_poll);
+bench/bench.c:		measure_init(&req->latency_ftl);
+bench/bench.c:		MS(&req->latency_ftl);
+bench/bench.c:	MS(&req->algo);
+bench/bench.c:	MA(&req->algo);
+bench/bench.c:	measure_init(&req->lower);
+bench/bench.c:	MS(&req->lower);
+bench/bench.c:	MA(&req->lower);
+bench/bench.c:	MC(&req->latency_ftl);
+bench/bench.c:	temp = &_d->ftl_poll[req->type_ftl][req->type_lower];
+bench/bench.c:	req->latency_ftl.micro_time += req->latency_ftl.adding.tv_sec*1000000 + req->latency_ftl.adding.tv_usec;
+bench/bench.c:	temp->total_micro += req->latency_ftl.micro_time;
+bench/bench.c:	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
+bench/bench.c:	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
+bench/bench.c:	temp = &_d->ftl_npoll[req->type_ftl][req->type_lower];
+bench/bench.c:	req->latency_ftl.micro_time -= req->latency_poll.adding.tv_sec*1000000 + req->latency_poll.adding.tv_usec;
+bench/bench.c:	temp->total_micro += req->latency_ftl.micro_time;
+bench/bench.c:	temp->max = temp->max < req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->max;
+bench/bench.c:	temp->min = temp->min > req->latency_ftl.micro_time ? req->latency_ftl.micro_time : temp->min;
+bench/bench.c:	int idx=req->mark;
+bench/bench.c:	measure_calc(&req->latency_checker);
+bench/bench.c:	int idx=req->mark;
+bench/bench.c:	if(req->type==FS_GET_T || req->type==FS_NOTFOUND_T){
+bench/bench.c:	if(req->type==FS_NOTFOUND_T){
+bench/bench.c:	int slot_num=req->latency_checker.micro_time/TIMESLOT;
+bench/bench.c:	if(req->type==FS_GET_T){
+bench/bench.c:	else if(req->type==FS_SET_T){
+bench/bench.c:		if(req->type==FS_GET_T){
+bench/bench.c:		else if(req->type==FS_SET_T){
+bench/bench.c:	if(req->algo.isused)
+bench/bench.c:		__bench_time_maker(req->algo,_data,true);
+bench/bench.c:	if(req->lower.isused)
+bench/bench.c:		__bench_time_maker(req->lower,_data,false);
+bench/bench.c:	if(req->type==FS_NOTFOUND_T){

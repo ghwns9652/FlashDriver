@@ -3,7 +3,7 @@ export CC=g++
 TARGET_INF=interface
 TARGET_LOWER=posix_memory
 #TARGET_LOWER=linux_aio
-TARGET_ALGO=red_tpftl
+TARGET_ALGO=dftl
 
 
 
@@ -11,16 +11,17 @@ PPWD=$(pwd)
 
 DEBUGFLAGS=\
 			-rdynamic\
-			-Wno-pointer-arith\
-#			-fsanitize=address\
+			-Wno-pointer-arith\	
+
 #	-DBUSE_DEBUG
 
 COMMONFLAGS=\
 			-Wno-write-strings\
 			-DLARGEFILE64_SOURCE\
 			-DSLC\
-#			-O2\
-
+			-O2\
+			-fsanitize=address\
+			-static-libasan
 #			-DWRITESYNC\
 
 COMMONFLAGS+=$(DEBUGFLAGS)\
@@ -107,8 +108,9 @@ endif
 LIBS +=\
 		-lpthread\
 		-lm\
+
+		#-ljemalloc\
 #		-laio\
-#-ljemalloc\
 
 all: driver
 
@@ -119,7 +121,7 @@ duma_sim: duma_driver
 debug_driver: ./interface/main.c libdriver_d.a
 	$(CC) $(CFLAGS) -DDEBUG -o $@ $^ $(LIBS)
 
-driver: ./interface/main.c libdriver.a
+driver: ./interface/t_main.c libdriver.a
 	$(CC) $(CFLAGS) -o $@ $^ $(ARCH) $(LIBS)
 
 range_driver: ./interface/range_test_main.c libdriver.a

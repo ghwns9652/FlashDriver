@@ -32,6 +32,7 @@ Redblack tp_entry_alloc(int32_t lpa, int32_t offset, int32_t ppa, int8_t cnt, ch
 }
 void tp_entry_free(int32_t lpa, Redblack d_node){
 	C_TABLE *c_table = &CMT[D_IDX];
+
 	rb_delete(d_node);
 	c_table->entry_cnt--;
 	free_cache_size += ENTRY_SIZE;
@@ -81,6 +82,7 @@ Redblack tp_entry_op(int32_t lpa, int32_t ppa){
 #if B_TPFTL
 		if(c_table->h_bitmap[P_IDX])
 			find_node = tp_entry_search(lpa);
+
 #else
 		find_node = tp_entry_search(lpa);
 #endif
@@ -105,6 +107,7 @@ Redblack tp_entry_op(int32_t lpa, int32_t ppa){
 #if B_TPFTL
 			if(c_table->h_bitmap[P_IDX])
 				find_node = tp_entry_search(lpa);
+			
 #else
 			find_node = tp_entry_search(lpa);
 #endif
@@ -126,6 +129,7 @@ Redblack tp_entry_split(Redblack split_node, int32_t lpa, int32_t ppa, bool flag
 	int32_t cnt       = split_node->cnt;
 	int32_t distance  = 0;
 	int32_t pre_cnt, next_cnt;
+
 	if(P_IDX == head_lpn){
 		//Split After merge	
 		if(!flag){
@@ -163,11 +167,13 @@ Redblack tp_entry_split(Redblack split_node, int32_t lpa, int32_t ppa, bool flag
 
 	}
 	else{
-
+		/*
 		if(cnt == 0){
 			tp_entry_free(lpa, split_node);
+			//return c_table->last_ptr;
 			return last_ptr;
 		}
+		*/
 		tp_entry_update(split_node, head_lpn, head_ppn, split_node->cnt-1,'W');
 		last_ptr = tp_entry_alloc(lpa, P_IDX, ppa, 0, 'W');
 	}

@@ -12,7 +12,6 @@
 #include "../bench/bench.h"
 #include "../bench/measurement.h"
 #include "interface.h"
-
 #define LOAD_FILE TPC_C_W_16
 #define RUN_FILE  TPC_C_BENCH_16
 #define BLK_NUM 16
@@ -24,7 +23,6 @@ int32_t write_cnt;
 int32_t read_cnt;
 int32_t real_w_cnt;
 int32_t real_r_cnt;
-
 /*
 void log_print(int sig){
  	if (total_sec) {
@@ -47,6 +45,8 @@ int main(int argc, char *argv[]) {
 	char type[5];
 	double cal_len;
 	struct sigaction sa;
+	uint64_t c_number = 0;
+
 	//sa.sa_handler = log_print;
 	//sigaction(SIGINT, &sa, NULL);
 	bt = (MeasureTime *)malloc(sizeof(MeasureTime));
@@ -81,13 +81,6 @@ int main(int argc, char *argv[]) {
         */
 //	int32_t cnt = 0;
 	while (fscanf(w_fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
-//		printf("cnt = %d\n",cnt++);
-		/*
-		if(offset == 28887332){
-			printf("%s %s %llu %lf\n",command, type, offset, cal_len);
-			sleep(1);
-		}
-		*/
 
 		if(command[0] == 'D'){
 			offset = offset / BLK_NUM;
@@ -128,6 +121,8 @@ int main(int argc, char *argv[]) {
 		printf("No file\n");
 		return 1;
 	}
+//	trace_cdf = (uint64_t *)malloc(sizeof(uint64_t) * (1000000/TIMESLOT)+1);
+//	memset(trace_cdf, 0, sizeof(uint64_t) * ((1000000/TIMESLOT)+1));
 	measure_start(bt);	
 //	cnt = 0;
 	while (fscanf(r_fp, "%s %s %llu %lf", command, type, &offset, &cal_len) != EOF) {
@@ -185,6 +180,14 @@ int main(int argc, char *argv[]) {
 	printf("read throughput: %.2fMB/s\n", (float)real_r_cnt*8192/total_sec/1000/1000);
 	printf("write throughput: %.2fMB/s\n", (float)real_w_cnt*8192/total_sec/1000/1000);
 	printf("total_throughput: %.2fMB/s\n",(float)req_t_cnt*8192/total_sec/1000/1000);
+	printf("CDF for bench trace!\n");
+	for(int i = 0; i < 1000000/TIMESLOT+1; i++){
+		c_number += trace_cdf[i];
+		if(trace_cdf[i]==0) continue;
+		printf("%d\t%ld\t%f\n",i * 10, trace_cdf[i], (float)c_number/real_r_cnt);
+		if(real_r_cnt == c_number)
+			break;
+	}
 	free(bt);
 	free(st);
 	sleep(5);

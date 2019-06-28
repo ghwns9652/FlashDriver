@@ -105,6 +105,8 @@ int32_t dpage_GC(){
     volatile int32_t twrite;
     volatile int valid_num;
     volatile int real_valid;
+	//int32_t f_offset;
+	//hash_node *node;
     Block *victim;
     C_TABLE *c_table;
     //value_set *p_table_vs;
@@ -201,20 +203,20 @@ int32_t dpage_GC(){
                 continue;
             }
             else{ // but CLEAN state couldn't have this case, so just change ppa
-                p_table[P_IDX].ppa = new_block + real_valid;	
-		real_valid++;
+                p_table[P_IDX].ppa = new_block + real_valid;
+				//tp_entry_op(lpa, p_table[P_IDX].ppa);
+				 /*  
+				if(c_table->h_bitmap[P_IDX]){
+					int32_t f_offset = find_head_idx(lpa);
+					node = tp_entry_search(lpa, P_IDX);
+					node->data = p_table[P_IDX].ppa;
+				}
+				*/
+				real_valid++;
                 if(c_table->state == CLEAN){
                     c_table->state = DIRTY;
                     BM_InvalidatePage(bm, t_ppa);
-#if C_CACHE
-                    if (num_caching == num_max_cache) {
-                        bool gc_flag, d_flag;
-                        demand_eviction(NULL, 'D', &gc_flag, &d_flag);
-                    }
 
-                    c_table->queue_ptr = lru_push(lru, (void *)c_table);
-                    num_caching++;
-#endif
                 }
             }
             continue;
@@ -256,7 +258,7 @@ int32_t dpage_GC(){
             c_table->t_ppa = t_ppa; // Update CMT t_ppa
         }
     }
-
+	
     NODE *c_ptr = lru->head;
     hash_t *ht_ptr;
 	hash_node *node, *next;
@@ -264,7 +266,7 @@ int32_t dpage_GC(){
     while(c_ptr != NULL){
 	    c_table = (C_TABLE *)c_ptr->DATA;
 		ht_ptr = c_table->ht_ptr;
-	    for(int i = 0 ; i < ht_ptr->size; i++){
+		for(int i = 0 ; i < ht_ptr->size; i++){
 			node = ht_ptr->bucket[i];
 			while(node != NULL){
 				node->data = c_table->p_table[node->key].ppa;
@@ -274,7 +276,6 @@ int32_t dpage_GC(){
 
 		c_ptr = c_ptr->next;
 	}
-
 
 
 
