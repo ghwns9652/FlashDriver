@@ -35,6 +35,7 @@ int32_t BM_InitBlockArray(Block* blockArray)
 	for (int i=0; i<numBlock; ++i){
 		blockArray[i].PBA = i;
 		blockArray[i].Invalid = 0;
+		blockArray[i].wr_off = 0;
 		blockArray[i].hn_ptr = NULL;
 		blockArray[i].type = 0;
 		blockArray[i].ValidP = (ValidP_T*)malloc(numBITMAPB);

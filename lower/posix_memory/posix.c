@@ -29,6 +29,9 @@
 #include "../../algorithm/hash_tpftl/dftl.h"
 #elif defined(ctoc_batch)
 #include "../../algorithm/ctoc_batch/dftl.h"
+#elif defined(hashftl)
+#include "../../algorithm/hashftl/hashftl.h"
+
 #else
 #include "../../algorithm/Lsmtree/lsmtree.h"
 #endif
