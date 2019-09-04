@@ -326,6 +326,7 @@ level *array_skp_cvt_level(skiplist *skip,float fpr){
 		LSM.keynum_in_header=(LSM.keynum_in_header*LSM.keynum_in_header_cnt+idx-1)/(LSM.keynum_in_header_cnt+1);
 		LSM.keynum_in_header_cnt++;
 	}
+	lsm_param_update(res->n_num);
 	return res;
 }
 /*

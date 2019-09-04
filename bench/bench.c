@@ -213,7 +213,7 @@ bench_value* get_bench(){
 		float head=_m->n_num;
 		printf("\r testing.....[%f%%]",head/body*100);
 	}
-	else if(_m->n_num%(_m->m_num<100?_m->m_num:PRINTPER*(_m->m_num/100))==0){
+	else if(_m->n_num%(_m->m_num<100?_m->m_num:PRINTPER*(_m->m_num/10000))==0){
 #ifdef PROGRESS
 		printf("\r testing...... [%.2lf%%]",(double)(_m->n_num)/(_m->m_num/100));
 		fflush(stdout);
@@ -1042,7 +1042,7 @@ int bench_set_params(int argc, char **argv, char **temp_argv){
 							key_length=true;
 							KEYLENGTH=atoi(optarg);
 							if(KEYLENGTH>16 || KEYLENGTH<1){
-								KEYLENGTH=-1;
+								KEYLENGTH=2;
 							}
 						}
 						break;
@@ -1051,7 +1051,7 @@ int bench_set_params(int argc, char **argv, char **temp_argv){
 							value_size=true;
 							VALUESIZE=atoi(optarg);
 							if(VALUESIZE>NPCINPAGE || VALUESIZE<0){
-								VALUESIZE=-1;
+								VALUESIZE=1;
 							}
 						}
 						break;
@@ -1066,10 +1066,10 @@ int bench_set_params(int argc, char **argv, char **temp_argv){
 		LOCALITY=50; TARGETRATIO=0.5;
 	}
 	if(!key_length){
-		KEYLENGTH=-1;
+		KEYLENGTH=2;
 	}
 	if(!value_size){
-		VALUESIZE=-1;
+		VALUESIZE=1;
 	}
 	printf("key_length: %d - -1==rand\n",KEYLENGTH==-1?KEYLENGTH:KEYLENGTH*16);
 	printf("value_size: %d - -1==rand\n",VALUESIZE==-1?VALUESIZE:VALUESIZE*PIECE);
