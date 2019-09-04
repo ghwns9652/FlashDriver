@@ -31,6 +31,7 @@ level_ops a_ops={
 	.get_number_runs=array_get_numbers_run,
 	.get_max_table_entry=a_max_table_entry,
 	.get_max_flush_entry=a_max_flush_entry,
+	.skiplist_cvt_level=array_skp_cvt_level,
 
 	.keyset_iter_init=array_key_iter_init,
 	.keyset_iter_nxt=array_key_iter_nxt,

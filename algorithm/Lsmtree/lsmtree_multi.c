@@ -16,8 +16,8 @@ uint32_t __lsm_range_get_sub(request* req,lsm_sub_req *sr,void *arg1, void *arg2
 extern lsmtree LSM;
 
 uint32_t lsm_multi_set(request *const req, uint32_t num){
-	compaction_check(req->key,false);
 	for(int i=0; i<req->num; i++){
+		compaction_check(req->multi_key[i],req->multi_value[i]->length,false);
 		skiplist_insert(LSM.memtable,req->multi_key[i],req->multi_value[i],true);
 	}
 	req->end_req(req);

@@ -5,6 +5,7 @@
 #include "bloomfilter.h"
 #include "nocpy.h"
 #include "lsmtree_scheduling.h"
+#include "../../include/utils/thpool.h"
 extern lsmtree LSM;
 pl_run *make_pl_run_array(level *t, uint32_t *num){
 	//first lock
@@ -45,9 +46,46 @@ void *level_insert_write(level *t, run_t *data){
 	free(data);
 	return NULL;
 }
+static threadpool bg_read_th; 
+void bg_start(void *arg, int id){
+	void **p=(void**)arg;
+	run_t **r=(run_t**)p[0];
+	fdriver_lock_t **locks=(fdriver_lock_t**)p[1];
+	
+	algo_req *areq;
+	lsm_params *params;
+	for(int i=0; r[i]!=NULL; i++){
+		areq=(algo_req*)malloc(sizeof(algo_req));
+		params=(lsm_params*)malloc(sizeof(lsm_params));
+
+		params->lsm_type=BGREAD;
+		params->value=inf_get_valueset(NULL,FS_MALLOC_R,PAGESIZE);
+		params->target=(PTR*)&r[i]->cpt_data;
+		params->ppa=r[i]->pbn;
+		params->lock=locks[i];
+
+		areq->parents=NULL;
+		areq->end_req=lsm_end_req;
+		areq->params=(void*)params;
+		areq->type_lower=0;
+		areq->rapid=false;
+		areq->type=HEADERR;
+		if(LSM.nocpy) r[i]->cpt_data->nocpy_table=nocpy_pick(r[i]->pbn);
+		LSM.li->read(r[i]->pbn,PAGESIZE,params->value,ASYNC,areq);
+	}
+	free(r);
+	free(locks);
+	return;
+}
 
 uint32_t pipe_partial_leveling(level *t, level *origin, leveling_node* lnode, level *upper){
 	compaction_sub_pre();
+
+	static bool thpool_init_flag=false;
+	if(!thpool_init_flag){
+		thpool_init_flag=true;
+		bg_read_th=thpool_init(1);
+	}
 
 	uint32_t u_num=0, l_num=0;
 	pl_run *u_data=NULL, *l_data=NULL;
@@ -104,11 +142,18 @@ uint32_t pipe_partial_leveling(level *t, level *origin, leveling_node* lnode, le
 	}
 	
 	read_target[cnt]=NULL;
-	compaction_bg_htable_bulkread(read_target,lock_target);
+	void *arg[2];
+	arg[0]=(void*)read_target;
+	arg[1]=(void*)lock_target;
+	thpool_add_work(bg_read_th,bg_start,(void*)arg);
+	//compaction_bg_htable_bulkread(read_target,lock_target);
 
 	LSM.lop->partial_merger_cutter(lnode?lnode->mem:NULL,u_data,l_data,u_num,l_num,t,level_insert_write);
 
 	compaction_sub_post();
+
+	while(thpool_num_threads_working(bg_read_th)==1);
+
 	if(u_data) pl_run_free(u_data,u_num);
 	pl_run_free(l_data,l_num);
 	return 1;

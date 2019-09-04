@@ -59,7 +59,7 @@ struct algorithm algo_lsm={
 
 lsmtree LSM;
 int save_fd;
-int32_t SIZEFACTOR;
+double SIZEFACTOR;
 uint64_t caching_size;
 
 MeasureTime __get_mt;
@@ -86,21 +86,23 @@ void lsm_bind_ops(lsmtree *l){
 	l->lop=&a_ops;
 	l->KEYNUM=l->lop->get_max_table_entry();
 	l->FLUSHNUM=l->lop->get_max_flush_entry(FULLMAPNUM);
-	l->keynum_in_header=l->FLUSHNUM;
+	l->keynum_in_header=8192/32;
 	l->keynum_in_header_cnt=0;
 }
 uint32_t __lsm_get(request *const);
-static int32_t get_sizefactor(uint64_t as,uint32_t keynum_in_header){
+static double get_sizefactor(uint64_t as,uint32_t keynum_in_header){
 	uint32_t _f=LSM.LEVELN;
 	int32_t res;
-	uint64_t all_memory=(TOTALSIZE/1024);
+	uint64_t all_memory=(SHOWINGSIZE/1024);
 	caching_size=LSM.caching_size*(all_memory/(8*K));
+	as/=(ONESEGMENT);
 #if !defined(READCACHE)
 	if(LSM.LEVELCACHING==1 && LSM.LEVELN==2)
 		res=caching_size;
 	else
 #endif
-		res=_f?ceil(pow(10,log10(as/keynum_in_header)/(_f))):as/keynum_in_header;
+		res=_f?ceil(pow(10,log10(as)/(_f))):as/keynum_in_header;
+	LSM.header_factor=((ONESEGMENT)/PIECE)/(keynum_in_header);
 	return res;
 }
 uint32_t lsm_create(lower_info *li,blockmanager *bm, algorithm *lsm){
@@ -136,11 +138,11 @@ uint32_t __lsm_create_normal(lower_info *li, algorithm *lsm){
 	lsm_bind_ops(&LSM);
 	LSM.memtable=skiplist_init();
 	LSM.debug_flag=false;
-	SIZEFACTOR=get_sizefactor(RANGE,LSM.FLUSHNUM);
+	SIZEFACTOR=get_sizefactor(SHOWINGSIZE,LSM.keynum_in_header);
 	LSM.size_factor=SIZEFACTOR;
-	unsigned long long sol;
+	double sol;
 #ifdef MONKEY
-	int32_t SIZEFACTOR2=ceil(pow(10,log10(RANGE/LSM.KEYNUM/LSM.LEVELN)/(LSM.LEVELN-1)));
+	float SIZEFACTOR2=ceil(pow(10,log10(RANGE/LSM.KEYNUM/LSM.LEVELN)/(LSM.LEVELN-1)));
 	float ffpr=RAF*(1-SIZEFACTOR2)/(1-pow(SIZEFACTOR2,LSM.LEVELN-1));
 #endif
 	float target_fpr=0;
@@ -152,7 +154,7 @@ uint32_t __lsm_create_normal(lower_info *li, algorithm *lsm){
 	printf("| LSM KEYNUM:%d FLUSHNUM:%d\n",LSM.KEYNUM,LSM.FLUSHNUM);
 	LSM.disk=(level**)malloc(sizeof(level*)*LSM.LEVELN);
 	for(int i=0; i<LSM.LEVELN-1; i++){//for lsmtree -1 level
-		LSM.disk[i]=LSM.lop->init(sol,i,target_fpr,false);
+		LSM.disk[i]=LSM.lop->init((uint32_t)(ceil(sol*LSM.header_factor)),i,target_fpr,false);
 #ifdef BLOOM
 #ifdef MONKEY
 		target_fpr=pow(SIZEFACTOR2,i)*ffpr;
@@ -172,14 +174,14 @@ uint32_t __lsm_create_normal(lower_info *li, algorithm *lsm){
 	}   
 
 #ifdef TIERING
-	LSM.disk[LSM.LEVELN-1]=LSM.lop->init(sol,LSM.LEVELN-1,1,true);
+	LSM.disk[LSM.LEVELN-1]=LSM.lop->init(sol*LSM.header_factor,LSM.LEVELN-1,1,true);
 #else
-	LSM.disk[LSM.LEVELN-1]=LSM.lop->init(sol,LSM.LEVELN-1,1,false);
+	LSM.disk[LSM.LEVELN-1]=LSM.lop->init(sol*LSM.header_factor,LSM.LEVELN-1,1,false);
 #endif
 	printf("| [%d] fpr:1.0000 bytes per entry:%lu noe:%d\n",LSM.LEVELN,bf_bits(LSM.KEYNUM,1),LSM.disk[LSM.LEVELN-1]->m_num);
 	sizeofall+=LSM.disk[LSM.LEVELN-1]->m_num;
-	printf("| level:%d sizefactor:%d\n",LSM.LEVELN,SIZEFACTOR);
-	printf("| all level size:%lu(MB), %lf(GB)\n",sizeofall*8*M,(double)sizeofall*8*M/G);
+	printf("| level:%d sizefactor:%lf\n",LSM.LEVELN,SIZEFACTOR);
+	printf("| all level size:%lu(MB), %lf(GB)\n",sizeofall*ONESEGMENT/LSM.header_factor,(double)sizeofall*ONESEGMENT/G/LSM.header_factor);
 	printf("| all level header size: %lu(MB), except last header: %lu(MB)\n",sizeofall*PAGESIZE/M,(sizeofall-LSM.disk[LSM.LEVELN-1]->m_num)*PAGESIZE/M);
 	printf("| WRITE WAF:%f\n",(float)SIZEFACTOR * LSM.LEVELN /LSM.KEYNUM);
 	printf("| top level size:%d(MB)\n",LSM.disk[0]->m_num*8);
@@ -190,13 +192,13 @@ uint32_t __lsm_create_normal(lower_info *li, algorithm *lsm){
 	//	uint32_t cached_entry=0;
 	LSM.lsm_cache=cache_init(cached_entry+lev_caching_entry);
 
-	printf("| all caching %.2f(%%) - %lu page\n",(float)caching_size/(TOTALSIZE/PAGESIZE/K)*100,caching_size);	
-	printf("| level cache :%luMB(%lu page)%.2f(%%)\n",lev_caching_entry*PAGESIZE/M,lev_caching_entry,(float)lev_caching_entry/(TOTALSIZE/PAGESIZE/K)*100);
+	printf("| all caching %.2f(%%) - %lu page\n",(float)caching_size/(SHOWINGSIZE/PAGESIZE/K)*100,caching_size);	
+	printf("| level cache :%luMB(%lu page)%.2f(%%)\n",lev_caching_entry*PAGESIZE/M,lev_caching_entry,(float)lev_caching_entry/(SHOWINGSIZE/PAGESIZE/K)*100);
 
-	printf("| entry cache :%uMB(%u page)%.2f(%%)\n",cached_entry*PAGESIZE/M,cached_entry,(float)cached_entry/(TOTALSIZE/PAGESIZE/K)*100);
-	printf("| start cache :%luMB(%lu page)%.2f(%%)\n",(cached_entry+lev_caching_entry)*PAGESIZE/M,cached_entry+lev_caching_entry,(float)cached_entry/(TOTALSIZE/PAGESIZE/K)*100);
+	printf("| entry cache :%uMB(%u page)%.2f(%%)\n",cached_entry*PAGESIZE/M,cached_entry,(float)cached_entry/(SHOWINGSIZE/PAGESIZE/K)*100);
+	printf("| start cache :%luMB(%lu page)%.2f(%%)\n",(cached_entry+lev_caching_entry)*PAGESIZE/M,cached_entry+lev_caching_entry,(float)cached_entry/(SHOWINGSIZE/PAGESIZE/K)*100);
 	printf("| -------- algorithm_log END\n\n");
-	fprintf(stderr,"TOTALSIZE(GB) :%lu HEADERSEG:%d DATASEG:%ld\n",TOTALSIZE/G,MAPPART_SEGS,DATAPART_SEGS);
+	fprintf(stderr,"SHOWINGSIZE(GB) :%lu HEADERSEG:%d DATASEG:%ld\n",SHOWINGSIZE/G,MAPPART_SEGS,DATAPART_SEGS);
 	fprintf(stderr,"LEVELN:%d (LEVELCACHING(%d), MEMORY:%f\n",LSM.LEVELN,LSM.LEVELCACHING,LSM.caching_size);
 	pthread_mutex_init(&LSM.memlock,NULL);
 	pthread_mutex_init(&LSM.templock,NULL);
@@ -420,9 +422,8 @@ uint32_t data_input_write;
 uint32_t lsm_set(request * const req){
 	static bool force = 0 ;
 	data_input_write++;
-	compaction_check(req->key,force);
+	compaction_check(req->key,req->value->length,force);
 	snode *new_temp;
-
 	if(req->type==FS_DELETE_T){
 		new_temp=skiplist_insert(LSM.memtable,req->key,req->value,false);
 	}
@@ -493,7 +494,6 @@ uint32_t lsm_get(request *const req){
 		//		cache_print(LSM.lsm_cache);
 	}
 	lsm_proc_re_q();
-	static MeasureTime aaa;
 	if(!temp){
 		//printf("nocpy size:%d\n",nocpy_size()/M);
 		//printf("lsmtree size:%d\n",lsm_memory_size()/M);
@@ -1056,14 +1056,14 @@ uint32_t lsm_memory_size(){
 
 level *lsm_level_resizing(level *target, level *src){
 	if(target->idx==LSM.LEVELN-1){
-		uint32_t before=LSM.size_factor;
-		LSM.size_factor=get_sizefactor(RANGE,LSM.keynum_in_header);
+		double before=LSM.size_factor;
+		LSM.size_factor=get_sizefactor(SHOWINGSIZE,LSM.keynum_in_header);
 		if(before!=LSM.size_factor){
 			memset(LSM.size_factor_change,1,sizeof(bool)*LSM.LEVELN);
 			uint32_t total_header=0;
 			uint32_t t=LSM.size_factor;
 			for(int i=0; i<LSM.LEVELN; i++){
-				total_header+=t;
+				total_header+=t*LSM.header_factor;
 				t*=LSM.size_factor;
 			}
 			printf("change %d->%d (%d:%d)\n",before,LSM.size_factor,total_header,(MAPPART_SEGS-1)*_PPS);
@@ -1076,6 +1076,7 @@ level *lsm_level_resizing(level *target, level *src){
 		uint32_t cnt=target->idx+1;
 		target_cnt=1;
 		while(cnt--)target_cnt*=LSM.size_factor;
+		target_cnt*=LSM.header_factor;
 	}
 	if(LSM.added_header && target->idx==LSM.LEVELN-2){
 		target_cnt+=LSM.added_header;

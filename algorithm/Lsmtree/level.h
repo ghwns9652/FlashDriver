@@ -130,13 +130,14 @@ typedef struct level_ops{
 	uint32_t (*get_number_runs)(level*);
 	uint32_t (*get_max_table_entry)();
 	uint32_t (*get_max_flush_entry)(uint32_t);
+	level* (*skiplist_cvt_level)(skiplist*,float);
 
 	keyset_iter *(*keyset_iter_init)(char *keyset_data, int from);
 	keyset *(*keyset_iter_nxt)(keyset_iter*,keyset *target);
 	/*compaciton operation*/
 	htable* (*mem_cvt2table)(skiplist *,run_t *);
 
-	void (*merger)( skiplist*, run_t** src,  run_t** org,  level *des);
+	void (*merger)( skiplist*, run_t** src,uint32_t snum,  run_t** org,uint32_t o_num,  level *des);
 	run_t *(*cutter)( skiplist *,  level* des, KEYT* start, KEYT* end);
 	run_t *(*partial_merger_cutter)(skiplist*,pl_run *, pl_run *,uint32_t, uint32_t, level *,void*(*lev_insert_write)(level*, run_t*));
 	void (*normal_merger)(skiplist *,run_t *t_run, bool);

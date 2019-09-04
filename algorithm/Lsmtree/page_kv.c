@@ -34,7 +34,7 @@ int gc_header(){
 	//printf("gc_header %u",gc_cnt++);
 	LSM.header_gc_cnt++;
 	gc_general_wait_init();
-	lsm_io_sched_flush();
+	//lsm_io_sched_flush();
 
 	blockmanager *bm=LSM.bm;
 	__gsegment *tseg=bm->pt_get_gc_target(bm,MAP_S);

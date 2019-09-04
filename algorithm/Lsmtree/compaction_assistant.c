@@ -113,9 +113,9 @@ bool compaction_init(){
 			abort();
 			break;
 	}
-
+/*
 	if(LSM.comp_opt==PIPE)
-		lsm_io_sched_init();
+		lsm_io_sched_init();*/
 	return true;
 }
 
@@ -335,7 +335,8 @@ void *compaction_main(void *input){
 		if(req->fromL==-1){
 			lnode.mem=req->temptable;
 			compaction_data_write(&lnode);
-			compaction_selector(NULL,LSM.disk[0],&lnode,&LSM.level_lock[0]);
+			level *t_level=LSM.lop->skiplist_cvt_level(lnode.mem,LSM.disk[0]->fpr);
+			compaction_selector(t_level,LSM.disk[0],NULL,&LSM.level_lock[0]);
 		}
 		bool is_gc_needed=false;
 
@@ -345,13 +346,13 @@ void *compaction_main(void *input){
 		if(LSM.gc_opt && is_gc_needed){
 			gc_data();
 		}
-		free(lnode.start.key);
-		free(lnode.end.key);
+		//free(lnode.start.key);
+		//free(lnode.end.key);
 		
 		skiplist_free(req->temptable);
 #ifdef WRITEWAIT
 		if(req->last){
-			lsm_io_sched_flush();	
+	//		lsm_io_sched_flush();	
 			LSM.li->lower_flying_req_wait();
 			pthread_mutex_unlock(&compaction_flush_wait);
 		}
@@ -363,12 +364,24 @@ void *compaction_main(void *input){
 	return NULL;
 }
 
-void compaction_check(KEYT key, bool force){
-	if(LSM.memtable->size<LSM.FLUSHNUM) return;
-	compR *req;
-	bool last;
-	uint32_t avg_cnt;
-	skiplist *t=NULL, *t2=NULL;
+void compaction_check(KEYT key,uint32_t length, bool force){
+	//if(LSM.memtable->size<LSM.FLUSHNUM) return;
+
+	if(LSM.memtable->data_size+length>ONESEGMENT){
+		compR *req;
+		req=(compR*)malloc(sizeof(compR));
+		req->fromL=-1;
+		req->last=true;
+		req->temptable=LSM.memtable;
+		LSM.memtable=skiplist_init();
+		compaction_assign(req);
+#ifdef WRITEWAIT
+	//LSM.memtable=skiplist_init();
+		pthread_mutex_lock(&compaction_flush_wait);
+#endif
+	}
+	else return;
+	/*
 	do{
 		last=0;
 		if(t2!=NULL){
@@ -386,23 +399,17 @@ void compaction_check(KEYT key, bool force){
 		req->last=last;
 		req->temptable=t;
 		compaction_assign(req);
-	}while(!last);
-
-#ifdef WRITEWAIT
-	//LSM.memtable=skiplist_init();
-	pthread_mutex_lock(&compaction_flush_wait);
-#endif
+	}while(!last);*/
 }
 
 
 
-void compaction_subprocessing(struct skiplist *top, struct run** src, struct run** org, struct level *des){
-	
+void compaction_subprocessing(struct skiplist *top, struct run** src,uint32_t s_num, struct run** org, uint32_t d_num, struct level *des){
 	compaction_sub_wait();
 	bench_custom_A(write_opt_time,5);
 
 	bench_custom_start(write_opt_time,6);
-	LSM.lop->merger(top,src,org,des);
+	LSM.lop->merger(top,src,s_num,org,d_num,des);
 	bench_custom_A(write_opt_time,6);
 
 	KEYT key,end;

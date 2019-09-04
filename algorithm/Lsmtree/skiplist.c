@@ -28,7 +28,7 @@ extern KEYT key_max, key_min;
 extern kmem_cache_t snode_slab;
 #endif
 skiplist *skiplist_init(){
-	skiplist *point=(skiplist*)malloc(sizeof(skiplist));
+	skiplist *point=(skiplist*)calloc(sizeof(skiplist),1);
 	point->level=1;
 #ifdef USINGSLAB
 	//point->header=(snode*)slab_alloc(&snode_slab);
@@ -50,7 +50,6 @@ skiplist *skiplist_init(){
 	point->end=0;
 #endif
 	point->header->value=NULL;
-	point->size=0;
 	return point;
 }
 
@@ -520,6 +519,7 @@ snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 	if(value!=NULL){
 		value->length=(value->length/PIECE)+(value->length%PIECE?1:0);
 	}
+
 #if defined(KVSSD)
 	if(KEYTEST(key,x->key))
 #else
@@ -537,14 +537,15 @@ snode *skiplist_insert(skiplist *list,KEYT key,value_set* value, bool deletef){
 		if(testflag){
 			printf("%d overlap!\n",++cnt);
 		}*/
+		list->data_size-=(x->value->length*PIECE);
+		list->data_size+=(value->length*PIECE);
 		if(x->value)
 			inf_free_valueset(x->value,FS_MALLOC_W);
 #if defined(KVSSD)
 		free(key.key);
 #endif
 	//	old_req->end_req(old_req);
-		list->data_size-=(x->value->length*PIECE);
-		list->data_size+=(value->length*PIECE);
+
 		x->value=value;
 		x->isvalid=deletef;
 		return x;
@@ -612,12 +613,13 @@ value_set **skiplist_make_valueset(skiplist *input, level *from,KEYT *start, KEY
 	snode *target;
 	int total_size=0;
 	for_each_sk(target,input){
+		/*
 		if(idx==1){
 			kvssd_cpy_key(start,&target->key);
 		}
 		else if (idx==input->size){
 			kvssd_cpy_key(end,&target->key);
-		}
+		}*/
 		idx++;
 
 		if(target->value==0) continue;

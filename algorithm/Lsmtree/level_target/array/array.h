@@ -167,6 +167,7 @@ void array_print_run(run_t * r);
 
 
 run_t *array_pipe_p_merger_cutter(skiplist *skip, pl_run *u_data, pl_run* l_data, uint32_t u_num, uint32_t l_num,level *t, void *(*lev_insert_write)(level *,run_t *data));
-void array_pipe_merger(struct skiplist* mem, run_t** s, run_t** o, struct level*);
+void array_pipe_merger(struct skiplist* mem, run_t** s,uint32_t s_num, run_t** o, uint32_t d_num,struct level* d);
 run_t *array_pipe_cutter(struct skiplist* mem, struct level* d, KEYT* _start, KEYT *_end);
+level *array_skp_cvt_level(skiplist *skip,float);
 #endif

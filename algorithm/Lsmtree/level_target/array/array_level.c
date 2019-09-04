@@ -278,6 +278,56 @@ int array_cache_comp_formatting(level *lev ,run_t ***des, bool des_cache){
 	return lev->n_num;
 }
 
+level *array_skp_cvt_level(skiplist *skip,float fpr){
+	snode *t;
+	level *res=array_init(LSM.disk[0]->m_num,-1,fpr,false);
+	snode *old;
+	for_each_sk(t,skip){
+		char *body=(char*)malloc(PAGESIZE);
+		uint16_t *bitmap=(uint16_t*)body;
+		uint32_t idx=1;
+		uint16_t data_start=KEYBITMAP;
+		KEYT start, end;
+		bool isstart=false;
+#ifdef BLOOM
+		BF *f=bf_init(LSM.keynum_in_header,fpr);
+#endif
+		do{
+			if(!isstart){
+				isstart=true;
+				start=t->key;
+			}
+			memcpy(&body[data_start],&t->ppa,sizeof(t->ppa));
+			memcpy(&body[data_start+sizeof(t->ppa)],t->key.key,t->key.len);
+			bitmap[idx]=data_start;
+			data_start+=t->key.len+sizeof(t->ppa);
+			idx++;
+			end=t->key;
+#ifdef BLOOM
+			bf_set(f,t->key);
+#endif
+			old=t;
+			t=t->list[1];
+			if(t==skip->header) break;
+		}while(skip->all_length && (data_start+KEYLEN(t->key)<=PAGESIZE) && (idx-1)<KEYBITMAP/sizeof(uint16_t)-2);
+		bitmap[0]=idx-1;
+		bitmap[idx]=data_start;
+		run_t *t_r=array_make_run(start,end,-1);
+#ifdef BLOOM
+		t_r->filter=f;
+#endif
+		t_r->level_caching_data=body;
+		array_insert(res,t_r);
+		array_free_run(t_r);
+		free(t_r);
+	//	array_header_print(body);
+		if(t==skip->header) break;
+		t=old;
+		LSM.keynum_in_header=(LSM.keynum_in_header*LSM.keynum_in_header_cnt+idx-1)/(LSM.keynum_in_header_cnt+1);
+		LSM.keynum_in_header_cnt++;
+	}
+	return res;
+}
 /*
  
  
@@ -472,3 +522,5 @@ run_t *array_p_merger_cutter(skiplist *skip,run_t **src, run_t **org, float fpr)
 	return res_r;
 }
 #endif
+
+
