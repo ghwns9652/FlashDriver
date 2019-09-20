@@ -27,11 +27,14 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "interface.h"
 #include "buse.h"
 #include "queue.h"
 #include "../bench/bench.h"
 #include "../bench/measurement.h"
 #include "../include/utils/cond_lock.h"
+#include "../include/FS.h"
+#include "lfqueue/lfqueue.h"
 
 /* BUSE callbacks */
 //static void *data;
@@ -46,175 +49,141 @@ MeasureTime buseendTime;
 struct nbd_reply end_reply;
 extern int g_sk;
 
-static queue *request_q;
-static queue *reply_q;
+queue *request_q;
+queue *reply_q;
+//lfqueue_t reply_q;
 cl_lock *buse_flying;
 cl_lock *buse_end_flying;
+pthread_mutex_t reply_lock;
+pthread_mutex_t temp_lock;
+pthread_mutex_t rmw_lock;
 
+//#define TLOCK
+
+static void do_rmw_unlock(char type){
+    if(type == FS_RMW_T)
+        pthread_mutex_unlock(&rmw_lock);
+}
+
+static void do_rmw_lock(char type){
+    static bool rmw_inflight = false;
+
+    if(type == FS_RMW_T){
+        pthread_mutex_lock(&rmw_lock);
+        rmw_inflight = true;
+    }
+    else if(rmw_inflight){
+        pthread_mutex_lock(&rmw_lock);
+        rmw_inflight = false;
+        pthread_mutex_unlock(&rmw_lock);
+    }
+}
 
 #if (BUSE_ASYNC==1)
-static void* buse_end_request(void* buse_req){
+static void buse_end_request(uint32_t tmp0, uint32_t tmp2, void* buse_req){
     while(1){
         if(q_enqueue(buse_req, reply_q)){
             cl_release(buse_end_flying);
             break;
         }
     }
-    //while(!q_enqueue(buse_req, reply_q));
-    return NULL;
+    return;
 }
 #endif
 
 #if (BUSE_ASYNC==1)
-void* buse_reply(void *args){
+void buse_reply(void *args){
 #elif (BUSE_ASYNC==0)
-void* buse_end_request(void *args){
+void buse_end_request(uint32_t tmp0, uint32_t tmp2, void *args){
 #endif
     //FIXME : run this as another thread
     struct buse *buse_req=(struct buse*)args;
-#ifdef BUSE_MEASURE
-    if(buse_req->type==FS_BUSE_R)
-        MS(&buseendTime);
-#endif
     u_int32_t len=buse_req->len;
     value_set *value=buse_req->value;
-    void *chunk=buse_req->chunk;
-    int flag=((buse_req->offset)+(buse_req->i_len))==len?1:0;
-    //int cmp;
-    //int diff_cnt=0;
 
-    chunk+=buse_req->offset;
-    if(buse_req->i_len!=PAGESIZE && buse_req->type==FS_BUSE_R){
-        //printf("chunk : %p, value : %p, i_offset : %d, i_len : %u\n", chunk, value, buse_req->i_offset, buse_req->i_len);
-        memcpy(chunk,(value->value)+(buse_req->i_offset),buse_req->i_len);
-    }
-    if(value){
-        inf_free_valueset(value, buse_req->type);
-    }
-    if(!flag){
 #ifdef BUSE_MEASURE
-        if(buse_req->type==FS_BUSE_R)
-            MA(&buseendTime);
+    if(buse_req->type==FS_GET_T)
+        MS(&buseendTime);
 #endif
-        free(buse_req);
-        return NULL;
-    }
 
-    memcpy(end_reply.handle,buse_req->handle,8);
-    //memcpy(reply.handle,"10000000",8);
-    //printf("reply handle : %s\n", end_reply.handle);
+#ifdef RPRINT
+        printf("reply : %lu, %u\n", buse_req->offset/PAGESIZE, len);
+#endif
+
+    memcpy(end_reply.handle, buse_req->handle, 8);
+    pthread_mutex_lock(&reply_lock);
     write_all(g_sk,(char*)&end_reply,sizeof(struct nbd_reply));
-    chunk-=(buse_req->offset);
-    switch(buse_req->type){
-        case FS_BUSE_R:
-            write_all(g_sk,(char*)chunk,len);
-            free(chunk);
-            break;
+    if(buse_req->type==FS_GET_T)
+        write_all(g_sk,&(value->value)[value->offset],len);
+    pthread_mutex_unlock(&reply_lock);
 
-        case FS_BUSE_W:
-            free(chunk);
-            break;
-
-        case FS_DELETE_T:
-            break;
-
-        default:
-            break;
-    }
-#ifdef BUSE_MEASURE
-    if(buse_req->type==FS_BUSE_R)
-        MA(&buseendTime);
+    do_rmw_unlock(buse_req->type);
+#ifdef TLOCK
+    pthread_mutex_unlock(&temp_lock);
 #endif
+
+    if(value)
+      inf_free_valueset(value, buse_req->type);
     free(buse_req);
-    return NULL;
 
-    /*
-    if(buse_req->type==FS_BUSE_R){
-        memcpy(chunk, value->value, PAGESIZE);
-    }
-
-    if(flag){
-        //printf("reply : %d, %u\n", buse_req->offset, (unsigned int)(buse_req->len)*PAGESIZE);
-        write_all(sk,reply,sizeof(struct nbd_reply));
-        chunk=chunk-(PAGESIZE*(buse_req->idx));
-        if(buse_req->type==FS_BUSE_R){
-            write_all(sk,(char*)chunk, len);
-        }
-        if(buse_req->type!=FS_DELETE_T)
-            free(chunk);
-        free(reply);
-    }
-
-    if(value){
-        if(buse_req->type==FS_BUSE_R)
-            inf_free_valueset(value, 0);
-        if(buse_req->type==FS_BUSE_W)
-            inf_free_valueset(value, 1);
-    }
-
-    free(buse_req);
-    return NULL;
-    */
+    return;
 }
 
-static int buse_io(char _type, int sk, void *buf, u_int32_t len, u_int64_t offset, void *reply)
+static int buse_io(char _type, int sk, void *buf, u_int32_t len, u_int64_t offset, void *handle)
 {
-    //FIXME : only support read/write unit of PAGESIZE
-    u_int32_t remain=len;
-    u_int64_t target=offset;
-    int i_offset=target%PAGESIZE;
-    int i_len=len<PAGESIZE?len:PAGESIZE-i_offset;
-    int b_offset=0;
-    static u_int64_t write_count = 0;
-    struct buse *buse_req;
-    struct buse *temp_buse_req;
-    void *temp_chunk;
+    u_int64_t end_offset = offset + len;
+    int p_cnt;
+    int align;
 
-    while(remain){
-        buse_req=(struct buse*)malloc(sizeof(struct buse));
-        *buse_req=(struct buse){
-            .sk=sk, 
-            .len=len,
-            .chunk=buf,
-            .type=_type,
-            .reply=reply,
-            .log_offset=offset,
-            .offset=b_offset,
-            .i_offset=i_offset,
-            .write_check=false,
-            .i_len=i_len
-        };
-        memcpy(buse_req->handle,(char*)reply,8);
-#ifdef BUSE_MEASURE
-        if(_type==FS_BUSE_R)
-            MA(&buseTime);
-#endif
-        inf_make_req_fromApp(_type,target/PAGESIZE,0,i_len,buf+b_offset,(void*)buse_req,buse_end_request);
-#ifdef BUSE_MEASURE
-        if(_type==FS_BUSE_R)
-            MS(&buseTime);
-#endif
-        remain-=i_len;
-        target+=i_len;
-        i_offset=target%PAGESIZE;
-        i_len=remain<PAGESIZE?remain:PAGESIZE-i_offset;
-        b_offset+=i_len;
+    struct buse *buse_req = (struct buse*)malloc(sizeof(struct buse));
+    buse_req->len=len;
+    buse_req->type=_type;
+    buse_req->value=NULL;
+    buse_req->offset=offset;
+    memcpy(buse_req->handle, (char*)handle, 8);
+
+    if(_type==FS_DELETE_T){
+      p_cnt = end_offset/PAGESIZE - offset/PAGESIZE;
+      align = offset%PAGESIZE==0?0:1;
+      p_cnt -= align;
+      //FIXME: need small trim logic
+      if(p_cnt)
+          inf_make_req_buse(buse_req->type, offset/PAGESIZE+align, 0, p_cnt*PAGESIZE, (PTR)buf, (void*)buse_req, buse_end_request);
+      else
+          buse_end_request(0, 0, buse_req);
+      return 0;
     }
 
+    p_cnt = end_offset/PAGESIZE - offset/PAGESIZE;
+    p_cnt += end_offset%PAGESIZE==0?0:1;
+    align = offset%PAGESIZE + end_offset%PAGESIZE;
+
+    if(_type==FS_SET_T && align>0){
+      buse_req->type=FS_RMW_T;
+    }
+
+    do_rmw_lock(buse_req->type);
+    inf_make_req_buse(buse_req->type, offset/PAGESIZE, offset%PAGESIZE, p_cnt*PAGESIZE, (PTR)buf, (void*)buse_req, buse_end_request);
+    
     return 0;
 }
 
 static int buse_make_read(int sk, void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     struct buse_request *buse_req; 
+#ifdef TLOCK
+    pthread_mutex_lock(&temp_lock);
+#endif
+#ifdef RPRINT
+        fprintf(stdout, "R - %lu, %u\n", offset/PAGESIZE, len);
+#endif
     buse_req = (struct buse_request*)malloc(sizeof(struct buse_request));
-    *buse_req = (struct buse_request){
-        .type = FS_BUSE_R,
-        .buf = buf,
-        .len = len,
-        .offset = offset
-    };
+    buse_req->type = FS_GET_T;
+    buse_req->buf = buf;
+    buse_req->len = len;
+    buse_req->offset = offset;
     memcpy(buse_req->handle, userdata, sizeof(buse_req->handle));
+
     while(1){
         if(q_enqueue((void*)buse_req, request_q)){
             cl_release(buse_flying);
@@ -224,16 +193,20 @@ static int buse_make_read(int sk, void *buf, u_int32_t len, u_int64_t offset, vo
     return 0;
 }
 
-static int buse_make_write(int sk, const void *buf, u_int32_t len, u_int64_t offset, void *userdata)
+static int buse_make_write(int sk, void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     struct buse_request *buse_req; 
+#ifdef TLOCK
+    pthread_mutex_lock(&temp_lock);
+#endif
+#ifdef RPRINT
+        fprintf(stdout, "W - %lu, %u\n", offset/PAGESIZE, len);
+#endif
     buse_req = (struct buse_request*)malloc(sizeof(struct buse_request));
-    *buse_req = (struct buse_request){
-        .type = FS_BUSE_W,
-        .buf = buf,
-        .len = len,
-        .offset = offset
-    };
+    buse_req->type = FS_SET_T;
+    buse_req->buf = buf;
+    buse_req->len = len;
+    buse_req->offset = offset;
     memcpy(buse_req->handle, userdata, sizeof(buse_req->handle));
     while(1){
         if(q_enqueue((void*)buse_req, request_q)){
@@ -241,20 +214,24 @@ static int buse_make_write(int sk, const void *buf, u_int32_t len, u_int64_t off
             break;
         }
     }
-    //while(!q_enqueue((void*)buse_req, request_q));
+
     return 0;
 }
 
 static int buse_make_trim(int sk, u_int64_t from, u_int32_t len, void *userdata)
 {
     struct buse_request *buse_req; 
+#ifdef TLOCK
+    pthread_mutex_lock(&temp_lock);
+#endif
+#ifdef RPRINT
+    fprintf(stdout, "T - %lu, %u\n", from/PAGESIZE, len);
+#endif
     buse_req = (struct buse_request*)malloc(sizeof(struct buse_request));
-    *buse_req = (struct buse_request){
-        .type = FS_DELETE_T,
-        .buf = NULL,
-        .len = len,
-        .offset = from
-    };
+    buse_req->type = FS_DELETE_T;
+    buse_req->buf = NULL;
+    buse_req->len = len;
+    buse_req->offset = from;
     memcpy(buse_req->handle, userdata, sizeof(buse_req->handle));
     while(1){
         if(q_enqueue((void*)buse_req, request_q)){
@@ -268,21 +245,25 @@ static int buse_make_trim(int sk, u_int64_t from, u_int32_t len, void *userdata)
 static int buse_read(int sk, void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     //if (*(int *)userdata)
-    //fprintf(stdout, "R - %lu, %u\n", offset/PAGESIZE, len);
+#ifdef RPRINT
+    fprintf(stdout, "R - %lu, %u\n", offset/PAGESIZE, len);
+#endif
     //printf("R - handle : %s\n", (char*)userdata);
     
-    buse_io(FS_BUSE_R,sk,buf,len,offset,userdata);
+    buse_io(FS_GET_T,sk,buf,len,offset,userdata);
 
     return 0;
 }
 
-static int buse_write(int sk, const void *buf, u_int32_t len, u_int64_t offset, void *userdata)
+static int buse_write(int sk, void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     //if (*(int *)userdata)
-    //fprintf(stdout, "W - %lu, %u\n", offset/PAGESIZE, len);
+#ifdef RPRINT
+    fprintf(stdout, "W - %lu, %u\n", offset/PAGESIZE, len);
+#endif
     //printf("W - handle : %s\n", (char*)userdata);
 
-    buse_io(FS_BUSE_W,sk,buf,len,offset,userdata);
+    buse_io(FS_SET_T,sk,buf,len,offset,userdata);
 
     return 0;
 }
@@ -296,14 +277,18 @@ static void buse_disc(int sk, void *userdata)
 static int buse_flush(int sk, void *userdata)
 {
     //if (*(int *)userdata)
-    //fprintf(stdout, "Received a flush request.\n");
+#ifdef RPRINT
+    fprintf(stdout, "Received a flush request.\n");
+#endif
     return 0;
 }
 
 static int buse_trim(int sk, u_int64_t from, u_int32_t len, void *userdata)
 {
     //if (*(int *)userdata)
-    //fprintf(stdout, "T - %lu, %u\n", from/PAGESIZE, len);
+#ifdef RPRINT
+    fprintf(stdout, "T - %lu, %u\n", from/PAGESIZE, len);
+#endif
 
     buse_io(FS_DELETE_T,sk,NULL,len,from,userdata);
 
@@ -344,8 +329,8 @@ static unsigned long long strtoull_with_prefix(const char * str, char * * end) {
 
 /* Parse a single option. */
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
-    struct arguments *arguments = state->input;
-    char * endptr;
+    struct arguments *arguments = (struct arguments*)state->input;
+    //char * endptr;
 
     switch (key) {
 
@@ -398,15 +383,29 @@ static struct argp argp = {
         "`DEVICE` is path to block device, for example \"/dev/nbd0\".",
 };
 
+
 #if (BUSE_ASYNC==1)
 void* buse_request_main(void* args){
     struct buse_request *buse_req;
+#ifdef LPRINT
+    struct timeval infstart, infend;
+#endif
     while(1){
 		cl_grap(buse_flying);
         buse_req = (struct buse_request*)q_dequeue(request_q);
+#ifdef QPRINT
+        //printf("buse requset main : %d\n", request_q->size);
+#endif
         if(!buse_req)
             continue;
+#ifdef LPRINT
+        gettimeofday(&infstart, NULL);
+#endif
         buse_io(buse_req->type, g_sk, buse_req->buf, buse_req->len, buse_req->offset, buse_req->handle);
+#ifdef LPRINT
+        gettimeofday(&infend, NULL);
+        printf("inf latency [sec, usec] : [%ld, %ld]\n", infend.tv_sec-infstart.tv_sec, infend.tv_usec-infstart.tv_usec);
+#endif
         free(buse_req);
         //usleep(10000);
     }
@@ -428,57 +427,64 @@ void* buse_reply_main(void* args){
 #endif
 
 int main(int argc, char *argv[]) {
-    pthread_t tid[2];
-    struct arguments arguments = {
-        .verbose = 0,
-    };
+#define NUM_BUSE_REQ_MAIN 8
+    pthread_t tid;
+    pthread_t main_tid[NUM_BUSE_REQ_MAIN];
+    struct arguments arguments;
+    arguments.verbose = 0;
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
-    struct buse_operations aop = {
+    struct buse_operations aop;
 #if (BUSE_ASYNC==1)
-        .read = buse_make_read,
-        .write = buse_make_write,
-        .trim = buse_make_trim,
+    aop.read = buse_make_read;
+    aop.write = buse_make_write;
+    aop.trim = buse_make_trim;
 #elif (BUSE_ASYNC==0)
-        .read = buse_read,
-        .write = buse_write,
-        .trim = buse_trim,
+    aop.read = buse_read;
+    aop.write = buse_write;
+    aop.trim = buse_trim;
 #endif
-        //.size = arguments.size,
-        .disc = buse_disc,
-        .flush = buse_flush,
-        .size = TOTALSIZE,
-    };
+    //.size = arguments.size,
+    aop.disc = buse_disc;
+    aop.flush = buse_flush;
+    aop.size = TOTALSIZE;
+    aop.blksize = 0;
+    aop.size_blocks = 0;
+    //aop.blksize = 1*M;
+    //aop.size_blocks = TOTALSIZE/M;
 
-    /*
-       data = malloc(aop.size);
-       if (data == NULL) err(EXIT_FAILURE, "failed to alloc space for data");
-    */
-
-    //memset(rep,0,sizeof(struct replies)*10);
-    inf_init();
-    //bench_init();
-    //measure_init(&totTime);
+    inf_init(0,0);
 #ifdef BUSE_MEASURE
     measure_init(&buseTime);
     measure_init(&buseendTime);
+#endif
+    pthread_mutex_init(&reply_lock, NULL);
+    pthread_mutex_init(&rmw_lock, NULL);
+#ifdef TLOCK
+    pthread_mutex_init(&temp_lock, NULL);
 #endif
     end_reply.magic = htonl(NBD_REPLY_MAGIC);
     end_reply.error = htonl(0);
 #if (BUSE_ASYNC==1)
     q_init(&request_q, QSIZE);
     q_init(&reply_q, QSIZE);
-	buse_flying=cl_init(QDEPTH*2,true);
-	buse_end_flying=cl_init(QDEPTH*2,true);
-    pthread_create(&tid[0], NULL, buse_request_main, NULL);
-    pthread_create(&tid[1], NULL, buse_reply_main, NULL);
+    //lfqueue_init(&reply_q);
+    buse_flying=cl_init(QDEPTH*2,true);
+    buse_end_flying=cl_init(QDEPTH*2,true);
+    for(int i = 0; i < NUM_BUSE_REQ_MAIN; i++){
+        pthread_create(&main_tid[i], NULL, buse_request_main, NULL);
+    }
+    pthread_create(&tid, NULL, buse_reply_main, NULL);
 #endif
     buse_main(arguments.device, &aop, (void *)&arguments.verbose);
 #if (BUSE_ASYNC==1)
-    pthread_cancel(tid[0]);
-    pthread_cancel(tid[1]);
+    for(int i = 0; i < NUM_BUSE_REQ_MAIN; i++){
+        pthread_cancel(main_tid[i]);
+    }
+    pthread_cancel(tid);
     q_free(request_q);
     q_free(reply_q);
+    //lfqueue_destroy(&reply_q);
 #endif
 
     inf_free();
@@ -490,4 +496,3 @@ int main(int argc, char *argv[]) {
 #endif
     return 0;
 }
-

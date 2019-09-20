@@ -149,7 +149,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
     //num_max_cache = 1; // 1 cache
 	//num_max_cache = max_cache_entry / 4; // 1/4 cache
     //num_max_cache = max_cache_entry / 20; // 5%
-    num_max_cache = max_cache_entry / 10; // 10%
+    num_max_cache = max_cache_entry; // 10%
     //num_max_cache = max_cache_entry / 8; // 12.5%
     //num_max_cache = max_cache_entry / 40; // 2.5%
 	//num_max_cache = max_cache_entry / 50; // 2%
@@ -158,7 +158,7 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
     num_caching = 0;
     //max_write_buf = 512;
-	max_write_buf = 1024;
+	max_write_buf = 1;
 //	max_write_buf = 1;
 #if C_CACHE
     max_clean_cache = num_max_cache / 2; // 50 : 50
@@ -240,13 +240,13 @@ uint32_t demand_create(lower_info *li, algorithm *algo){
 
 void demand_destroy(lower_info *li, algorithm *algo){
 
-    
+    /*
     puts("");
     for (int i = 0; i < max_cache_entry; i++) {
         if (CMT[i].read_hit || CMT[i].write_hit) {
             printf("CMT[%d]: read(%u) / write(%u)\n", i, CMT[i].read_hit, CMT[i].write_hit);
         }
-    }
+    }*/
 
 
     /* Print information */
@@ -323,13 +323,15 @@ static uint32_t demand_cache_update(request *const req, char req_t) {
     int lpa = req->key;
     C_TABLE *c_table = &CMT[D_IDX];
     int32_t t_ppa = c_table->t_ppa;
+    bool gc_flag;
+    bool d_flag;
 
     if (req_t == 'R') {
 #if C_CACHE
         if (c_table->clean_ptr) {
             lru_update(c_lru, c_table->clean_ptr);
         }
-        if (c_table->queue_tpr) {
+        if (c_table->queue_ptr) {
             lru_update(lru, c_table->queue_ptr);
         }
 #else
@@ -396,13 +398,13 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
     // Reserve requests that share flying mapping table
     if (c_table->flying) {
         c_table->flying_arr[c_table->num_waiting++] = req;
-        bench_algo_end(req);
+        //bench_algo_end(req);
         return 1;
     }
 
     if (num_flying == num_max_cache) { // This case occurs only if (QDEPTH > num_max_cache)
         waiting_arr[waiting++] = req;
-        bench_algo_end(req);
+        //bench_algo_end(req);
         return 1;
     }
 
@@ -430,7 +432,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
                 num_flying++;
                 if(d_flag) req->type_ftl += 1;
                 if(gc_flag) req->type_ftl += 2;
-                bench_algo_end(req);
+                //bench_algo_end(req);
                 return 1;
             }
             if(gc_flag) req->type_ftl += 2;
@@ -443,7 +445,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
             if (demand_eviction(req, 'W', &gc_flag, &d_flag) == 0) {
                 c_table->flying = true;
                 num_flying++;
-                bench_algo_end(req);
+                //bench_algo_end(req);
                 return 1;
             }
         }
@@ -456,7 +458,7 @@ static uint32_t demand_cache_eviction(request *const req, char req_t) {
         dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
 
-        bench_algo_end(req);
+        //bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
         return 1;
@@ -485,7 +487,7 @@ static uint32_t demand_write_flying(request *const req, char req_t) {
         dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
 
-        bench_algo_end(req);
+        //bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
         return 1;
@@ -541,7 +543,7 @@ static uint32_t demand_read_flying(request *const req, char req_t) {
         dummy_vs = inf_get_valueset(NULL, FS_MALLOC_R, PAGESIZE);
         temp_req = assign_pseudo_req(MAPPING_R, dummy_vs, req);
 
-        bench_algo_end(req);
+        //bench_algo_end(req);
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
 
         return 1;
@@ -595,7 +597,7 @@ static uint32_t __demand_get(request *const req){
     snode *temp;
 #endif
 
-    bench_algo_start(req);
+    //bench_algo_start(req);
     lpa = req->key;
     if(lpa > RANGE + 1){ // range check
         printf("range error %d\n",lpa);
@@ -609,7 +611,7 @@ static uint32_t __demand_get(request *const req){
         memcpy(req->value->value, temp->value->value, PAGESIZE);
         req->type_ftl = 0;
         req->type_lower = 0;
-        bench_algo_end(req);
+        //bench_algo_end(req);
         req->end_req(req);
         return 1;
     }
@@ -623,7 +625,7 @@ static uint32_t __demand_get(request *const req){
         if (p_table) { // Cache hit
             ppa = p_table[P_IDX].ppa;
             if (ppa == -1) {
-                bench_algo_end(req);
+                //bench_algo_end(req);
                 return UINT32_MAX;
             }
             cache_hit_on_read++;
@@ -633,7 +635,7 @@ static uint32_t __demand_get(request *const req){
 
         } else { // Cache miss
             if (t_ppa == -1) {
-                bench_algo_end(req);
+                //bench_algo_end(req);
                 return UINT32_MAX;
             }
             //cache_miss_on_read++;
@@ -664,10 +666,10 @@ static uint32_t __demand_get(request *const req){
     p_table = c_table->p_table;
     ppa = p_table[P_IDX].ppa;
     if (ppa == -1) {
-        bench_algo_end(req);
+        //bench_algo_end(req);
         return UINT32_MAX;
     }
-    bench_algo_end(req);
+    //bench_algo_end(req);
     // Get data in ppa
     __demand.li->read(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
 
@@ -688,7 +690,7 @@ static uint32_t __demand_set(request *const req){
 #endif
 	static bool is_flush = false;
 
-    bench_algo_start(req);
+    //bench_algo_start(req);
 
     lpa = req->key;
     if(lpa > RANGE + 1){ // range check
@@ -696,6 +698,7 @@ static uint32_t __demand_set(request *const req){
         exit(3);
     }
 
+#if W_BUFF
     /* If the write buffer is already full, flush it */
     if (write_buffer->size == max_write_buf) {
         /* Push all the data to lower */
@@ -704,7 +707,7 @@ static uint32_t __demand_set(request *const req){
 
             /* Actual part of data push */
             /* Push the buffered data to pre-fetched ppa */
-            my_req = assign_pseudo_req(DATA_W, temp->value, NULL);
+            my_req = assign_pseudo_req(DATA_W, temp->value, temp->value->req);
             __demand.li->write(temp->ppa, PAGESIZE, temp->value, ASYNC, my_req);
 
             temp->value = NULL; // this memory area will be freed in end_req
@@ -738,6 +741,7 @@ static uint32_t __demand_set(request *const req){
         __demand.li->lower_flying_req_wait();
 		is_flush = true;
     }
+#endif
 
     /* Insert data to skiplist (default) */
     lpa = req->key;
@@ -772,14 +776,13 @@ static uint32_t __demand_set(request *const req){
 
     c_table->write_hit++;
 
-    temp = skiplist_insert(write_buffer, lpa, req->value, true);
+    //temp = skiplist_insert(write_buffer, lpa, req->value, true);
 
     // If the value is successfully inserted to write_buffer, then update the mapping table entry
-    if (write_buffer->size == ppa_idx+1) {
         ppa = ppa_prefetch[ppa_idx].ppa;
-        temp->ppa = ppa;
+        //temp->ppa = ppa;
 
-        ppa_prefetch[ppa_idx++].sn = temp;
+        //ppa_prefetch[ppa_idx++].sn = temp;
 
         // if there is previous data with same lpa, then invalidate it
         p_table = c_table->p_table;
@@ -791,10 +794,14 @@ static uint32_t __demand_set(request *const req){
         p_table[P_IDX].ppa = ppa;
         BM_ValidatePage(bm, ppa);
         demand_OOB[ppa].lpa = lpa;
-    }
-    req->value = NULL; // moved to 'value' field of snode
-    bench_algo_end(req);
-    req->end_req(req);
+
+    my_req = assign_pseudo_req(DATA_W, req->value, req);
+    __demand.li->write(ppa, PAGESIZE, req->value, ASYNC, my_req);
+    __demand.li->lower_flying_req_wait();
+    is_flush = true;
+    //req->value = NULL; // moved to 'value' field of snode
+    //bench_algo_end(req);
+    //req->end_req(req);
 
     return 1;
 }
@@ -815,7 +822,7 @@ static uint32_t __demand_remove(request *const req) {
     demand_params *params;
 
 
-    bench_algo_start(req);
+    //bench_algo_start(req);
 
     // Range check
     lpa = req->key;
@@ -830,7 +837,7 @@ static uint32_t __demand_remove(request *const req) {
 
 #if W_BUFF
     if (skiplist_delete(write_buffer, lpa) == 0) { // Deleted on skiplist
-        bench_algo_end(req);
+        //bench_algo_end(req);
         return 0;
     }
 #endif
@@ -855,7 +862,7 @@ static uint32_t __demand_remove(request *const req) {
 
         // Validity check by t_ppa
         if (t_ppa == -1) {
-            bench_algo_end(req);
+            //bench_algo_end(req);
             return UINT32_MAX;
         }
 
@@ -870,9 +877,9 @@ static uint32_t __demand_remove(request *const req) {
         params = (demand_params *)temp_req->params;
 
         __demand.li->read(t_ppa, PAGESIZE, dummy_vs, ASYNC, temp_req);
-        MS(&req->latency_poll);
+        //MS(&req->latency_poll);
         dl_sync_wait(&params->dftl_mutex);
-        MA(&req->latency_poll);
+        //MA(&req->latency_poll);
 
         free(params);
         free(temp_req);
@@ -888,7 +895,7 @@ static uint32_t __demand_remove(request *const req) {
 
     // Validity check by ppa
     if (ppa == -1) { // case of no data written
-        bench_algo_end(req);
+        //bench_algo_end(req);
         return UINT32_MAX;
     }
 
@@ -912,7 +919,7 @@ static uint32_t __demand_remove(request *const req) {
 #endif
     }
 
-    bench_algo_end(req);
+    //bench_algo_end(req);
     return 0;
 }
 
@@ -932,7 +939,7 @@ uint32_t demand_set(request *const req){
         }
     }
     __demand_set(req);
-#ifdef W_BUFF
+#if W_BUFF
     if(write_buffer->size == max_write_buf){
         return 1;
     }

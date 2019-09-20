@@ -32,7 +32,7 @@ uint32_t memio_info_create(lower_info *li){
 	li->NOP=_NOP;
 	li->SOB=BLOCKSIZE;
 	li->SOP=PAGESIZE;
-	li->SOK=sizeof(KEYT);
+	li->SOK=sizeof(uint32_t);
 	li->PPB=_PPB;
 	li->TS=TOTALSIZE;
 
@@ -56,20 +56,13 @@ static uint8_t test_type(uint8_t type){
 void *memio_info_destroy(lower_info *li){
 	measure_init(&li->writeTime);
 	measure_init(&li->readTime);
+	for(int i=0; i<LREQ_TYPE_NUM;i++){
+		fprintf(stderr,"%s %lu\n",bench_lower_type(i),li->req_type_cnt[i]);
+	}
 
-    printf("TRIM\t%lu\n", li->req_type_cnt[0]);
-    printf("TR\t%lu\n", li->req_type_cnt[1]);
-    printf("TW\t%lu\n", li->req_type_cnt[2]);
-    printf("TGCR\t%lu\n", li->req_type_cnt[3]);
-    printf("TGCW\t%lu\n", li->req_type_cnt[4]);
-    printf("DR\t%lu\n", li->req_type_cnt[5]);
-    printf("DW\t%lu\n", li->req_type_cnt[6]);
-    printf("DGCR\t%lu\n", li->req_type_cnt[7]);
-    printf("DGCW\t%lu\n\n", li->req_type_cnt[8]);
-
-    printf("Total Read Traffic : %lu\n", li->req_type_cnt[1]+li->req_type_cnt[3]+li->req_type_cnt[5]+li->req_type_cnt[7]);
-    printf("Total Write Traffic: %lu\n\n", li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]);
-    printf("Total WAF: %.2f\n\n", (float)(li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]) / li->req_type_cnt[6]);
+    fprintf(stderr,"Total Read Traffic : %lu\n", li->req_type_cnt[1]+li->req_type_cnt[3]+li->req_type_cnt[5]+li->req_type_cnt[7]);
+    fprintf(stderr,"Total Write Traffic: %lu\n\n", li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]);
+    fprintf(stderr,"Total WAF: %.2f\n\n", (float)(li->req_type_cnt[2]+li->req_type_cnt[4]+li->req_type_cnt[6]+li->req_type_cnt[8]) / li->req_type_cnt[6]);
 
 	li->write_op=li->read_op=li->trim_op=0;
 	memio_close(mio);
@@ -77,7 +70,7 @@ void *memio_info_destroy(lower_info *li){
 	return NULL;
 }
 
-void *memio_info_push_data(KEYT ppa, uint32_t size, value_set *value, bool async, algo_req *const req){
+void *memio_info_push_data(uint32_t ppa, uint32_t size, value_set *value, bool async, algo_req *const req){
 	if(value->dmatag==-1){
 		printf("dmatag -1 error!\n");
 		exit(1);
@@ -87,16 +80,13 @@ void *memio_info_push_data(KEYT ppa, uint32_t size, value_set *value, bool async
 	if(t_type < LREQ_TYPE_NUM){
 		memio_info.req_type_cnt[t_type]++;
 	}
-	//bench_lower_w_start(&memio_info);
-	//req->parents->ppa=bb_checker_fix_ppa(ppa);
-	//bench_lower_w_end(&memio_info);
 	memio_write(mio,bb_checker_fix_ppa(ppa),(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//memio_write(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//pthread_mutex_lock(&test_lock);
 	return NULL;
 }
 
-void *memio_info_pull_data(KEYT ppa, uint32_t size, value_set *value, bool async, algo_req *const req){
+void *memio_info_pull_data(uint32_t ppa, uint32_t size, value_set *value, bool async, algo_req *const req){
 	if(value->dmatag==-1){
 		printf("dmatag -1 error!\n");
 		exit(1);
@@ -105,16 +95,13 @@ void *memio_info_pull_data(KEYT ppa, uint32_t size, value_set *value, bool async
 	if(t_type < LREQ_TYPE_NUM){
 		memio_info.req_type_cnt[t_type]++;
 	}
-	//bench_lower_r_start(&memio_info);
-	//req->parents->ppa=bb_checker_fix_ppa(ppa);
-	//bench_lower_r_end(&memio_info);
 	memio_read(mio,bb_checker_fix_ppa(ppa),(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//memio_read(mio,ppa,(uint32_t)size,(uint8_t*)value->value,async,(void*)req,value->dmatag);
 	//pthread_mutex_lock(&test_lock);
 	return NULL;
 }
 
-void *memio_info_trim_block(KEYT ppa, bool async){
+void *memio_info_trim_block(uint32_t ppa, bool async){
 	//int value=memio_trim(mio,bb_checker_fix_ppa(ppa),(1<<14)*PAGESIZE,NULL);
 	int value=memio_trim(mio,bb_checker_fixed_segment(ppa),(1<<14)*PAGESIZE,NULL);
 	value=memio_trim(mio,bb_checker_paired_segment(ppa),(1<<14)*PAGESIZE,NULL);
@@ -133,7 +120,7 @@ void *memio_info_refresh(struct lower_info* li){
 	li->write_op=li->read_op=li->trim_op=0;
 	return NULL;
 }
-void *memio_badblock_checker(KEYT ppa,uint32_t size, void*(*process)(uint64_t,uint8_t)){
+void *memio_badblock_checker(uint32_t ppa,uint32_t size, void*(*process)(uint64_t,uint8_t)){
 	memio_trim(mio,ppa,size,process);
 	return NULL;
 }

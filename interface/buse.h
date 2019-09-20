@@ -11,18 +11,11 @@ extern "C" {
 #include "interface.h"
 
     struct buse{
-        int sk;
         u_int32_t len;
-        int i_len;
-        int i_offset;
-        int offset;
-        u_int64_t log_offset;
+        u_int64_t offset;
         int type;
-        void *chunk;
         value_set *value;
-        void *reply;
         char handle[8];
-        bool write_check;
     };
 
     struct buse_request {
@@ -35,7 +28,7 @@ extern "C" {
 
 	struct buse_operations {
 		int (*read)(int sk,void *buf, u_int32_t len, u_int64_t offset, void *userdata);
-		int (*write)(int sk,const void *buf, u_int32_t len, u_int64_t offset, void *userdata);
+		int (*write)(int sk,void *buf, u_int32_t len, u_int64_t offset, void *userdata);
 		void (*disc)(int sk,void *userdata);
 		int (*flush)(int sk,void *userdata);
 		int (*trim)(int sk,u_int64_t from, u_int32_t len, void *userdata);

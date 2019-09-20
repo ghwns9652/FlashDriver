@@ -4,6 +4,7 @@
 buse
 driver
 driver_memory_check
+vcu_driver
 server
 duma_*
 data/

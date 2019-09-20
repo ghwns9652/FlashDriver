@@ -57,6 +57,7 @@ extern int32_t gc_count;
 uint32_t pbase_create(lower_info*,algorithm *);
 void *pbase_end_req(algo_req*);
 void pbase_destroy(lower_info*, algorithm *);
+uint32_t pbase_bulk_get(request* const);
 uint32_t pbase_get(request* const);
 uint32_t pbase_set(request* const);
 uint32_t pbase_remove(request* const);

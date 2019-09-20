@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -38,6 +39,8 @@
 #include "interface.h"
 #include "buse.h"
 #include "../bench/measurement.h"
+#include "../include/FS.h"
+#include "../include/settings.h"
 
 #ifndef BUSE_DEBUG
 #define BUSE_DEBUG (0)
@@ -49,6 +52,23 @@ extern MeasureTime buseTime;
 struct nbd_reply reply;
 int g_sk;
 pthread_mutex_t sk_lock;
+pthread_mutex_t req_lock;
+extern pthread_mutex_t reply_lock;
+
+#ifdef QPRINT
+extern master_processor mp;
+extern queue *request_q;
+extern queue *reply_q;
+#ifdef vcu108
+extern queue *vcu_q;
+#endif
+int numio;
+#endif
+
+
+pthread_t tid[NUM_SERVE_THRD];
+
+int sp[2];
 
 /*
  * These helper functions were taken from cliserv.h in the nbd distribution.
@@ -111,6 +131,10 @@ static void disconnect_nbd(int signal) {
             warn("failed to request disconect on nbd device");
         } else {
             nbd_dev_to_disconnect = -1;
+            /*
+            for(int i = 0; i < NUM_SERVE_THRD; i++)
+                pthread_kill(tid[i], SIGKILL);
+            */
             fprintf(stderr, "sucessfuly requested disconnect on nbd device\n");
             //gettimeofday
         }
@@ -128,33 +152,55 @@ static int set_sigaction(int sig, const struct sigaction * act) {
 }
 
 /* Serve userland side of nbd socket. If everything worked ok, return 0. */
-static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata) {
+static int __serve_nbd(int sk, const struct buse_operations * aop, void * userdata) {
     u_int64_t from;
     u_int32_t len;
     ssize_t bytes_read;
     struct nbd_request request;
     void *chunk;
+    int ret_nread;
 
     g_sk = sk;
     reply.magic = htonl(NBD_REPLY_MAGIC);
     reply.error = htonl(0);
-    //fd = open("requests", O_CREAT | O_WRONLY | O_TRUNC);
-    while ((bytes_read = read(sk, &request, sizeof(request))) > 0) {
-        //printf("handle : %s\n", request.handle);
-        //printf("bytes_read : %d\n", bytes_read);
-        //reply = (struct nbd_reply*)malloc(sizeof(struct nbd_reply));
-        //reply->magic = htonl(NBD_REPLY_MAGIC);
-        //reply->error = htonl(0);
+#ifdef LPRINT
+    struct timeval busestart, buseend;
+#endif
+    while (1) {
+    //while ((bytes_read = read(sk, &request, sizeof(request))) > 0) {
+        pthread_mutex_lock(&req_lock);
+        bytes_read = read(sk, &request, sizeof(request));
+#ifdef LPRINT
+        gettimeofday(&busestart, NULL);
+#endif
+        if(bytes_read <= 0){
+            pthread_mutex_unlock(&req_lock);
+            break;
+        }
+
+        if(ntohl(request.type) != NBD_CMD_WRITE)
+            pthread_mutex_unlock(&req_lock);
+
+        ioctl(sk, FIONREAD, &ret_nread);
+#ifdef QPRINT
+        printf("--------------------------------\n");
+        printf("buffer usage : %d\n", ret_nread);
+        printf("request_q usage : %d\n", request_q->size);
+        printf("reply_q usage : %d\n", reply_q->size);
+        printf("interface_q usage : %d\n", (mp.processors[0].req_q)->size);
+#ifdef vcu108
+        printf("vcu_q usage : %d\n", vcu_q->size);
+#endif
+        //printf("aio_q usage : %d\n", numio);
+        printf("--------------------------------\n");
+#endif
         assert(bytes_read == sizeof(request));
-        //memcpy(reply.handle, request.handle, sizeof(reply.handle));
-        //reply->error = htonl(0);
 
         len = ntohl(request.len);
         from = ntohll(request.from);
         assert(request.magic == htonl(NBD_REQUEST_MAGIC));
 
         switch(ntohl(request.type)) {
-            printf("asdf\n");
             /* I may at some point need to deal with the the fact that the
              * official nbd server has a maximum buffer size, and divides up
              * oversized requests into multiple pieces. This applies to reads
@@ -166,35 +212,21 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
 #endif
                 if (BUSE_DEBUG) fprintf(stderr, "Request for read of size %d\n", len);
                 /* Fill with zero in case actual read is not implemented */
-                chunk = malloc(len);
                 if (aop->read) {
-                     aop->read(sk, chunk, len, from, request.handle);
+                     aop->read(sk, NULL, len, from, request.handle);
                 } 
 #ifdef BUSE_MEASURE
                 MA(&buseTime);
 #endif
-                //else {
-                    /* If user not specified read operation, return EPERM error */
-                //    reply->error = htonl(EPERM);
-                //}
-                //write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
-                //write_all(sk, (char*)chunk, len);
-
-                //free(chunk);
                 break;
             case NBD_CMD_WRITE:
                 if (BUSE_DEBUG) fprintf(stderr, "Request for write of size %d\n", len);
-                chunk = malloc(len);
+                F_malloc(&chunk, len, FS_SET_T);
                 read_all(sk, (char*)chunk, len);
+                pthread_mutex_unlock(&req_lock);
                 if (aop->write) {
                     aop->write(sk, chunk, len, from, request.handle);
                 } 
-                //else {
-                    /* If user not specified write operation, return EPERM error */
-                //    reply->error = htonl(EPERM);
-                //}
-                //free(chunk);
-                //write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
                 break;
             case NBD_CMD_DISC:
                 if (BUSE_DEBUG) fprintf(stderr, "Got NBD_CMD_DISC\n");
@@ -210,7 +242,9 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
                     aop->flush(sk, userdata);
                 }
                 memcpy(reply.handle, request.handle, sizeof(reply.handle));
+                pthread_mutex_lock(&reply_lock);
                 write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
+                pthread_mutex_unlock(&reply_lock);
                 break;
 #endif
 #ifdef NBD_FLAG_SEND_TRIM
@@ -219,12 +253,15 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
                 if (aop->trim) {
                     aop->trim(sk, from, len, request.handle);
                 }
-                //write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
                 break;
 #endif
             default:
                 assert(0);
         }
+#ifdef LPRINT
+        gettimeofday(&buseend, NULL);
+        printf("buse latency [sec, usec] : [%ld, %ld]\n", buseend.tv_sec-busestart.tv_sec, buseend.tv_usec-busestart.tv_usec);
+#endif
     }
     if (bytes_read == -1) {
         warn("error reading userside of nbd socket");
@@ -234,16 +271,24 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
     return EXIT_SUCCESS;
 }
 
+static void* serve_nbd(void* args)
+{
+    return (void*)__serve_nbd(sp[0], (struct buse_operations*)args, NULL);
+}
+
 int buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
 {
-    int sp[2];
     int nbd, sk, err, flags;
+    socklen_t argsize;
+    int sndsize, rcvsize;
 
     pthread_mutex_init(&sk_lock, NULL);
+    pthread_mutex_init(&req_lock, NULL);
 
     err = socketpair(AF_UNIX, SOCK_STREAM, 0, sp);
     assert(!err);
 
+    printf("opened device  : %s\n", dev_file);
     nbd = open(dev_file, O_RDWR);
     if (nbd == -1) {
         fprintf(stderr, 
@@ -285,6 +330,17 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
         /* The child needs to continue setting things up. */
         close(sp[0]);
         sk = sp[1];
+
+        //FIXME: check effect of window size
+        argsize = sizeof(int);
+        getsockopt(sk, SOL_SOCKET, SO_SNDBUF, &sndsize, &argsize);
+        getsockopt(sk, SOL_SOCKET, SO_RCVBUF, &rcvsize, &argsize);
+
+        sndsize*=WDSIZE;
+        rcvsize*=WDSIZE;
+
+        setsockopt(sk, SOL_SOCKET, SO_SNDBUF, &sndsize, argsize);
+        setsockopt(sk, SOL_SOCKET, SO_RCVBUF, &rcvsize, argsize);
 
         if(ioctl(nbd, NBD_SET_SOCK, sk) == -1){
             printf("sk ioctl error\n");
@@ -347,10 +403,29 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
     }
 
     close(sp[1]);
+    sk = sp[0];
+
+    //FIXME: check effect of window size
+    argsize = sizeof(int);
+    getsockopt(sk, SOL_SOCKET, SO_SNDBUF, &sndsize, &argsize);
+    getsockopt(sk, SOL_SOCKET, SO_RCVBUF, &rcvsize, &argsize);
+
+    sndsize*=WDSIZE;
+    rcvsize*=WDSIZE;
+
+    setsockopt(sk, SOL_SOCKET, SO_SNDBUF, &sndsize, argsize);
+    setsockopt(sk, SOL_SOCKET, SO_RCVBUF, &rcvsize, argsize);
 
     /* serve NBD socket */
     int status;
-    status = serve_nbd(sp[0], aop, userdata);
+    for(int i = 0; i < NUM_SERVE_THRD; i++){
+        pthread_create(&tid[i], NULL, serve_nbd, (void*)aop);
+    }
+    //long temp_stat;
+    for(int i = 0; i < NUM_SERVE_THRD; i++){
+        pthread_join(tid[i], NULL);
+    }
+    //status = serve_nbd(sp[0], aop, userdata);
     if (close(sp[0]) != 0) warn("problem closing server side nbd socket");
     if (status != 0) return status;
 

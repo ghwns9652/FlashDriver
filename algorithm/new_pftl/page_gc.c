@@ -14,6 +14,8 @@ int32_t pbase_garbage_collection(){
 	value_set **temp_set;
 	SRAM *d_sram;
 
+    while(1) printf("garbage!!!\n");
+
 	all = 0;
 	gc_count++;
 	victim = BM_Heap_Get_Max(b_heap);

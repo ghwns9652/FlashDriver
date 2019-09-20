@@ -1,0 +1,4 @@
+[submodule "lower/NDPSql"]
+	path = lower/NDPSql
+	url = https://github.com/ghwns9652/NDPSql.git
+    branch = buse

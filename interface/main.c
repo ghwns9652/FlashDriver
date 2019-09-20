@@ -10,17 +10,19 @@
 #include "../bench/bench.h"
 #include "interface.h"
 #include "../algorithm/Lsmtree/lsmtree.h"
+#include "../include/utils/kvssd.h"
 extern int req_cnt_test;
 extern uint64_t dm_intr_cnt;
 extern int LOCALITY;
 extern float TARGETRATIO;
 extern master *_master;
 extern bool force_write_start;
+extern int seq_padding_opt;
 extern lsmtree LSM;
 #ifdef Lsmtree
 int skiplist_hit;
 #endif
-
+MeasureTime write_opt_time[10];
 int main(int argc,char* argv[]){
 	if(argc==3){
 		LOCALITY=atoi(argv[1]);
@@ -32,19 +34,26 @@ int main(int argc,char* argv[]){
 		LOCALITY=50;
 		TARGETRATIO=0.5;
 	}
-
-	inf_init();
+	seq_padding_opt=1;
+	inf_init(0,0);
 	bench_init();
 	char t_value[PAGESIZE];
 	memset(t_value,'x',PAGESIZE);
 
+	printf("TOTALKEYNUM: %d\n",TOTALKEYNUM);
+	// GC test
 	bench_add(SEQSET,0,RANGE,RANGE);
-//	bench_add(RANDSET,0,RANGE,RANGE/2);
+	bench_add(RANDSET,0,RANGE,REQNUM*3);
+
+//	bench_add(SEQRW,0,RANGE,REQNUM*2);
+//	bench_add(RANDSET,0,RANGE,REQNUM*2);
+//	bench_add(RANDRW,0,RANGE,REQNUM*2);
+	
 //	bench_add(RANDGET,0,RANGE,RANGE);
-//	bench_add(RANDSET,0,RANGE/2,RANGE);
-	bench_add(SEQGET,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE,RANGE);
-//	bench_add(MIXED,0,RANGE,RANGE);
+//	bench_add(SEQGET,0,RANGE,RANGE);
+//	bench_add(RANDSET,0,RANGE,RANGE);
+//	bench_add(MIXED,0,RANGE,RANGE/2);
 //	bench_add(SEQLATENCY,0,RANGE,RANGE);
 //	bench_add(RANDSET,0,RANGE,RANGE);
 //	bench_add(RANDLATENCY,0,RANGE,RANGE-RANGE/10);
@@ -60,49 +69,41 @@ int main(int argc,char* argv[]){
 	int cnt=0;
 
 	int locality_check=0,locality_check2=0;
-/*
-	uint32_t _type, _key;
-	while(1){
-		scanf("%d%d",&_type,&_key);
-		if(cnt++%10240==0){
-			printf("%d\n",cnt);
-		}
-		temp.length=PAGESIZE;
-		inf_make_req(_type,_key,&temp,0);
-		if(cnt>37000000)
-			break;
-	}
-*/
 	MeasureTime aaa;
 	measure_init(&aaa);
 	bool tflag=false;
 	while((value=get_bench())){
 		temp.length=value->length;
+#ifdef KVSSD
+		//printf("value:%s\n",kvssd_tostring(value->key));
+#endif
 		if(value->type==FS_SET_T){
 			memcpy(&temp.value[0],&value->key,sizeof(value->key));
 		}
 
+#ifdef KVSSD
+		inf_make_req(value->type,value->key,temp.value ,value->length-value->key.len-sizeof(value->key.len),value->mark);
+		free(value->key.key);
+#else
 		inf_make_req(value->type,value->key,temp.value ,value->length,value->mark);
+#endif
 		if(!tflag &&value->type==FS_GET_T){
 			tflag=true;
 		}
 
 
 		if(_master->m[_master->n_num].type<=SEQRW) continue;
+		
+#ifndef KVSSD
 		if(value->key<RANGE*TARGETRATIO){
 			locality_check++;
 		}
 		else{
 			locality_check2++;
 		}
+#endif
 	}
 
-	if(req_cnt_test==cnt){
-		printf("done!\n");
-	}
-	else{
-		printf("req_cnt_test:cnt -> %d:%d fuck\n",req_cnt_test,cnt);
-	}
 	force_write_start=true;
 	
 	printf("bench finish\n");
