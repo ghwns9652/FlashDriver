@@ -1,4 +1,3 @@
-[submodule "lower/NDPSql"]
-	path = lower/NDPSql
-	url = https://github.com/ghwns9652/NDPSql.git
-    branch = buse
+[submodule "interface/lfqueue"]
+	path = interface/lfqueue
+	url = https://github.com/ghwns9652/lfqueue.git

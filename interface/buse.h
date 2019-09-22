@@ -39,7 +39,9 @@ extern "C" {
 		u_int64_t size_blocks;
 	};
 
-	int buse_main(const char* dev_file, const struct buse_operations *bop, void *userdata);
+	int __buse_main(const char* dev_file, const struct buse_operations *bop, void *userdata);
+    int buse_init();
+    int buse_free();
 
 #ifdef __cplusplus
 }

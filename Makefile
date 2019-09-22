@@ -82,6 +82,7 @@ SRCS +=\
 	./interface/interface.c\
 	./interface/bb_checker.c\
 	./interface/buse.c\
+	./interface/buse_inf.c\
 	./interface/lfqueue/lfqueue.c\
 	./include/FS.c\
 	./include/slab.c\
@@ -140,8 +141,8 @@ range_driver: ./interface/range_test_main.c libdriver.a
 duma_driver: ./interface/main.c libdriver.a
 	$(CC) $(CFLAGS) -o $@ $^ -lduma $(ARCH) $(LIBS)
 
-vcu_driver: ./interface/busexmp.c libdriver.a connectal.a
-	$(CC) -fPIC $(CFLAGS) -o $@ $^ $(LIBS)
+vcu_driver: ./interface/buse_main.c libdriver.a libconnectal.so
+	$(CC) -fPIC $(CFLAGS) -o $@ $^ $(LIBS) -L./ -lconnectal
 
 jni: libdriver.a ./jni/DriverInterface.c
 	$(CC) -fPIC -o libdriver.so -shared -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux ./object/* $(LIBS)
@@ -152,7 +153,7 @@ libfdsock.a:
 libdriver.a: $(TARGETOBJ)
 	mkdir -p object && mkdir -p data
 	cd ./algorithm/$(TARGET_ALGO) && $(MAKE) clean && $(MAKE) && cd ../../
-	#cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
+	cd ./lower/$(TARGET_LOWER) && $(MAKE) && cd ../../ 
 	cd ./algorithm/blockmanager && $(MAKE) && cd ../../
 #cd ./include/kuk_socket_lib/ && $(MAKE) && mv ./*.o ../../object/ && cd ../../
 	mv ./include/data_struct/*.o ./object/
@@ -160,9 +161,9 @@ libdriver.a: $(TARGETOBJ)
 	mv ./interface/*.o ./object/ && mv ./bench/*.o ./object/ && mv ./include/*.o ./object/ && mv ./interface/lfqueue/*.o ./object/
 	$(AR) r $(@) ./object/*
 
-connectal.a:
-	cd ./lower/vcu108/platform_tests/flash_dual_no_ind_vcu108/vcu108/ && $(MAKE) connectal.a &&\
-	cp ./jni/connectal.a ../../../../../connectal.a && $(RM) ./jni/connectal.a
+libconnectal.so:
+	cd ../../platform_tests/flash_dual_no_ind_vcu108/vcu108/ && $(MAKE) connectal.so &&\
+	cp ./jni/connectal.so ../../../util/FlashDriver/libconnectal.so && $(RM) ./jni/connectal.so
 
 %_mem.o: %.c
 	$(CC) $(CFLAGS) -DLEAKCHECK -c $< -o $@ $(LIBS)

@@ -426,15 +426,24 @@ void* buse_reply_main(void* args){
 }
 #endif
 
-int main(int argc, char *argv[]) {
 #define NUM_BUSE_REQ_MAIN 8
-    pthread_t tid;
-    pthread_t main_tid[NUM_BUSE_REQ_MAIN];
-    struct arguments arguments;
-    arguments.verbose = 0;
-    argp_parse(&argp, argc, argv, 0, 0, &arguments);
+static struct arguments arguments;
+static struct buse_operations aop;
+static pthread_t tid;
+static pthread_t main_tid[NUM_BUSE_REQ_MAIN];
 
-    struct buse_operations aop;
+void* buse_main(void* args){
+    __buse_main(arguments.device, &aop, (void *)&arguments.verbose);
+
+    return NULL;
+}
+
+//int main(int argc, char *argv[]) {
+int buse_init() {
+    arguments.verbose = 0;
+    arguments.device = "/dev/nbd0";
+    //argp_parse(&argp, argc, argv, 0, 0, &arguments);
+
 #if (BUSE_ASYNC==1)
     aop.read = buse_make_read;
     aop.write = buse_make_write;
@@ -476,7 +485,13 @@ int main(int argc, char *argv[]) {
     }
     pthread_create(&tid, NULL, buse_reply_main, NULL);
 #endif
-    buse_main(arguments.device, &aop, (void *)&arguments.verbose);
+    pthread_t buse_main_tid;
+    pthread_create(&buse_main_tid, NULL, buse_main, NULL);
+    //buse_main(arguments.device, &aop, (void *)&arguments.verbose);
+    return 0;
+}
+
+int buse_free() {
 #if (BUSE_ASYNC==1)
     for(int i = 0; i < NUM_BUSE_REQ_MAIN; i++){
         pthread_cancel(main_tid[i]);

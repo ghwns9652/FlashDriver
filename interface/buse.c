@@ -276,7 +276,7 @@ static void* serve_nbd(void* args)
     return (void*)__serve_nbd(sp[0], (struct buse_operations*)args, NULL);
 }
 
-int buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
+int __buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
 {
     int nbd, sk, err, flags;
     socklen_t argsize;
