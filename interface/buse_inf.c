@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <linux/nbd.h>
+#include <linux/fs.h>
+#include <linux/ioctl.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -35,6 +37,13 @@
 #include "../include/utils/cond_lock.h"
 #include "../include/FS.h"
 #include "lfqueue/lfqueue.h"
+
+#ifdef pftl
+#include "../algorithm/pftl/page.h"
+#endif
+
+#ifdef vcu108
+#include "../lower/vcu108/vcu108_inf.h"
 
 /* BUSE callbacks */
 //static void *data;
@@ -293,6 +302,37 @@ static int buse_trim(int sk, u_int64_t from, u_int32_t len, void *userdata)
     buse_io(FS_DELETE_T,sk,NULL,len,from,userdata);
 
     return 0;
+}
+
+uint32_t lpa2ppa(uint32_t lpa){
+    uint32_t ftlppa, ppa;
+    PageTableEntry vcuppa;
+
+    ftlppa = page_TABLE[lpa].ppa;
+    vcuppa = pageTable[ftlppa];
+    ppa = (uint32_t)(vcuppa.card |
+        vcuppa.bus<<LG_NUM_CARDS |
+        vcuppa.chip<<LG_NUM_BUSES+LG_NUM_CARDS |
+        vcuppa.block<<LG_CHIPS_PER_BUS+LG_NUM_BUSES+LG_NUM_CARDS |
+        vcuppa.page<<LG_BLOCKS_PER_CHIP+LG_CHIPS_PER_BUS+LG_NUM_BUSES+LG_NUM_CARDS);
+    
+    return ppa;
+}
+
+uint32_t getPhysPageAddr(int fd, size_t byteOffset){
+    int blksize;
+    uint32_t lba, lpa;
+
+    ioctl(fd, FIGETBSZ, &blksize);
+    for(int i = 0; i <= byteOffset/blksize; i++)
+        ioctl(fd, FIBMAP, &lba);
+
+    if(blksize < PAGESIZE)
+        lpa = lba/(PAGESIZE/blksize);
+    else
+        lpa = lba*(blksize/PAGESIZE) + (byteOffset%blksize)/PAGESIZE;
+
+    return lpa2ppa(lpa);
 }
 
 /* argument parsing using argp */

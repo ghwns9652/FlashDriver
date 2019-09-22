@@ -25,11 +25,11 @@
 #define NUM_CARDS 2
 
 #else
-#define PAGES_PER_BLOCK 256
-#define BLOCKS_PER_CHIP 1024
-#define CHIPS_PER_BUS 8
-#define NUM_BUSES 8
-#define NUM_CARDS 2
+#define PAGES_PER_BLOCK 1U<<LG_PAGES_PER_BLOCK
+#define BLOCKS_PER_CHIP 1U<<LG_BLOCKS_PER_CHIP
+#define CHIPS_PER_BUS 1U<<LG_CHIPS_PER_BUS
+#define NUM_BUSES 1U<<LG_NUM_BUSES
+#define NUM_CARDS 1U<<LG_NUM_CARDS
 #endif
 
 
@@ -62,53 +62,6 @@ FILE* file0;
 #define DEBUG_PRINT(...) do{ } while ( false )
 #endif
 
-typedef enum {
-  UNINIT,
-  ERASED,
-  ERASED_BAD,
-  WRITTEN
-} FlashStatusT;
-
-typedef struct {
-  bool busy;
-  int card;
-  int bus;
-  int chip;
-  int block;
-  int page;
-  algo_req* req;
-} TagTableEntry;
-
-typedef struct {
-    bool inflight;
-    int card;
-    int bus;
-    int chip;
-    int block;
-    int page;
-} PageTableEntry;
-
-/*
-struct vcu_request{
-    FSTYPE type;
-    uint32_t PPA;
-    uint32_t size;
-    value_set* value;
-    bool async;
-    algo_req* req;
-};
-*/
-
-struct vcu_request{
-    FSTYPE type;
-    int card;
-    int bus;
-    int chip;
-    int block;
-    int page;
-    int tag;
-};
-
 FlashRequestProxy *device;
 
 pthread_mutex_t flashReqMutex;
@@ -133,7 +86,6 @@ TagTableEntry readTagTable[NUM_TAGS];
 TagTableEntry writeTagTable[NUM_TAGS]; 
 TagTableEntry eraseTagTable[NUM_TAGS]; 
 FlashStatusT flashStatus[NUM_CARDS][NUM_BUSES][CHIPS_PER_BUS][BLOCKS_PER_CHIP];
-PageTableEntry *pageTable;
 
 int testPass = 1;
 bool verbose = true;
