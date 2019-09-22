@@ -1,7 +1,7 @@
 export CC=g++
 
 TARGET_INF=interface
-TARGET_LOWER=NDPSql
+TARGET_LOWER=vcu108
 TARGET_ALGO=pftl
 #TARGET_LOWER=linux_aio
 #TARGET_ALGO=Lsmtree
@@ -23,7 +23,7 @@ export COMMONFLAGS=\
 			-D_GNU_SOURCE\
 			-DSLC\
 			-Wno-unused-but-set-variable\
--O0\
+-O3\
 #			-DWRITESYNC\
 #			-DCHECKINGTIME\
 #			-DKVSSD
@@ -161,7 +161,7 @@ libdriver.a: $(TARGETOBJ)
 	$(AR) r $(@) ./object/*
 
 connectal.a:
-	cd ./lower/NDPSql/platform_tests/flash_dual_no_ind_vcu108/vcu108/ && $(MAKE) connectal.a &&\
+	cd ./lower/vcu108/platform_tests/flash_dual_no_ind_vcu108/vcu108/ && $(MAKE) connectal.a &&\
 	cp ./jni/connectal.a ../../../../../connectal.a && $(RM) ./jni/connectal.a
 
 %_mem.o: %.c
