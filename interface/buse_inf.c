@@ -24,7 +24,7 @@
 #include <string.h>
 #include <linux/nbd.h>
 #include <linux/fs.h>
-#include <linux/ioctl.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -44,6 +44,8 @@
 
 #ifdef vcu108
 #include "../lower/vcu108/vcu108_inf.h"
+extern PageTableEntry *pageTable;
+#endif
 
 /* BUSE callbacks */
 //static void *data;
@@ -304,17 +306,29 @@ static int buse_trim(int sk, u_int64_t from, u_int32_t len, void *userdata)
     return 0;
 }
 
+#define DEBUGGETPPA
+
 uint32_t lpa2ppa(uint32_t lpa){
     uint32_t ftlppa, ppa;
     PageTableEntry vcuppa;
 
     ftlppa = page_TABLE[lpa].ppa;
+#ifdef DEBUGGETPPA
+    fprintf(stderr, "ftlppa : %u\n", ftlppa);
+#endif
     vcuppa = pageTable[ftlppa];
+#ifdef DEBUGGETPPA
+    fprintf(stderr, "(card, bus, chip, block, page) : (%d, %d, %d, %d, %d)\n", vcuppa.card, vcuppa.bus, vcuppa.chip, vcuppa.block, vcuppa.page);
+#endif
     ppa = (uint32_t)(vcuppa.card |
         vcuppa.bus<<LG_NUM_CARDS |
-        vcuppa.chip<<LG_NUM_BUSES+LG_NUM_CARDS |
-        vcuppa.block<<LG_CHIPS_PER_BUS+LG_NUM_BUSES+LG_NUM_CARDS |
-        vcuppa.page<<LG_BLOCKS_PER_CHIP+LG_CHIPS_PER_BUS+LG_NUM_BUSES+LG_NUM_CARDS);
+        vcuppa.chip<<(LG_NUM_BUSES+LG_NUM_CARDS) |
+        vcuppa.block<<(LG_CHIPS_PER_BUS+LG_NUM_BUSES+LG_NUM_CARDS) |
+        vcuppa.page<<(LG_BLOCKS_PER_CHIP+LG_CHIPS_PER_BUS+LG_NUM_BUSES+LG_NUM_CARDS));
+
+#ifdef DEBUGGETPPA
+    fprintf(stderr, "ppa : %u\n", ppa);
+#endif
     
     return ppa;
 }
@@ -324,13 +338,24 @@ uint32_t getPhysPageAddr(int fd, size_t byteOffset){
     uint32_t lba, lpa;
 
     ioctl(fd, FIGETBSZ, &blksize);
-    for(int i = 0; i <= byteOffset/blksize; i++)
+#ifdef DEBUGGETPPA
+    fprintf(stderr, "blksize : %d\n", blksize);
+#endif
+    for(int i = 0; i <= (int)byteOffset/blksize; i++)
         ioctl(fd, FIBMAP, &lba);
+
+#ifdef DEBUGGETPPA
+    fprintf(stderr, "lba : %u\n", lba);
+#endif
 
     if(blksize < PAGESIZE)
         lpa = lba/(PAGESIZE/blksize);
     else
         lpa = lba*(blksize/PAGESIZE) + (byteOffset%blksize)/PAGESIZE;
+
+#ifdef DEBUGGETPPA
+    fprintf(stderr, "lpa : %u\n", lpa);
+#endif
 
     return lpa2ppa(lpa);
 }

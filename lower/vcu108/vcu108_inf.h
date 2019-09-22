@@ -42,8 +42,6 @@ struct vcu_request{
     int tag;          
 };                    
 
-PageTableEntry *pageTable;
-
 uint32_t vcu_create(lower_info*);
 void *vcu_destroy(lower_info*);
 void* vcu_push_data(uint32_t ppa, uint32_t size, value_set *value,bool async, algo_req * const req);

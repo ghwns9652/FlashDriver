@@ -25,11 +25,11 @@
 #define NUM_CARDS 2
 
 #else
-#define PAGES_PER_BLOCK 1U<<LG_PAGES_PER_BLOCK
-#define BLOCKS_PER_CHIP 1U<<LG_BLOCKS_PER_CHIP
-#define CHIPS_PER_BUS 1U<<LG_CHIPS_PER_BUS
-#define NUM_BUSES 1U<<LG_NUM_BUSES
-#define NUM_CARDS 1U<<LG_NUM_CARDS
+#define PAGES_PER_BLOCK (1<<LG_PAGES_PER_BLOCK)
+#define BLOCKS_PER_CHIP (1<<LG_BLOCKS_PER_CHIP)
+#define CHIPS_PER_BUS (1<<LG_CHIPS_PER_BUS)
+#define NUM_BUSES (1<<LG_NUM_BUSES)
+#define NUM_CARDS (1<<LG_NUM_CARDS)
 #endif
 
 
@@ -86,6 +86,7 @@ TagTableEntry readTagTable[NUM_TAGS];
 TagTableEntry writeTagTable[NUM_TAGS]; 
 TagTableEntry eraseTagTable[NUM_TAGS]; 
 FlashStatusT flashStatus[NUM_CARDS][NUM_BUSES][CHIPS_PER_BUS][BLOCKS_PER_CHIP];
+PageTableEntry *pageTable;
 
 int testPass = 1;
 bool verbose = true;
