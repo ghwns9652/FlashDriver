@@ -189,4 +189,5 @@ clean :
 	@$(RM) range_driver
 	@$(RM) *driver
 	@$(RM) libdriver.so
+	@$(RM) libconnectal.so
 

@@ -25,23 +25,18 @@
 #define NUM_CARDS 2
 
 #else
-#define PAGES_PER_BLOCK (1<<LG_PAGES_PER_BLOCK)
-#define BLOCKS_PER_CHIP (1<<LG_BLOCKS_PER_CHIP)
-#define CHIPS_PER_BUS (1<<LG_CHIPS_PER_BUS)
-#define NUM_BUSES (1<<LG_NUM_BUSES)
-#define NUM_CARDS (1<<LG_NUM_CARDS)
+#define PAGES_PER_BLOCK 256
+#define BLOCKS_PER_CHIP 4096
+#define CHIPS_PER_BUS 8
+#define NUM_BUSES 8
+#define NUM_CARDS 2
 #endif
-
 
 #define PAGE_SIZE (8192*2)
 #define PAGE_SIZE_VALID (8224)
 #define NUM_TAGS 128
 
 //#define DEBUG 1
-//#define WLOCK
-//#define PRINTBUF
-//#define PRINTLREQ
-#define VCU_ASYNC 1
 //#define TAGPRINT
 #ifdef TAGPRINT
 int busy_cnt = 0;
@@ -49,12 +44,7 @@ pthread_mutex_t busy_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 #define NUM_VCU_THREAD 8
-//pthread_t vcu_tid[NUM_VCU_THREAD];
 pthread_t vcu_tid;
-
-#ifdef PRINTBUF
-FILE* file0;
-#endif
 
 #ifdef DEBUG
 #define DEBUG_PRINT(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
@@ -101,14 +91,6 @@ unsigned int hashAddrToData(int card, int bus, int chip, int blk, int word) {
     return ((card<<28) + (bus<<24) + (chip<<20) + (blk<<16) + word);
 }
 
-bool checkOutOfRange(uint32_t ppa){
-    static uint32_t max_range = NUM_CARDS*NUM_BUSES*CHIPS_PER_BUS*BLOCKS_PER_CHIP - badBlockCnt;
-
-    if(ppa/PAGES_PER_BLOCK < max_range)
-        return false;
-    return true;
-}
-
 void lowerPageAlloc(uint32_t ppa){
     static uint32_t card, bus, chip, block, page = 0;
 
@@ -120,39 +102,25 @@ void lowerPageAlloc(uint32_t ppa){
     DEBUG_PRINT(stderr, "Allocated! (card, bus, chip, block, page) = (%d, %d, %d, %d, %d)\n", card, bus, chip, block, page);
 
     do{
-        if(++card != NUM_CARDS)
-            continue;
-        else
-            card = 0;
+        if(++card != NUM_CARDS) continue;
+        else card = 0;
 
-        if(++bus != NUM_BUSES)
-            continue;
-        else
-            bus = 0;
+        if(++bus != NUM_BUSES) continue;
+        else bus = 0;
 
-        if(++chip != CHIPS_PER_BUS)
-            continue;
-        else
-            chip = 0;
+        if(++chip != CHIPS_PER_BUS) continue;
+        else chip = 0;
 
-        if(++block != BLOCKS_PER_CHIP)
-            continue;
-        else
-            block = 0;
+        if(++block != BLOCKS_PER_CHIP) continue;
+        else block = 0;
 
-        if(++page != PAGES_PER_BLOCK)
-            continue;
-        else
-            page = 0;
+        if(++page != PAGES_PER_BLOCK) continue;
+        else page = 0;
 
-    }while(flashStatus[card][bus][chip][block]!=ERASED);
+    }while(flashStatus[card][bus][chip][block] != ERASED);
 
     return;
 }
-
-#ifdef WLOCK
-pthread_mutex_t wlock;
-#endif
 
 lower_info vcu_info={
 	.create=vcu_create,
@@ -207,17 +175,9 @@ public:
     
     algo_req* req = writeTagTable[tag].req;
     writeTagTable[tag].busy = false;
-    /*
-    if(req){
-        pageTable[req->ppa].inflight = false;
-    }
-    */
     if(req){
         req->end_req(req);
     }
-#ifdef WLOCK
-    pthread_mutex_unlock(&wlock);
-#endif
   }
 
   virtual void eraseDone(unsigned int tag, unsigned int status, uint64_t cycles) {
@@ -363,7 +323,6 @@ void *check_read_buffer_done(void *ptr){
     if ( readBuffers[tag][flag_word_offset] == (unsigned int)-1 ) {
 
       DEBUG_PRINT("LOG: pagedone: tag=%d; inflight=%d\n", tag, curReadsInFlight );
-      //checkReadData(tag);
       
       //pthread_mutex_lock(&readReqMutex);
       /*
@@ -379,7 +338,6 @@ void *check_read_buffer_done(void *ptr){
       }
       algo_req* req = readTagTable[tag].req;
       if(req){
-          //pageTable[req->ppa].inflight = false;
           value_set* value = req->parents->value;
           memcpy(value->value, readBuffers[tag], PAGESIZE);
           req->end_req(req);
@@ -395,7 +353,6 @@ void *check_read_buffer_done(void *ptr){
     }
 
     tag = (tag + 1)%NUM_TAGS;
-    // usleep(100);
   }
     
 }
@@ -403,6 +360,7 @@ void *check_read_buffer_done(void *ptr){
 queue* vcu_q;
 static cl_lock* vcu_flying;
 
+/* VCU108 run as async mode */
 static void* vcu_request_main(void* args){
     struct vcu_request *vcu_req;
 
@@ -469,20 +427,7 @@ uint32_t vcu_create(lower_info *li){
   q_init(&vcu_q, QSIZE);
   vcu_flying=cl_init(QDEPTH*2,true);
 
-  /*
-  for(int i = 0; i < NUM_VCU_THREAD; i++){
-      pthread_create(&vcu_tid[i], NULL, vcu_request_main, (void*)NULL);
-  }
-  */
   pthread_create(&vcu_tid, NULL, vcu_request_main, NULL);
-
-#ifdef WLOCK
-  pthread_mutex_init(&wlock,NULL);
-#endif
-
-#ifdef PRINTBUF
-  file0 = fopen("wbuf.txt", "w+");
-#endif
 
   for (int t = 0; t < NUM_TAGS; t++) { //allocate buffer address for each tag
     readTagTable[t].busy = false;
@@ -552,13 +497,10 @@ uint32_t vcu_create(lower_info *li){
         for (int card = 0; card < NUM_CARDS; card++){
             tag = waitIdleEraseTag();
 
-            //pthread_mutex_lock(&eraseReqMutex);
-            //curErasesInFlight ++;
             eraseTagTable[tag].card = card;
             eraseTagTable[tag].bus = bus;
             eraseTagTable[tag].chip = chip;
             eraseTagTable[tag].block = blk;
-            //pthread_mutex_unlock(&eraseReqMutex);
 
             eraseBlock(card, bus, chip, blk, tag); 
         }
@@ -627,9 +569,6 @@ static void *enqRequest(FSTYPE type, int card, int bus, int chip, int block, int
 }
 
 void *vcu_push_data(uint32_t PPA, uint32_t size, value_set* value, bool async,algo_req *const req){
-#ifdef PRINTLREQ
-    fprintf(stderr, "push data lpa : %u\n", req->parents->key);
-#endif
 
   lowerPageAlloc(PPA);
   PageTableEntry pte = pageTable[PPA];
@@ -647,36 +586,17 @@ void *vcu_push_data(uint32_t PPA, uint32_t size, value_set* value, bool async,al
   memcpy(writeBuffers[tag], value->value, PAGESIZE);
   pageTable[PPA].inflight = true;
 
-#ifdef PRINTBUF
-  unsigned char* wbuf = (unsigned char*)(writeBuffers[tag]);
-  for(int i = 0; i < PAGE_SIZE; i++){
-	  fprintf(file0, "%.2x", wbuf[i]);
-  }
-  fprintf(file0, "\n");
-#endif
-
-#ifdef WLOCK
-  pthread_mutex_lock(&wlock);
-#endif
-
-  //pthread_mutex_lock(&writeReqMutex);
-  //curWritesInFlight ++;
   writeTagTable[tag].card = pte.card;
   writeTagTable[tag].bus = pte.bus;
   writeTagTable[tag].chip = pte.chip;
   writeTagTable[tag].block = pte.block;
   writeTagTable[tag].page = pte.page;
-  //pthread_mutex_unlock(&writeReqMutex);
 
   enqRequest(FS_SET_T, pte.card, pte.bus, pte.chip, pte.block, pte.page, tag);
-  //writePage(pte.card, pte.bus, pte.chip, pte.block, pte.page, tag);
   return NULL;
 }
 
 void *vcu_pull_data(uint32_t PPA, uint32_t size, value_set* value, bool async,algo_req *const req){	
-#ifdef PRINTLREQ
-    fprintf(stderr, "pull data lpa : %u\n", req->parents->key);
-#endif
 
   PageTableEntry pte = pageTable[PPA];
 
@@ -693,17 +613,13 @@ void *vcu_pull_data(uint32_t PPA, uint32_t size, value_set* value, bool async,al
   pthread_mutex_unlock(&busy_lock);
 #endif
 
-  //pthread_mutex_lock(&readReqMutex);
-  //curReadsInFlight ++;
   readTagTable[tag].card = pte.card;
   readTagTable[tag].bus = pte.bus;
   readTagTable[tag].chip = pte.chip;
   readTagTable[tag].block = pte.block;
   readTagTable[tag].page = pte.page;
-  //pthread_mutex_unlock(&readReqMutex);
 
   enqRequest(FS_GET_T, pte.card, pte.bus, pte.chip, pte.block, pte.page, tag);
-  //readPage(pte.card, pte.bus, pte.chip, pte.block, pte.page, tag);
   return NULL;
 }
 
@@ -713,78 +629,14 @@ void *vcu_trim_block(uint32_t PPA, bool async){
 
   int tag = waitIdleEraseTag();
 
-  //pthread_mutex_lock(&eraseReqMutex);
-  //curErasesInFlight ++;
   eraseTagTable[tag].card = pte.card;
   eraseTagTable[tag].bus = pte.bus;
   eraseTagTable[tag].chip = pte.chip;
   eraseTagTable[tag].block = pte.block;
-  //eraseTagTable[tag].page = pte.page;
-  //pthread_mutex_unlock(&eraseReqMutex);
 
   enqRequest(FS_DELETE_T, pte.card, pte.bus, pte.chip, pte.block, 0, tag);
-  //eraseBlock(pte.card, pte.bus, pte.chip, pte.block, tag);
   return NULL;
 }
-
-/*
-void *vcu_make_push(uint32_t PPA, uint32_t size, value_set* value, bool async, algo_req *const req){
-    struct vcu_request *vcu_req;
-
-    vcu_req = (struct vcu_request*)malloc(sizeof(struct vcu_request));
-    vcu_req->type = FS_SET_T;
-    vcu_req->PPA = PPA;
-    vcu_req->size = size;
-    vcu_req->value = value;
-    vcu_req->async = async;
-    vcu_req->req = req;
-
-    while(1){
-        if(q_enqueue((void*)vcu_req, vcu_q)){
-            cl_release(vcu_flying);
-            break;
-        }
-    }
-    return 0;
-}
-
-void *vcu_make_pull(uint32_t PPA, uint32_t size, value_set* value, bool async, algo_req *const req){
-    struct vcu_request *vcu_req;
-
-    vcu_req = (struct vcu_request*)malloc(sizeof(struct vcu_request));
-    vcu_req->type = FS_GET_T;
-    vcu_req->PPA = PPA;
-    vcu_req->size = size;
-    vcu_req->value = value;
-    vcu_req->async = async;
-    vcu_req->req = req;
-
-    while(1){
-        if(q_enqueue((void*)vcu_req, vcu_q)){
-            cl_release(vcu_flying);
-            break;
-        }
-    }
-    return 0;
-}
-
-void *vcu_make_trim(uint32_t PPA, bool async){
-    struct vcu_request *vcu_req;
-
-    vcu_req = (struct vcu_request*)malloc(sizeof(struct vcu_request));
-    vcu_req->type = FS_DELETE_T;
-    vcu_req->PPA = PPA;
-    vcu_req->async = async;
-
-    while(1){
-        if(q_enqueue((void*)vcu_req, vcu_q)){
-            cl_release(vcu_flying);
-            break;
-        }
-    }
-    return 0;
-}
-*/
 
 void vcu_stop(){}
 

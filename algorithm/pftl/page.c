@@ -134,23 +134,6 @@ void *pbase_end_req(algo_req* input){
 	return NULL;
 }
 
-uint32_t pbase_bulk_get(request* const req){
-    int32_t lpa;
-    int32_t ppa;
-    int32_t size;
-
-    lpa = req->key;
-    ppa = page_TABLE[lpa].ppa;
-    size = req->num;
-    if(ppa == -1){
-        req->end_req(req);
-        return 1;
-    }
-    algo_pbase.li->read(ppa, size, req->value, ASYNC, assign_pseudo_req(DATA_R, NULL, req));
-    //req->end_req(req);
-    return 0;
-}
-
 uint32_t pbase_get(request* const req){
 	/*
 	 * gives pull request to lower level.
@@ -163,22 +146,15 @@ uint32_t pbase_get(request* const req){
 #ifdef BUSE_MEASURE
     MS(&algoTime);
 #endif
-	//bench_algo_start(req);
 	lpa = req->key;
 	ppa = page_TABLE[lpa].ppa;
 	if(ppa == -1){
-		//bench_algo_end(req);
-    /*
-        if(req->type != FS_GET_T && req->type != FS_SET_T) //for buse interface
-            req->type = FS_NOTFOUND_T;
-    */
 #ifndef vcu108
-    algo_pbase.li->read(0, 0, NULL, ASYNC, NULL);
+        algo_pbase.li->read(0, 0, NULL, ASYNC, NULL);
 #endif
 		req->end_req(req);
 		return 1;
 	}
-	//bench_algo_end(req);	
 #ifdef BUSE_MEASURE
     MA(&algoTime);
 #endif
@@ -196,10 +172,8 @@ uint32_t pbase_set(request* const req){
 	int32_t lpa;
 	int32_t ppa;
 
-	//bench_algo_start(req);
 	lpa = req->key;
 	ppa = alloc_page();
-	//bench_algo_end(req);
 
 	algo_pbase.li->write(ppa, PAGESIZE, req->value, ASYNC, assign_pseudo_req(DATA_W, NULL, req));
 	if(page_TABLE[lpa].ppa != -1){//already mapped case.(update)
@@ -217,7 +191,6 @@ uint32_t pbase_remove(request* const req){
 	int32_t lpa;
     int32_t ppa;
 
-	//bench_algo_start(req);
 	lpa = req->key;
 	ppa = page_TABLE[lpa].ppa;
   if(ppa == -1){
@@ -225,11 +198,9 @@ uint32_t pbase_remove(request* const req){
     return 0;
   }
 
-  //algo_pbase.li->trim_block(ppa, ASYNC);
   BM_InvalidatePage(BM,page_TABLE[lpa].ppa);
 	page_TABLE[lpa].ppa = -1; //reset to default.
 	page_OOB[lpa].lpa = -1; //reset reverse_table to default.
   req->end_req(req);
-	//bench_algo_end(req);
 	return 0;
 }

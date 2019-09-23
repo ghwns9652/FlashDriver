@@ -62,11 +62,12 @@ extern queue *reply_q;
 #ifdef vcu108
 extern queue *vcu_q;
 #endif
-int numio;
+#ifdef linux_aio
+extern int numio;
+#endif
 #endif
 
-
-pthread_t tid[NUM_SERVE_THRD];
+pthread_t srvtid[NUM_SERVE_THRD];
 
 int sp[2];
 
@@ -123,20 +124,15 @@ int write_all(int fd, char* buf, size_t count)
 }
 
 /* Signal handler to gracefully disconnect from nbd kernel driver. */
-static int nbd_dev_to_disconnect = -1;
-static void disconnect_nbd(int signal) {
+int nbd_dev_to_disconnect = -1;
+void disconnect_nbd(int signal) {
     (void)signal;
     if (nbd_dev_to_disconnect != -1) {
         if(ioctl(nbd_dev_to_disconnect, NBD_DISCONNECT) == -1) {
             warn("failed to request disconect on nbd device");
         } else {
             nbd_dev_to_disconnect = -1;
-            /*
-            for(int i = 0; i < NUM_SERVE_THRD; i++)
-                pthread_kill(tid[i], SIGKILL);
-            */
             fprintf(stderr, "sucessfuly requested disconnect on nbd device\n");
-            //gettimeofday
         }
     }
 }
@@ -151,6 +147,23 @@ static int set_sigaction(int sig, const struct sigaction * act) {
     return r;
 }
 
+static void print_queue_usage(){
+    int ret_nread;
+    ioctl(sk, FIONREAD, &ret_nread);
+    printf("--------------------------------\n");
+    printf("buffer usage : %d\n", ret_nread);
+    printf("request_q usage : %d\n", request_q->size);
+    printf("reply_q usage : %d\n", reply_q->size);
+    printf("interface_q usage : %d\n", (mp.processors[0].req_q)->size);
+#ifdef vcu108
+    printf("vcu_q usage : %d\n", vcu_q->size);
+#endif
+#ifdef linux_aio
+    printf("aio_q usage : %d\n", numio);
+#endif
+    printf("--------------------------------\n");
+}
+
 /* Serve userland side of nbd socket. If everything worked ok, return 0. */
 static int __serve_nbd(int sk, const struct buse_operations * aop, void * userdata) {
     u_int64_t from;
@@ -160,14 +173,13 @@ static int __serve_nbd(int sk, const struct buse_operations * aop, void * userda
     void *chunk;
     int ret_nread;
 
-    g_sk = sk;
+    //g_sk = sk;
     reply.magic = htonl(NBD_REPLY_MAGIC);
     reply.error = htonl(0);
 #ifdef LPRINT
     struct timeval busestart, buseend;
 #endif
     while (1) {
-    //while ((bytes_read = read(sk, &request, sizeof(request))) > 0) {
         pthread_mutex_lock(&req_lock);
         bytes_read = read(sk, &request, sizeof(request));
 #ifdef LPRINT
@@ -181,19 +193,10 @@ static int __serve_nbd(int sk, const struct buse_operations * aop, void * userda
         if(ntohl(request.type) != NBD_CMD_WRITE)
             pthread_mutex_unlock(&req_lock);
 
-        ioctl(sk, FIONREAD, &ret_nread);
 #ifdef QPRINT
-        printf("--------------------------------\n");
-        printf("buffer usage : %d\n", ret_nread);
-        printf("request_q usage : %d\n", request_q->size);
-        printf("reply_q usage : %d\n", reply_q->size);
-        printf("interface_q usage : %d\n", (mp.processors[0].req_q)->size);
-#ifdef vcu108
-        printf("vcu_q usage : %d\n", vcu_q->size);
+        print_queue_usage(); 
 #endif
-        //printf("aio_q usage : %d\n", numio);
-        printf("--------------------------------\n");
-#endif
+
         assert(bytes_read == sizeof(request));
 
         len = ntohl(request.len);
@@ -404,6 +407,7 @@ int __buse_main(const char* dev_file, const struct buse_operations *aop, void *u
 
     close(sp[1]);
     sk = sp[0];
+    g_sk = sk;
 
     //FIXME: check effect of window size
     argsize = sizeof(int);
@@ -419,11 +423,11 @@ int __buse_main(const char* dev_file, const struct buse_operations *aop, void *u
     /* serve NBD socket */
     int status;
     for(int i = 0; i < NUM_SERVE_THRD; i++){
-        pthread_create(&tid[i], NULL, serve_nbd, (void*)aop);
+        pthread_create(&srvtid[i], NULL, serve_nbd, (void*)aop);
     }
     //long temp_stat;
     for(int i = 0; i < NUM_SERVE_THRD; i++){
-        pthread_join(tid[i], NULL);
+        pthread_join(srvtid[i], NULL);
     }
     //status = serve_nbd(sp[0], aop, userdata);
     if (close(sp[0]) != 0) warn("problem closing server side nbd socket");

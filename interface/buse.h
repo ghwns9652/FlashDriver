@@ -44,6 +44,7 @@ extern "C" {
 	int __buse_main(const char* dev_file, const struct buse_operations *bop, void *userdata);
     int buse_init();
     int buse_free();
+    void disconnect_nbd(int signal);
 
 #ifdef __cplusplus
 }

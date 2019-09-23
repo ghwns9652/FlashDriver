@@ -122,10 +122,6 @@ static inline char KEYTEST(KEYT a, KEYT b){
 #define THPOOL
 //#define AIOTHPOOL
 //#define AIOBUF
-#define NUM_THREAD 1
-#define NUM_SERVE_THRD 1
-#define POLLER_THRD 1
-#define WDSIZE 64
 
 #define TCP 1
 //#define IP "10.42.0.2"
@@ -139,8 +135,20 @@ static inline char KEYTEST(KEYT a, KEYT b){
 #define KEYGEN
 #define SPINSYNC
 //#define interface_pq
-//#define BUSE_MEASURE
+
+/* BUSE NBD settings */
+#define DEVNAME "/dev/nbd0"
+
+/* BUSE Thread Settings */
 #define BUSE_ASYNC 1
+#define NUM_BUSE_REQ_MAIN 8
+#define NUM_THREAD 1
+#define NUM_SERVE_THRD 1
+#define POLLER_THRD 1
+#define WDSIZE 64
+
+/* BUSE Debug Settings */
+//#define BUSE_MEASURE
 //#define QPRINT
 //#define RPRINT
 //#define KPRINT
@@ -148,6 +156,8 @@ static inline char KEYTEST(KEYT a, KEYT b){
 //#define FSDEBUG
 //#define ALIGNDETECT
 //#define NOWRITE
+
+/* BUSE Request Settings */
 #define BULK 1
 #define BULK_MAX_REQ (4*M)/PAGESIZE
 

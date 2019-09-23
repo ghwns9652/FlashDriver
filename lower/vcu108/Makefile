@@ -1,13 +1,3 @@
-
-SRCS +=\
-	   vcu108_inf.cpp\
-
-OBJS :=\
-	$(patsubst %.cpp,%.o,$(SRCS))\
-
-TARGETOBJ:=\
-	$(addprefix ../../object/,$(OBJS))\
-
 CONNECTALDIR?=../../../../platform/build_tools/connectal
 DTOP?=../../../../platform_tests/flash_dual_no_ind_vcu108/vcu108
 
@@ -23,6 +13,15 @@ CFLAGS_LOWER += -O\
                 -I$(CONNECTALDIR)\
                 -I$(CONNECTALDIR)/cpp\
                 -I$(CONNECTALDIR)/lib/cpp\
+
+SRCS +=\
+	   vcu108_inf.cpp\
+
+OBJS :=\
+	$(patsubst %.cpp,%.o,$(SRCS))\
+
+TARGETOBJ:=\
+	$(addprefix ../../object/,$(OBJS))\
 
 LDLIBS := -lpthread
 

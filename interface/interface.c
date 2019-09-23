@@ -954,7 +954,7 @@ value_set *inf_get_valueset(PTR in_v, int type, uint32_t length){
 }
 
 void inf_free_valueset(value_set *in, int type){
-#ifdef BULK
+#if BULK
   if(in->value)
     F_free((void*)in->value, in->dmatag, type);
   
