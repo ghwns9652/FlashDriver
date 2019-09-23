@@ -149,6 +149,7 @@ static int set_sigaction(int sig, const struct sigaction * act) {
 
 static void print_queue_usage(){
     int ret_nread;
+#ifdef QPRINT
     ioctl(sk, FIONREAD, &ret_nread);
     printf("--------------------------------\n");
     printf("buffer usage : %d\n", ret_nread);
@@ -162,6 +163,7 @@ static void print_queue_usage(){
     printf("aio_q usage : %d\n", numio);
 #endif
     printf("--------------------------------\n");
+#endif
 }
 
 /* Serve userland side of nbd socket. If everything worked ok, return 0. */
@@ -193,9 +195,7 @@ static int __serve_nbd(int sk, const struct buse_operations * aop, void * userda
         if(ntohl(request.type) != NBD_CMD_WRITE)
             pthread_mutex_unlock(&req_lock);
 
-#ifdef QPRINT
         print_queue_usage(); 
-#endif
 
         assert(bytes_read == sizeof(request));
 

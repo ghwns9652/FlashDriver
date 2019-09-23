@@ -379,6 +379,12 @@ void* buse_reply_main(void* args){
 }
 #endif
 
+struct arguments {
+    unsigned long long size;
+    char * device;
+    int verbose;
+};
+
 static struct arguments arguments;
 static struct buse_operations aop;
 static pthread_t request_tid[NUM_BUSE_REQ_MAIN];
