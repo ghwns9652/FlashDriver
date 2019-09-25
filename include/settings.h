@@ -40,10 +40,10 @@
 
 #elif defined(SLC)
 
-#define GIGAUNIT 256L
+#define GIGAUNIT 1024L
 #define TOTALSIZE (GIGAUNIT*G)
-#define REALSIZE (256L*G)
-#define DEVSIZE (256L * G)
+#define REALSIZE (1024L*G)
+#define DEVSIZE (1024L * G)
 #define PAGESIZE (8*K)
 #define _PPB (256)
 #define BPS (1)
@@ -156,6 +156,7 @@ static inline char KEYTEST(KEYT a, KEYT b){
 //#define FSDEBUG
 //#define ALIGNDETECT
 //#define NOWRITE
+//#define DEBUGGETPPA
 
 /* BUSE Request Settings */
 #define BULK 1

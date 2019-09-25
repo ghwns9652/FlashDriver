@@ -26,7 +26,7 @@
 
 #else
 #define PAGES_PER_BLOCK 256
-#define BLOCKS_PER_CHIP 1024
+#define BLOCKS_PER_CHIP 4096
 #define CHIPS_PER_BUS 8
 #define NUM_BUSES 8
 #define NUM_CARDS 2

@@ -58,8 +58,6 @@ MeasureTime buseTime;
 MeasureTime buseendTime;
 #endif
 
-#define DEBUGGETPPA
-
 struct nbd_reply end_reply;
 extern int g_sk;
 
@@ -70,11 +68,16 @@ cl_lock *buse_end_flying;
 pthread_mutex_t reply_lock;
 pthread_mutex_t rmw_lock;
 
+/* Unlock requests after Read-Modify-Write request is done */
 static void do_rmw_unlock(char type){
     if(type == FS_RMW_T)
         pthread_mutex_unlock(&rmw_lock);
 }
 
+/* Lock requests following after a Read-Modify-Write(RMW) request
+ * 
+ * every request are temporarily locked until inflight RMW request is done
+ */
 static void do_rmw_lock(char type){
     static bool rmw_inflight = false;
 
@@ -89,20 +92,24 @@ static void do_rmw_lock(char type){
     }
 }
 
-
+/* Converts logical page address to physical page address
+ *
+ * obtain card,bus,chip,block,page address by using ftl's page table and vcu's page table
+ * calculates physical page address and returns it
+ *
+ *           ppa format
+ *
+ * |EMPTY|PAGE|BLOCK|CHIP|BUS|CARD| uint32_t
+ * --------------------------------
+ * |  5  | 8  | 12  | 3  | 3 | 1  | total 32bit
+ */
 static uint32_t lpa2ppa(uint32_t lpa){
     uint32_t ftlppa, ppa;
     PageTableEntry vcuppa;
 
     ftlppa = page_TABLE[lpa].ppa;
-#ifdef DEBUGGETPPA
-    fprintf(stderr, "ftlppa : %u\n", ftlppa);
-#endif
     vcuppa = pageTable[ftlppa];
-    vcuppa.block = (blockBase+vcuppa.block)%4096;
-#ifdef DEBUGGETPPA
-    fprintf(stderr, "(card, bus, chip, block, page) : (%d, %d, %d, %d, %d)\n", vcuppa.card, vcuppa.bus, vcuppa.chip, vcuppa.block, vcuppa.page);
-#endif
+    vcuppa.block = (blockBase+vcuppa.block)%4096; //!!remove effect of blockbase!!
     ppa = (uint32_t)(vcuppa.card |
         vcuppa.bus<<LG_NUM_CARDS |
         vcuppa.chip<<(LG_NUM_BUSES+LG_NUM_CARDS) |
@@ -110,30 +117,28 @@ static uint32_t lpa2ppa(uint32_t lpa){
         vcuppa.page<<(LG_BLOCKS_PER_CHIP+LG_CHIPS_PER_BUS+LG_NUM_BUSES+LG_NUM_CARDS));
 
 #ifdef DEBUGGETPPA
+    fprintf(stderr, "ftlppa : %u\n", ftlppa);
+    fprintf(stderr, "(card, bus, chip, block, page) : (%d, %d, %d, %d, %d)\n",
+            vcuppa.card, vcuppa.bus, vcuppa.chip, vcuppa.block, vcuppa.page);
     fprintf(stderr, "ppa : %u\n", ppa);
 #endif
     
     return ppa;
 }
 
+/*
+ * Return physical page address(ppa) of file's data
+ *
+ * calculates lpa from filesystem's blksize, blkmap
+ * calculates ppa from FTL's page mapping table, vcu108_inf's mapping table
+ */
 uint32_t getPhysPageAddr(int fd, size_t byteOffset){
     int blksize;
     uint32_t lba, lpa;
 
-#ifdef DEBUGGETPPA
-    fprintf(stderr, "byteOffset : %d\n", byteOffset);
-#endif
-
     ioctl(fd, FIGETBSZ, &blksize);
-#ifdef DEBUGGETPPA
-    fprintf(stderr, "blksize : %d\n", blksize);
-#endif
     lba = (int)byteOffset/blksize;
     ioctl(fd, FIBMAP, &lba);
-
-#ifdef DEBUGGETPPA
-    fprintf(stderr, "lba : %u\n", lba);
-#endif
 
     if(blksize < PAGESIZE)
         lpa = lba/(PAGESIZE/blksize);
@@ -141,12 +146,16 @@ uint32_t getPhysPageAddr(int fd, size_t byteOffset){
         lpa = lba*(blksize/PAGESIZE) + (byteOffset%blksize)/PAGESIZE;
 
 #ifdef DEBUGGETPPA
+    fprintf(stderr, "byteOffset : %d\n", byteOffset);
+    fprintf(stderr, "blksize : %d\n", blksize);
+    fprintf(stderr, "lba : %u\n", lba);
     fprintf(stderr, "lpa : %u\n", lpa);
 #endif
 
     return lpa2ppa(lpa);
 }
 
+/* Enqueue replies */
 #if (BUSE_ASYNC==1)
 static void buse_end_request(uint32_t tmp0, uint32_t tmp2, void* buse_req){
     while(1){
@@ -159,6 +168,13 @@ static void buse_end_request(uint32_t tmp0, uint32_t tmp2, void* buse_req){
 }
 #endif
 
+/*
+ * Send reply(ack) to nbd
+ *
+ * cannot send multiple replies simultaneously
+ * read : send request header + user data
+ * write : send request header
+ */
 #if (BUSE_ASYNC==1)
 void buse_reply(void *args){
 #elif (BUSE_ASYNC==0)
@@ -192,6 +208,23 @@ void buse_end_request(uint32_t tmp0, uint32_t tmp2, void *args){
     return;
 }
 
+/*
+ * Process buse requests with considering request's property
+ *
+ * caculates a logical page address to support FTL algorithm layer
+ * operates differently regards to type of requests
+ *      FS_SET_T : determine whether it is normal write request or read-modify-write request
+ *                 change type to FS_RMW_T if it is read-modify-write request
+ *      FS_GET_T : nothing special
+ *      FS_DELETE_T : trim pages by removing it from mapping of FTL
+ *                    (FIXME: do not support erase size below PAGESIZE)
+ *      FS_RMW_T : send read request first and lock other requests
+ *                 when read request is done, modify it and send write request
+ *                 after write request is done, unlock other requests
+ *
+ * Supports various size of requests regardless of PAGESIZE and len except FS_DELETE_T request
+ *
+ */
 static int buse_io(char _type, int sk, void *buf, u_int32_t len, u_int64_t offset, void *handle)
 {
     u_int64_t end_offset = offset + len;
@@ -231,6 +264,11 @@ static int buse_io(char _type, int sk, void *buf, u_int32_t len, u_int64_t offse
     return 0;
 }
 
+/*
+ * Queueing buse read requests to request_q
+ *
+ * other thread will process queued element later
+ */
 static int buse_make_read(int sk, void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     struct buse_request *buse_req; 
@@ -253,6 +291,11 @@ static int buse_make_read(int sk, void *buf, u_int32_t len, u_int64_t offset, vo
     return 0;
 }
 
+/*
+ * Queueing buse write requests to request_q
+ *
+ * other thread will process queued element later
+ */
 static int buse_make_write(int sk, void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     struct buse_request *buse_req; 
@@ -275,6 +318,11 @@ static int buse_make_write(int sk, void *buf, u_int32_t len, u_int64_t offset, v
     return 0;
 }
 
+/*
+ * Queueing buse trim requests to request_q
+ * 
+ * other thread will process queued element later
+ */
 static int buse_make_trim(int sk, u_int64_t from, u_int32_t len, void *userdata)
 {
     struct buse_request *buse_req; 
@@ -347,6 +395,10 @@ static int buse_trim(int sk, u_int64_t from, u_int32_t len, void *userdata)
 
 
 #if (BUSE_ASYNC==1)
+
+/*
+ * Dequeue requests and run buse_io
+ */
 void* buse_request_main(void* args){
     struct buse_request *buse_req;
 #ifdef LPRINT
@@ -355,9 +407,6 @@ void* buse_request_main(void* args){
     while(1){
 		cl_grap(buse_flying);
         buse_req = (struct buse_request*)q_dequeue(request_q);
-#ifdef QPRINT
-        //printf("buse requset main : %d\n", request_q->size);
-#endif
         if(!buse_req)
             continue;
 #ifdef LPRINT
@@ -373,6 +422,9 @@ void* buse_request_main(void* args){
     return NULL;
 }
 
+/*
+ * Dequeue replies and run buse_reply
+ */
 void* buse_reply_main(void* args){
     void *buse_req;
     while(1){
@@ -386,6 +438,9 @@ void* buse_reply_main(void* args){
 }
 #endif
 
+/*
+ * Execute command and wait until it ends
+ */
 int run_exec(char* cmd){
     char s[100];
     char* args[20];
@@ -410,9 +465,11 @@ int run_exec(char* cmd){
         execvp(args[0], args);
     }
 
-    do{
-        waitpid(pid, &status, 0);
-    }while(!WIFEXITED(status));
+    waitpid(pid, &status, 0);
+    if(!WIFEXITED(status)){
+        fprintf(stderr, "child exited with error\n");
+        abort();
+    }
 
     printf("******terminated!******\n\n");
 
@@ -431,11 +488,18 @@ static pthread_t request_tid[NUM_BUSE_REQ_MAIN];
 static pthread_t reply_tid;
 static pthread_t bmain_tid;
 
+
+/* Wrapping function for pthread create */
 void* buse_main(void* args){
     return (void*)__buse_main(arguments.device, &aop, (void *)&arguments.verbose);
 }
 
-//int main(int argc, char *argv[]) {
+/*
+ * Initialize buse, interface, ftl, vcu108 layer
+ * 
+ * setting device with buse interface and devcie size
+ * create buse request and reply threads (reply thread must be single thread)
+ */
 int buse_init() {
     arguments.verbose = 0;
     arguments.device = DEVNAME;
@@ -476,11 +540,14 @@ int buse_init() {
 #endif
 
     pthread_create(&bmain_tid, NULL, buse_main, NULL);
-    sleep(5);
+    sleep(5); //wait to make sure buse_main initialzing is done
     //buse_main(arguments.device, &aop, (void *)&arguments.verbose);
     return 0;
 }
 
+/*
+ * Wait until SIGINT or SIGTERM received 
+ */
 void buse_wait(){
     void* ret;
 
@@ -491,6 +558,12 @@ void buse_wait(){
     }
 }
 
+/* 
+ * Free buse, interface, ftl, vcu108 layer
+ *
+ * cancel buse request and reply threads
+ * free variables
+ */
 int buse_free() {
 #if (BUSE_ASYNC==1)
     for(int i = 0; i < NUM_BUSE_REQ_MAIN; i++){
