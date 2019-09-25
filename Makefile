@@ -23,7 +23,7 @@ export COMMONFLAGS=\
 			-D_GNU_SOURCE\
 			-DSLC\
 			-Wno-unused-but-set-variable\
--O3\
+-O0\
 #			-DWRITESYNC\
 #			-DCHECKINGTIME\
 #			-DKVSSD

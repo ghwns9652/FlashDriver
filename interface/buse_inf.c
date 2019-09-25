@@ -25,6 +25,7 @@
 #include <linux/nbd.h>
 #include <linux/fs.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -45,6 +46,7 @@
 #ifdef vcu108
 #include "../lower/vcu108/vcu108_inf.h"
 extern PageTableEntry *pageTable;
+extern int blockBase;
 #endif
 
 /* BUSE callbacks */
@@ -97,6 +99,7 @@ static uint32_t lpa2ppa(uint32_t lpa){
     fprintf(stderr, "ftlppa : %u\n", ftlppa);
 #endif
     vcuppa = pageTable[ftlppa];
+    vcuppa.block = (blockBase+vcuppa.block)%4096;
 #ifdef DEBUGGETPPA
     fprintf(stderr, "(card, bus, chip, block, page) : (%d, %d, %d, %d, %d)\n", vcuppa.card, vcuppa.bus, vcuppa.chip, vcuppa.block, vcuppa.page);
 #endif
@@ -384,10 +387,18 @@ void* buse_reply_main(void* args){
 #endif
 
 int run_exec(char* cmd){
+    char s[100];
     char* args[20];
     char* token;
-    if(fork()){
-        token = strtok(cmd, " ");
+    pid_t pid;
+    int status;
+
+    printf("\nInput cmd : %s\n", cmd);
+
+    pid = fork();
+    if(!pid){
+        memcpy(s, cmd, strlen(cmd)+1);
+        token = strtok(s, " ");
         args[0] = token;
         int i;
         for(i = 1; token != NULL; i++){
@@ -395,10 +406,17 @@ int run_exec(char* cmd){
             args[i] = token;
         }
         args[i] = NULL;
+        printf("*****%s running!*****\n", args[0]);
         execvp(args[0], args);
     }
 
-    return 0;
+    do{
+        waitpid(pid, &status, 0);
+    }while(!WIFEXITED(status));
+
+    printf("******terminated!******\n\n");
+
+    return pid;
 }
 
 struct arguments {
@@ -460,6 +478,7 @@ int buse_init() {
 
     pthread_t bmain_tid;
     pthread_create(&bmain_tid, NULL, buse_main, NULL);
+    sleep(5);
     //buse_main(arguments.device, &aop, (void *)&arguments.verbose);
     return 0;
 }
