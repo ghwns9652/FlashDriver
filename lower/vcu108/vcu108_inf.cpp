@@ -191,7 +191,7 @@ public:
 
     pthread_mutex_lock(&flashReqMutex);
     if (status != 0) {
-      printf("LOG: detected bad block with tag = %d\n", tag);
+      DEBUG_PRINT("LOG: detected bad block with tag = %d\n", tag);
       flashStatus[card][bus][chip][block] = ERASED_BAD;
     } else {
       flashStatus[card][bus][chip][block] = ERASED;
@@ -521,7 +521,7 @@ uint32_t vcu_create(lower_info *li){
           for(int bus = 0; bus < NUM_BUSES; bus++){
               for(int card = 0; card < NUM_CARDS; card++){
                   if(flashStatus[card][bus][chip][block]==ERASED_BAD){
-                      fprintf(stderr, "BAD BLOCK : (%d %d %d %d)\n", card, bus, chip, block);
+                      DEBUG_PRINT("BAD BLOCK : (%d %d %d %d)\n", card, bus, chip, block);
                       badBlockCnt++;
                   }
               }
@@ -529,6 +529,7 @@ uint32_t vcu_create(lower_info *li){
       }
   }
 
+  fprintf(stderr, "badBlockCnt : %d\n", badBlockCnt);
   fprintf(stderr, "LOG: Bad Block Detection Done...\n");
 
   return 0;
