@@ -128,8 +128,8 @@ uint32_t getPhysPageAddr(int fd, size_t byteOffset){
 #ifdef DEBUGGETPPA
     fprintf(stderr, "blksize : %d\n", blksize);
 #endif
-    for(int i = 0; i <= (int)byteOffset/blksize; i++)
-        ioctl(fd, FIBMAP, &lba);
+    lba = (int)byteOffset/blksize;
+    ioctl(fd, FIBMAP, &lba);
 
 #ifdef DEBUGGETPPA
     fprintf(stderr, "lba : %u\n", lba);
@@ -429,11 +429,10 @@ static struct arguments arguments;
 static struct buse_operations aop;
 static pthread_t request_tid[NUM_BUSE_REQ_MAIN];
 static pthread_t reply_tid;
+static pthread_t bmain_tid;
 
 void* buse_main(void* args){
-    __buse_main(arguments.device, &aop, (void *)&arguments.verbose);
-
-    return NULL;
+    return (void*)__buse_main(arguments.device, &aop, (void *)&arguments.verbose);
 }
 
 //int main(int argc, char *argv[]) {
@@ -476,11 +475,20 @@ int buse_init() {
     pthread_create(&reply_tid, NULL, buse_reply_main, NULL);
 #endif
 
-    pthread_t bmain_tid;
     pthread_create(&bmain_tid, NULL, buse_main, NULL);
     sleep(5);
     //buse_main(arguments.device, &aop, (void *)&arguments.verbose);
     return 0;
+}
+
+void buse_wait(){
+    void* ret;
+
+    pthread_join(bmain_tid, &ret);
+    if((int64_t)ret != EXIT_SUCCESS){
+        fprintf(stderr, "buse main exit failure!\n");
+        abort();
+    }
 }
 
 int buse_free() {

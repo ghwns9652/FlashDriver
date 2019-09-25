@@ -33,16 +33,16 @@ int main(int argc, char *argv[]) {
 
     fd = open("/mnt/nbd0/gppa_test.txt", O_RDWR|O_CREAT|O_DIRECT, 0666);
     printf("fd : %d\n", fd);
-    posix_memalign(&buf, 512, 4096);
-    memset(buf, 'A', 4096);
-    ret = write(fd, buf, 4096);
+    posix_memalign(&buf, 512, 16384);
+    memset(buf, 'A', 16384);
+    ret = write(fd, buf, 16384);
     printf("ret : %d\n", ret);
-    printf("ppa : %u\n", getPhysPageAddr(fd, 0));
+    printf("ppa : %u\n", getPhysPageAddr(fd, 4096));
     close(fd);
 
     pid = run_exec("umount /dev/nbd0");
-    while(1){}
-    //buse_free(); 
+    buse_wait();
+    buse_free(); 
 
     return 0;
 }

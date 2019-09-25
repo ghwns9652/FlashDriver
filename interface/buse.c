@@ -129,7 +129,7 @@ void disconnect_nbd(int signal) {
     (void)signal;
     if (nbd_dev_to_disconnect != -1) {
         if(ioctl(nbd_dev_to_disconnect, NBD_DISCONNECT) == -1) {
-            warn("failed to request disconect on nbd device");
+            warn("failed to request disconect on nbd device or already disconnected");
         } else {
             nbd_dev_to_disconnect = -1;
             fprintf(stderr, "sucessfuly requested disconnect on nbd device\n");
