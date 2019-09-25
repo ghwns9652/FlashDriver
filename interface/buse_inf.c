@@ -88,7 +88,7 @@ static void do_rmw_lock(char type){
 }
 
 
-uint32_t lpa2ppa(uint32_t lpa){
+static uint32_t lpa2ppa(uint32_t lpa){
     uint32_t ftlppa, ppa;
     PageTableEntry vcuppa;
 
@@ -116,6 +116,10 @@ uint32_t lpa2ppa(uint32_t lpa){
 uint32_t getPhysPageAddr(int fd, size_t byteOffset){
     int blksize;
     uint32_t lba, lpa;
+
+#ifdef DEBUGGETPPA
+    fprintf(stderr, "byteOffset : %d\n", byteOffset);
+#endif
 
     ioctl(fd, FIGETBSZ, &blksize);
 #ifdef DEBUGGETPPA
@@ -378,6 +382,24 @@ void* buse_reply_main(void* args){
     return NULL;
 }
 #endif
+
+int run_exec(char* cmd){
+    char* args[20];
+    char* token;
+    if(fork()){
+        token = strtok(cmd, " ");
+        args[0] = token;
+        int i;
+        for(i = 1; token != NULL; i++){
+            token = strtok(NULL, " ");
+            args[i] = token;
+        }
+        args[i] = NULL;
+        execvp(args[0], args);
+    }
+
+    return 0;
+}
 
 struct arguments {
     unsigned long long size;
